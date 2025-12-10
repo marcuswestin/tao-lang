@@ -6,20 +6,8 @@ Tao Lang
 
 Next tasks, in order:
 
-- [ ] [Dev Env Automation](#dev-env-automation)
-- [ ] [Agent Setup](#agent-setup)
-- [ ] [Compiler Seed](#parsercompiler-seed)
+#### Seed project components
 
-## Project List
-
-Projects to tackle:
-
-#### Dev Env Automation
-
-- [x] README.md
-- [x] Justfile
-- [x] mise tools
-- [x] idempotent `just setup` with `enter-tao` command
 - [ ] Start app to implement against
 - [ ] Seed compiler
   - [ ] packages/language
