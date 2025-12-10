@@ -1,0 +1,9 @@
+[tools]
+just = "latest"
+node = "lts"
+bun = "latest"
+jq = "latest"
+
+"npm:dprint" = "latest"
+"npm:oxlint" = "latest"
+"npm:typescript" = "latest"

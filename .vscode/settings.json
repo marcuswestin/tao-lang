@@ -1,3 +1,26 @@
 {
+  // Code appearance
+  "editor.fontSize": 12.5,
+  "editor.lineHeight": 17,
+
+  "files.exclude": {
+    ".config/MISE_DIR": true,
+    ".config/mise.lock": true
+  },
+
+  // DPrint
   "editor.formatOnSave": true,
+  "editor.formatOnPaste": true,
+  "editor.formatOnType": true,
+  "editor.defaultFormatter": "dprint.dprint",
+  "dprint.path": ".config/MISE_DIR/installs/npm-dprint/latest/bin/dprint",
+
+  // Langium and App Lang configs
+  "langium.config": "packages/language/langium-config.json",
+  "files.associations": {
+    "**/*.app": "app-lang"
+  },
+
+  // Typescript
+  "typescript.tsdk": "node_modules/typescript/lib"
 }

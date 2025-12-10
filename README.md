@@ -1,16 +1,13 @@
 # Tao Lang
 
+Tao Lang is a programming language written for creating apps, native and web.
+
+See `./Docs/*` for more information
+
 ### Get started
 
-```zsh
-# install just, and setup
-curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/.local/bin
-just setup
-```
-
-Now close terminal, then
+Run this to get started:
 
 ```zsh
-et
-just dev
+zsh .config/automated-setup.zsh
 ```

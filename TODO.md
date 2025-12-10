@@ -19,6 +19,22 @@ Projects to tackle:
 - [x] README.md
 - [x] Justfile
 - [x] mise tools
+- [x] idempotent `just setup` with `enter-tao` command
+- [ ] Start app to implement against
+- [ ] Seed compiler
+  - [ ] packages/language
+- [ ] Seed cli
+  - [ ] package/tao-cli
+- [ ] Seed Runtime
+  - [ ] package/runtime
+- [ ] Seed test suites
+  - [ ] packages/language/tests/compile-tao-studio.test.ts
+  - [ ] packages/runtime/tests/views.test.ts
+    - [ ] `const runners = [headless, webPlaywright, iosMaestro]`
+    - [ ] `describe.each(runners)("runner $s", (runner) => { runner.expect(CODE).text('foo').press({ testID: 'button' }).text('bar') })`
+  - [ ] packages/runtime/tests/runners/headless.ts
+  - [ ] packages/runtime/tests/runners/web-playwright.ts
+  - [ ] packages/runtime/tests/runners/ios-maestro.ts
 
 #### Agent Setup
 
