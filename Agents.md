@@ -12,6 +12,8 @@ just <command recipe>
 
 **Add new recipe if needed** to the Agent Commands section in Justfile. You **MUST ask for permission** before adding it
 
+**NEVER merge changes into main branch without asking for permission first.**
+
 ## Tooling
 
 - **Bun** over Node.js for running scripts, tests, and builds
