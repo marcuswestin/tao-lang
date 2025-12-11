@@ -21,11 +21,12 @@ just <command recipe>
 ## Project Structure
 
 ```
-packages/compiler/     # Langium-based parser/compiler for .tao files
-packages/tao-cli/      # CLI tool built with Bun
-packages/expo-runtime/ # React Native/Expo runtime for Tao apps
-Apps/                  # Example .tao applications (e.g., Tao Studio)
-Docs/                  # Language design documentation
+packages/compiler/       # Langium-based parser/compiler for .tao files
+packages/tao-cli/        # CLI tool built with Bun
+packages/internal-tools/ # Scripts for internal use
+packages/expo-runtime/   # React Native/Expo runtime for Tao apps
+Apps/                    # Example .tao applications (e.g., Tao Studio)
+Docs/                    # Language design documentation
 ```
 
 ## Code Style
