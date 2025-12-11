@@ -7,3 +7,6 @@ jq = "latest"
 "npm:dprint" = "latest"
 "npm:oxlint" = "latest"
 "npm:typescript" = "latest"
+
+[task_config]
+includes = ["mise-gen-just-commands.toml"]

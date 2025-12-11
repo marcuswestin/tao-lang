@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /**
  * Auto-generates mise tasks from Justfile recipes.
- * Run with: bun .config/gen-mise-tasks.ts
+ * Run with: bun packages/internal-tools/gen-mise-tasks.ts
  * Or via: just _agent-gen-mise-tasks
  */
 
@@ -19,9 +19,10 @@ interface JustDump {
 }
 
 async function main() {
-  // Get Justfile recipes as JSON
+  // Get Justfile recipes as JSON (run from project root)
   const proc = Bun.spawn(['just', '--dump', '--dump-format', 'json'], {
     stdout: 'pipe',
+    cwd: process.cwd().replace(/\/packages\/internal-tools.*$/, ''),
   })
   const output = await new Response(proc.stdout).text()
   const exitCode = await proc.exited
@@ -32,12 +33,15 @@ async function main() {
 
   const dump: JustDump = JSON.parse(output)
 
-  // Filter to public recipes without parameters (exclude private/internal ones)
+  // Filter to only recipes prefixed with _agent- (without parameters)
   const recipes = Object.values(dump.recipes)
-    .filter((r) => !r.private && r.parameters.length === 0 && !r.name.startsWith('_'))
+    .filter((r) => r.name.startsWith('_agent-') && r.parameters.length === 0)
     .sort((a, b) => a.name.localeCompare(b.name))
 
-  // Generate TOML
+  // Generate TOML (write to project root .config directory)
+  const projectRoot = process.cwd().replace(/\/packages\/internal-tools.*$/, '')
+  const outputPath = `${projectRoot}/${OUTPUT_FILE}`
+
   const lines: string[] = [
     '# Auto-generated from Justfile - do not edit manually',
     '# Regenerate with: just _agent-gen-mise-tasks',
@@ -52,8 +56,8 @@ async function main() {
     lines.push('')
   }
 
-  await Bun.write(OUTPUT_FILE, lines.join('\n'))
-  console.log(`Generated ${OUTPUT_FILE} with ${recipes.length} tasks`)
+  await Bun.write(outputPath, lines.join('\n'))
+  console.log(`Generated ${outputPath} with ${recipes.length} tasks`)
 }
 
 main()
