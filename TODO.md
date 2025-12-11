@@ -17,10 +17,10 @@ Next tasks, in order:
 - [x] Seed test suites
   - [x] packages/language/tests/compile-tao-studio.test.ts
   - [x] packages/runtime/tests/views.test.ts
-- [ ] Cleanups
+- [x] Cleanups
   - [x] Use `set quiet` in main Justfile
-  - [ ] Replace `"module": "Preserve",` with `"module": "ESNext",`
-  - [ ] Fix ts errors in langium generated code. Set which ts library w `"typescript.tsdk": "path to node_modules/typescript/lib"`?
+  - [x] Replace `"module": "Preserve",` with `"module": "ESNext",`
+  - [x] Fix ts errors in langium generated code. Set which ts library w `"typescript.tsdk": "path to node_modules/typescript/lib"`?
 
 #### Start compiling and running basic app
 

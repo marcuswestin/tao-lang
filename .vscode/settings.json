@@ -1,4 +1,7 @@
 {
+  // Use compiler typescript version, for langium generated code to typecheck properly
+  "typescript.tsdk": "packages/compiler/node_modules/typescript/lib",
+
   // Code appearance
   "editor.fontSize": 12.5,
   "editor.lineHeight": 17,
