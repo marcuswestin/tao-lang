@@ -9,8 +9,14 @@ help:
     just _help
 
 # Enter development
-dev:
+dev: mcp-run
     cursor .
+
+mcp-run:
+    screen -dmS mise-mcp mise mcp
+
+mcp-halt:
+    screen -X -S mise-mcp quit
 
 # Run tests
 [no-quiet]

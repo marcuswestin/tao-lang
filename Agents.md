@@ -51,23 +51,7 @@ Run `just help` to list all available commands. Key ones:
 
 ## MCP Integration
 
-mise exposes project tasks to AI agents via MCP. The tasks are auto-generated from `Agents.just` into `.config/mise-gen-just-commands.toml`.
-
-To enable mise MCP:
-
-1. Set `MISE_EXPERIMENTAL=1` in your environment
-2. Configure your AI tool to use the mise MCP server:
-   ```json
-   {
-     "mcpServers": {
-       "mise": {
-         "command": "mise",
-         "args": ["mcp"],
-         "env": { "MISE_EXPERIMENTAL": "1" }
-       }
-     }
-   }
-   ```
+mise exposes project tasks to AI agents via MCP. The tasks are auto-generated from Justfile recipes prefixed with `_agent-` into `.config/mise-gen-just-commands.toml`.
 
 ### Regenerating mise-gen-just-commands.toml
 
@@ -81,7 +65,7 @@ This extracts all public recipes from `Justfile` and generates `.config/mise-gen
 
 ## Command Design Principles
 
-Commands in `Jusefile` follow DRY (Don't Repeat Yourself) principles:
+Commands in `Justfile` follow DRY (Don't Repeat Yourself) principles:
 
 - **Favor fewer commands with arguments** over many one-off commands
 - Commands should be reusable and composable
