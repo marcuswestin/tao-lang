@@ -1,0 +1,38 @@
+# Auto-generated from Justfile - do not edit manually
+# Regenerate with: just _agent-gen-mise-tasks
+
+[tasks.build]
+description = "Build everything"
+run = "just build"
+
+[tasks.dev]
+description = "Enter development"
+run = "just dev"
+
+[tasks.fmt]
+description = "Format and check files"
+run = "just fmt"
+
+[tasks.help]
+description = "Print available commands"
+run = "just help"
+
+[tasks.lint]
+description = "lint"
+run = "just lint"
+
+[tasks.run-studio]
+description = "Run Tao Studio app"
+run = "just run-studio"
+
+[tasks.setup]
+description = "Setup development environment"
+run = "just setup"
+
+[tasks.start-runtime]
+description = "Start tao expo runtime"
+run = "just start-runtime"
+
+[tasks.test]
+description = "Run tests"
+run = "just test"
