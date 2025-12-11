@@ -6,6 +6,12 @@ Tao Lang
 
 Next tasks, in order:
 
+#### Agent Setup
+
+- [ ] Write Agents.md
+- [ ] Write .Agents.justfile, along w Agents.md instructions
+- [ ] Get mise mcp running while in dev mode
+
 #### Start compiling and running basic app
 
 - [ ] Start app to implement against (Tao Studio)
@@ -13,9 +19,3 @@ Next tasks, in order:
 #### Start stubbing out Docs
 
 - [ ] Create Docs with explanation for Tao, and language design
-
-#### Agent Setup
-
-- [ ] Write Agents.md
-- [ ] Write .Agents.justfile, along w Agents.md instructions
-- [ ] Get mise mcp running while in dev mode
