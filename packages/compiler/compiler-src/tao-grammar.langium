@@ -1,6 +1,6 @@
-grammar Tao
+grammar TaoLang
 
-entry TaoLang:
+entry TaoFile:
     (persons+=Person | greetings+=Greeting)*;
 
 Person:

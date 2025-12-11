@@ -1,5 +1,8 @@
 set quiet
 
+run:
+    bun run tao-cli.ts help
+
 test:
     bun test
 

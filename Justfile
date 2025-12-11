@@ -12,19 +12,19 @@ help:
 dev: mcp-run
     cursor .
 
-mcp-run:
-    screen -dmS mise-mcp mise mcp
-
-mcp-halt:
-    screen -X -S mise-mcp quit
 
 # Run tests
 [no-quiet]
 test:
     cd packages/compiler && just test
+    cd packages/ide-extension && just test
     cd packages/tao-cli && just test
-    cd packages/internal-tools && bun test
+    cd packages/shared-tools && bun test
     cd packages/expo-runtime && just test
+
+# Check that builds work
+check-builds:
+    cd packages/tao-cli && just build && ./.builds/tao help
 
 # Run and Build commands
 ########################
@@ -48,17 +48,38 @@ tao args:
 [no-quiet]
 build:
     cd packages/compiler && just build
+    cd packages/ide-extension && just build
     cd packages/tao-cli && just build
 
 # Format and check files
 fmt:
     just _fmt
 
+# Check all code: lint, typecheck, etc.
+check:
+    just _check
+
 # Setup development environment
 setup:
     echo "\tSetup Tao Lang dev environment:"
     just _install_mise
     just _do_setup
+
+# LLM & Agent Setups
+####################
+
+# Run mise MCP server
+mcp-run:
+    screen -dmS mise-mcp mise mcp
+
+# Halt mise MCP server
+mcp-halt:
+    screen -X -S mise-mcp quit
+
+# Generate mise-gen-just-commands.toml from this file
+gen-mise-tasks:
+    cd packages/shared-tools && bun tools-src/gen-mise-tasks.ts
+
 
 ############
 # Internal #
@@ -72,17 +93,18 @@ _MISE_CMD := "~/.local/bin/mise"
 
 _fmt:
     just --fmt --unstable 1> /dev/null
+    bunx sort-package-json packages/*/package.json 1> /dev/null
     dprint fmt 1> /dev/null
     {{ _MISE_CMD }} fmt 1> /dev/null
-    just lint
+    just check
     oxlint --fix 1> /dev/null
 
 [no-quiet]
-lint:
+_check:
     oxlint
     cd packages/compiler && tsc --noEmit
     cd packages/tao-cli && tsc --noEmit
-    cd packages/internal-tools && tsc --noEmit
+    cd packages/shared-tools && tsc --noEmit
     cd packages/expo-runtime && tsc --noEmit
     cd packages/expo-runtime && bunx expo lint
 
@@ -154,11 +176,10 @@ _agent-test: test
 _agent-fmt: fmt
 
 # Lint code
-_agent-lint: lint
+_agent-lint: check
 
 # Generate mise-gen-just-commands.toml from this file
-_agent-gen-mise-tasks:
-    cd packages/internal-tools && bun scripts/gen-mise-tasks.ts
+_agent-gen-mise-tasks: gen-mise-tasks
 
 # Execute git commands:
 _agent-git args:

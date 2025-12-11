@@ -1,7 +1,8 @@
 {
-  "name": "tao-compiler",
-  "module": "tao-compiler.ts",
+  "name": "@tao-compiler",
+  "private": true,
   "type": "module",
+  "module": "tao-compiler.ts",
   "devDependencies": {
     "@types/bun": "latest",
     "langium-cli": "^4.1.0",

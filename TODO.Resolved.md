@@ -1,3 +1,9 @@
+#### Get extension working (2025-12-11)
+
+- [x] Create basic vscode extension, and automate installation into current cursor instance.
+- [x] Hook up inter-package imports and builds.
+- [x] Use bun in extension instead of node/npm.
+
 #### Agent Setup (2024-06-11)
 
 - [x] Write Agents.md

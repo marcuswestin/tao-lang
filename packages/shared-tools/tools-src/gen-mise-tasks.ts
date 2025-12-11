@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /**
  * Auto-generates mise tasks from Justfile recipes.
- * Run with: bun packages/internal-tools/gen-mise-tasks.ts
+ * Run with: bun packages/shared-tools/gen-mise-tasks.ts
  * Or via: just _agent-gen-mise-tasks
  */
 
@@ -22,7 +22,7 @@ async function main() {
   // Get Justfile recipes as JSON (run from project root)
   const proc = Bun.spawn(['just', '--dump', '--dump-format', 'json'], {
     stdout: 'pipe',
-    cwd: process.cwd().replace(/\/packages\/internal-tools.*$/, ''),
+    cwd: process.cwd().replace(/\/packages\/shared-tools.*$/, ''),
   })
   const output = await new Response(proc.stdout).text()
   const exitCode = await proc.exited
@@ -39,7 +39,7 @@ async function main() {
     .sort((a, b) => a.name.localeCompare(b.name))
 
   // Generate TOML (write to project root .config directory)
-  const projectRoot = process.cwd().replace(/\/packages\/internal-tools.*$/, '')
+  const projectRoot = process.cwd().replace(/\/packages\/shared-tools.*$/, '')
   const outputPath = `${projectRoot}/${OUTPUT_FILE}`
 
   const lines: string[] = [

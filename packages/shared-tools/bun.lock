@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "internal-tools",
+      "name": "shared-tools",
       "devDependencies": {
         "@types/bun": "latest",
       },

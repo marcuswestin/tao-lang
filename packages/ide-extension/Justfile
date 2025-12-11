@@ -1,0 +1,46 @@
+set quiet := true
+
+test:
+    # No tests currently
+
+dev:
+    cursor --extensionDevelopmentPath .
+
+run:
+    echo "TODO: This isn't working yet -- unsure why."
+    exit 1
+    echo
+    echo "\tBuild and package extension..."
+    bunx @vscode/vsce package --allow-missing-repository --out ../../.builds/tao-lang-vscode.vsix # > /dev/null
+    echo "\tInstall extension..."
+    just uninstall > /dev/null 2>&1 || true
+    just install-extension > /dev/null 2>&1
+    echo "\tCheck extension installation..."
+    set -e && cursor --list-extensions | grep "tao.vscode-extension" > /dev/null || { echo "Installation failed -- extension not found" >&2; exit 1; }
+    echo "\n\t* Extension installed and loaded *\n"
+
+uninstall-extension:
+    cursor --uninstall-extension tao.vscode-extension
+install-extension:
+    cursor --install-extension ../../.builds/tao-lang-vscode.vsix --verbose
+    cursor --reload-window > /dev/null 2>&1
+
+
+build: _install
+    cd ../compiler && just gen
+    mkdir -p ./gen-syntaxes/
+    cp ../compiler/gen-syntaxes/tao-lang.tmLanguage.json ./gen-syntaxes/tao-lang.tmLanguage.json
+    tsc -b tsconfig.json
+    node esbuild.mjs
+
+watch:
+    bunx concurrently -n tsc,esbuild -c blue,yellow \
+        "tsc -b tsconfig.json --watch" \
+        "node esbuild.mjs --watch"
+
+_install:
+    bun install
+    # npm install
+
+clean:
+    rm -fr *.tsbuildinfo out gen-syntaxes

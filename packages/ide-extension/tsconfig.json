@@ -1,13 +1,14 @@
 {
+  "extends": "../tsconfig.base.json",
   "references": [{
     "path": "../compiler"
   }],
   "include": [
-    "cli-src/**/*",
-    "cli-tests/**/*",
-    "tao-cli.ts"
+    "extension-src/**/*.ts"
   ],
   "compilerOptions": {
+    "noEmit": true,
+
     "baseUrl": ".",
     "paths": {
       "@tao-compiler": ["../compiler/tao-compiler.ts"]

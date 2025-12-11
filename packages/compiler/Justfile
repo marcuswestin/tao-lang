@@ -7,6 +7,19 @@ build: _install gen
 
 gen:
     bunx langium generate
+    just _merge_textmate_syntax_files
+
 
 _install:
     bun install
+
+# highlighting instructions into the generate tao-lang.tmLanguage.json file.
+_merge_textmate_syntax_files:
+    # cd ./gen-syntaxes && npx node-jq \
+    #     -s '.[0].repository += .[1].repository | .[0].patterns += .[1].patterns | .[0]' \
+    #     `pwd`/tao-lang.tmLanguage.json `pwd`/tao-lang.merge.tmLanguage.json \
+    #     | npx sponge `pwd`/tao-lang.tmLanguage.json
+    npx node-jq \
+        -s '.[0].repository += .[1].repository | .[0].patterns += .[1].patterns | .[0]' \
+        ./gen-syntaxes/tao-lang.tmLanguage.json ./gen-syntaxes/tao-lang.merge.tmLanguage.json \
+        | npx sponge ./gen-syntaxes/tao-lang.tmLanguage.json

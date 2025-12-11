@@ -23,18 +23,31 @@ just <command recipe>
 ## Project Structure
 
 ```
+Justfile                 # *All* commands necessary to develop Tao Lang
 packages/compiler/       # Langium-based parser/compiler for .tao files
+packages/ide-extension/  # VSCode IDE extension for Tao Lang
 packages/tao-cli/        # CLI tool built with Bun
-packages/internal-tools/ # Scripts for internal use
 packages/expo-runtime/   # React Native/Expo runtime for Tao apps
+packages/shared-tools/   # Toosl & scripts for internal use
 Apps/                    # Example .tao applications (e.g., Tao Studio)
 Docs/                    # Language design documentation
+.config/                 # Configuration files for the repo
+.builds/                 # Build artifacts from the repo
+TODO.md                  # Upcoming Projects and Tasks
+TODO.Resolved.md         # Resolved Projects and Tasks
 ```
+
+### Role of Each Package
+
+- Compiler: The compiler is standalone, with an internal typescript API. It takes links to .tao files, and outputs a folder with typescript code to be run in the expo runtime.
+- Expo Runtime: The expo runtime takes receives a compiled .tao app, and runs it in a React Native/Expo environment.
+- Tao CLI: The cli is used to build apps with the compiler, run apps in expo runtimes, and more.
+- Internal Tools: Scripts for more complex internal functionality than is appropriate for the Justfile
 
 ## Code Style
 
 - **Formatter**: just fmt
-- **Linter**: just lint
+- **Linter**: just check
 
 ## Testing
 

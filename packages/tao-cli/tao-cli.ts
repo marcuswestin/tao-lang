@@ -1,1 +1,3 @@
-console.log('Hello via Bun!')
+import { taoCliMain } from './cli-src/tao-cli-main'
+
+taoCliMain()

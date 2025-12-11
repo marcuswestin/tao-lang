@@ -1,0 +1,69 @@
+{
+  "name": "vscode-extension",
+  "private": true,
+  "displayName": "Tao Lang",
+  "version": "0.0.1",
+  "description": "Tao Lang VSCode Extension",
+  "categories": [
+    "Programming Languages"
+  ],
+  "publisher": "tao",
+  "type": "module",
+  "main": "../../.builds/ts-packages/ide-extension/extension/main.cjs",
+  "files": [
+    "out",
+    "gen-syntaxes",
+    "language-configuration.json",
+    "package.json",
+    "README.md",
+    "LICENSE.txt"
+  ],
+  "scripts": {
+    "vscode:prepublish": "just build"
+  },
+  "contributes": {
+    "grammars": [
+      {
+        "language": "tao",
+        "scopeName": "source.tao-lang",
+        "path": "gen-syntaxes/tao-lang.tmLanguage.json"
+      }
+    ],
+    "languages": [
+      {
+        "id": "tao",
+        "aliases": [
+          "Tao",
+          "tao",
+          "tao lang",
+          "Tao Lang",
+          "Tao lang"
+        ],
+        "extensions": [
+          ".tao"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ]
+  },
+  "activationEvents": [
+    "onLanguage:tao"
+  ],
+  "dependencies": {
+    "vscode-languageclient": "~9.0.1",
+    "vscode-languageserver": "~9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.0",
+    "@types/vscode": "~1.67.0",
+    "concurrently": "^9.2.1",
+    "esbuild": "~0.25.5",
+    "langium": "^4.1.2"
+  },
+  "engines": {
+    "vscode": "^1.67.0"
+  },
+  "vsce": {
+    "dependencies": false
+  }
+}

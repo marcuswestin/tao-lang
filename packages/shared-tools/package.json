@@ -1,7 +1,7 @@
 {
-  "name": "internal-tools",
-  "type": "module",
+  "name": "shared-tools",
   "private": true,
+  "type": "module",
   "devDependencies": {
     "@types/bun": "latest"
   },

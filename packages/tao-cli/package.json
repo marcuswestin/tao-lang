@@ -1,7 +1,11 @@
 {
   "name": "tao-cli",
-  "module": "tao-cli.ts",
+  "private": true,
   "type": "module",
+  "module": "tao-cli.ts",
+  "dependencies": {
+    "@commander-js/extra-typings": "^14.0.0"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },

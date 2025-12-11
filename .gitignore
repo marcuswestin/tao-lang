@@ -3,6 +3,7 @@ node_modules
 *.tsbuildinfo
 
 # Generated files
-packages/compiler/gen-syntaxes
-packages/compiler/src/gen-tao-parser
 .builds
+packages/compiler/compiler-src/gen-tao-parser
+packages/compiler/gen-syntaxes
+packages/ide-extension/gen-syntaxes
