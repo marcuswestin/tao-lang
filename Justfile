@@ -17,6 +17,7 @@ dev:
 test:
     cd packages/compiler && just test
     cd packages/tao-cli && just test
+    cd packages/internal-tools && bun test
     cd packages/expo-runtime && just test
 
 # Run and Build commands
@@ -75,6 +76,7 @@ lint:
     oxlint
     cd packages/compiler && tsc --noEmit
     cd packages/tao-cli && tsc --noEmit
+    cd packages/internal-tools && tsc --noEmit
     cd packages/expo-runtime && tsc --noEmit
     cd packages/expo-runtime && bunx expo lint
 
