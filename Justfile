@@ -1,3 +1,4 @@
+set quiet := true
 set dotenv-load := true
 
 # Dev commands
@@ -5,18 +6,14 @@ set dotenv-load := true
 
 # Print available commands
 help:
-    @ echo "\nTo ended Tao Dev Env, run either of:\n"
-    @ echo "    enter-tao"
-    @ echo "    et"
-    @ echo "\n For more commands, run:\n"
-    @ echo "    just <recipe>"
-    @ just _list_just_commands
+    just _help
 
 # Enter development
 dev:
     cursor .
 
 # Run tests
+[no-quiet]
 test:
     cd packages/compiler && just test
     cd packages/tao-cli && just test
@@ -29,6 +26,10 @@ test:
 start-runtime:
     cd packages/expo-runtime && just run
 
+# Run Tao Studio app
+run-studio:
+    cd packages/tao-cli && bun run tao-cli.ts run-app "Apps/Tao Studio/Tao Studio.tao"
+
 # Build and run Tao CLI with given arguments
 tao args:
     just build
@@ -37,19 +38,20 @@ tao args:
     echo
 
 # Build everything
+[no-quiet]
 build:
     cd packages/compiler && just build
     cd packages/tao-cli && just build
 
 # Format and check files
 fmt:
-    @ just _fmt
+    just _fmt
 
 # Setup development environment
 setup:
-    @ echo "\tSetup Tao Lang dev environment:"
-    @ just _install_mise
-    @ just _do_setup
+    echo "\tSetup Tao Lang dev environment:"
+    just _install_mise
+    just _do_setup
 
 ############
 # Internal #
@@ -58,20 +60,17 @@ setup:
 [private]
 _MISE_CMD := "~/.local/bin/mise"
 
-# Help commands
-_list_just_commands:
-    @ echo
-    @ just --list --unsorted
-    @ echo
-
 # Formatting and linting
-_fmt:
-    @ just --fmt --unstable 1> /dev/null
-    @ dprint fmt 1> /dev/null
-    @ {{ _MISE_CMD }} fmt 1> /dev/null
-    @ just _lint
-    @ oxlint --fix 1> /dev/null
+########################
 
+_fmt:
+    just --fmt --unstable 1> /dev/null
+    dprint fmt 1> /dev/null
+    {{ _MISE_CMD }} fmt 1> /dev/null
+    just _lint
+    oxlint --fix 1> /dev/null
+
+[no-quiet]
 _lint:
     oxlint
     cd packages/compiler && tsc --noEmit
@@ -79,7 +78,19 @@ _lint:
     cd packages/expo-runtime && tsc --noEmit
     cd packages/expo-runtime && bunx expo lint
 
-# Setup
+# Help & Setup
+##############
+
+_help:
+    echo "\nTo ended Tao Dev Env, run either of:\n"
+    echo "    enter-tao"
+    echo "    et"
+    echo "\n For more commands, run:\n"
+    echo "    just <recipe>"
+    echo
+    just --list --unsorted
+    echo
+
 _do_setup:
     #!/bin/zsh
     set -e
