@@ -12,6 +12,10 @@ Next tasks, in order:
 - [ ] Write .Agents.justfile, along w Agents.md instructions
 - [ ] Get mise mcp running while in dev mode
 
+Prompt:
+
+    Create Agents.md for this project. Do a careful search through the project to consider a succinct best practices Agents.md file. Make sure to setup ability to use mise mcp, including generating a .config/mise-gen-just-commands.toml, by either reading the output of `just help` or using the just dump function to generate toml.
+
 #### Start compiling and running basic app
 
 - [ ] Start app to implement against (Tao Studio)
