@@ -2,6 +2,7 @@
   "recommendations": [
     "dprint.dprint",
     "continue.continue",
-    "langium.langium-vscode"
+    "langium.langium-vscode",
+    "expo.vscode-expo-tools"
   ]
 }

@@ -6,6 +6,10 @@
     "packages/compiler/gen-syntaxes",
     "packages/compiler/src/gen-tao-parser",
   ],
+  "overrides": [{
+    "files": ["packages/expo-runtime/tests - expo-runtime/**/*.{ts,tsx}"],
+    "rules": { "jest/expect-expect": "off" }
+  }],
   "globals": {},
   "categories": {},
   "env": { "builtin": true },

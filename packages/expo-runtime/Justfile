@@ -1,0 +1,10 @@
+set quiet
+
+run: _install
+    bunx expo start --web --ios
+
+test:
+    npx jest
+
+_install:
+    bun install

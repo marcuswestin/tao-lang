@@ -16,15 +16,32 @@ help:
 dev:
     cursor .
 
+# Run tests
 test:
     cd packages/compiler && just test
     cd packages/tao-cli && just test
+    cd packages/expo-runtime && just test
 
+# Run and Build commands
+########################
+
+# Start tao expo runtime
+start-runtime:
+    cd packages/expo-runtime && just run
+
+# Build and run Tao CLI with given arguments
+tao args:
+    just build
+    echo "\n> Run: ./.builds/tao-cli {{ args }}\n"
+    ./.builds/tao-cli {{ args }}
+    echo
+
+# Build everything
 build:
     cd packages/compiler && just build
     cd packages/tao-cli && just build
 
-# Format all files
+# Format and check files
 fmt:
     @ just _fmt
 
@@ -52,9 +69,15 @@ _fmt:
     @ just --fmt --unstable 1> /dev/null
     @ dprint fmt 1> /dev/null
     @ {{ _MISE_CMD }} fmt 1> /dev/null
-    @ # Lint and type check
+    @ just _lint
     @ oxlint --fix 1> /dev/null
-    @ tsc --noEmit --project ./packages/compiler/tsconfig.json 1> /dev/null
+
+_lint:
+    oxlint
+    cd packages/compiler && tsc --noEmit
+    cd packages/tao-cli && tsc --noEmit
+    cd packages/expo-runtime && tsc --noEmit
+    cd packages/expo-runtime && bunx expo lint
 
 # Setup
 _do_setup:
