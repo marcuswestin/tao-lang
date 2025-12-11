@@ -1,6 +1,6 @@
 # Tao Lang TODOs
 
-Tao Lang
+Tao Lang TODOs.
 
 ## STACK
 
