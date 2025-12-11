@@ -1,0 +1,12 @@
+{
+  "name": "tao-compiler",
+  "module": "tao-compiler.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest",
+    "langium-cli": "^4.1.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}

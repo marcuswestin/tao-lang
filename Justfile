@@ -1,4 +1,3 @@
-set fallback := true
 set dotenv-load := true
 
 # Dev commands
@@ -12,6 +11,16 @@ help:
     @ echo "\n For more commands, run:\n"
     @ echo "    just <recipe>"
     @ just _list_just_commands
+
+# Enter development
+dev:
+    cursor .
+
+test:
+    cd packages/compiler && just test
+
+build:
+    cd packages/compiler && just build
 
 # Format all files
 fmt:
@@ -39,9 +48,11 @@ _list_just_commands:
 # Formatting and linting
 _fmt:
     @ just --fmt --unstable 1> /dev/null
-    @ dprint --config ./.config/dprint.jsonc fmt 1> /dev/null
-    @ oxlint --config ./.config/oxlintrc.json --fix 1> /dev/null
+    @ dprint fmt 1> /dev/null
     @ {{ _MISE_CMD }} fmt 1> /dev/null
+    @ # Lint and type check
+    @ oxlint --fix 1> /dev/null
+    @ tsc --noEmit --project ./packages/compiler/tsconfig.json 1> /dev/null
 
 # Setup
 _do_setup:

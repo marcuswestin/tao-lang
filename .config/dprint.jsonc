@@ -10,6 +10,8 @@
   "excludes": [
     "**/node_modules",
     "**/*-lock.json",
+    "packages/compiler/src/gen-tao-parser",
+    "packages/compiler/gen-syntaxes",
   ],
 
   "typescript": {

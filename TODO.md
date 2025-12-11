@@ -8,21 +8,23 @@ Next tasks, in order:
 
 #### Seed project components
 
-- [ ] Start app to implement against
-- [ ] Seed compiler
-  - [ ] packages/language
-- [ ] Seed cli
-  - [ ] package/tao-cli
-- [ ] Seed Runtime
-  - [ ] package/runtime
-- [ ] Seed test suites
-  - [ ] packages/language/tests/compile-tao-studio.test.ts
-  - [ ] packages/runtime/tests/views.test.ts
-    - [ ] `const runners = [headless, webPlaywright, iosMaestro]`
-    - [ ] `describe.each(runners)("runner $s", (runner) => { runner.expect(CODE).text('foo').press({ testID: 'button' }).text('bar') })`
-  - [ ] packages/runtime/tests/runners/headless.ts
-  - [ ] packages/runtime/tests/runners/web-playwright.ts
-  - [ ] packages/runtime/tests/runners/ios-maestro.ts
+- [x] Seed compiler
+  - [x] packages/language
+- [x] Seed cli
+  - [x] package/tao-cli
+- [x] Seed Runtime
+  - [x] package/runtime
+- [x] Seed test suites
+  - [x] packages/language/tests/compile-tao-studio.test.ts
+  - [x] packages/runtime/tests/views.test.ts
+- [ ] Start app to implement against (Tao Studio)
+- [ ] Cleanups
+  - [ ] Replace `"module": "Preserve",` with `"module": "ESNext",`
+  - [ ] Fix ts errors in langium generated code. Set which ts library w `"typescript.tsdk": "path to node_modules/typescript/lib"`?
+
+#### Start stubbing out Docs
+
+- [ ] Create Docs with explanation for Tao, and language design
 
 #### Agent Setup
 
@@ -33,8 +35,8 @@ Next tasks, in order:
 #### Parser/Compiler Seed
 
 - [ ] Create langium grammar and generator commands
-  - [ ] Init w langium command in src/compiler-seed
-  - [ ] Move needed things over into src/compiler
+  - [ ] Init w langium command in packages/compiler-seed
+  - [ ] Move needed things over into packages/compiler
   - [ ] Implement commands
     - [ ] _watch_tao_compiler # grammar, validator, compiler
     - [ ] _watch_dev_app

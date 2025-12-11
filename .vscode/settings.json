@@ -16,11 +16,8 @@
   "dprint.path": ".config/MISE_DIR/installs/npm-dprint/latest/bin/dprint",
 
   // Langium and App Lang configs
-  "langium.config": "packages/language/langium-config.json",
+  "langium.config": "packages/compiler/langium-config.json",
   "files.associations": {
-    "**/*.app": "app-lang"
-  },
-
-  // Typescript
-  "typescript.tsdk": "node_modules/typescript/lib"
+    "**/*.tao": "tao-lang"
+  }
 }

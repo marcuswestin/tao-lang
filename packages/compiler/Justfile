@@ -1,0 +1,10 @@
+test: gen
+    bun test
+
+build: install gen
+
+gen:
+    bunx langium generate
+
+install:
+    bun install

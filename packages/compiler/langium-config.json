@@ -1,0 +1,12 @@
+{
+  "projectName": "Tao",
+  "out": "src/gen-tao-parser",
+  "languages": [{
+    "id": "tao",
+    "grammar": "src/tao-grammar.langium",
+    "fileExtensions": ["tao"],
+    "textMate": {
+      "out": "gen-syntaxes/tao.tmLanguage.json"
+    }
+  }]
+}

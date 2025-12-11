@@ -1,6 +1,7 @@
 {
   "recommendations": [
     "dprint.dprint",
-    "continue.continue"
+    "continue.continue",
+    "langium.langium-vscode"
   ]
 }

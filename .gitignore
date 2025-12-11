@@ -1,0 +1,7 @@
+.DS_Store
+node_modules
+*.tsbuildinfo
+
+# Generated files
+packages/compiler/gen-syntaxes
+packages/compiler/src/gen-tao-parser

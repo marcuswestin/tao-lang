@@ -1,8 +1,41 @@
 {
   "$schema": "MISE_DIR/installs/npm-oxlint/latest/lib/node_modules/oxlint/configuration_schema.json",
   "ignorePatterns": [
-    ".config/MISE_DIR"
+    ".config/MISE_DIR",
+    "packages/compiler/src/gen-tao-parser",
+    "packages/compiler/gen-syntaxes",
+    "packages/compiler/src/gen-tao-parser",
   ],
+  "globals": {},
+  "categories": {},
+  "env": { "builtin": true },
+  "settings": {
+    "jsx-a11y": {
+      "polymorphicPropName": null,
+      "components": {},
+      "attributes": {}
+    },
+    "next": {
+      "rootDir": []
+    },
+    "react": {
+      "formComponents": [],
+      "linkComponents": []
+    },
+    "jsdoc": {
+      "ignorePrivate": false,
+      "ignoreInternal": false,
+      "ignoreReplacesDocs": true,
+      "overrideReplacesDocs": true,
+      "augmentsExtendsReplacesDocs": false,
+      "implementsReplacesDocs": false,
+      "exemptDestructuredRootsFromChecks": false,
+      "tagNamePreference": {}
+    },
+    "vitest": {
+      "typecheck": false
+    }
+  },
   "plugins": [
     "react",
     "unicorn",
@@ -16,7 +49,6 @@
     "node",
     "eslint"
   ],
-  "categories": {},
   "rules": {
     "for-direction": "warn",
     "no-async-promise-executor": "warn",
@@ -121,36 +153,5 @@
     "unicorn/no-useless-spread": "warn",
     "unicorn/prefer-set-size": "warn",
     "unicorn/prefer-string-starts-ends-with": "warn"
-  },
-  "settings": {
-    "jsx-a11y": {
-      "polymorphicPropName": null,
-      "components": {},
-      "attributes": {}
-    },
-    "next": {
-      "rootDir": []
-    },
-    "react": {
-      "formComponents": [],
-      "linkComponents": []
-    },
-    "jsdoc": {
-      "ignorePrivate": false,
-      "ignoreInternal": false,
-      "ignoreReplacesDocs": true,
-      "overrideReplacesDocs": true,
-      "augmentsExtendsReplacesDocs": false,
-      "implementsReplacesDocs": false,
-      "exemptDestructuredRootsFromChecks": false,
-      "tagNamePreference": {}
-    },
-    "vitest": {
-      "typecheck": false
-    }
-  },
-  "env": {
-    "builtin": true
-  },
-  "globals": {}
+  }
 }
