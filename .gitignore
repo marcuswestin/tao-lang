@@ -5,3 +5,4 @@ node_modules
 # Generated files
 packages/compiler/gen-syntaxes
 packages/compiler/src/gen-tao-parser
+.builds

@@ -18,9 +18,11 @@ dev:
 
 test:
     cd packages/compiler && just test
+    cd packages/tao-cli && just test
 
 build:
     cd packages/compiler && just build
+    cd packages/tao-cli && just build
 
 # Format all files
 fmt:

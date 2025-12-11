@@ -1,0 +1,10 @@
+set quiet
+
+test:
+    bun test
+
+build: _install
+    bun build tao-cli.ts --compile --outfile ../../.builds/tao
+
+_install:
+    bun install

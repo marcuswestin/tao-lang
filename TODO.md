@@ -19,6 +19,7 @@ Next tasks, in order:
   - [x] packages/runtime/tests/views.test.ts
 - [ ] Start app to implement against (Tao Studio)
 - [ ] Cleanups
+  - [ ] Use `set quiet` in main Justfile
   - [ ] Replace `"module": "Preserve",` with `"module": "ESNext",`
   - [ ] Fix ts errors in langium generated code. Set which ts library w `"typescript.tsdk": "path to node_modules/typescript/lib"`?
 

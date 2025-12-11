@@ -1,10 +1,12 @@
+set quiet
+
 test: gen
     bun test
 
-build: install gen
+build: _install gen
 
 gen:
     bunx langium generate
 
-install:
+_install:
     bun install
