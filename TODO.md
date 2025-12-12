@@ -13,6 +13,7 @@ First:
 - [x] Extension validation isn't working. Try e.g `Person ro` which should warn; or an incorrect reference.
 - [x] Write basic validation tests
 - [ ] Use Bun to build extension instead of esbuild script
+- [ ] Create "watch" command that watches _all_ components and auto rebuilds. Save expo and interactive tests for last. Then add those either together or separaterly
 - [ ] Create AST testing helper
   - [ ] Use Highlght or Comment vscode extension for syntax highlighting
     - E.g: "const foo = tao`view View {}`", where tao could be parse fn

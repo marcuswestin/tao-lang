@@ -1,4 +1,6 @@
-set quiet := true
+set fallback
+set dotenv-load
+set quiet
 
 test:
     # No tests currently

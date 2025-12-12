@@ -1,5 +1,5 @@
-set quiet := true
-set dotenv-load := true
+set dotenv-load
+set quiet
 
 # Dev commands
 ##############
@@ -103,10 +103,10 @@ _fmt:
 [no-quiet]
 _check:
     oxlint
-    cd packages/compiler && tsc --noEmit
-    cd packages/tao-cli && tsc --noEmit
-    cd packages/shared-tools && tsc --noEmit
-    cd packages/expo-runtime && tsc --noEmit
+    cd packages/compiler && tsc --noEmit --noUnusedLocals
+    cd packages/tao-cli && tsc --noEmit --noUnusedLocals
+    cd packages/shared-tools && tsc --noEmit --noUnusedLocals
+    cd packages/expo-runtime && tsc --noEmit --noUnusedLocals
     cd packages/expo-runtime && bunx expo lint
 
 # Help & Setup
@@ -189,3 +189,11 @@ _agent-git args:
 # Execute mise commands:
 _agent-mise args:
     mise {{ args }}
+
+# Print a file (read-only helper for AI agents).
+_agent-cat PATH:
+  cat "{{PATH}}"
+
+# Ripgrep a pattern in an optional path (defaults to current dir).
+_agent-rg PATTERN PATH='.':
+  rg "{{PATTERN}}" "{{PATH}}" || true
