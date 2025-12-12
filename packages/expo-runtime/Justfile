@@ -1,10 +1,10 @@
 set quiet
 
-run: _install
+run: _install_deps
     bunx expo start --web --ios
 
 test:
     npx jest
 
-_install:
+_install_deps:
     bun install

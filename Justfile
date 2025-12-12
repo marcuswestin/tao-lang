@@ -12,7 +12,6 @@ help:
 dev: mcp-run
     cursor .
 
-
 # Run tests
 [no-quiet]
 test:
@@ -65,6 +64,9 @@ setup:
     just _install_mise
     just _do_setup
 
+reload-extension:
+    cd packages/ide-extension && just run
+
 # LLM & Agent Setups
 ####################
 
@@ -79,7 +81,6 @@ mcp-halt:
 # Generate mise-gen-just-commands.toml from this file
 gen-mise-tasks:
     cd packages/shared-tools && bun tools-src/gen-mise-tasks.ts
-
 
 ############
 # Internal #

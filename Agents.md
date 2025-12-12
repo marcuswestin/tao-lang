@@ -63,6 +63,7 @@ Run `just help` to list all available commands. Key ones:
 
 - `just test` - Run all tests
 - `just fmt` - Format and lint code
+- `just git <args>` - Execute git commands
 
 ## MCP Integration
 

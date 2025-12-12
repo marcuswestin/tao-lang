@@ -1,5 +1,4 @@
-import * as path from 'node:path'
-import type * as vscode from 'vscode'
+import * as vscode from 'vscode'
 import type { LanguageClientOptions, ServerOptions } from 'vscode-languageclient/node.js'
 import { LanguageClient, TransportKind } from 'vscode-languageclient/node.js'
 
@@ -19,7 +18,8 @@ export function deactivate(): Thenable<void> | undefined {
 }
 
 async function startLanguageClient(context: vscode.ExtensionContext): Promise<LanguageClient> {
-  const serverModule = context.asAbsolutePath(path.join('out/language/main.cjs'))
+  const serverModule = context.asAbsolutePath('_gen-ide-extension/language/main.cjs')
+
   // The debug options for the server
   // --inspect=6009: runs the server in Node's Inspector mode so VS Code can attach to the server for debugging.
   // By setting `process.env.DEBUG_BREAK` to a truthy value, the language server will wait until a debugger is attached.

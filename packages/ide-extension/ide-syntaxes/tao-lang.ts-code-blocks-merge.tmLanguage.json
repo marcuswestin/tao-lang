@@ -1,0 +1,23 @@
+{
+  "_info": "This file gets merged with the generated tao-lang.tmLanguage.json file, to add syntax highlighting for '```ts ... ``` blocks.",
+
+  "patterns": [
+    { "include": "#ts-fenced-block" }
+  ],
+  "repository": {
+    "ts-fenced-block": {
+      "name": "meta.embedded.block.ts.tao-lang",
+      "begin": "```\\s*ts\\s*",
+      "beginCaptures": {
+        "0": { "name": "punctuation.definition.codeblock.begin.tao-lang" }
+      },
+      "end": "```",
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.codeblock.end.tao-lang" }
+      },
+      "patterns": [
+        { "include": "source.ts" }
+      ]
+    }
+  }
+}

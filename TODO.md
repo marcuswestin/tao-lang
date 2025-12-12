@@ -8,7 +8,24 @@ Next tasks, in order:
 
 #### Start compiling and running basic app
 
+First:
+
+- [x] Extension validation isn't working. Try e.g `Person ro` which should warn; or an incorrect reference.
+- [x] Write basic validation tests
+- [ ] Use Bun to build extension instead of esbuild script
+- [ ] Create AST testing helper
+  - [ ] Use Highlght or Comment vscode extension for syntax highlighting
+    - E.g: "const foo = tao`view View {}`", where tao could be parse fn
+    - Or: "const foo = \n//tao-lang-syntax:\n`view View {}`
+  - [ ] Then adding this functionality to our vscode extension
+- [ ] Create Validation testing helper
+
+Then:
+
 - [ ] Start app to implement against (Tao Studio)
+- [ ] App and View declaration
+- [ ] Validation
+- [ ] Scoping
 
 #### Start stubbing out Docs
 
@@ -16,6 +33,4 @@ Next tasks, in order:
 
 #### Fixes
 
-- [ ] Extension validation isn't working. Try e.g `Person ro` which should warn; or an incorrect reference.
-- [ ] Commit Docs
 - [ ] Describe all package justfile commands with a comment

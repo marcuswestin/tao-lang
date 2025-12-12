@@ -6,8 +6,8 @@ run:
 test:
     bun test
 
-build: _install
+build: _install_deps
     bun build tao-cli.ts --compile --outfile ../../.builds/tao
 
-_install:
+_install_deps:
     bun install

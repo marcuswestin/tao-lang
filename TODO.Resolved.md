@@ -3,6 +3,7 @@
 - [x] Create basic vscode extension, and automate installation into current cursor instance.
 - [x] Hook up inter-package imports and builds.
 - [x] Use bun in extension instead of node/npm.
+- [x] Commit Docs
 
 #### Agent Setup (2024-06-11)
 

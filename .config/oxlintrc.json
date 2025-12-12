@@ -2,9 +2,7 @@
   "$schema": "MISE_DIR/installs/npm-oxlint/latest/lib/node_modules/oxlint/configuration_schema.json",
   "ignorePatterns": [
     ".config/MISE_DIR",
-    "packages/compiler/src/gen-tao-parser",
-    "packages/compiler/gen-syntaxes",
-    "packages/compiler/src/gen-tao-parser",
+    "**/_gen-*"
   ],
   "overrides": [{
     "files": ["packages/expo-runtime/tests - expo-runtime/**/*.{ts,tsx}"],

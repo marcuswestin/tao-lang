@@ -1,4 +1,4 @@
-import { TaoLangTerminals } from './gen-tao-parser/ast'
+import { TaoLangTerminals } from './_gen-tao-parser/ast'
 
 export type File = {
   path: string

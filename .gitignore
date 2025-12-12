@@ -4,6 +4,4 @@ node_modules
 
 # Generated files
 .builds
-packages/compiler/compiler-src/gen-tao-parser
-packages/compiler/gen-syntaxes
-packages/ide-extension/gen-syntaxes
+_gen-*

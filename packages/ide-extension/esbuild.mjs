@@ -29,7 +29,7 @@ const plugins = [{
 const ctx = await esbuild.context({
   // Entry points for the vscode extension and the language server
   entryPoints: ['extension-src/extension/main.ts', 'extension-src/language/main.ts'],
-  outdir: '../../.builds/ts-packages/ide-extension',
+  outdir: '_gen-ide-extension',
   bundle: true,
   target: 'ES2017',
   // VSCode's extension host is still using cjs, so we need to transform the code

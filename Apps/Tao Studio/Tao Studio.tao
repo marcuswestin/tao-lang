@@ -1,10 +1,9 @@
-person Ro
-Hello Ro!
+app TaoStudio {
+    root RootView
+}
 
-// app TaoStudio {
-//     root RootView
-// }
-// 
-// view RootView {
-//     Text "Hello World"
-// }
+view RootView {
+    Text "Hello World"
+}
+
+view Text {}

@@ -1,0 +1,12 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "npm",
+      "script": "vscode:prepublish",
+      "path": "packages/ide-extension",
+      "label": "Tao-VSCode-task: 'just build' in packages/ide-extension",
+      "detail": "just build"
+    }
+  ]
+}

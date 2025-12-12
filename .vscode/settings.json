@@ -8,7 +8,9 @@
 
   "files.exclude": {
     ".config/MISE_DIR": true,
-    ".config/mise.lock": true
+    ".config/mise.lock": true,
+    "**/node_modules": true,
+    "**/tsconfig.tsbuildinfo": true
   },
 
   // DPrint
@@ -19,8 +21,5 @@
   "dprint.path": ".config/MISE_DIR/installs/npm-dprint/latest/bin/dprint",
 
   // Langium and App Lang configs
-  "langium.config": "packages/compiler/langium-config.json",
-  "files.associations": {
-    "**/*.tao": "tao-lang"
-  }
+  "langium.config": "packages/compiler/langium-config.json"
 }

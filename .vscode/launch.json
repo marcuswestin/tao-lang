@@ -9,10 +9,11 @@
       "name": "Run Extension",
       "type": "extensionHost",
       "request": "launch",
+      "preLaunchTask": "Tao-VSCode-task: 'just build' in packages/ide-extension",
       "args": [
         "--extensionDevelopmentPath=${workspaceFolder}/packages/ide-extension",
         "${workspaceFolder}/Apps",
-        "${workspaceFolder}/Apps/Tao Studio/Tao Studio.tao"
+        "${workspaceFolder}/Apps/Kitchen Sink/Kitchen Sink.tao"
       ]
     }
   ]
