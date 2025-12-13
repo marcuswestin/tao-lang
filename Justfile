@@ -1,12 +1,17 @@
-set dotenv-load
-set quiet
+set dotenv-load := true
+set quiet := true
 
 # Dev commands
 ##############
 
 # Print available commands
 help:
-    just _help
+    just _print_help
+
+# Print extra agent commands
+agent-help:
+    echo "\n> Available agent commands:\n"
+    just --dump | grep -B 1 '^_agent'  | grep -v '^--$'
 
 # Enter development
 dev: mcp-run
@@ -22,8 +27,8 @@ test:
     cd packages/expo-runtime && just test
 
 # Check that builds work
-check-builds:
-    cd packages/tao-cli && just build && ./.builds/tao help
+check-run-builds:
+    ./.builds/tao help
 
 # Run and Build commands
 ########################
@@ -49,8 +54,24 @@ build:
     cd packages/compiler && just build
     cd packages/ide-extension && just build
     cd packages/tao-cli && just build
+    just _agent-gen-mise-tasks
 
-# Format and check files
+# Run full battery of checks and builds. Meant to be run before committing.
+pre-commit:
+    echo "\n> Running pre-commit checks...\n"
+    echo "> Stashing non-staged changes..."
+    git stash push --keep-index --include-untracked
+    echo "> Running code checks..."
+    just check
+    echo "> Building everything..."
+    just test
+    echo "> Checking builds..."
+    just check-run-builds
+    echo "> Pre-commit checks complete. Unstashing changes..."
+    git stash pop
+
+
+# Format all files
 fmt:
     just _fmt
 
@@ -93,16 +114,16 @@ _MISE_CMD := "~/.local/bin/mise"
 ########################
 
 _fmt:
-    just --fmt --unstable 1> /dev/null
-    bunx sort-package-json packages/*/package.json 1> /dev/null
-    dprint fmt 1> /dev/null
-    {{ _MISE_CMD }} fmt 1> /dev/null
-    just check
-    oxlint --fix 1> /dev/null
+    just --fmt --unstable 1> /dev/null 2>&1
+    cd packages/shared-tools && just sort-package-json-files 1> /dev/null 2>&1
+    dprint fmt 1> /dev/null 2>&1
+    {{ _MISE_CMD }} fmt 1> /dev/null 2>&1
+    oxlint --fix 1> /dev/null 2>&1
 
 [no-quiet]
 _check:
     oxlint
+    dprint check
     cd packages/compiler && tsc --noEmit --noUnusedLocals
     cd packages/tao-cli && tsc --noEmit --noUnusedLocals
     cd packages/shared-tools && tsc --noEmit --noUnusedLocals
@@ -112,14 +133,14 @@ _check:
 # Help & Setup
 ##############
 
-_help:
+_print_help:
     echo "\nTo ended Tao Dev Env, run either of:\n"
     echo "    enter-tao"
     echo "    et"
     echo "\n For more commands, run:\n"
     echo "    just <recipe>"
     echo
-    just --list --unsorted
+    just --list --unsorted --color=always | grep -v "_"
     echo
 
 _do_setup:
@@ -171,29 +192,33 @@ _print_setup_done:
 # If a command is needed that doesn't exist, they need to ask for permission before adding it.
 
 # Run tests
-_agent-test: test
+_agent-test *args:
+    test {{ args }}
 
 # Format and lint code
-_agent-fmt: fmt
+_agent-fmt *args:
+    fmt {{ args }}
 
 # Lint code
-_agent-lint: check
+_agent-lint *args:
+    check {{ args }}
 
 # Generate mise-gen-just-commands.toml from this file
-_agent-gen-mise-tasks: gen-mise-tasks
+_agent-gen-mise-tasks *args:
+    gen-mise-tasks {{ args }}
 
 # Execute git commands:
-_agent-git args:
+_agent-git *args:
     git {{ args }}
 
 # Execute mise commands:
-_agent-mise args:
+_agent-mise *args:
     mise {{ args }}
 
 # Print a file (read-only helper for AI agents).
-_agent-cat PATH:
-  cat "{{PATH}}"
+_agent-cat *args:
+    cat "{{ args }}"
 
 # Ripgrep a pattern in an optional path (defaults to current dir).
-_agent-rg PATTERN PATH='.':
-  rg "{{PATTERN}}" "{{PATH}}" || true
+_agent-rg *args:
+    rg "{{ args }}" || true

@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeShellExecution": [{ "command": "../packages/shared-tools/tools-src/cursor-hooks/command-whitelist.sh" }],
+    "afterFileEdit": [{ "command": "cd .. && just fmt && echo '{}'" }],
+
+    "beforeMCPExecution": [],
+    "afterShellExecution": [],
+    "afterMCPExecution": [],
+    "beforeReadFile": [],
+    "beforeTabFileRead": [],
+    "afterTabFileEdit": [],
+    "stop": [],
+    "beforeSubmitPrompt": [],
+    "afterAgentResponse": [],
+    "afterAgentThought": []
+  }
+}

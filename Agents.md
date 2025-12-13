@@ -44,11 +44,6 @@ TODO.Resolved.md         # Resolved Projects and Tasks
 - Tao CLI: The cli is used to build apps with the compiler, run apps in expo runtimes, and more.
 - Internal Tools: Scripts for more complex internal functionality than is appropriate for the Justfile
 
-## Code Style
-
-- **Formatter**: just fmt
-- **Linter**: just check
-
 ## Testing
 
 - Use `bun test` with `bun:test` imports for `packages/compiler` and `packages/tao-cli`
@@ -59,11 +54,12 @@ TODO.Resolved.md         # Resolved Projects and Tasks
 
 ## Available Commands
 
-Run `just help` to list all available commands. Key ones:
+Run `just help` to list all available dev commands; and `just agent-help` to list additional available commands for agents. Key ones:
 
 - `just test` - Run all tests
-- `just fmt` - Format and lint code
-- `just git <args>` - Execute git commands
+- `just pre-commit` - Run all checks.
+- `just _agent-git <args>` - Execute git commands
+- `just _agent-lint` - Run linting checks
 
 ## MCP Integration
 
