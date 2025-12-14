@@ -2,8 +2,8 @@
   "version": 1,
   "hooks": {
     "beforeShellExecution": [{ "command": "../packages/shared-tools/tools-src/cursor-hooks/command-whitelist.sh" }],
-    "afterFileEdit": [{ "command": "cd .. && just fmt && echo '{}'" }],
 
+    "afterFileEdit": [],
     "beforeMCPExecution": [],
     "afterShellExecution": [],
     "afterMCPExecution": [],

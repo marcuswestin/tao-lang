@@ -12,14 +12,15 @@ First:
 
 - [x] Extension validation isn't working. Try e.g `Person ro` which should warn; or an incorrect reference.
 - [x] Write basic validation tests
-- [ ] Use Bun to build extension instead of esbuild script
-- [ ] Create "watch" command that watches _all_ components and auto rebuilds. Save expo and interactive tests for last. Then add those either together or separaterly
+- [x] Use Bun to build extension instead of esbuild script
+- [x] Create "watch" command that watches _all_ components and auto rebuilds. Save expo and interactive tests for last. Then add those either together or separaterly
 - [ ] Create AST testing helper
   - [ ] Use Highlght or Comment vscode extension for syntax highlighting
     - E.g: "const foo = tao`view View {}`", where tao could be parse fn
     - Or: "const foo = \n//tao-lang-syntax:\n`view View {}`
   - [ ] Then adding this functionality to our vscode extension
 - [ ] Create Validation testing helper
+- [ ] Create test watch runner for all test suites
 
 Then:
 

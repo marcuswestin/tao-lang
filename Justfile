@@ -17,6 +17,30 @@ agent-help:
 dev: mcp-run
     cursor .
 
+# Kitchen Sink Dev App Watcher
+##############################
+
+watch-kitchen-sink:
+    watchexec --restart --watch=Justfile -- just _watch-kitchen-sink
+
+[parallel]
+_watch-kitchen-sink: _watch-langium-generate _watch-cli-compile-build _watch-runtime-build
+
+_watch-langium-generate:
+    cd packages/compiler \
+        && bunx langium generate --watch --mode=development \
+        | awk '{ print "\033[36mlangium-gen  > \033[0m" $0 }'
+
+_watch-cli-compile-build APP_PATH="./Apps/KitchenSink/KitchenSink.tao":
+    cd packages/tao-cli \
+        && bun run  --watch --no-clear-screen ./tao-cli.ts compile {{ APP_PATH }} \
+        | awk '{ print "\033[32mcli-compile  > \033[0m" $0 }'
+
+_watch-runtime-build:
+    cd packages/expo-runtime \
+        && bunx expo start --ios --web 2>&1 \
+        | awk '{ print "\033[35mexpo-runtime > \033[0m" $0 }'
+
 # Run tests
 [no-quiet]
 test:
@@ -70,7 +94,6 @@ pre-commit:
     echo "> Pre-commit checks complete. Unstashing changes..."
     git stash pop
 
-
 # Format all files
 fmt:
     just _fmt
@@ -87,6 +110,9 @@ setup:
 
 reload-extension:
     cd packages/ide-extension && just run
+
+install-mise-deps:
+    mise install
 
 # LLM & Agent Setups
 ####################

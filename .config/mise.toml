@@ -3,6 +3,7 @@ just = "latest"
 node = "lts"
 bun = "latest"
 jq = "latest"
+watchexec = "latest"
 
 "npm:dprint" = "latest"
 "npm:oxlint" = "latest"

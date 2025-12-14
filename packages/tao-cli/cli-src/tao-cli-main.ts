@@ -9,7 +9,7 @@ export function taoCliMain() {
     .argument('<path>', 'The file to compile')
     .action((path) => {
       const result = compile({ file: { path } })
-      console.log(result)
+      Bun.write(__dirname + '/../../expo-runtime/app/_gen-tao-compiler/app-output.tsx', result.code)
     })
 
   program.parse(process.argv)
