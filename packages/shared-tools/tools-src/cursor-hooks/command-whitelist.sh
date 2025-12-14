@@ -5,15 +5,37 @@
 input=$(cat)
 command=$(echo "$input" | jq -r '.command')
 
-# Block dangerous patterns
-if echo "$command" | grep --invert-match --quiet "^just "; then
-  echo '{"allow": false, "message": "Only `just <command>` commands are allowed"}'
-  exit 1
-fi
+# checks if the command contains something
+function if_command_contains() {
+  local string="$1"
+  if ! echo "$command" | grep --quiet "$string"; then
+    return true
+  fi
+}
 
-if echo "$command" | grep --quiet "git commit" | grep --invert-match --quiet "just pre-commit"; then
-  echo '{"allow": false, "message": "You must run `just pre-commit && git commit ...` to commit your changes"}'
+# checks if the command does not contain something
+function if_without_command() {
+  local string="$1"
+  if echo "$command" | grep --quiet --invert-match "$string"; then
+    return true
+  fi
+}
+
+# halts a command instead of exectuing
+function halt_command() {
+  local message="$1"
+  echo '{"allow": false, "message": "'$message'"}'
   exit 1
-fi
+}
+
+if_command_lacks "^just " \
+  && halt_command "Only 'just <command>' commands are allowed"
+
+if_command_contains "git commit" \
+  && if_command_lacks "git pre-commit" \
+  && halt_command "You must run `just pre-commit && git commit ...` to commit your changes"
+
+if_command_contains "git push" \
+  && halt_command "git push is not allowed"
 
 echo '{"allow": true}'
