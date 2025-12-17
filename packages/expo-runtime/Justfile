@@ -1,18 +1,15 @@
-set shell := ["zsh", "-euo", "pipefail", "-c"]
 set fallback := true
-set dotenv-load := true
 set quiet := true
 
 build:
     just _install_deps
-    
 
 run: _install_deps
     bunx expo start --web --ios
 
+[no-quiet]
 test *FLAGS_AND_PATTERNS:
-    bunx jest --watchPathIgnorePatterns='./app/_gen-tao-compiler' {{ FLAGS_AND_PATTERNS }}
-    # bunx jest --no-cache --passWithNoTests {{ FLAGS_AND_PATTERNS }}
+    bunx jest --detectOpenHandles --watchPathIgnorePatterns='./app/_gen-tao-compiler' {{ FLAGS_AND_PATTERNS }}
 
 _install_deps:
     bun install

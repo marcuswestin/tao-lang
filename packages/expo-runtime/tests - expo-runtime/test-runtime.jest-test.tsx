@@ -1,7 +1,6 @@
 import { describe, test } from '@jest/globals'
 import { render } from '@testing-library/react-native'
-import { exec } from 'node:child_process'
-import { promisify } from 'node:util'
+import { exec, spawn } from 'node:child_process'
 import { Text } from 'react-native'
 
 describe('runtime:', () => {
@@ -13,7 +12,7 @@ describe('runtime:', () => {
   test('compile and run with cli', async () => {
     // First compile the app
     const { code, needle } = getRandomUI()
-    await promisify(exec)(`just tao compile --code '${code}'`)
+    await cmd('just', ['tao', 'compile', '--code', `'${code}'`])
 
     // Then import the resulting app, and render it
     // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -34,4 +33,18 @@ function getRandomUI() {
     }
   `
   return { code, needle }
+}
+
+async function cmd(cmd: string, args: string[]) {
+  await new Promise<void>((resolve, reject) => {
+    spawn(cmd, args, {
+      stdio: 'pipe',
+    }).on('close', (exitCode) => {
+      if (exitCode === 0) {
+        resolve()
+      } else {
+        reject(new Error(`Process exited with code ${exitCode}`))
+      }
+    })
+  })
 }
