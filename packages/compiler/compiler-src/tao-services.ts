@@ -10,17 +10,18 @@ export type TaoServices = LSP.LangiumServices
 type TaoServicesResult = {
   shared: LSP.LangiumSharedServices
   Tao: LSP.LangiumServices
+  metaData: langium.LanguageMetaData
 }
 
 // Create the services required by Langium.
 // This is a pretty opaque process, but it's how langium expects it.
 export function createTaoServices(context: LSP.DefaultSharedModuleContext): TaoServicesResult {
-  const shared = langium.inject(
+  const sharedTaoModule = langium.inject(
     LSP.createDefaultSharedModule(context),
     TaoLangGeneratedSharedModule,
   )
-  const Tao = langium.inject(
-    LSP.createDefaultModule({ shared }),
+  const TaoModule = langium.inject(
+    LSP.createDefaultModule({ shared: sharedTaoModule }),
     TaoLangGeneratedModule,
     {
       validation: {
@@ -29,13 +30,15 @@ export function createTaoServices(context: LSP.DefaultSharedModuleContext): TaoS
     },
   )
 
-  shared.ServiceRegistry.register(Tao)
-  Tao.validation.ValidationRegistry.register(validator, Tao.validation.TaoLangValidator)
+  TaoModule.shared.ServiceRegistry.register(TaoModule)
+  TaoModule.validation.ValidationRegistry.register(validator, TaoModule.validation.TaoLangValidator)
 
   if (!context.connection) {
     // We're not inside a language server, so
     // initialize the configuration provider instantly
-    shared.workspace.ConfigurationProvider.initialized({})
+    TaoModule.shared.workspace.ConfigurationProvider.initialized({})
   }
-  return { shared, Tao }
+
+  // TODO: Is there a difference between sharedTaoModule and TaoModule.shared?
+  return { shared: sharedTaoModule, Tao: TaoModule, metaData: TaoModule.LanguageMetaData }
 }
