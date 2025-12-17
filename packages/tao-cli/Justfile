@@ -1,6 +1,4 @@
-set shell := ["zsh", "-euo", "pipefail", "-c"]
 set fallback := true
-set dotenv-load := true
 set quiet := true
 
 run:

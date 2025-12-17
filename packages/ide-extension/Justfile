@@ -1,6 +1,4 @@
-set shell := ["zsh", "-euo", "pipefail", "-c"]
 set fallback := true
-set dotenv-load := true
 set quiet := true
 
 dev:
@@ -41,9 +39,8 @@ restart-cursor:
     osascript -e 'quit app "Cursor"'
     sleep 0.25 && open -a Cursor && sleep 0.5 && open -a Cursor && sleep 0.5 && open -a Cursor
 
-[no-quiet]
 build: _install_deps
-    cd ../compiler && just gen
+    cd ../compiler && just build
     node esbuild.mjs
 
 check:

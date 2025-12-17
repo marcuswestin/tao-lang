@@ -1,11 +1,12 @@
-set shell := ["zsh", "-euo", "pipefail", "-c"]
 set fallback := true
-set dotenv-load := true
 set quiet := true
 
-test-prep: gen
+_pretest:
+    just gen
 
-build: _install_deps gen
+build:
+    bun install
+    just gen
 
 gen:
     bunx langium generate --mode=development
@@ -16,9 +17,6 @@ watch-compiler:
 
 watch-grammar:
     watchexec --restart --watch=tao-grammar.langium -- just gen
-
-_install_deps:
-    bun install
 
 # highlighting instructions into the generate tao-lang.tmLanguage.json file.
 _merge_textmate_syntax_files:

@@ -1,4 +1,5 @@
-import "../shared/just/setup.just"
+set fallback := true
+set quiet := true
 
 build:
     bun install
