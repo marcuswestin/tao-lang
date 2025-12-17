@@ -1,4 +1,17 @@
-import { TaoLangTerminals } from './_gen-tao-parser/ast'
+import * as LangiumGen from 'langium/generate'
+import { Assert } from './@shared/TaoErrors'
+import { isInjection, isViewRenderStatement } from './_gen-tao-parser/ast'
+import {
+  assertNever,
+  Compiled,
+  compileList,
+  compileNode,
+  compileNodeListProperty,
+  compileNodeProperty,
+  genNodePropertyRef,
+} from './compiler-utils'
+import { AST } from './grammar'
+import { TaoParser } from './parser'
 
 export type File = {
   path: string
@@ -8,21 +21,148 @@ export type CompileResult = {
   code: string
 }
 
-export function compile(opts: { file: File }): CompileResult {
-  const { file } = opts
-  console.log(file, TaoLangTerminals)
-  return {
-    code: `
-      import { View, Text } from 'react-native';
-      export function TestView() {
-        return (
-          <View>
-            <Text>
-              Hello World from compiled app: ${file.path}
-            </Text>
-          </View>
-        )
-      }
-    `,
+type CompileOpts =
+  | { file: File; code?: never }
+  | { file?: never; code: string }
+
+export async function compile(opts: CompileOpts): Promise<CompileResult> {
+  const parsed = await (opts.file ? TaoParser.parseFile(opts.file.path) : TaoParser.parseString(opts.code))
+  Assert(parsed.taoFileAST, 'Expected TaoFileAST, but got none.')
+  const result = generateTypescript(parsed.taoFileAST)
+  return { code: LangiumGen.toString(result) }
+}
+
+function generateTypescript(taoFile: AST.TaoFile): Compiled {
+  return compileNode(taoFile)`
+    import * as RN from 'react-native'
+
+    export default function CompiledTaoApp() {
+      return (
+        <RN.View style={{ flex: 1, backgroundColor: 'red' }}>
+          <AppUIView />
+        </RN.View>
+      )
+    }
+    
+    ${compileNodeListProperty(taoFile, 'topLevelStatements', compileTopLevelStatement)}
+  `
+}
+
+function compileTopLevelStatement(statement: AST.Declaration | AST.Injection): Compiled {
+  switch (statement.$type) {
+    case 'AppDeclaration':
+    case 'ViewDeclaration':
+      return compileDeclaration(statement)
+    case 'Injection':
+      return compileInjection(statement)
+    default:
+      assertNever(statement)
   }
+}
+
+function compileDeclaration(declaration: AST.Declaration): Compiled {
+  switch (declaration.type) {
+    case 'app':
+      return compileNodeListProperty(declaration, 'appStatements', compileAppStatement)
+    case 'view':
+      const renderStatements = declaration.viewStatements.filter(isViewRenderStatement)
+      const injectionStatements = declaration.viewStatements.filter(isInjection)
+      return compileNode(declaration)`
+        function ${declaration.name}(${compileParameterList(declaration.parameterList)}) {
+          ${compileList(declaration, injectionStatements, compileInjection)}
+          return <>${compileList(declaration, renderStatements, compileViewRenderStatement)}</>
+        }
+      `
+  }
+}
+
+function compileParameterList(parameterList?: AST.ParameterList): Compiled {
+  if (!parameterList) {
+    return undefined
+  }
+  return compileNode(parameterList)`
+    props: {${
+    compileNodeListProperty(parameterList, 'parameters', param => {
+      return compileNode(param)`${param.key ? `${param.key}: ` : ''}${param.type}`
+    })
+  }}
+  `
+}
+
+function compileViewRenderStatement(node: AST.ViewRenderStatement): Compiled {
+  return genNodePropertyRef(node, 'view', view =>
+    compileNode(view)`
+      <${view.name} ${compileArgsListToProps(node.args)}>
+        ${compileNodeListProperty(node.body, 'viewStatements', compileViewStatement)}
+      </${view.name}>
+    `)
+}
+
+function compileViewStatement(statement: AST.ViewStatement): Compiled {
+  switch (statement.$type) {
+    case 'ViewRenderStatement':
+      return compileViewRenderStatement(statement)
+    case 'Injection':
+      return compileInjection(statement)
+    default:
+      assertNever(statement)
+  }
+}
+
+function compileArgsListToProps(args?: AST.ArgsList): Compiled {
+  if (!args) {
+    return undefined
+  }
+  return compileNodeListProperty(args, 'args', argument => {
+    return compileNode(argument)`
+      ${argument.key} = {${compileExpression(argument.value)}}
+    `
+  })
+}
+
+function compileExpression(expression: AST.Expression): Compiled {
+  switch (expression.$type) {
+    case 'StringLiteral':
+      return compileNode(expression)`
+        ${JSON.stringify(expression.string)}
+      `
+    case 'NumberLiteral':
+      return compileNode(expression)`
+        ${JSON.stringify(expression.number)}
+      `
+    default:
+      assertNever(expression)
+  }
+}
+
+function compileAppStatement(statement: AST.AppStatement): Compiled {
+  switch (statement.type) {
+    case 'ui':
+      return compileNode(statement)`
+        function AppUIView() {
+          return <${statement.ui.ref!.name} />
+        }
+      `
+    default:
+      assertNever(statement.type)
+  }
+}
+
+function trimTsFence(content: string) {
+  const fenced = content.replace(/^```ts/g, '\n// ```ts\n').replace(/ *```$/g, '\n// ```')
+  return fenced.replace('```ts\n\n', '```ts\n').replace('\n\n// ```', '\n// ```')
+}
+
+function compileInjection(injection: AST.Injection): Compiled {
+  const tsCodeBlock = compileNodeProperty(injection, 'tsCodeBlock', trimTsFence)
+  return compileNode(injection)`
+    {
+      const injectionResult = (() => {
+        ${tsCodeBlock}
+      })()
+      if (typeof injectionResult !== 'undefined') {
+        return injectionResult
+      }
+    }
+  `
 }
