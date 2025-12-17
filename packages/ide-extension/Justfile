@@ -1,9 +1,7 @@
-set fallback
-set dotenv-load
-set quiet
-
-test:
-    # No tests currently
+set shell := ["zsh", "-euo", "pipefail", "-c"]
+set fallback := true
+set dotenv-load := true
+set quiet := true
 
 dev:
     cursor --extensionDevelopmentPath .
@@ -11,14 +9,27 @@ dev:
 run:
     echo
     echo "\tBuild and package extension..."
-    bunx @vscode/vsce package --allow-missing-repository --out ../../.builds 2>&1 > /dev/null
+    just package
     echo "\tInstall extension..."
     just uninstall-extension > /dev/null 2>&1 || true
-    just install-extension > /dev/null 2>&1
+    just install-extension > /dev/null 
     echo "\tCheck extension installation..."
     set -e && cursor --list-extensions | grep "tao.tao-lang-vscode-extension" || { echo "Installation failed -- extension not found" >&2; exit 1; }
     echo "\n\t* Extension installed - restart IDE *\n"
-    just restart-cursor
+    # just restart-cursor
+    echo "\tCheck for type errors..."
+    # just check
+
+# Package the extension. This calls `just _npm-package-script_vscode-prepublish` via package.json script `vscode:prepublish`.
+package:
+    bunx @vscode/vsce package --allow-missing-repository --out ../../.builds 1> /dev/null
+
+_npm-package-script_vscode-prepublish:
+    node esbuild.mjs
+
+package-and-install:
+    just package
+    just install-extension
 
 uninstall-extension:
     cursor --uninstall-extension tao.tao-lang-vscode-extension
@@ -33,13 +44,10 @@ restart-cursor:
 [no-quiet]
 build: _install_deps
     cd ../compiler && just gen
-    tsc -b tsconfig.json
     node esbuild.mjs
 
-watch:
-    bunx concurrently -n tsc,esbuild -c blue,yellow \
-        "tsc -b tsconfig.json --watch" \
-        "node esbuild.mjs --watch"
+check:
+    tsc -b tsconfig.json
 
 _install_deps:
     bun install

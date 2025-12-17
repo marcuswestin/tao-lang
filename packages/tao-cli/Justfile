@@ -1,15 +1,13 @@
-set fallback
-set dotenv-load
-set quiet
+set shell := ["zsh", "-euo", "pipefail", "-c"]
+set fallback := true
+set dotenv-load := true
+set quiet := true
 
 run:
     bun run tao-cli.ts help
 
-test:
-    bun test
-
 build: _install_deps
-    bun build tao-cli.ts --compile --outfile ../../.builds/tao
+    bun build tao-cli.ts --compile --outfile ../../.builds/tao-cli
 
 _install_deps:
     bun install

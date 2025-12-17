@@ -1,15 +1,21 @@
-set fallback
-set dotenv-load
-set quiet
+set shell := ["zsh", "-euo", "pipefail", "-c"]
+set fallback := true
+set dotenv-load := true
+set quiet := true
 
-test: gen
-    bun test
+test-prep: gen
 
 build: _install_deps gen
 
 gen:
-    bunx langium generate
+    bunx langium generate --mode=development
     just _merge_textmate_syntax_files
+
+watch-compiler:
+    bun -e "import 'compiler-src/compiler-main'; console.log('Reload...'); " --watch --no-clear-screen
+
+watch-grammar:
+    watchexec --restart --watch=tao-grammar.langium -- just gen
 
 _install_deps:
     bun install
