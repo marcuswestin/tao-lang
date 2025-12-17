@@ -23,3 +23,9 @@ _build-all:
     cd packages/expo-runtime && just build
     cd packages/ide-extension && just build
     just _agent-gen-mise-tasks
+
+x-fix-file-associations:
+    brew install duti --quiet
+    for ext in md txt json yaml yml xml css js ts tsx jsx zsh; \
+        do duti -s $(osascript -e 'id of app "Cursor"') .$ext all; \
+    done
