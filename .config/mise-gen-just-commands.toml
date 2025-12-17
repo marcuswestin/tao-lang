@@ -1,18 +1,2 @@
 # Auto-generated from Justfile - do not edit manually
 # Regenerate with: just _agent-gen-mise-tasks
-
-[tasks._agent-fmt]
-description = "Format and lint code"
-run = "just _agent-fmt"
-
-[tasks._agent-gen-mise-tasks]
-description = "Generate mise-gen-just-commands.toml from this file"
-run = "just _agent-gen-mise-tasks"
-
-[tasks._agent-lint]
-description = "Lint code"
-run = "just _agent-lint"
-
-[tasks._agent-test]
-description = "Run tests"
-run = "just _agent-test"

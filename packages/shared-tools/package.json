@@ -2,6 +2,9 @@
   "name": "shared-tools",
   "private": true,
   "type": "module",
+  "dependencies": {
+    "concurrently": "^9.2.1"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },
