@@ -72,9 +72,12 @@ tao *ARGS:
 # Build everything
 [no-quiet]
 build:
+    cd packages/shared-tools && just build
+    cd packages/shared && just build
     cd packages/compiler && just build
-    cd packages/ide-extension && just build
     cd packages/tao-cli && just build
+    cd packages/expo-runtime && just build
+    cd packages/ide-extension && just build
     just _agent-gen-mise-tasks
 
 # Build and install the extension to cursor

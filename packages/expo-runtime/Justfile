@@ -3,6 +3,10 @@ set fallback := true
 set dotenv-load := true
 set quiet := true
 
+build:
+    just _install_deps
+    
+
 run: _install_deps
     bunx expo start --web --ios
 
