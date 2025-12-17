@@ -8,9 +8,13 @@ _fmt:
     dprint fmt 1> /dev/null 2>&1
     {{ MISE_CMD }} fmt 1> /dev/null 2>&1
     oxlint --fix 1> /dev/null 2>&1
+    just _fmt_newlines
 
 _fmt_just:
     find . -type f \( -name "Justfile" -o -name "*.just" \) -exec just --fmt --unstable --justfile {} \; 1> /dev/null 2>&1
+
+_fmt_newlines:
+    git ls-files '*.ts' '*.just' '*.tsx' '*.js' '*.jsx' '*.json' '*.md' '*.yaml' '*.yml' '*.css' '*.html' '*.sh' '*.zsh' '*.toml' '*.txt' 'Justfile' '*.just' '*.langium' '*.tao' | while read f; do [ -s "$f" ] && [ -n "$(tail -c1 "$f")" ] && echo >> "$f"; done; true
 
 [no-quiet]
 _fix:
