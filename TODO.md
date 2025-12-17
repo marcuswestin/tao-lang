@@ -11,7 +11,7 @@ Next tasks, in order:
 First:
 
 - [ ] Commit!
-  - [ ] There are two almost idential justfiles in ide-extension...?
+  - [x] There are two almost idential justfiles in ide-extension...?
   - [ ] Fix the validator testing
   - [ ] Read through compiler-utils.ts
   - [ ] Read through other files
