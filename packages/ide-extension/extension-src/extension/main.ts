@@ -1,12 +1,35 @@
 import * as vscode from 'vscode'
 import type { LanguageClientOptions, ServerOptions } from 'vscode-languageclient/node.js'
 import { LanguageClient, TransportKind } from 'vscode-languageclient/node.js'
+import { Log, setLogTransport } from '../../../compiler/compiler-src/@shared/Log.js'
 
 let client: LanguageClient
+const channel = vscode.window.createOutputChannel('My Extension', { log: true })
 
 // This function is called when the extension is activated.
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
+  if (context.extensionMode === vscode.ExtensionMode.Development) {
+    channel.show(true)
+
+    setLogTransport({
+      log: channel.debug as (...args: unknown[]) => void,
+      wrap: channel.debug,
+      debug: channel.debug,
+      info: channel.info,
+      warn: channel.warn,
+      error: channel.trace,
+      trace: channel.trace,
+      success: channel.info,
+      instruct: channel.info,
+      reject: channel.error,
+    })
+  }
+
+  Log.info('Start Language Server ...')
   client = await startLanguageClient(context)
+  Log.info('Language Server started')
+
+  Log.info('Extension activated')
 }
 
 // This function is called when the extension is deactivated.
@@ -42,7 +65,7 @@ async function startLanguageClient(context: vscode.ExtensionContext): Promise<La
   // Create the language client and start the client.
   const client = new LanguageClient(
     'tao',
-    'Tao',
+    'Tao Language Server',
     serverOptions,
     clientOptions,
   )
