@@ -13,6 +13,10 @@
     "**/tsconfig.tsbuildinfo": true
   },
 
+  "editor.codeActionsOnSave": {
+    "source.addMissingImports": "explicit"
+  },
+
   // DPrint
   "editor.formatOnSave": true,
   "editor.formatOnPaste": true,
@@ -21,5 +25,23 @@
   "dprint.path": ".config/MISE_DIR/installs/npm-dprint/latest/bin/dprint",
 
   // Langium and App Lang configs
-  "langium.config": "packages/compiler/langium-config.json"
+  "langium.config": "packages/compiler/langium-config.json",
+
+  // "filewatcher.commands": [
+  //   {
+  //     "match": "Justfile",
+  //     "isAsync": true,
+  //     "cmd": "/opt/homebrew/bin/just --fmt --unstable --justfile ${file} && echo 'formatted' > /tmp/just-fmt-test.txt",
+  //     "event": "onFileChange"
+  //   }
+  // ]
+
+  "emeraldwalk.RunOnSave": {
+    "commands": [
+      {
+        "match": ".*[Jj]ustfile$",
+        "cmd": "/opt/homebrew/bin/just --fmt --unstable --justfile ${file}"
+      }
+    ]
+  }
 }

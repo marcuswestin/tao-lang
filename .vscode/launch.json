@@ -4,13 +4,15 @@
 // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
 {
   "version": "0.2.0",
+  "internalConsoleOptions": "openOnSessionStart",
   "configurations": [
     {
       "name": "Run Extension",
       "type": "extensionHost",
       "request": "launch",
-      "preLaunchTask": "Tao-VSCode-task: 'just build' in packages/ide-extension",
+      "preLaunchTask": "Tao-VSCode-task: 'just package-and-install' in packages/ide-extension",
       "args": [
+        "--disable-extensions",
         "--extensionDevelopmentPath=${workspaceFolder}/packages/ide-extension",
         "${workspaceFolder}/Apps",
         "${workspaceFolder}/Apps/Kitchen Sink/Kitchen Sink.tao"

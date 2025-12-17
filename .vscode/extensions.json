@@ -3,6 +3,7 @@
     "dprint.dprint",
     "continue.continue",
     "langium.langium-vscode",
-    "expo.vscode-expo-tools"
+    "expo.vscode-expo-tools",
+    "kokakiwi.vscode-just"
   ]
 }

@@ -5,8 +5,25 @@
       "type": "npm",
       "script": "vscode:prepublish",
       "path": "packages/ide-extension",
-      "label": "Tao-VSCode-task: 'just build' in packages/ide-extension",
+      "label": "Tao-VSCode-task: 'just package-and-install' in packages/ide-extension",
       "detail": "just build"
+    },
+    {
+      "label": "package-and-install-extension",
+      "type": "shell",
+      "command": "just package-and-install",
+      "options": {
+        "cwd": "${workspaceFolder}/packages/ide-extension"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
     }
   ]
 }
