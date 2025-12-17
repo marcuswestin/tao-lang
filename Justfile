@@ -1,5 +1,4 @@
-set dotenv-load := true
-set quiet := true
+import "packages/shared/just/setup.just"
 
 # Dev commands
 ##############
@@ -13,63 +12,61 @@ agent-help:
     echo "\n> Available agent commands:\n"
     just --dump | grep -B 1 '^_agent'  | grep -v '^--$'
 
-# Enter development
-dev: mcp-run
-    cursor .
+# Dev Loops
+###########
 
-# Kitchen Sink Dev App Watcher
-##############################
+# Build and run all components
+dev:
+    just _dev
 
-watch-kitchen-sink:
-    watchexec --restart --watch=Justfile -- just _watch-kitchen-sink
+# Run tests for the directory we're in
+[no-cd]
+test *PATTERNS:
+    @-just test-prep 2> /dev/null # Optionally implemented in executing directory Justfile
+    bun test --reporter=dot {{ PATTERNS }}
 
-[parallel]
-_watch-kitchen-sink: _watch-langium-generate _watch-cli-compile-build _watch-runtime-build
+test-all *PATTERNS:
+    cd packages/shared-tools && just test {{ PATTERNS }}
+    cd packages/shared && just test {{ PATTERNS }}
+    cd packages/compiler && just test {{ PATTERNS }}
+    cd packages/tao-cli && just test {{ PATTERNS }}
+    cd packages/ide-extension && just test {{ PATTERNS }}
+    cd packages/expo-runtime && just test {{ PATTERNS }}
 
-_watch-langium-generate:
-    cd packages/compiler \
-        && bunx langium generate --watch --mode=development \
-        | awk '{ print "\033[36mlangium-gen  > \033[0m" $0 }'
+watch-tests2 *PATTERNS:
+    #!{{ SHELL_INIT }}
+    while true; do
+        just concurrently-named \
+            "bun" "bun test --watch --silent --reporter=dot {{ PATTERNS }}" \
+            "jest" "cd packages/expo-runtime && just test --watch {{ PATTERNS }}" \
+            "q Exit" "just _die_on_r_or_q" || break;
+    done
 
-_watch-cli-compile-build APP_PATH="./Apps/KitchenSink/KitchenSink.tao":
-    cd packages/tao-cli \
-        && bun run  --watch --no-clear-screen ./tao-cli.ts compile {{ APP_PATH }} \
-        | awk '{ print "\033[32mcli-compile  > \033[0m" $0 }'
-
-_watch-runtime-build:
-    cd packages/expo-runtime \
-        && bunx expo start --ios --web 2>&1 \
-        | awk '{ print "\033[35mexpo-runtime > \033[0m" $0 }'
-
-# Run tests
-[no-quiet]
-test:
-    cd packages/compiler && just test
-    cd packages/ide-extension && just test
-    cd packages/tao-cli && just test
-    cd packages/shared-tools && bun test
-    cd packages/expo-runtime && just test
+watch-tests *PATTERNS:
+    #!{{ SHELL_INIT }}
+    while true; do
+        just concurrently-named \
+            "tools" "cd packages/shared-tools && bun test --watch --silent --reporter=dot {{ PATTERNS }}" \
+            "shared" "cd packages/shared && bun test --watch --silent --reporter=dot {{ PATTERNS }}" \
+            "compiler" "cd packages/compiler && bun test --watch --silent --reporter=dot {{ PATTERNS }}" \
+            "tao-cli" "cd packages/tao-cli && bun test --watch --silent --reporter=dot {{ PATTERNS }}" \
+            "extension" "cd packages/ide-extension && bun test --watch --silent --reporter=dot {{ PATTERNS }}" \
+            "runtime" "cd packages/expo-runtime && just test --watch --silent --reporter=dot {{ PATTERNS }}" \
+            "q Exit" "just _die_on_r_or_q" || break;
+    done
 
 # Check that builds work
 check-run-builds:
-    ./.builds/tao help
+    ./.builds/tao-cli help
 
 # Run and Build commands
 ########################
 
-# Start tao expo runtime
-start-runtime:
-    cd packages/expo-runtime && just run
-
-# Run Tao Studio app
-run-studio:
-    cd packages/tao-cli && bun run tao-cli.ts run-app "Apps/Tao Studio/Tao Studio.tao"
-
 # Build and run Tao CLI with given arguments
-tao args:
-    just build
-    echo "\n> Run: ./.builds/tao-cli {{ args }}\n"
-    ./.builds/tao-cli {{ args }}
+tao *ARGS:
+    cd packages/tao-cli && just build
+    echo "\n> Run: ./.builds/tao-cli "$@"\n"
+    ./.builds/tao-cli "$@"
     echo
 
 # Build everything
@@ -80,19 +77,13 @@ build:
     cd packages/tao-cli && just build
     just _agent-gen-mise-tasks
 
+# Build and install the extension to cursor
+extension-build-package-and-install:
+    cd packages/ide-extension && just build && just package-and-install
+
 # Run full battery of checks and builds. Meant to be run before committing.
 pre-commit:
-    echo "\n> Running pre-commit checks...\n"
-    echo "> Stashing non-staged changes..."
-    git stash push --keep-index --include-untracked
-    echo "> Running code checks..."
-    just check
-    echo "> Building everything..."
-    just test
-    echo "> Checking builds..."
-    just check-run-builds
-    echo "> Pre-commit checks complete. Unstashing changes..."
-    git stash pop
+    just _pre-commit
 
 # Format all files
 fmt:
@@ -105,14 +96,42 @@ check:
 # Setup development environment
 setup:
     echo "\tSetup Tao Lang dev environment:"
-    just _install_mise
-    just _do_setup
+    just _install_mise && just _do_setup
 
 reload-extension:
     cd packages/ide-extension && just run
 
 install-mise-deps:
     mise install
+
+# Powerful helper commands
+##########################
+
+# Run recipes in parallel. All die when any exits. Output prefixed with recipe name.
+parallel *RECIPES:
+    just prefix-strip-parallel "" {{ RECIPES }}
+
+# Run recipes in parallel with prefix stripping from labels.
+prefix-strip-parallel PREFIX *RECIPES:
+    just _prefix-strip-parallel {{ PREFIX }} {{ RECIPES }}
+
+# Usage: just concurrently "<cmd1> <args>" "<2cmd> <args>"
+[positional-arguments]
+concurrently *CMDS:
+    exec {{ CONCURRENTLY_RUN_AND_STOP_ALL_CMD }} "$@"
+
+# Usage: just concurrently-named "<name 1>" "<cmd 1>" "<name 2>" "<cmd 2>" ...
+[positional-arguments]
+concurrently-named *NAMES_AND_CMDS:
+    #!{{ SHELL_INIT }}
+    names=() && cmds=()
+    while (( {{ NUM_ARGS }} >= 2 )); do
+        names+=("$1") && cmds+=("$2")
+        shift 2
+    done
+    exec {{ CONCURRENTLY_RUN_AND_STOP_ALL_CMD }} \
+        --names "$(IFS=,; echo "${names[*]}")" \
+        "${cmds[@]}"
 
 # LLM & Agent Setups
 ####################
@@ -129,22 +148,159 @@ mcp-halt:
 gen-mise-tasks:
     cd packages/shared-tools && bun tools-src/gen-mise-tasks.ts
 
-############
-# Internal #
-############
+#
+#
+####################################
+############# Internal #############
+####################################
+#
+#
 
-[private]
-_MISE_CMD := "~/.local/bin/mise"
+MISE_CMD := "~/.local/bin/mise"
+
+# Dev Commands
+##############
+
+DEV_WATCH_RECIPES := "_watch-grammar _watch-kitchen-sink-build _watch-runtime-reload \
+                       _watch-typecheck-extension _watch-esbuild-extension _watch-fmt-justfile"
+
+_dev:
+    #!{{ SHELL_INIT }}
+    while true; do
+        just _prefix-strip-parallel "_watch-" \
+            {{ DEV_WATCH_RECIPES }} \
+            _steal_focus \
+            _die_on_r_or_q || break;
+    done
+
+_steal_focus:
+    #!/bin/zsh
+    app=$(osascript -e 'tell application "System Events" to get name of first application process whose frontmost is true')
+    last_frontmost=""
+    change_count=0
+    while (( change_count < 5 )); do
+        sleep 0.01
+        frontmost=$(osascript -e 'tell application "System Events" to name of first process whose frontmost is true')
+        osascript -e "tell application \"$app\" to activate"
+        if [[ "$frontmost" != "$last_frontmost" ]]; then
+            (( change_count++ ))
+            last_frontmost="$frontmost"
+            echo "Frontmost changed to $frontmost"
+        fi
+    done
+    sleep 999999
+
+_die_on_r_or_q:
+    #!{{ SHELL_INIT }}
+    REPLY=""
+    echo "Press 'r' to restart or 'q' to exit..."
+    while read -k 1; [[ $REPLY != r ]] && [[ $REPLY != q ]]; do :; done
+    [[ $REPLY == q ]] && exit 1
+    exit 0
+
+_watch-grammar:
+    cd packages/compiler && just watch-grammar
+
+_watch-kitchen-sink-build APP_PATH="./Apps/Kitchen Sink/Kitchen Sink.tao":
+    cd packages/tao-cli && bun run  --watch --no-clear-screen \
+        ./tao-cli.ts compile "`pwd`/../../{{ APP_PATH }}" --verbose --watch \
+
+_watch-runtime-reload:
+    cd packages/expo-runtime \
+        && EXPO_NO_CLEAR=true BROWSER="Google Chrome" npx expo start --ios --web \
+
+_watch-typecheck-extension:
+    cd packages/ide-extension && tsc -b tsconfig.json --watch --preserveWatchOutput
+
+_watch-esbuild-extension:
+    cd packages/ide-extension && node esbuild.mjs --watch
+
+_watch-fmt-justfile:
+    watchexec --filter '**/*.just' --filter '**/Justfile' -- 'just _fmt_just'
+
+_pre-commit:
+    echo "\n> Run pre-commit checks...\n"
+    echo "> Stashing non-staged changes..." && git stash push --keep-index --include-untracked
+    echo "> Running code checks..." && just check
+    echo "> Building everything..." && just test
+    echo "> Checking builds..." && just check-run-builds
+    echo "> Pre-commit checks complete. Unstashing changes..." && git stash pop
+
+_prefix-strip-parallel PREFIX *RECIPES:
+    #!{{ SHELL_INIT }}
+    p="{{ PREFIX }}"; recipes=({{ RECIPES }})
+    for r in "${recipes[@]}"; do cmds+=("just $r"); names+=("${r#$p}"); done
+    exec {{ CONCURRENTLY_RUN_AND_STOP_ALL_CMD }} \
+        --names "$(IFS=,; echo "${names[*]}")" \
+        "${cmds[@]}"
+
+NUM_ARGS := "$#"
+CONCURRENTLY_COLORS := '--prefix-colors "#4FC3F7,#81C784,#FFD54F,#FF8A65,#BA68C8,#4DD0E1,#F06292,#AED581,#7986CB,#FFB74D"'
+CONCURRENTLY_PROPOGATE_FIRST_EXIT_STATUS := "--success first"
+CONCURRENTLY_EXIT_ALL_TOGETHER := "--kill-others --kill-others-on-fail"
+CONCURRENTLY_RUN_AND_STOP_ALL_CMD := "" + "./packages/shared-tools/node_modules/.bin/concurrently" + " " + CONCURRENTLY_COLORS + " " + CONCURRENTLY_PROPOGATE_FIRST_EXIT_STATUS + " " + CONCURRENTLY_EXIT_ALL_TOGETHER
+
+# Process Filtering
+###################
+
+# Grep my relevant processes
+psgrep *PATTERN:
+    just _ps-filter | grep {{ PATTERN }}
+
+# Print my most relevant processes, with a filter
+psrelevant *FILTERS:
+    just _ps-filter \
+        "/Library/Developer/CoreSimulator/" "/System/Library/" \
+        "Spotify.app|Google Chrome.app" "Cursor.app" "ChatGPT" \
+        "Brave Browser" "/bin/node$" " Cursor Helper" " aslmanager$" \
+        " assetsd$" \
+        {{ FILTERS }}
+
+# Print my relevant processes, with a filter
+ps *FILTERS:
+    just _ps-filter {{ FILTERS }}
+
+# Print my processes, with a filter
+[positional-arguments]
+_ps-filter *FILTERS:
+    #!/bin/bash
+    max_pid=$(ps -axo pid | sort -rn | head -1)
+    # Create arguments regex, or default to unmatchable regex
+    regex=$(IFS='|'; echo "${*:-{{ PS_UNMATCHABLE_REGEX }}}")
+    ps -eo user,pid,ppid,args,comm \
+        | awk '{ pid=$2; ppid=$3 } pid > 1000 && ppid != 1' \
+        | awk -v max_pid="$max_pid" 'pid < max_pid' \
+        | grep -vE "^\w+(\d\s)+ /{{ PS_FILTER_LIBRARY }}|{{ PS_FILTER_SYSTEM }}|{{ PS_FILTER_USR }}/" \
+        | grep -vE "$regex" \
+        | sort -k 2 -n \
+        || true;
+
+PS_FILTER_LIBRARY := "(Library/Apple/System)"
+PS_FILTER_SYSTEM := "(System/(Library|Volumes|iOSSupport|Cryptexes))"
+PS_FILTER_USR := "(usr/(sbin|libexec))"
+PS_UNMATCHABLE_REGEX := "$^"
 
 # Formatting and linting
 ########################
 
 _fmt:
-    just --fmt --unstable 1> /dev/null 2>&1
+    just _fmt_just
     cd packages/shared-tools && just sort-package-json-files 1> /dev/null 2>&1
     dprint fmt 1> /dev/null 2>&1
-    {{ _MISE_CMD }} fmt 1> /dev/null 2>&1
+    {{ MISE_CMD }} fmt 1> /dev/null 2>&1
     oxlint --fix 1> /dev/null 2>&1
+
+_fmt_just:
+    find . -type f \( -name "Justfile" -o -name "*.just" \) -exec just --fmt --unstable --justfile {} \; 1> /dev/null 2>&1
+
+[no-quiet]
+fix:
+    cd packages/compiler && bunx ts-autofix fix --tsCliArgs --noUnusedLocals
+    cd packages/tao-cli && bunx ts-autofix fix --tsCliArgs --noUnusedLocals
+    cd packages/shared-tools && bunx ts-autofix fix --tsCliArgs --noUnusedLocals
+    cd packages/expo-runtime && bunx ts-autofix fix --tsCliArgs --noUnusedLocals
+    cd packages/expo-runtime && bunx expo lint --fix
+    cd packages/expo-runtime && bunx eslint --fix
 
 [no-quiet]
 _check:
@@ -155,6 +311,7 @@ _check:
     cd packages/shared-tools && tsc --noEmit --noUnusedLocals
     cd packages/expo-runtime && tsc --noEmit --noUnusedLocals
     cd packages/expo-runtime && bunx expo lint
+    cd packages/expo-runtime && bunx eslint
 
 # Help & Setup
 ##############
@@ -170,9 +327,8 @@ _print_help:
     echo
 
 _do_setup:
-    #!/bin/zsh
-    set -e
-    eval "$({{ _MISE_CMD }} activate zsh)"
+    #!{{ SHELL_INIT }}
+    eval "$({{ MISE_CMD }} activate zsh)"
     just _configure_mise
     just _configure_zsh
     just _install_deps
@@ -182,7 +338,7 @@ _do_setup:
 _install_mise:
     @ echo "\tInstall mise..."
     @ curl -sS https://mise.run | MISE_VERSION=v2025.12.1 sh 2> /dev/null
-    @ {{ _MISE_CMD }} trust --quiet
+    @ {{ MISE_CMD }} trust --quiet
 
 _configure_mise:
     @ echo "\tConfigure mise..."
@@ -191,8 +347,7 @@ _configure_mise:
     @ mise doctor 1> /dev/null
 
 _configure_zsh:
-    #!/bin/zsh
-    set -e
+    #!{{ SHELL_INIT }}
     echo "\tConfigure zsh..."
     add_if_missing() { local line="$1" file="$2"; grep -qxF "$line" "$file" || echo "\n# Added by tao-lang dev env '_configure_zsh' justfile rule\n$line" >> "$file"; }
     add_if_missing "alias et=enter-tao && alias enter-tao='echo \" * Enter Tao Lang dev env * \" && cd $PWD && source .config/enter-tao-dev-env-source-configure.zsh'" ~/.zshrc
@@ -212,8 +367,10 @@ _print_setup_done:
     @ echo "\t\tenter-tao && just help"
     @ echo
 
-# Agent Generated Commands
+#
 ##########################
+# Agent Generated Commands
+# ------------------------
 # These are commands generated by agents, to be used by the agents themselves.
 # If a command is needed that doesn't exist, they need to ask for permission before adding it.
 
@@ -231,7 +388,7 @@ _agent-lint *args:
 
 # Generate mise-gen-just-commands.toml from this file
 _agent-gen-mise-tasks *args:
-    gen-mise-tasks {{ args }}
+    just gen-mise-tasks {{ args }}
 
 # Execute git commands:
 _agent-git *args:
