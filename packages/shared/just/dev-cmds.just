@@ -1,5 +1,3 @@
-SHELL_INIT := "/bin/zsh -eu -o pipefail"
-
 _tao *ARGS:
     pushd packages/tao-cli && just build && popd
     echo "\n> Run: ./.builds/tao-cli "$@"\n"
@@ -26,6 +24,6 @@ _build-all:
 
 x-fix-file-associations:
     brew install duti --quiet
-    for ext in md txt json yaml yml xml css js ts tsx jsx zsh; \
+    for ext in md txt json yaml yml xml css js ts tsx jsx zsh just; \
         do duti -s $(osascript -e 'id of app "Cursor"') .$ext all; \
     done

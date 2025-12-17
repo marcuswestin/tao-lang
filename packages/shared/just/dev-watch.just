@@ -1,3 +1,5 @@
+import "./_vars.just"
+
 _dev:
     #!{{ SHELL_INIT }}
     while true; do

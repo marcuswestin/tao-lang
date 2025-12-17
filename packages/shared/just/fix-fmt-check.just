@@ -1,6 +1,7 @@
+import "./_vars.just"
+
 # Formatting and linting
 ########################
-
 
 _fmt:
     just _fmt_just
@@ -11,7 +12,9 @@ _fmt:
     just _fmt_newlines
 
 _fmt_just:
-    find . -type f \( -name "Justfile" -o -name "*.just" \) -exec just --fmt --unstable --justfile {} \; 1> /dev/null 2>&1
+    for f in $(git ls-files 'Justfile' '*.just'); do \
+        just --fmt --unstable --justfile "$f"; \
+    done
 
 _fmt_newlines:
     git ls-files '*.ts' '*.just' '*.tsx' '*.js' '*.jsx' '*.json' '*.md' '*.yaml' '*.yml' '*.css' '*.html' '*.sh' '*.zsh' '*.toml' '*.txt' 'Justfile' '*.just' '*.langium' '*.tao' | while read f; do [ -s "$f" ] && [ -n "$(tail -c1 "$f")" ] && echo >> "$f"; done; true

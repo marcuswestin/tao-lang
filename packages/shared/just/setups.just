@@ -1,4 +1,4 @@
-MISE_CMD := "~/.local/bin/mise"
+import "./_vars.just"
 
 _print_help:
     echo "\nTo ended Tao Dev Env, run either of:\n"
@@ -63,4 +63,3 @@ _print_setup_done:
     @ echo "\trestart your terminal and run:\n"
     @ echo "\t\tenter-tao && just help"
     @ echo
-
