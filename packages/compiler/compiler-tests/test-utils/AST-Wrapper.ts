@@ -1,43 +1,6 @@
 import { AstNode, Reference } from 'langium'
 import { expect } from './test-harness'
 
-// Example usage
-////////////////
-
-// export async function _ExampleUsage() {
-//   const code = `
-//     app ExampleApp {
-//         ui ExampleView
-//     }
-//     view ExampleView {}
-//     `
-//   const document = await parseTaoString(code)
-//   const appFile = wrap(document)
-
-//   // Union types: use .as_<TypeName> to narrow
-//   const appDeclaration = appFile.topLevelStatements[0]!.as_Declaration
-//   appDeclaration.expect('type').toBe('app')
-//   appDeclaration.expect('name').toBe('ExampleApp')
-
-//   const viewDeclaration = appFile.topLevelStatements[1]!.as_Declaration
-//   viewDeclaration.expect('type').toBe('view')
-//   viewDeclaration.expect('name').toBe('ExampleView')
-
-//   if (appDeclaration.type === 'app') {
-//     const asd = appDeclaration.appStatements[0]!
-//     asd
-//   }
-
-//   // References are auto-dereferenced
-//   //   appFile.topLevelStatements[0].as_AppDeclaration.ui.expect('name').toBe('HelloView')
-
-//   // Type errors on union types without narrowing:
-//   // @ts-expect-error - must narrow first
-//   topLevelStmt.expect('name')
-//   // @ts-expect-error - must narrow first
-//   topLevelStmt.stateDeclarations[0]
-// }
-
 // Exported
 ///////////
 
