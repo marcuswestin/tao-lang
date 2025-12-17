@@ -31,20 +31,6 @@ export function setLogTransport(t: Transport) {
   transport = t
 }
 
-// export interface Logger {
-//   (...args: unknown[]): void
-//   log: (...args: unknown[]) => void
-//   wrap<T extends (...args: any[]) => any>(label: string, fn: T): T
-//   debug(message: string, ...args: unknown[]): void
-//   info(message: string, ...args: unknown[]): void
-//   warn(message: string, ...args: unknown[]): void
-//   error(message: string, ...args: unknown[]): void
-//   trace(message: string, ...args: unknown[]): void
-//   success(message: string): void
-//   instruct(message: string): void
-//   reject(message: string): void
-// }
-
 let wrapIndent = 0
 function indentWrap() {
   let indent = ' '.repeat(wrapIndent)
