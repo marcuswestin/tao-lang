@@ -22,6 +22,7 @@ First:
 - [ ] Follow up on having a few lexer tests written
 - [ ] Start formatter
   - [ ] ASTNode.$cstNode.test/.range.start.line?
+- [ ] Use workspaces: { "private": true, "workspaces": [ "packages/_", "apps/_" ]}; bun install installs for ALL with one lockile
 
 - [ ] Combine shared: shared/shared-ts-libs, /shared-scripts, just/foo.just;bar.just
 - [ ] Consider exec before each just command

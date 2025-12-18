@@ -1,3 +1,14 @@
+#### Build & Dev Workflow Improvements (2025-12-18)
+
+- [x] Rename `gen-mise-tasks` → `mise-tasks-gen` for consistency across all files
+- [x] Add numbered prefixes to cursor commands for logical ordering (1-, 2-, 3-)
+- [x] Create `1-check-for-improvements.md` pre-commit review command
+- [x] Make oxlint respect .gitignore with `--ignore-path .gitignore` flag
+- [x] Add `tsc` to compiler build step
+- [x] Setup now builds all packages after installation
+- [x] Add `git-stage-and-test` recipe for testing staged changes in isolation
+- [x] Add `backups` and `staging-area` to .gitignore
+
 #### Test Infrastructure & Error Handling (2025-12-18)
 
 - [x] Extension validation isn't working. Try e.g `Person ro` which should warn; or an incorrect reference.
