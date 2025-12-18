@@ -2,13 +2,16 @@ import * as Langium from 'langium'
 import { NodeFileSystem } from 'langium/node'
 import path from 'node:path'
 
+import { createHash } from 'node:crypto'
+import { statSync } from 'node:fs'
 import { createTaoServices } from 'tao-compiler'
 import { Log } from './@shared/Log'
+import { throwUserInputRejectionError } from './@shared/TaoErrors'
 import { AST } from './grammar'
-import { ErrorReport, getDocumentErrors, throwTaoParserError } from './parse-errors'
+import { ErrorReport, getDocumentErrors } from './parse-errors'
 
 export type ParseOptions = {
-  validate?: 'all' | 'lexing' | 'parsing' | 'linking' | 'none'
+  validateUpToStage?: 'lexing' | 'parsing' | 'linking' | 'all' | 'none'
   skipSlowValidation?: boolean
   suppressThrowOnError?: boolean
 }
@@ -26,8 +29,13 @@ export const TaoParser = {
 
 const STRICT_URIs = true
 
+function getCodeHash(code: string) {
+  // Bun.hash(code).toString(16)
+  return createHash('sha256').update(code).digest('hex')
+}
+
 async function parseString(code: string, opts: ParseOptions = {}): Promise<ParseResult> {
-  const codeHash = Bun.hash(code).toString(16)
+  const codeHash = getCodeHash(code)
   const evalCodeUri = `tao-string://v0/hash/${codeHash}.tao`
   const uri = Langium.URI.parse(evalCodeUri, STRICT_URIs)
   return await internalParseTaoCode(uri, opts, code)
@@ -40,8 +48,7 @@ async function parseFile(filePath: string, opts: ParseOptions = {}): Promise<Par
     const ioError = new Error(`Unsupported scheme: ${uri.scheme}`)
     return createErrorResult(opts, { ioError })
   }
-  const file = Bun.file(uri.path)
-  if (!file.exists()) {
+  if (!fileExists(uri.path)) {
     const message = `Missing file: ${filePath}. No file at ${uri.fsPath}`
     return { errorReport: { ioError: new Error(message) } }
   }
@@ -61,9 +68,9 @@ async function internalParseTaoCode(
   const extension = path.extname(uri.path)
   const supportedExtensions = Tao.LanguageMetaData.fileExtensions
   if (!supportedExtensions.includes(extension)) {
-    return createErrorResult(opts, {
-      ioError: new Error(`Unsupported extension: ${extension}. Choose a file with ${supportedExtensions.join(', ')}.`),
-    })
+    throwUserInputRejectionError(
+      `Unsupported extension: ${extension}. Choose a file with ${supportedExtensions.join(', ')}.`,
+    )
   }
 
   const services: Langium.LangiumCoreServices = Tao
@@ -90,13 +97,16 @@ function createErrorResult(opts: ParseOptions, errorReport: ErrorReport): ParseR
   if (opts.suppressThrowOnError) {
     return { errorReport }
   } else {
-    throwTaoParserError(errorReport)
+    const additionalHumanInfoMessage = JSON.stringify(errorReport, null, 2)
+    throwUserInputRejectionError(
+      `There was an error parsing your code: ${additionalHumanInfoMessage}`,
+    )
   }
 }
 
 function getValidationOptions(opts: ParseOptions): Langium.ValidationOptions | boolean {
   const categories = opts.skipSlowValidation ? ['fast'] : undefined
-  switch (opts.validate ?? 'all') {
+  switch (opts.validateUpToStage ?? 'all') {
     case 'none':
       return false
     case 'all':
@@ -107,5 +117,14 @@ function getValidationOptions(opts: ParseOptions): Langium.ValidationOptions | b
       return { categories, stopAfterParsingErrors: true }
     case 'linking':
       return { categories, stopAfterLinkingErrors: true }
+  }
+}
+
+// TODO WE NEED TO SHARE THESE
+function fileExists(path: string): boolean {
+  try {
+    return statSync(path).isFile()
+  } catch {
+    return false // does not exist or inaccessible
   }
 }

@@ -13,20 +13,18 @@ import {
 import { AST } from './grammar'
 import { TaoParser } from './parser'
 
-export type File = {
-  path: string
-}
+// export type File = {
+//   path: string
+// }
 
 export type CompileResult = {
   code: string
 }
 
-type CompileOpts =
-  | { file: File; code?: never }
-  | { file?: never; code: string }
+export type CompileOpts = { file: string }
 
 export async function compile(opts: CompileOpts): Promise<CompileResult> {
-  const parsed = await (opts.file ? TaoParser.parseFile(opts.file.path) : TaoParser.parseString(opts.code))
+  const parsed = await TaoParser.parseFile(opts.file)
   Assert(parsed.taoFileAST, 'Expected TaoFileAST, but got none.')
   const result = generateTypescript(parsed.taoFileAST)
   return { code: LangiumGen.toString(result) }
@@ -68,7 +66,7 @@ function compileDeclaration(declaration: AST.Declaration): Compiled {
       const renderStatements = declaration.viewStatements.filter(isViewRenderStatement)
       const injectionStatements = declaration.viewStatements.filter(isInjection)
       return compileNode(declaration)`
-        function ${declaration.name}(${compileParameterList(declaration.parameterList)}) {
+        export function ${declaration.name}(${compileParameterList(declaration.parameterList)}) {
           ${compileList(declaration, injectionStatements, compileInjection)}
           return <>${compileList(declaration, renderStatements, compileViewRenderStatement)}</>
         }
