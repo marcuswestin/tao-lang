@@ -1,3 +1,5 @@
+import "./_shared-vars.just"
+
 [positional-arguments]
 _tao *ARGS:
     pushd packages/tao-cli && just build && popd
@@ -19,7 +21,7 @@ _build-all:
     cd packages/tao-cli && just build
     cd packages/expo-runtime && just build
     cd packages/ide-extension && just build
-    just _agent-gen-mise-tasks
+    just _agent-mise-tasks-gen
 
 x-fix-file-associations:
     brew install duti --quiet

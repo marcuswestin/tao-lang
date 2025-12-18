@@ -1,8 +1,8 @@
 #!/usr/bin/env bun
 /**
  * Auto-generates mise tasks from Justfile recipes.
- * Run with: bun packages/shared-tools/gen-mise-tasks.ts
- * Or via: just _agent-gen-mise-tasks
+ * Run with: bun packages/shared-tools/tools-src/gen-mise-tasks.ts
+ * Or via: just _agent-mise-tasks-gen
  */
 
 const OUTPUT_FILE = '.config/mise-gen-just-commands.toml'
@@ -45,7 +45,7 @@ async function main() {
 
   const lines: string[] = [
     '# Auto-generated from Justfile - do not edit manually',
-    '# Regenerate with: just _agent-gen-mise-tasks',
+    '# Regenerate with: just _agent-mise-tasks-gen',
     '',
   ]
 

@@ -69,7 +69,7 @@ mcp-halt:
     screen -X -S mise-mcp quit
 
 # Generate mise-gen-just-commands.toml from this file
-gen-mise-tasks:
+mise-tasks-gen:
     cd packages/shared-tools && bun tools-src/gen-mise-tasks.ts
 
 # Sub-project commands

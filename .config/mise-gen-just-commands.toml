@@ -1,5 +1,5 @@
 # Auto-generated from Justfile - do not edit manually
-# Regenerate with: just _agent-gen-mise-tasks
+# Regenerate with: just _agent-mise-tasks-gen
 
 [tasks._agent-cat]
 description = "Print a file (read-only helper for AI agents)."
@@ -8,10 +8,6 @@ run = "just _agent-cat"
 [tasks._agent-fmt]
 description = "Format and lint code"
 run = "just _agent-fmt"
-
-[tasks._agent-gen-mise-tasks]
-description = "Generate mise-gen-just-commands.toml from this file"
-run = "just _agent-gen-mise-tasks"
 
 [tasks._agent-git]
 description = "Execute git commands:"
@@ -24,6 +20,10 @@ run = "just _agent-lint"
 [tasks._agent-mise]
 description = "Execute mise commands:"
 run = "just _agent-mise"
+
+[tasks._agent-mise-tasks-gen]
+description = "Generate mise-gen-just-commands.toml from this file"
+run = "just _agent-mise-tasks-gen"
 
 [tasks._agent-rg]
 description = "Ripgrep a pattern in an optional path (defaults to current dir)."

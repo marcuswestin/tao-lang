@@ -70,7 +70,7 @@ mise exposes project tasks to AI agents via MCP. The tasks are auto-generated fr
 When `Agents.just` changes, regenerate the TOML file:
 
 ```bash
-just _agent-gen-mise-tasks
+just _agent-mise-tasks-gen
 ```
 
 This extracts all public recipes from `Justfile` and generates `.config/mise-gen-just-commands.toml` for mise MCP.
