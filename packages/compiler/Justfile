@@ -11,6 +11,7 @@ test *PATTERNS: _pretest
 build:
     bun install
     just gen
+    tsc
 
 gen:
     bunx langium generate --mode=development
