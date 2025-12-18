@@ -1,8 +1,22 @@
 // import { wrap } from './test-utils/AST-Wrapper'
-import { describe, expect, test } from './test-utils/test-harness'
+import { describe, expect, parseTaoFully, test } from './test-utils/test-harness'
 
 describe('parse:', () => {
   test('stub test', () => expect(true).toBe(true))
+
+  test('asd', async () => {
+    const needle = Math.random().toString(36).substring(2, 15)
+    const code = `
+        app KitchenSink { ui RootView }
+        view RootView { Text value "${needle}" {} }
+        view Text value string {
+            inject \`\`\`ts return <RN.Text>{props.value}</RN.Text> \`\`\`
+        }
+    `
+    const result = await parseTaoFully(code)
+    expect(result).toBeDefined()
+    result.topLevelStatements.first.as_AppDeclaration.expect('name').toBe('KitchenSink')
+  })
 
   // test('no newlines in code', async () => {
   //   const document = await parseTaoString(`app MyApp { ui MyView } view MyView { }`)

@@ -1,15 +1,15 @@
-import { describe, expect, parseTestCode, parseWithErrors, test } from './test-utils/test-harness'
+import { describe, expect, parseAST, parseASTWithErrors, test } from './test-utils/test-harness'
 
 describe('parse:', () => {
   test('stub test', () => expect(true).toBe(true))
 
   test('no newlines in code', async () => {
-    const document = await parseTestCode(`app MyApp { ui MyView } view MyView { }`)
+    const document = await parseAST(`app MyApp { ui MyView } view MyView { }`)
     expect(document).toBeDefined()
   })
 
   test('basic app', async () => {
-    const appFile = await parseTestCode(`
+    const appFile = await parseAST(`
         app MyApp {
             ui MyView
         }
@@ -27,7 +27,7 @@ describe('parse:', () => {
   })
 
   test('reference validation errors', async () => {
-    const errorReport = await parseWithErrors(`
+    const errorReport = await parseASTWithErrors(`
         app MyApp {
             ui MyApp
         }
@@ -35,7 +35,7 @@ describe('parse:', () => {
             Text value "Hello World"
         }
     `)!
-    expect(errorReport!.errorString).toContain('Could not resolve reference')
-    expect(errorReport!.errorString).toContain('App ui must be a view declaration')
+    expect(errorReport!.humanErrorMessage).toContain('Could not resolve reference')
+    expect(errorReport!.humanErrorMessage).toContain('App ui must be a view declaration')
   })
 })
