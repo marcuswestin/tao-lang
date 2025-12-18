@@ -16,11 +16,7 @@ say-hello:
 
 # Run recipes in parallel. All die when any exits. Output prefixed with recipe name.
 parallel *RECIPES:
-    just prefix-strip-parallel "" {{ RECIPES }}
-
-# Run recipes in parallel with prefix stripping from labels.
-prefix-strip-parallel PREFIX *RECIPES:
-    just _prefix-strip-parallel {{ PREFIX }} {{ RECIPES }}
+    just _prefix-strip-parallel "" {{ RECIPES }}
 
 # Usage: just concurrently "<cmd1> <args>" "<2cmd> <args>"
 [positional-arguments]
