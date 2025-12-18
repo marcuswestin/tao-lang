@@ -1,6 +1,6 @@
 {
   "name": "tao-expo-runtime",
-  "version": "1.0.0",
+  "version": "0.1.0-dev",
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
