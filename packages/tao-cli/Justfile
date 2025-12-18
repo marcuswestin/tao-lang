@@ -1,11 +1,21 @@
+set unstable := true
 set fallback := true
-set quiet := true
+# set quiet := true
 
 run:
     bun run tao-cli.ts help
 
 build: _install_deps
     bun build tao-cli.ts --compile --outfile ../../.builds/tao-cli
+
+build-lib OUTPUT_DIR:
+    bun build cli-src/tao-cli-main.ts --keep-names \
+        --outdir={{ OUTPUT_DIR }} --target=node \
+        --define import.meta.url='"file:///__virtual__.js"'
+
+
+test *PATTERNS:
+    bun test --reporter=dot {{ PATTERNS }}
 
 _install_deps:
     bun install

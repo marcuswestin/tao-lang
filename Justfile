@@ -1,9 +1,6 @@
-import "packages/shared/just/_all.just"
+import "./packages/shared/just/all-imports.just"
 
-set quiet := true
-set positional-arguments := true
-set dotenv-load := true
-
+# set quiet := true
 # Dev commands
 ##############
 
@@ -20,14 +17,14 @@ tao *ARGS:
     just _tao {{ ARGS }}
 
 # Run tests for whatever directory we're in
+[no-cd]
 test *PATTERNS:
-    # If run in any package without test already defined, run all tests
     just test-all {{ PATTERNS }}
 
 # Run all tests
 test-all *PATTERNS:
-    bun test --reporter=dot # {{ PATTERNS }}
-    cd packages/expo-runtime && just test # {{ PATTERNS }}
+    bun test --reporter=dot {{ PATTERNS }}
+    cd packages/expo-runtime && just test {{ PATTERNS }}
 
 # Watch all tests
 watch-tests *PATTERNS:
@@ -37,6 +34,10 @@ watch-tests *PATTERNS:
 # Build everything
 [no-quiet]
 build:
+    just build-all
+
+# Alias
+build-all:
     just _build-all
 
 # Build and install the extension to cursor
@@ -70,3 +71,24 @@ mcp-halt:
 # Generate mise-gen-just-commands.toml from this file
 gen-mise-tasks:
     cd packages/shared-tools && bun tools-src/gen-mise-tasks.ts
+
+# Sub-project commands
+
+# #####################
+compiler *ARGS:
+    cd packages/compiler && just {{ ARGS }}
+
+expo-runtime *ARGS:
+    cd packages/expo-runtime && just {{ ARGS }}
+
+ide-extension *ARGS:
+    cd packages/ide-extension && just {{ ARGS }}
+
+shared *ARGS:
+    cd packages/shared && just {{ ARGS }}
+
+shared-tools *ARGS:
+    cd packages/shared-tools && just {{ ARGS }}
+
+tao-cli *ARGS:
+    cd packages/tao-cli && just {{ ARGS }}
