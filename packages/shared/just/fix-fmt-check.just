@@ -1,4 +1,5 @@
-import "./_vars.just"
+import "./_shared-vars.just"
+import "./setups.just"
 
 # Formatting and linting
 ########################

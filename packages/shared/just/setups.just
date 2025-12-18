@@ -1,4 +1,4 @@
-import "./_vars.just"
+import "./_shared-vars.just"
 
 _print_help:
     echo "\nTo ended Tao Dev Env, run either of:\n"

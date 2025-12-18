@@ -1,8 +1,7 @@
+[positional-arguments]
 _tao *ARGS:
     pushd packages/tao-cli && just build && popd
-    echo "\n> Run: ./.builds/tao-cli "$@"\n"
     ./.builds/tao-cli "$@"
-    echo
 
 _pre-commit:
     echo "\n> Run pre-commit checks...\n"
