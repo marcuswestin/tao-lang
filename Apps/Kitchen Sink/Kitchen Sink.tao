@@ -6,7 +6,7 @@ app KitchenSink {
 }
 
 view RootView {
-    Text value "Standing on the edge of the world!" {}
+    Text value "Standing on the edge of the worlds!" {}
     MyView {}
 }
 

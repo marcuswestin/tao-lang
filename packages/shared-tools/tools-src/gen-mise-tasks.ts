@@ -20,7 +20,8 @@ interface JustDump {
 
 async function main() {
   // Get Justfile recipes as JSON (run from project root)
-  const proc = Bun.spawn(['just', '--dump', '--dump-format', 'json'], {
+  const cmd = `just --dump --dump-format json --justfile packages/shared/just/agent-cmds.just`
+  const proc = Bun.spawn(cmd.split(' '), {
     stdout: 'pipe',
     cwd: process.cwd().replace(/\/packages\/shared-tools.*$/, ''),
   })
@@ -35,7 +36,7 @@ async function main() {
 
   // Filter to only recipes prefixed with _agent- (without parameters)
   const recipes = Object.values(dump.recipes)
-    .filter((r) => r.name.startsWith('_agent-') && r.parameters.length === 0)
+    .filter((r) => r.name.startsWith('_agent-'))
     .sort((a, b) => a.name.localeCompare(b.name))
 
   // Generate TOML (write to project root .config directory)

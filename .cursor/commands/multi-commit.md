@@ -1,4 +1,8 @@
-Look at all uncommitted changes. Determine if there are multiple atomic changes. Proceed and commit each change with its own commit message.
+Now write a summary of the uncommited changes.
+
+Then show me the summary, and wait for me to approve before you proceed.
+
+When I do approve, consider the summary and look through code, and determine which atomic changes can be committed one by one. Proceed and commit each change with its own commit message.
 
 _IMPORTANT_: Do NOT use `git reset`, `git checkout`, or any other commands that could modify the files in the repo.
 

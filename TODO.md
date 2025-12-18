@@ -13,6 +13,7 @@ First:
 - [ ] Commit!
   - [x] There are two almost idential justfiles in ide-extension...?
   - [ ] Fix the validator testing
+  - [ ] Prefer backtick strings
   - [ ] Read through compiler-utils.ts
   - [ ] Read through other files
   - [ ] Create commit plan
@@ -24,10 +25,6 @@ First:
 
 - [ ] Combine shared: shared/shared-ts-libs, /shared-scripts, just/foo.just;bar.just
 - [ ] Consider exec before each just command
-- [x] Extension validation isn't working. Try e.g `Person ro` which should warn; or an incorrect reference.
-- [x] Write basic validation tests
-- [x] Use Bun to build extension instead of esbuild script
-- [x] Create "watch" command that watches _all_ components and auto rebuilds. Save expo and interactive tests for last. Then add those either together or separaterly
 - [ ] Create AST testing helper
   - [ ] Get extension compiled map to work
   - [ ] Use Highlght or Comment vscode extension for syntax highlighting
