@@ -1,47 +1,45 @@
 import { Command } from '@commander-js/extra-typings'
 import { compile } from '@tao-compiler'
 import chokidar from 'chokidar'
-import { Log } from '../../compiler/compiler-src/@shared/Log'
+import { mkdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from 'node:fs'
+import path from 'node:path'
+import {
+  Assert,
+  getTaoError,
+  TaoError,
+  throwUserInputRejectionError,
+} from '../../compiler/compiler-src/@shared/TaoErrors'
+import { hci } from './hci-human-computer-interaction'
 
 export function taoCliMain() {
   const program = new Command()
 
   program.command('compile')
     .description('Compile a Tao file')
-    .argument('<path>', 'The file to compile')
-    .option('--code', 'Compile the given string of text, rather than a file')
+    .argument('[path]', 'The file to compile', (value) => path.resolve(value))
+    .requiredOption('--runtime-dir <path>', 'The runtime to compile the code to', (value) => path.resolve(value))
+    .option('--code <code>', 'Compile the given string of text, rather than a file')
     .option('--watch', 'Watch the file and recompile when it changes')
-    .option('--verbose', 'Verbose output')
-    .action(async (path, { watch, verbose, code }) => {
-      async function compileAndWrite() {
-        try {
-          if (verbose) {
-            Log.info('Compiling ...')
-          }
-          const result = await (
-            code
-              ? compile({ code: path })
-              : compile({ file: { path } })
-          )
-          Bun.write(__dirname + '/../../expo-runtime/app/_gen-tao-compiler/app-output.tsx', result.code)
-        } catch (error) {
-          if (verbose) {
-            Log.error('Error compiling file', error)
-          }
-          const message = (error as Error).stack || (error as Error).message || typeof error === 'string'
-            ? (error as string)
-            : 'Unknown error'
-
-          // message.replace(/</g, '&lt;').replace(/>/g, '&gt;')
-
-          Bun.write(__dirname + '/../../expo-runtime/app/_gen-tao-compiler/app-output.tsx', getErrorAppString(message))
+    .option('--verbose', 'Verbose output', false)
+    .action(async (path, { watch, verbose, code, runtimeDir }) => {
+      verbose = true
+      hci.setVerbose(verbose)
+      hci.wrapExecution(async () => {
+        async function compileAndWrite() {
+          hci.verboselyInform(`Compiling...`)
+          const outputPath = await TaoSDK_compile({ path, code, runtimeDir })
+          hci.inform(`Compiled to ${outputPath}`)
         }
-        console.log('Done Compiling')
-      }
-      await compileAndWrite()
-      if (watch) {
-        chokidar.watch(path).on('change', compileAndWrite)
-      }
+
+        if (watch) {
+          if (!path) {
+            throwUserInputRejectionError('Watch mode requires a file to be provided')
+          }
+          chokidar.watch(path).on('change', compileAndWrite)
+        }
+
+        await compileAndWrite()
+      })
     })
 
   program.parse(process.argv)
@@ -57,7 +55,90 @@ function getErrorAppString(message: string) {
     // Center view in parent
     return <RN.View style={{ backgroundColor: 'red', maxWidth: 400, flex: 1, justifyContent: 'center', alignItems: 'center' }}>
       <RN.Text>Error compiling file</RN.Text>
-      <RN.Text>\${message}</RN.Text>
+      <RN.Text>${message}</RN.Text>
     </RN.View>
   }`
+}
+
+type TaoSDK_compileOpts = {
+  path?: string | undefined
+  code?: string | undefined
+  runtimeDir: string
+  outputFileName?: string
+}
+type TaoSDK_compileResult = { outputPath: string; result?: { code: string }; error?: TaoError }
+export async function TaoSDK_compile(opts: TaoSDK_compileOpts): Promise<TaoSDK_compileResult> {
+  hci.debug(`TaoSDK_compile opts: ${JSON.stringify(opts, null, 2)}`)
+  if (!opts.path && !opts.code) {
+    throwUserInputRejectionError('Missing <path>')
+  } else if (opts.code && opts.path) {
+    throwUserInputRejectionError('Provide EITHER <path> or --code, but not both')
+  }
+
+  if (opts.code) {
+    opts.path = `/tmp/tao-cli-temp-${Date.now()}.tao`
+    writeFileSync(opts.path, opts.code)
+  }
+  Assert(opts.path, 'path is set')
+
+  const outputPath = await checkUserInputs(opts)
+
+  try {
+    const result = await compile({ file: opts.path })
+    await writeFile(outputPath, result.code)
+    return { outputPath, result }
+  } catch (error) {
+    const taoError = getTaoError(error, { 'context': 'TaoSDK_compile' })
+    await writeFile(outputPath, getErrorAppString(taoError.messageForEndUser))
+    return { outputPath, error: taoError }
+  } finally {
+    if (opts.code) {
+      unlinkSync(opts.path)
+    }
+  }
+}
+
+async function checkUserInputs(opts: TaoSDK_compileOpts) {
+  const runtimeDir = path.resolve(opts.runtimeDir)
+  if (!isDirectory(runtimeDir)) {
+    throwUserInputRejectionError(`Runtime path is not a directory: ${runtimeDir}`)
+  }
+  const packageJsonPath = path.resolve(runtimeDir, 'package.json')
+  if (!fileExists(packageJsonPath)) {
+    throwUserInputRejectionError(`Runtime path does not contain a package.json file: ${runtimeDir}`)
+  }
+  const packageJson = readJsonFile(packageJsonPath)
+  if (packageJson.name !== 'tao-expo-runtime') {
+    throwUserInputRejectionError(`Runtime path is not a tao runtime: ${runtimeDir}`)
+  }
+  if (packageJson.version !== '0.1.0-dev') {
+    throwUserInputRejectionError(`Runtime path is not expected version 0.1.0-dev: ${packageJson.version}`)
+  }
+
+  return path.resolve(runtimeDir, 'app/_gen-tao-compiler/app-output.tsx')
+}
+
+function isDirectory(path: string): boolean {
+  try {
+    return statSync(path).isDirectory()
+  } catch {
+    return false // does not exist or inaccessible
+  }
+}
+
+async function writeFile(targetPath: string, content: string) {
+  mkdirSync(path.dirname(targetPath), { recursive: true })
+  writeFileSync(targetPath, content)
+}
+
+function fileExists(path: string): boolean {
+  try {
+    return statSync(path).isFile()
+  } catch {
+    return false // does not exist or inaccessible
+  }
+}
+
+function readJsonFile(path: string): any {
+  return JSON.parse(readFileSync(path, 'utf8'))
 }
