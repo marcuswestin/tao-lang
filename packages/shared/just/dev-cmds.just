@@ -1,8 +1,9 @@
+import "./_shared-vars.just"
+
+[positional-arguments]
 _tao *ARGS:
     pushd packages/tao-cli && just build && popd
-    echo "\n> Run: ./.builds/tao-cli "$@"\n"
     ./.builds/tao-cli "$@"
-    echo
 
 _pre-commit:
     echo "\n> Run pre-commit checks...\n"
@@ -20,7 +21,7 @@ _build-all:
     cd packages/tao-cli && just build
     cd packages/expo-runtime && just build
     cd packages/ide-extension && just build
-    just _agent-gen-mise-tasks
+    just _agent-mise-tasks-gen
 
 x-fix-file-associations:
     brew install duti --quiet

@@ -1,6 +1,9 @@
+import { TaoSDK_compile } from '@/_gen-tao-lib/tao-cli-main'
 import { describe, test } from '@jest/globals'
 import { render } from '@testing-library/react-native'
-import { exec, spawn } from 'node:child_process'
+import { spawn } from 'node:child_process'
+import { copyFileSync, mkdirSync } from 'node:fs'
+import path from 'node:path'
 import { Text } from 'react-native'
 
 describe('runtime:', () => {
@@ -9,22 +12,45 @@ describe('runtime:', () => {
     await render(<MockTestView />).findByText('Hello Mock Test View')
   })
 
-  test('compile and run with cli', async () => {
+  test('compile and run with sdk', async () => {
     // First compile the app
-    const { code, needle } = getRandomUI()
-    await cmd('just', ['tao', 'compile', '--code', `'${code}'`])
+    const { code, needle, runtimeDir, targetPath } = makeNeedleApp()
 
-    // Then import the resulting app, and render it
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { default: CompiledTaoApp } = require('@/app/_gen-tao-compiler/app-output')
-    await render(<CompiledTaoApp />).findByText(needle)
+    const result = await TaoSDK_compile({ code, runtimeDir })
+    expect(result.error).toBeUndefined()
+    expect(result.outputPath).toBeDefined()
+    expect(result.result?.code).toContain(needle)
+
+    await checkNeedleInApp(needle, result.outputPath, targetPath)
+  })
+
+  test('compile and run with cli', async () => {
+    const { code, needle, runtimeDir, targetPath } = makeNeedleApp()
+
+    await _cmd('just', ['tao', 'compile', '--code', `'${code}'`, '--runtime-dir', runtimeDir])
+
+    // TODO: use the output path from the sdk compile
+    const hackHardCodedOutputPath = path.resolve(runtimeDir, `app/_gen-tao-compiler/app-output.tsx`)
+
+    await checkNeedleInApp(needle, hackHardCodedOutputPath, targetPath)
   })
 })
 
-function getRandomUI() {
+const targetDir = path.resolve(__dirname, '..', 'app/_gen-runtime-tests')
+
+async function checkNeedleInApp(needle: string, fromOutputPath: string, toTargetPath: string) {
+  mkdirSync(targetDir, { recursive: true })
+  copyFileSync(fromOutputPath, toTargetPath)
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { default: CompiledNeedleApp } = require(toTargetPath)
+  await render(<CompiledNeedleApp />).findByText(needle)
+}
+
+function makeNeedleApp() {
   const needle = Math.random().toString(36).substring(2, 15)
-  const code = `
-    app KitchenSink { ui RootView }
+  const runtimeDir = path.resolve(__dirname, '..')
+  const targetPath = path.resolve(runtimeDir, `app/_gen-runtime-tests/test-${needle}-app-output.tsx`)
+  const code = `app KitchenSink { ui RootView }
 
     view RootView { Text value "${needle}" {} }
 
@@ -32,19 +58,12 @@ function getRandomUI() {
         inject \`\`\`ts return <RN.Text>{props.value}</RN.Text> \`\`\`
     }
   `
-  return { code, needle }
+  return { code, needle, runtimeDir, targetPath }
 }
 
-async function cmd(cmd: string, args: string[]) {
-  await new Promise<void>((resolve, reject) => {
-    spawn(cmd, args, {
-      stdio: 'pipe',
-    }).on('close', (exitCode) => {
-      if (exitCode === 0) {
-        resolve()
-      } else {
-        reject(new Error(`Process exited with code ${exitCode}`))
-      }
-    })
+async function _cmd(cmd: string, args: string[]): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const p = spawn(cmd, args, { stdio: ['inherit', 'pipe', 'inherit'] })
+    p.on('exit', code => (code === 0 ? resolve(code) : reject(code)))
   })
 }

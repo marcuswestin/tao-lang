@@ -1,4 +1,4 @@
-import "./_vars.just"
+import "./_shared-vars.just"
 
 _print_help:
     echo "\nTo ended Tao Dev Env, run either of:\n"
@@ -30,11 +30,15 @@ _do_setup:
     just _configure_zsh
     just _install_deps
     just _install_ide_extensions
+    just _build_all
     just _print_setup_done
 
 _install_mise:
     @ echo "\tInstall mise..."
     @ curl -sS https://mise.run | MISE_VERSION=v2025.12.1 sh 2> /dev/null
+    @ just _trust_mise
+
+_trust_mise:
     @ {{ MISE_CMD }} trust --quiet
 
 _configure_mise:
@@ -57,6 +61,10 @@ _install_deps:
 _install_ide_extensions:
     @ echo "\tInstall IDE extensions..."
     @ jq -r '.recommendations[]' .vscode/extensions.json | xargs -L 1 cursor --force --install-extension 1> /dev/null
+
+_build_all:
+    @ echo "\tBuild all packages..."
+    just build-all
 
 _print_setup_done:
     @ echo "\n\t*** Done ***"

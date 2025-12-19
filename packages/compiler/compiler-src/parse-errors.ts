@@ -1,36 +1,6 @@
 import * as ChevrotainTypes from '@chevrotain/types'
 import * as Langium from 'langium'
 import * as VSCodeTypes from 'vscode-languageserver-types'
-import { BaseTaoError, TaoWrappedError } from './@shared/TaoErrors'
-
-// Parse Error types
-////////////////////
-
-export function isTaoParserError(error: unknown): error is TaoParserError {
-  return error instanceof TaoParserError
-}
-export function throwTaoParserError(errorReport: ErrorReport): never {
-  throw new TaoParserError(errorReport, 'There was an error parsing your code.')
-}
-
-export function isCaughtAndWrappedError(error: unknown): error is TaoWrappedError {
-  return error instanceof Error && '_isCaughtError' in error
-}
-export function throwAndWrapCaughtError(error: unknown, humanMessage: string): never {
-  throw new TaoWrappedError(humanMessage, error as Error)
-}
-
-// Error implementations
-////////////////////////
-
-class TaoParserError extends BaseTaoError {
-  constructor(
-    public readonly errorReport: ErrorReport,
-    public override readonly humanMessage: string,
-  ) {
-    super(humanMessage)
-  }
-}
 
 // Parser errors
 ////////////////
@@ -44,7 +14,7 @@ export type ErrorReport = {
   lexerErrors?: Chev_LexingError[]
   parserErrors?: Chev_ParserError[]
   diagnostics?: VSCode_Diagnostic[]
-  errorString?: string
+  humanErrorMessage?: string
 }
 
 // Error helpers
@@ -56,7 +26,9 @@ export function getDocumentErrors(document: Langium.LangiumDocument): ErrorRepor
   const diagnostics = document.diagnostics || []
   const errorStrings = getErrorStrings(lexerErrors, parserErrors, diagnostics)
   if (errorStrings.length > 0) {
-    return { lexerErrors, parserErrors, diagnostics, errorString: errorStrings.join('\n') }
+    // TODO: Make this more human-readable
+    const humanErrorMessage = errorStrings.join('\n')
+    return { lexerErrors, parserErrors, diagnostics, humanErrorMessage }
   }
   return undefined
 }

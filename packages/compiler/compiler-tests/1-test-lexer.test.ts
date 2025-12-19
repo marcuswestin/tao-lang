@@ -1,81 +1,67 @@
-import { TaoParser } from '@tao-compiler/parser'
-import { describe, expect, test } from './test-utils/test-harness'
-
-async function lex(code: string) {
-  const result = await TaoParser.parseString(code, { validate: 'lexing', suppressThrowOnError: true })
-  return result.errorReport?.lexerErrors ?? []
-}
-
-async function lexWithError(code: string, ...unexpectedCharacters: string[]) {
-  const lexErrors = await lex(code)
-  expect(lexErrors).toHaveLength(unexpectedCharacters.length)
-  lexErrors.forEach((error, i) => {
-    expect(error.message).toContain(`unexpected character: ->${unexpectedCharacters[i]}<- at offset: `)
-  })
-}
+import { describe, lexTokens, lexTokensWithErrors, test } from './test-utils/test-harness'
 
 describe('Lexer', () => {
   describe('valid tokens', () => {
     test('lexes identifiers', async () => {
-      expect(await lex(`_foo bar123 _under_score`)).toBeEmpty()
+      await lexTokens(`_foo bar123 _under_score`)
     })
 
     test('lexes double-quoted strings', async () => {
-      expect(await lex(`"hello world"`)).toBeEmpty()
+      await lexTokens(`"hello world"`)
     })
 
     test('lexes single-quoted strings', async () => {
-      expect(await lex(`'hello world'`)).toBeEmpty()
+      await lexTokens(`'hello world'`)
     })
 
     test('lexes strings with escapes', async () => {
-      expect(await lex(`"hello \\"world\\""`)).toBeEmpty()
+      await lexTokens(`"hello \\"world\\""`)
     })
 
     test('lexes numbers', async () => {
-      expect(await lex(`42 0 999`)).toBeEmpty()
+      await lexTokens(`42 0 999`)
     })
 
     test('ignores single-line comments', async () => {
-      expect(await lex(`// this is a comment`)).toBeEmpty()
+      await lexTokens(`// this is a comment`)
     })
 
     test('ignores multi-line comments', async () => {
-      expect(await lex(`/* multi\nline\ncomment */`)).toBeEmpty()
+      await lexTokens(`/* multi\nline\ncomment */`)
     })
 
     test('lexes ts code block', async () => {
-      expect(await lex('```ts\nconst x = 1\n```')).toBeEmpty()
+      await lexTokens('```ts\nconst x = 1\n```')
     })
   })
 
   describe('lexer errors', () => {
     test('rejects unknown character @', async () => {
-      await lexWithError(`@`, '@')
+      await lexTokensWithErrors(`@`, '@')
     })
 
     test('rejects unknown character #', async () => {
-      await lexWithError(`#`, '#')
+      await lexTokensWithErrors(`#`, '#')
     })
 
     test('rejects unknown character $', async () => {
-      await lexWithError(`$`, '$')
+      await lexTokensWithErrors(`$`, '$')
     })
 
     test('unclosed double-quoted string', async () => {
-      await lexWithError(`"hello`, '"')
+      await lexTokensWithErrors(`"hello`, '"')
     })
 
     test('unclosed single-quoted string', async () => {
-      await lexWithError(`'world`, "'")
+      await lexTokensWithErrors(`'world`, "'")
     })
 
     test('unclosed multi-line comment', async () => {
-      await lexWithError(`/* comment without end`, '/')
+      await lexTokensWithErrors(`/* comment without end`, '/')
     })
 
     test('unclosed ts code block', async () => {
-      await lexWithError('```ts\nconst x = 1', '`', '=')
+      await lexTokensWithErrors('```ts\nconst x = 1', '`', '=')
     })
   })
 })

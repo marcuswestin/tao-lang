@@ -1,14 +1,17 @@
-import "./_vars.just"
+import "./_shared-vars.just"
+import "./setups.just"
 
 # Formatting and linting
 ########################
+
+OXLINT_CMD := "oxlint --ignore-path .gitignore"
 
 _fmt:
     just _fmt_just
     cd packages/shared-tools && just sort-package-json-files 1> /dev/null 2>&1
     dprint fmt 1> /dev/null 2>&1
     {{ MISE_CMD }} fmt 1> /dev/null 2>&1
-    oxlint --fix 1> /dev/null 2>&1
+    {{ OXLINT_CMD }} --fix 1> /dev/null 2>&1
     just _fmt_newlines
 
 _fmt_just:
@@ -30,7 +33,7 @@ _fix:
 
 [no-quiet]
 _check:
-    oxlint
+    {{ OXLINT_CMD }}
     dprint check
     cd packages/compiler && tsc --noEmit --noUnusedLocals
     cd packages/tao-cli && tsc --noEmit --noUnusedLocals

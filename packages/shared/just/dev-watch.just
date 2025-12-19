@@ -1,13 +1,17 @@
-import "./_vars.just"
+import "./_shared-vars.just"
 
 _dev:
     #!{{ SHELL_INIT }}
     while true; do
         just _prefix-strip-parallel "_watch-" \
-            {{ DEV_WATCH_RECIPES }} \
+            {{ _DEV_WATCH_RECIPES }} \
             _steal_focus \
-            _die_on_r_or_q || break;
+            _r_reloead_q_quit || break;
     done
+
+[private]
+_DEV_WATCH_RECIPES := "_watch-grammar _watch-kitchen-sink-build _watch-runtime-reload \
+                       _watch-typecheck-extension _watch-esbuild-extension _watch-fmt-justfile"
 
 _watch-all-tests *PATTERNS:
     #!{{ SHELL_INIT }}
@@ -18,12 +22,9 @@ _watch-all-tests *PATTERNS:
             "compiler" "cd packages/compiler && bun test --watch --silent --reporter=dot {{ PATTERNS }}" \
             "tao-cli" "cd packages/tao-cli && bun test --watch --silent --reporter=dot {{ PATTERNS }}" \
             "extension" "cd packages/ide-extension && bun test --watch --silent --reporter=dot {{ PATTERNS }}" \
-            "runtime" "cd packages/expo-runtime && just test --watch --silent --reporter=dot {{ PATTERNS }}" \
-            "q Exit" "just _die_on_r_or_q" || break;
+            "runtime" "cd packages/expo-runtime && just watch-tests {{ PATTERNS }}" \
+            "q Exit" "just _r_reloead_q_quit" || break;
     done
-
-DEV_WATCH_RECIPES := "_watch-grammar _watch-kitchen-sink-build _watch-runtime-reload \
-                       _watch-typecheck-extension _watch-esbuild-extension _watch-fmt-justfile"
 
 _steal_focus:
     #!/bin/zsh
@@ -39,7 +40,7 @@ _steal_focus:
     done
     sleep 99999999
 
-_die_on_r_or_q:
+_r_reloead_q_quit:
     #!{{ SHELL_INIT }}
     REPLY=""
     echo "Press 'r' to restart or 'q' to exit..."
@@ -52,7 +53,9 @@ _watch-grammar:
 
 _watch-kitchen-sink-build APP_PATH="./Apps/Kitchen Sink/Kitchen Sink.tao":
     cd packages/tao-cli && bun run  --watch --no-clear-screen \
-        ./tao-cli.ts compile "`pwd`/../../{{ APP_PATH }}" --verbose --watch \
+        ./tao-cli.ts compile "`pwd`/../../{{ APP_PATH }}" \
+            --runtime-dir "../expo-runtime" \
+            --verbose --watch
 
 _watch-runtime-reload:
     cd packages/expo-runtime \

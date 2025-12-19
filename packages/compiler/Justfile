@@ -1,12 +1,17 @@
+set unstable := true
 set fallback := true
-set quiet := true
+# set quiet := true
 
 _pretest:
     just gen
 
+test *PATTERNS: _pretest
+    bun test --reporter=dot {{ PATTERNS }}
+
 build:
     bun install
     just gen
+    tsc
 
 gen:
     bunx langium generate --mode=development

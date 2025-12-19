@@ -85,7 +85,6 @@ function wrapArray<T>(array: unknown[]): WrappedArray<T> {
           expect(target.length > 0, `Array is empty, cannot get .last`).toBe(true)
           return wrapElement(target[target.length - 1])
         default: {
-          console.log('prop', prop)
           // Wrap numeric index access lazily
           const index = typeof prop === 'string' ? Number(prop) : NaN
           if (!Number.isNaN(index) && Number.isInteger(index)) {
