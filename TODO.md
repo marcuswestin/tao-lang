@@ -6,7 +6,20 @@ Tao Lang TODOs.
 
 Next tasks, in order:
 
-#### Start compiling and running basic app
+#### Parser
+
+- [ ] Formatter
+- [ ] Flesh out Validation
+- [ ] Scoping
+- [ ] Standard Library
+- [ ] Type System
+
+#### Language
+
+- [ ] Let
+- [ ] State
+
+#### Improve Dev Environment
 
 First:
 

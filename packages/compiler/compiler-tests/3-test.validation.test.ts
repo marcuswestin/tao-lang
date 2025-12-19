@@ -4,7 +4,7 @@ import { describe, expect, parseTaoFully, test } from './test-utils/test-harness
 describe('parse:', () => {
   test('stub test', () => expect(true).toBe(true))
 
-  test('asd', async () => {
+  test('needle test', async () => {
     const needle = Math.random().toString(36).substring(2, 15)
     const code = `
         app KitchenSink { ui RootView }

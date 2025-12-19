@@ -2,9 +2,13 @@ grammar TaoLang
 
 entry TaoFile:
     topLevelStatements += (
-        Declaration
-        | Injection
+        BaseStatement
     )*;
+
+BaseStatement:
+    ( Declaration
+    | Injection
+    );
 
 Declaration:
     ( AppDeclaration

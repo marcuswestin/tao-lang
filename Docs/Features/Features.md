@@ -2,6 +2,20 @@
 
 These are the main features that define what Tao is, and why it exists.
 
+## DX Developer Experience
+
+### Formatting, Linting, and Fixing
+
+There is _one canonical way_ for any file to be formatted.
+
+`tao fmt`
+
+### Self-documenting Code
+
+Generate documentation for the codebase, along with LLM summaries of what the code does.
+
+`tao document`
+
 ## Misc
 
 ### Errors

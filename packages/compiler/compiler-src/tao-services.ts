@@ -20,6 +20,7 @@ export function createTaoServices(context: LSP.DefaultSharedModuleContext): TaoS
     LSP.createDefaultSharedModule(context),
     TaoLangGeneratedSharedModule,
   )
+  // TODO: Add formatter
   const TaoModule = langium.inject(
     LSP.createDefaultModule({ shared: sharedTaoModule }),
     TaoLangGeneratedModule,

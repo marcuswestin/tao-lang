@@ -6,7 +6,8 @@
     "rootDir": ".",
     "baseUrl": ".",
     "paths": {
-      "@tao-compiler/*": ["compiler-src/*"]
+      "@tao-compiler/*": ["compiler-src/*"],
+      "@tao-formatter/*": ["formatter/formatter-src/*"]
     },
 
     "emitDeclarationOnly": true,
@@ -15,6 +16,8 @@
   "include": [
     "tao-compiler.ts",
     "compiler-src/**/*",
-    "compiler-tests/**/*"
+    "compiler-tests/**/*",
+    "formatter-src/**/*",
+    "formatter-tests/**/*"
   ]
 }

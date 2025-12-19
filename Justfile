@@ -19,7 +19,11 @@ tao *ARGS:
 # Run tests for whatever directory we're in
 [no-cd]
 test *PATTERNS:
-    just test-all {{ PATTERNS }}
+    just test-fast {{ PATTERNS }}
+
+# Run all tests
+test-fast *PATTERNS:
+    bun test {{ PATTERNS }}
 
 # Run all tests
 test-all *PATTERNS:
