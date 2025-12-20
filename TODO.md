@@ -23,6 +23,7 @@ Next tasks, in order:
 
 First:
 
+- [ ] Create pre-commit hook to check for unstaged changes and ask to stash them before continuing
 - [ ] Commit!
   - [x] There are two almost idential justfiles in ide-extension...?
   - [ ] Fix the validator testing

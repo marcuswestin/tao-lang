@@ -14,6 +14,10 @@ just <command recipe>
 
 **NEVER merge changes into main branch without asking for permission first.**
 
+## Agent Worktrees
+
+When a worktree is created, a git hook is automatically run to setup the new worktree dev environment.
+
 ## Tooling
 
 - **Bun** over Node.js for running scripts, tests, and builds

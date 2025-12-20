@@ -8,6 +8,10 @@ import "./packages/shared/just/all-imports.just"
 help:
     just _print_help
 
+# Setup dev env
+setup-dev-env:
+    just _setup-dev-env
+
 # Build and run all components
 dev:
     just _dev
