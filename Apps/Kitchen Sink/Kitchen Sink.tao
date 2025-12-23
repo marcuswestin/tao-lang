@@ -1,4 +1,3 @@
-
 app KitchenSink {
     // ui KitchenSink
     // ui Text
@@ -6,8 +5,8 @@ app KitchenSink {
 }
 
 view RootView {
-    Text value "Standing on the edge of the worlds!" {}
-    MyView {}
+    Text value "Standing on the edge of the worlds!" { }
+    MyView { }
 }
 
 view Text value string {

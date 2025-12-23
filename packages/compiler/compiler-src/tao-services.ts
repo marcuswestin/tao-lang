@@ -4,10 +4,11 @@ import * as LSP from 'langium/lsp'
 import { TaoLangGeneratedModule, TaoLangGeneratedSharedModule } from '@tao-compiler/_gen-tao-parser/module'
 
 import { validator } from '@tao-compiler/validation/tao-lang-validator.js'
+import TaoFormatter from '../formatter-src/TaoFormatter'
 
 export type TaoServices = LSP.LangiumServices
 
-type TaoServicesResult = {
+export type TaoServicesResult = {
   shared: LSP.LangiumSharedServices
   Tao: LSP.LangiumServices
   metaData: langium.LanguageMetaData
@@ -20,11 +21,13 @@ export function createTaoServices(context: LSP.DefaultSharedModuleContext): TaoS
     LSP.createDefaultSharedModule(context),
     TaoLangGeneratedSharedModule,
   )
-  // TODO: Add formatter
   const TaoModule = langium.inject(
     LSP.createDefaultModule({ shared: sharedTaoModule }),
     TaoLangGeneratedModule,
     {
+      lsp: {
+        Formatter: () => new TaoFormatter(),
+      },
       validation: {
         TaoLangValidator: () => validator,
       },

@@ -17,12 +17,16 @@
     "source.addMissingImports": "explicit"
   },
 
-  // DPrint
+  // Code Formatting: DPrint, by default.
   "editor.formatOnSave": true,
   "editor.formatOnPaste": true,
   "editor.formatOnType": true,
   "editor.defaultFormatter": "dprint.dprint",
   "dprint.path": ".config/MISE_DIR/installs/npm-dprint/latest/bin/dprint",
+  // Code Formatting: Tao Lang's extension, for .tao files.
+  "[tao]": {
+    "editor.defaultFormatter": "tao.tao-lang-vscode-extension"
+  },
 
   // Langium and App Lang configs
   "langium.config": "packages/compiler/langium-config.json"

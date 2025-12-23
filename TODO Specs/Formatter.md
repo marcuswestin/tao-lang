@@ -526,3 +526,10 @@ grouping consecutive comments
 comment-aware alignment
 
 or formatter behavior driven by semantic nodes
+
+#### Follow-up fixes:
+
+Great. Let's continue with:
+
+- [ ] Write a bunch of _super small_ tests for the formatter.
+- [ ] Ensure they pass.
