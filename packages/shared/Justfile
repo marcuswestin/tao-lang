@@ -4,3 +4,7 @@ set fallback := true
 
 build:
     bun install
+    just _agent-mise-tasks-gen
+
+sort-package-json-files:
+    bunx sort-package-json ../../packages/*/package.json

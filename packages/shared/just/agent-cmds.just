@@ -23,7 +23,7 @@ _agent-lint *args:
 
 # Generate mise-gen-just-commands.toml from this file
 _agent-mise-tasks-gen *args:
-    just mise-tasks-gen {{ args }}
+    just q-dev gen-mise-tasks {{ args }}
 
 # Execute git commands:
 _agent-git *args:

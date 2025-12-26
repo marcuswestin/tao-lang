@@ -40,7 +40,6 @@ test-all *PATTERNS:
 test-formatter *PATTERNS:
     bun test --watch --reporter=dot --test-name-pattern "{{ PATTERNS }}" packages/compiler/formatter-tests
 
-
 # Watch all tests
 watch-tests *PATTERNS:
     # If run in any package without watch-tests already defined, watch all tests
@@ -83,13 +82,9 @@ mcp-run:
 mcp-halt:
     screen -X -S mise-mcp quit
 
-# Generate mise-gen-just-commands.toml from this file
-mise-tasks-gen:
-    cd packages/shared-tools && bun tools-src/gen-mise-tasks.ts
-
 # Sub-project commands
-
 # #####################
+
 compiler *ARGS:
     cd packages/compiler && just {{ ARGS }}
 
@@ -102,9 +97,6 @@ ide-extension *ARGS:
 shared *ARGS:
     cd packages/shared && just {{ ARGS }}
 
-shared-tools *ARGS:
-    cd packages/shared-tools && just {{ ARGS }}
-
 tao-cli *ARGS:
     cd packages/tao-cli && just {{ ARGS }}
 
@@ -115,3 +107,12 @@ q-dev *ARGS:
 [no-cd]
 bun *ARGS:
     bun {{ ARGS }}
+
+# Additional commands
+#####################
+
+install-mise-deps:
+    just _install-mise-deps
+
+update-deps:
+    just _update-deps

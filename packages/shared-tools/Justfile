@@ -1,9 +1,0 @@
-set unstable := true
-set fallback := true
-# set quiet := true
-
-sort-package-json-files:
-    bunx sort-package-json ../../packages/*/package.json
-
-build:
-    bun install

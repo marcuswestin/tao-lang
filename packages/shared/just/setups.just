@@ -10,10 +10,10 @@ _print_help:
     just --list --unsorted --color=always | grep -v "_"
     echo
 
-install-mise-deps:
+_install-mise-deps:
     mise install
 
-update-deps:
+_update-deps:
     mise self-update --yes
     mise install
 

@@ -76,7 +76,7 @@ function reindentInjectionBlocks(code: string, tabSize: number): string {
 
   return code.replace(
     injectPattern,
-    (match, injectIndent, openMarker, content, closeIndent, closeMarker) => {
+    (_match, injectIndent, openMarker, content, _closeIndent) => {
       const baseIndent = injectIndent as string
       const contentIndent = baseIndent + ' '.repeat(tabSize)
 

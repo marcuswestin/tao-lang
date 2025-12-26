@@ -15,7 +15,6 @@ _pre-commit:
 
 _build-all:
     just install-mise-deps
-    cd packages/shared-tools && just build
     cd packages/shared && just build
     cd packages/compiler && just build
     cd packages/tao-cli && just build

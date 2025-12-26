@@ -19,7 +19,7 @@ const FORMAT_INJECTION_BLOCKS = true
  */
 export default class TaoFormatter extends AbstractFormatter {
   // Override formatDocument to apply injection block re-indentation after standard formatting
-  async formatDocument(
+  override async formatDocument(
     document: LangiumDocument,
     params: DocumentFormattingParams,
   ): Promise<TextEdit[]> {

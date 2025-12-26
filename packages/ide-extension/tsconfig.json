@@ -7,6 +7,9 @@
     "extension-src/**/*.ts",
     "extension-tests/**/*.ts"
   ],
+  "exclude": [
+    "node_modules"
+  ],
   "compilerOptions": {
     "noEmit": true,
 

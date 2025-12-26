@@ -32,7 +32,7 @@ packages/compiler/       # Langium-based parser/compiler for .tao files
 packages/ide-extension/  # VSCode IDE extension for Tao Lang
 packages/tao-cli/        # CLI tool built with Bun
 packages/expo-runtime/   # React Native/Expo runtime for Tao apps
-packages/shared-tools/   # Toosl & scripts for internal use
+packages/shared/         # Tools & scripts for internal use
 Apps/                    # Example .tao applications (e.g., Tao Studio)
 Docs/                    # Language design documentation
 .config/                 # Configuration files for the repo

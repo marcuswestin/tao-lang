@@ -17,7 +17,6 @@ _watch-all-tests *PATTERNS:
     #!{{ SHELL_INIT }}
     while true; do
         just concurrently-named \
-            "tools" "cd packages/shared-tools && bun test --watch --silent --reporter=dot {{ PATTERNS }}" \
             "shared" "cd packages/shared && bun test --watch --silent --reporter=dot {{ PATTERNS }}" \
             "compiler" "cd packages/compiler && bun test --watch --silent --reporter=dot {{ PATTERNS }}" \
             "tao-cli" "cd packages/tao-cli && bun test --watch --silent --reporter=dot {{ PATTERNS }}" \

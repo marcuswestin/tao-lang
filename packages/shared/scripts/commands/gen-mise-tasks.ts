@@ -1,8 +1,6 @@
-#!/usr/bin/env bun
 /**
  * Auto-generates mise tasks from Justfile recipes.
- * Run with: bun packages/shared-tools/tools-src/gen-mise-tasks.ts
- * Or via: just _agent-mise-tasks-gen
+ * Executed by `just _agent-mise-tasks-gen`
  */
 
 const OUTPUT_FILE = '.config/mise-gen-just-commands.toml'
@@ -18,7 +16,7 @@ interface JustDump {
   recipes: Record<string, JustRecipe>
 }
 
-async function main() {
+export async function genMiseTasks() {
   // Get Justfile recipes as JSON (run from project root)
   const cmd = `just --dump --dump-format json --justfile packages/shared/just/agent-cmds.just`
   const proc = Bun.spawn(cmd.split(' '), {
@@ -60,5 +58,3 @@ async function main() {
   await Bun.write(outputPath, lines.join('\n'))
   console.log(`Generated ${outputPath} with ${recipes.length} tasks`)
 }
-
-main()

@@ -7,7 +7,7 @@ Tao Lang TODOs.
 Next tasks, in order:
 
 - [x] Fix just check
-- [ ] Merge shared and shared-tools
+- [x] Merge shared and shared-tools
 
 #### Parser
 
