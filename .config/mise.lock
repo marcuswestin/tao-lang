@@ -13,6 +13,10 @@ backend = "core:bun"
 "platforms.windows-x64" = { checksum = "sha256:2a9c0a9e6ad77d0c31fd8fb1f596b61afa7f2f2f580baad597f17e7a0dbad960", url = "https://github.com/oven-sh/bun/releases/download/bun-v1.3.4/bun-windows-x64.zip"}
 "platforms.windows-x64-baseline" = { checksum = "sha256:4e1d253078173b84aea2b1501ef7e1d4b9eb5a44d86e62eb9ee6219a95e0d210", url = "https://github.com/oven-sh/bun/releases/download/bun-v1.3.4/bun-windows-x64-baseline.zip"}
 
+[[tools.jq]]
+version = "1.8.1"
+backend = "aqua:jqlang/jq"
+
 [[tools.just]]
 version = "1.44.1"
 backend = "aqua:casey/just"
@@ -51,6 +55,18 @@ backend = "npm:dprint"
 version = "1.32.0"
 backend = "npm:oxlint"
 
+[[tools."npm:ts-autofix"]]
+version = "1.0.0"
+backend = "npm:ts-autofix"
+
 [[tools."npm:tsc"]]
 version = "2.0.4"
 backend = "npm:tsc"
+
+[[tools."npm:typescript"]]
+version = "5.9.3"
+backend = "npm:typescript"
+
+[[tools.watchexec]]
+version = "2.3.2"
+backend = "aqua:watchexec/watchexec"

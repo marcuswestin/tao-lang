@@ -1,0 +1,11 @@
+view KnifeBlock {
+    Text value "Knife Block"
+}
+
+view RootView {
+    KnifeBlock {}
+}
+
+view RootView {
+    KnifeBlock {}
+}

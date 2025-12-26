@@ -1,0 +1,36 @@
+app MyApp {
+    ui AppScreen
+}
+
+action Alert Message string {
+    inject ```ts alert(ALRuntimeScope.getParameterValue('Message')) ```
+}
+
+view AppScreen {
+    Button title "Alert" {
+        on press with Message string do {
+            do Alert Message
+        }
+        on press -> Message string {
+            do Alert Message
+        }
+    }
+}
+
+view Button title string {
+    does press
+
+    inject ```ts
+        return ALRuntime.ui.renderView('Button', RN.Button, {
+            RNProps: {
+                title: ALRuntimeScope.getParameterValue('title'),
+                onPress() {
+                    const actionArguments = {
+                        Message: ALRuntime.Literal('Hello World')
+                    }
+                    ALRuntimeScope.notifyDo('press', { actionArguments })
+                }
+            }
+        })
+    ```
+}

@@ -1,21 +1,17 @@
+// use tao/ui Col, Row, Text
+
 app KitchenSink {
-    // ui KitchenSink
-    // ui Text
     ui RootView
 }
 
 view RootView {
-    Text value "Standing on the edge of the worlds!" { }
     MyView { }
 }
 
-view Text value string {
-    inject ```ts
-        return <RN.Text>{props.value}</RN.Text>
-    ```
-}
-
 view MyView {
-    // KitchenSink value "Hello World"
-    Text value "wooos" {}
+    // Col {
+    //     Row {
+    Text { }
+    //     }
+    // }
 }

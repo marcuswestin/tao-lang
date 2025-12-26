@@ -3,9 +3,11 @@
   "compilerOptions": {
     "strict": true,
     "paths": {
-      "@/*": [
-        "./*"
-      ]
+      "@/*": ["./*"],
+      "@shared/*": ["../shared/shared-src/*"],
+      "@tao-compiler/*": ["../compiler/compiler-src/*"],
+      "@tao-formatter/*": ["../compiler/formatter/formatter-src/*"],
+      "@tao-cli/*": ["../tao-cli/cli-src/*"]
     }
   },
   "include": [

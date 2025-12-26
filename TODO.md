@@ -8,12 +8,12 @@ Next tasks, in order:
 
 - [x] Fix just check
 - [x] Merge shared and shared-tools
+- [x] Formatter
+- [ ] Scoping
 
 #### Parser
 
-- [ ] Formatter
 - [ ] Flesh out Validation
-- [ ] Scoping
 - [ ] Standard Library
 - [ ] Type System
 
@@ -52,6 +52,13 @@ First:
 - [ ] Create Validation testing helper
 - [ ] Create test watch runner for all test suites
 - [ ] Split up Justfile into smaller files
+
+- Check other LLM editor envs
+  - [ ] Try google antigravity
+  - [ ] Try Gemini code assist
+  - [ ] Try gemini cli
+  - [ ] Try Claude code direct
+  - [ ] Try Codex code direct
 
 Then:
 

@@ -46,11 +46,12 @@ async function parseFile(filePath: string, opts: ParseOptions = {}): Promise<Par
   // const uri = Langium.URI.parse(filePath, STRICT_URIs)
   if (uri.scheme !== 'file') {
     const ioError = new Error(`Unsupported scheme: ${uri.scheme}`)
-    return createErrorResult(opts, { ioError })
+    const humanErrorMessage = `Unsupported scheme: ${uri.scheme}`
+    return createErrorResult(opts, { ioError, humanErrorMessage })
   }
   if (!fileExists(uri.path)) {
-    const message = `Missing file: ${filePath}. No file at ${uri.fsPath}`
-    return { errorReport: { ioError: new Error(message) } }
+    const humanErrorMessage = `Missing file: ${filePath}. No file at ${uri.fsPath}`
+    return { errorReport: { ioError: new Error(humanErrorMessage), humanErrorMessage } }
   }
   return await internalParseTaoCode(uri, opts, null)
 }
@@ -87,7 +88,7 @@ async function internalParseTaoCode(
   Log.warn('TODO: ADD Standard Library and Document Imports')
 
   // Why is this shared, vs Tao.shared?
-  const buildOptions = { validation: getValidationOptions(opts) }
+  const buildOptions = { validation: getValidationOptions(opts), eagerLinking: true }
   await shared.workspace.DocumentBuilder.build([document], buildOptions)
   const errorReport = getDocumentErrors(document)
   return { taoFileAST: document.parseResult.value, document, errorReport }
@@ -110,7 +111,7 @@ function getValidationOptions(opts: ParseOptions): Langium.ValidationOptions | b
     case 'none':
       return false
     case 'all':
-      return { categories }
+      return true
     case 'lexing':
       return { categories, stopAfterLexingErrors: true }
     case 'parsing':

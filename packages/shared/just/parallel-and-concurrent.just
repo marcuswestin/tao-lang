@@ -3,7 +3,7 @@ import "./_shared-vars.just"
 CONCURRENTLY_COLORS := '--prefix-colors "#4FC3F7,#81C784,#FFD54F,#FF8A65,#BA68C8,#4DD0E1,#F06292,#AED581,#7986CB,#FFB74D"'
 CONCURRENTLY_PROPOGATE_FIRST_EXIT_STATUS := "--success first"
 CONCURRENTLY_EXIT_ALL_TOGETHER := "--kill-others --kill-others-on-fail"
-CONCURRENTLY_CMD := "./packages/shared-tools/node_modules/.bin/concurrently"
+CONCURRENTLY_CMD := "./packages/shared/node_modules/.bin/concurrently"
 CONCURRENTLY_RUN_AND_STOP_ALL_CMD := f"\
     {{CONCURRENTLY_CMD}} \
     {{CONCURRENTLY_COLORS}} \

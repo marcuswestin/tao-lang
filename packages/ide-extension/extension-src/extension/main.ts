@@ -18,6 +18,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       info: channel.info,
       warn: channel.warn,
       error: channel.trace,
+      taoError(error, ...args) {
+        channel.error(error.getLogMessage(), ...args)
+      },
       trace: channel.trace,
       success: channel.info,
       instruct: channel.info,

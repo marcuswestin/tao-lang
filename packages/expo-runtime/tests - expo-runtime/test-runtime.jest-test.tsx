@@ -9,15 +9,15 @@ import { Text } from 'react-native'
 describe('runtime:', () => {
   test('renders <MockTestView />', async () => {
     const MockTestView = () => <Text>Hello Mock Test View</Text>
-    await render(<MockTestView />).findByText('Hello Mock Test View')
+    const res = await render(<MockTestView />).findByText('Hello Mock Test View')
+    expect(res).toBeDefined()
   })
 
   test('compile and run with sdk', async () => {
-    // First compile the app
     const { code, needle, runtimeDir, targetPath } = makeNeedleApp()
 
     const result = await TaoSDK_compile({ code, runtimeDir })
-    expect(result.error).toBeUndefined()
+    expect(result.result.errorReport).toBeUndefined()
     expect(result.outputPath).toBeDefined()
     expect(result.result?.code).toContain(needle)
 
@@ -27,8 +27,8 @@ describe('runtime:', () => {
   test('compile and run with cli', async () => {
     const { code, needle, runtimeDir, targetPath } = makeNeedleApp()
 
-    await _cmd('just', ['tao', 'compile', '--code', `'${code}'`, '--runtime-dir', runtimeDir])
-
+    const result = await _cmd('just', ['tao', 'compile', '--code', `'${code}'`, '--runtime-dir', runtimeDir])
+    expect(result).toBe(0)
     // TODO: use the output path from the sdk compile
     const hackHardCodedOutputPath = path.resolve(runtimeDir, `app/_gen-tao-compiler/app-output.tsx`)
 
@@ -52,8 +52,10 @@ function makeNeedleApp() {
   const targetPath = path.resolve(runtimeDir, `app/_gen-runtime-tests/test-${needle}-app-output.tsx`)
   const code = `app KitchenSink { ui RootView }
 
-    view RootView { Text value "${needle}" {} }
-
+    view RootView {
+      Text value "${needle}" {}
+    }
+    
     view Text value string {
         inject \`\`\`ts return <RN.Text>{props.value}</RN.Text> \`\`\`
     }
@@ -63,7 +65,7 @@ function makeNeedleApp() {
 
 async function _cmd(cmd: string, args: string[]): Promise<number> {
   return new Promise((resolve, reject) => {
-    const p = spawn(cmd, args, { stdio: ['inherit', 'pipe', 'inherit'] })
+    const p = spawn(cmd, args, { stdio: ['inherit', 'inherit', 'inherit'] })
     p.on('exit', code => (code === 0 ? resolve(code) : reject(code)))
   })
 }

@@ -1,11 +1,11 @@
 import { Command } from '@commander-js/extra-typings'
-import { compile } from '@tao-compiler'
+import { compileTao } from '@tao-compiler'
 import chokidar from 'chokidar'
 import { mkdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
+import { Log } from '../../compiler/compiler-src/@shared/Log'
 import {
   Assert,
-  getTaoError,
   TaoError,
   throwUserInputRejectionError,
 } from '../../compiler/compiler-src/@shared/TaoErrors'
@@ -45,21 +45,6 @@ export function taoCliMain() {
   program.parse(process.argv)
 }
 
-function getErrorAppString(message: string) {
-  return `
-  import * as RN from 'react-native'
-
-  const message = \`${message}\`.replace('\`', '\\\`')
-
-  export default function CompiledTaoApp() {
-    // Center view in parent
-    return <RN.View style={{ backgroundColor: 'red', maxWidth: 400, flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <RN.Text>Error compiling file</RN.Text>
-      <RN.Text>${message}</RN.Text>
-    </RN.View>
-  }`
-}
-
 type TaoSDK_compileOpts = {
   path?: string | undefined
   code?: string | undefined
@@ -68,7 +53,7 @@ type TaoSDK_compileOpts = {
 }
 type TaoSDK_compileResult = { outputPath: string; result?: { code: string }; error?: TaoError }
 export async function TaoSDK_compile(opts: TaoSDK_compileOpts): Promise<TaoSDK_compileResult> {
-  hci.debug(`TaoSDK_compile opts: ${JSON.stringify(opts, null, 2)}`)
+  Log.debug(`TaoSDK_compile opts: ${JSON.stringify(opts, null, 2)}`)
   if (!opts.path && !opts.code) {
     throwUserInputRejectionError('Missing <path>')
   } else if (opts.code && opts.path) {
@@ -81,16 +66,14 @@ export async function TaoSDK_compile(opts: TaoSDK_compileOpts): Promise<TaoSDK_c
   }
   Assert(opts.path, 'path is set')
 
-  const outputPath = await checkUserInputs(opts)
-
   try {
-    const result = await compile({ file: opts.path })
+    const outputPath = await checkUserInputs(opts)
+    const result = await compileTao({ file: opts.path })
     await writeFile(outputPath, result.code)
+    if (result.errorReport) {
+      throwUserInputRejectionError(result.errorReport.humanErrorMessage)
+    }
     return { outputPath, result }
-  } catch (error) {
-    const taoError = getTaoError(error, { 'context': 'TaoSDK_compile' })
-    await writeFile(outputPath, getErrorAppString(taoError.messageForEndUser))
-    return { outputPath, error: taoError }
   } finally {
     if (opts.code) {
       unlinkSync(opts.path)

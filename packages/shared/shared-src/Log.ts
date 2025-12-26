@@ -1,3 +1,5 @@
+import { TaoError } from './TaoErrors'
+
 type Transport = {
   log: (...args: unknown[]) => void
   wrap: (indent: string, level: string, label: string, fnName: string) => void
@@ -5,6 +7,7 @@ type Transport = {
   info: (message: string, ...args: unknown[]) => void
   warn: (message: string, ...args: unknown[]) => void
   error: (message: string, ...args: unknown[]) => void
+  taoError: (error: TaoError, ...args: unknown[]) => void
   trace: (message: string, ...args: unknown[]) => void
   success: (message: string) => void
   instruct: (message: string) => void
@@ -18,17 +21,18 @@ let transport: Transport = {
   info: console.info,
   warn: console.warn,
   error: console.error,
+  taoError: console.error,
   trace: console.trace,
-  success: console.info,
+  success: (message) => console.info(Bun.inspect(message, { colors: true })),
   instruct: console.info,
   reject: console.error,
 }
 
 // Silence the console
-Object.keys(transport).forEach(f => transport[f as keyof Transport] = () => {})
+// Object.keys(transport).forEach(f => transport[f as keyof Transport] = () => {})
 
 export function setLogTransport(t: Transport) {
-  transport = t
+  // transport = t
 }
 
 let wrapIndent = 0
@@ -57,6 +61,9 @@ function warn(message: string, ...args: unknown[]) {
 function error(message: string, ...args: unknown[]) {
   const mappedArgs = Array.from(args).map(arg => arg instanceof Error ? arg.stack : arg)
   transport.error(message, ...mappedArgs)
+}
+function taoError(error: TaoError, ...args: unknown[]) {
+  transport.taoError(error, ...args)
 }
 function trace(message: string, ...args: unknown[]) {
   const mappedArgs = Array.from(args).map(arg => arg instanceof Error ? arg.stack : arg)
@@ -97,6 +104,7 @@ export const Log = Object.assign(
     info,
     warn,
     error,
+    taoError,
     trace,
     success,
     instruct,

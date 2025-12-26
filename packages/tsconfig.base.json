@@ -17,7 +17,15 @@
     "noImplicitReturns": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noPropertyAccessFromIndexSignature": true
+    "noPropertyAccessFromIndexSignature": true,
+
+    "rootDir": ".",
+    "paths": {
+      // Each package imports this, and sets baseUrl to "." -- from there, these paths are correct.
+      "@tao-compiler/*": ["../compiler/compiler-src/*"],
+      "@tao-formatter/*": ["../compiler/formatter/formatter-src/*"],
+      "@shared/*": ["../shared/shared-src/*"]
+    }
   },
   "include": [
     "**/src/**/*",

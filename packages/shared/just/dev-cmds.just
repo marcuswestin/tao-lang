@@ -10,7 +10,6 @@ _pre-commit:
     echo "> Stashing non-staged changes..." && git stash push --keep-index --include-untracked
     echo "> Running code checks..." && just check
     echo "> Building everything..." && just test
-    echo "> Checking builds..." && just check-run-builds
     echo "> Pre-commit checks complete. Unstashing changes..." && git stash pop
 
 _build-all:

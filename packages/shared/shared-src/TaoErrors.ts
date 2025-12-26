@@ -77,7 +77,7 @@ export function isTaoError(error: unknown): error is TaoError {
   return error instanceof BaseTaoError
 }
 
-export function getTaoError(error: TaoError | unknown, logInfo?: Record<string, unknown>): TaoError {
+export function getTaoError(error: TaoError | Error | unknown, logInfo?: Record<string, unknown>): TaoError {
   if (isTaoError(error)) {
     return error
   }
@@ -167,7 +167,7 @@ class UnexpectedBehaviorError extends BaseTaoError {
 
     // Exclude this constructor from the stack so traces start at the call site.
     // We do this because constructor frames add noise without diagnostic value.
-    Error.captureStackTrace?.(this, UnexpectedBehaviorError)
+    // Error.captureStackTrace.(this, UnexpectedBehaviorError)
   }
 
   private static getCauseErrorAndLogInfo(

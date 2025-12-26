@@ -3,6 +3,8 @@
  * Executed by `just _agent-mise-tasks-gen`
  */
 
+import { Log } from '@shared/Log'
+
 const OUTPUT_FILE = '.config/mise-gen-just-commands.toml'
 
 interface JustRecipe {
@@ -56,5 +58,5 @@ export async function genMiseTasks() {
   }
 
   await Bun.write(outputPath, lines.join('\n'))
-  console.log(`Generated ${outputPath} with ${recipes.length} tasks`)
+  Log(`Generated ${outputPath} with ${recipes.length} tasks`)
 }

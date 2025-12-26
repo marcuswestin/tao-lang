@@ -14,7 +14,7 @@ export type ErrorReport = {
   lexerErrors?: Chev_LexingError[]
   parserErrors?: Chev_ParserError[]
   diagnostics?: VSCode_Diagnostic[]
-  humanErrorMessage?: string
+  humanErrorMessage: string
 }
 
 // Error helpers

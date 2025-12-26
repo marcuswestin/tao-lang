@@ -8,6 +8,10 @@ build:
     # It's a hack, and I'd like to make it cleaner.
     just tao-cli build-lib {{ justfile_directory() }}/_gen-tao-lib
 
+watch:
+    just _install_deps
+    just tao-cli watch-lib {{ justfile_directory() }}/_gen-tao-lib
+
 release-prep: build test
     npx expo prebuild
 
@@ -15,7 +19,7 @@ run: _install_deps
     bunx expo start --web --ios
 
 JEST_ARGS := "--detectOpenHandles"
-JEST_WATCH_ARGS := JEST_ARGS + " --watch --silent --reporter=dot  --watchPathIgnorePatterns='.'"
+JEST_WATCH_ARGS := JEST_ARGS + " --watch --silent --reporter=dot"
 
 [no-quiet]
 test *FLAGS_AND_PATTERNS: build

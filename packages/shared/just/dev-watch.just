@@ -58,7 +58,8 @@ _watch-kitchen-sink-build APP_PATH="./Apps/Kitchen Sink/Kitchen Sink.tao":
 
 _watch-runtime-reload:
     cd packages/expo-runtime \
-        && EXPO_NO_CLEAR=true BROWSER="Google Chrome" npx expo start --ios --web \
+        && EXPO_NO_CLEAR=true BROWSER="Google Chrome" npx expo start --web \
+        # && EXPO_NO_CLEAR=true BROWSER="Google Chrome" npx expo start --ios --web \
 
 _watch-typecheck-extension:
     cd packages/ide-extension && tsc -b tsconfig.json --watch --preserveWatchOutput
