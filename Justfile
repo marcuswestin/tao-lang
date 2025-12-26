@@ -72,7 +72,7 @@ fix:
     just _fix
 
 # Check all code: lint, typecheck, etc.
-check:
+check: build
     just _check
 
 # Run mise MCP server
