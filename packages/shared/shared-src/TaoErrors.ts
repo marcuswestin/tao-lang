@@ -64,6 +64,14 @@ export function Assert<T>(condition: T, expectedConditionDescription: string): a
   }
 }
 
+export function Halt(humanMessage?: string): never {
+  throw new UnexpectedBehaviorError({
+    humanMessage: humanMessage ?? 'Halt called',
+    cause: new Error('HaltError'),
+    logInfo: { humanMessage },
+  })
+}
+
 // Check if an error is a Tao error
 export function isTaoError(error: unknown): error is TaoError {
   return error instanceof BaseTaoError

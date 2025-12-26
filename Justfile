@@ -23,16 +23,23 @@ tao *ARGS:
 # Run tests for whatever directory we're in
 [no-cd]
 test *PATTERNS:
-    just test-fast {{ PATTERNS }}
+    just test-fast "{{ PATTERNS }}"
 
 # Run all tests
 test-fast *PATTERNS:
-    bun test {{ PATTERNS }}
+    bun test --reporter=dot --test-name-pattern "{{ PATTERNS }}"
+
+test-bail *PATTERNS:
+    bun test --watch --bail --test-name-pattern "{{ PATTERNS }}"
 
 # Run all tests
 test-all *PATTERNS:
     bun test --reporter=dot {{ PATTERNS }}
     cd packages/expo-runtime && just test {{ PATTERNS }}
+
+test-formatter *PATTERNS:
+    bun test --watch --reporter=dot --test-name-pattern "{{ PATTERNS }}" packages/compiler/formatter-tests
+
 
 # Watch all tests
 watch-tests *PATTERNS:
@@ -100,3 +107,11 @@ shared-tools *ARGS:
 
 tao-cli *ARGS:
     cd packages/tao-cli && just {{ ARGS }}
+
+[no-cd]
+q-dev *ARGS:
+    bun {{ justfile_dir() }}/packages/shared/scripts/q-dev.ts {{ ARGS }}
+
+[no-cd]
+bun *ARGS:
+    bun {{ ARGS }}

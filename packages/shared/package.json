@@ -7,5 +7,9 @@
   },
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "dependencies": {
+    "@commander-js/extra-typings": "^14.0.0",
+    "object-deep-merge": "^2.0.0"
   }
 }
