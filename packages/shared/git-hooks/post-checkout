@@ -1,6 +1,0 @@
-#!/bin/sh
-
-# # Check if we are new a new worktree:
-# if ! [[ "$1" == "0000000000000000000000000000000000000000" ]]; then ...; fi
-
-just _setup_git_repo

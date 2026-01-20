@@ -8,9 +8,13 @@ import "./packages/shared/just/all-imports.just"
 help:
     just _print_help
 
-# Setup dev env
-setup-dev-env:
-    just _setup-dev-env
+# Create "enter-tao" dev environment
+create-dev-env:
+    just _create-dev-env
+    just setup
+
+setup:
+    just _setup_git_repo
 
 # Build and run all components
 dev:
