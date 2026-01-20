@@ -34,8 +34,7 @@ _setup_git_repo:
     mise trust --quiet --yes
     mise install 2> /dev/null
     mise doctor 1> /dev/null
-    just _install_deps
-    just _build_all
+    just build-all
 
 _install_mise:
     @ echo "\tInstall mise..."
@@ -48,18 +47,9 @@ _configure_zsh:
     add_if_missing() { local line="$1" file="$2"; grep -qxF "$line" "$file" || echo "\n# Added by tao-lang dev env '_configure_zsh' justfile rule\n$line" >> "$file"; }
     add_if_missing "alias et=enter-tao && alias enter-tao='echo \" * Enter Tao Lang dev env * \" && cd $PWD && source .config/enter-tao-dev-env-source-configure.zsh'" ~/.zshrc
 
-_install_deps:
-    @ echo "\tInstall dependencies..."
-    @ curl https://cursor.com/install -fsS | bash > /dev/null 2>&1
-    @ mise install 2> /dev/null
-
 _install_ide_extensions:
     @ echo "\tInstall IDE extensions..."
     @ jq -r '.recommendations[]' .vscode/extensions.json | xargs -L 1 cursor --force --install-extension 1> /dev/null
-
-_build_all:
-    @ echo "\tBuild all packages..."
-    just build-all
 
 _print_setup_done:
     @ echo "\n\t*** Done ***"
