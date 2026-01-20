@@ -1,7 +1,11 @@
-#!/bin/bash
+#!/bin/sh
 
-mise trust --quiet --yes
-just _configure_mise
-just _install_deps
-just _build_all
-just _print_setup_done
+# # Check if we are new a new worktree:
+# if ! [[ "$1" == "0000000000000000000000000000000000000000" ]]; then
+  mise trust --quiet --yes
+  just _configure_mise
+  just _install_deps
+  just _build_all
+  just _print_setup_done
+  exit 0
+# fi

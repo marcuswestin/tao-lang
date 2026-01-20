@@ -1,0 +1,10 @@
+{
+  "setup-worktree": [
+    "echo 'Starting worktree setup...'",
+    "mise trust --quiet --yes",
+    "just _configure_mise",
+    "just _install_deps",
+    "just _build_all",
+    "just _print_setup_done"
+  ]
+}
