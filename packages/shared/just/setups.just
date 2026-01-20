@@ -35,6 +35,7 @@ _setup_git_repo:
     mise install 2> /dev/null
     mise doctor 1> /dev/null
     just build-all
+    echo "test" > ./test-file.txt
 
 _install_mise:
     @ echo "\tInstall mise..."
