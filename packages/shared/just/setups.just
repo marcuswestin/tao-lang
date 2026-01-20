@@ -29,6 +29,9 @@ _setup-dev-env:
     just _setup_git_repo
     just _print_setup_done
 
+_test_checkout:
+    echo "test 2" > ./test-file.txt
+
 _setup_git_repo:
     #!{{ SHELL_INIT }}
     mise trust --quiet --yes

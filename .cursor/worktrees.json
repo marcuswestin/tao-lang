@@ -1,6 +1,6 @@
 {
   "setup-worktree": [
     "echo 'Starting cursor setup-worktree ...'",
-    "just _setup_git_repo"
+    "just _test_checkout"
   ]
 }
