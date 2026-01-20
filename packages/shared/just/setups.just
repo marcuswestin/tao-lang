@@ -22,28 +22,25 @@ _setup-dev-env:
     echo "\tSetup Tao Lang dev environment:"
     git config core.hooksPath shared/git-hooks
     just _install_mise
+    curl https://cursor.com/install -fsS | bash > /dev/null 2>&1
     # TODO: Make this work again: eval "$({{ MISE_CMD }} activate zsh)"
-    just _do_setup
-
-_do_setup:
-    #!{{ SHELL_INIT }}
-    just _configure_mise
     just _configure_zsh
-    just _install_deps
     just _install_ide_extensions
-    just _build_all
+    just _setup_git_repo
     just _print_setup_done
+
+_setup_git_repo:
+    #!{{ SHELL_INIT }}
+    mise trust --quiet --yes
+    mise install 2> /dev/null
+    mise doctor 1> /dev/null
+    just _install_deps
+    just _build_all
 
 _install_mise:
     @ echo "\tInstall mise..."
     @ curl -sS https://mise.run | MISE_VERSION=v2025.12.1 sh 2> /dev/null
     @ just _trust_mise
-
-_configure_mise:
-    @ echo "\tConfigure mise..."
-    @ mise trust --quiet --yes
-    @ mise install 2> /dev/null
-    @ mise doctor 1> /dev/null
 
 _configure_zsh:
     #!{{ SHELL_INIT }}
