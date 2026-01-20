@@ -66,7 +66,6 @@ full-test:
     echo "> Running code checks..." && just check
     echo "> Building everything..." && just test
 
-
 # Format all files
 fmt:
     just _fmt

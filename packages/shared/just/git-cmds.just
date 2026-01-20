@@ -25,7 +25,7 @@ gitwtl-worktree-list:
 # Hooks
 
 _git-hook-post-checkout:
-    {{ IF_IS_FEATURE_LINK_WORKTREE_THEN }} just _setup-dev-env
+    {{ IF_IS_FEATURE_LINK_WORKTREE_THEN }} just _setup-worktree
 
 IF_IS_REPOSITORY_MAIN_DIRECTORY_THEN := "[ -f .git ] && "
 IF_IS_FEATURE_LINK_WORKTREE_THEN := "[ -f .git ] && "

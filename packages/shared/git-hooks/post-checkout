@@ -1,3 +1,7 @@
 #!/bin/bash
 
-just _git-hook-post-checkout
+mise trust --quiet --yes
+just _configure_mise
+just _install_deps
+just _build_all
+just _print_setup_done

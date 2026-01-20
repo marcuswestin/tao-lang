@@ -92,3 +92,8 @@ Commands in `Justfile` follow DRY (Don't Repeat Yourself) principles:
 1. Always use `just <command>` for any task
 2. Format code before committing: `just fmt`
 3. Run tests: `just test`
+
+# Hard and fast rules
+
+- ALWAYS use `ast.isUseStatement`, NEVER use `if (statement.$type === 'UseStatement') {`
+-

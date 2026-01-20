@@ -1,5 +1,5 @@
 ---
-description: Use these instructions when implementing scoping and module imports in Langium.
+description: Use these instructions when implementing scoping and modules in Langium.
 alwaysApply: false
 ------------------
 
