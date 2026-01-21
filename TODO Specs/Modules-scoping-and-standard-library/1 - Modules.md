@@ -69,6 +69,12 @@ Goal: Implement the basic parsing and resolution of `file`, `share`, and `use` d
   - [x] "This activation event can be removed as VS Code generates these automatically from your package.json contribution declarations."
     - This is for "activationEvents": ["onLanguage:tao"]
   - [ ] TaoScopeProvider has a lot of super-specific logic that should be generalized for references.
+  - [x] Remove these:
+    ```
+    TODO: Use shared for .. what? imports?
+    TODO: Which function to use
+    TODO: ADD Standard Library and Document Imports
+    ```
   - [ ] Newline whitespace sensitivity?:
     ```tao
     view MainView {

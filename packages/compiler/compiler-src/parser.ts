@@ -75,9 +75,8 @@ async function internalParseTaoCode(
   }
 
   const services: Langium.LangiumCoreServices = Tao
-  Log('TODO: Use shared for .. what? imports?')
 
-  Log('TODO: Which function to use')
+  // TODO: Which function to use?
   // const document = await Tao.shared.workspace.LangiumDocuments.getOrCreateDocument(uri)
   const documentFactory = Tao.shared.workspace.LangiumDocumentFactory
   const document = await (evalString
@@ -85,7 +84,6 @@ async function internalParseTaoCode(
     : documentFactory.fromUri<AST.TaoFile>(uri))
 
   services.shared.workspace.LangiumDocuments.addDocument(document)
-  Log.warn('TODO: ADD Standard Library and Document Imports')
 
   // Why is this shared, vs Tao.shared?
   const buildOptions = { validation: getValidationOptions(opts), eagerLinking: true }
