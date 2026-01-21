@@ -59,7 +59,8 @@ Goal: Implement the basic parsing and resolution of `file`, `share`, and `use` d
   - [x] Make tests non-todo, and ensure they pass.
 - Resolution
   - [x] Write TODO tests for resolving `use` imports to the corresponding module files.
-  - [ ] Add logic for resolving `use` imports to the corresponding module files.
+  - [x] Add TaoScopeComputation to export `share` declarations.
+  - [ ] Add TaoScopeProvider for resolving `use` imports.
   - [ ] Make tests non-todo, and ensure they pass.
 
 ### TODO: Followups:
