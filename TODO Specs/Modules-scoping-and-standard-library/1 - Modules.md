@@ -49,7 +49,7 @@ use ./ui/views PublicView, ExampleView2 // <- makes `PublicView` and `ExampleVie
 Goal: Implement the basic parsing and resolution of `file`, `share`, and `use` declarations and imports.
 
 - Declarations
-  - [ ] Write TODO tests for parsing `file`, `share` declarations.
+  - [x] Write TODO tests for parsing `file`, `share` declarations.
   - [ ] Add grammar for `file`, `share` declarations.
   - [ ] Make tests non-todo, and ensure they pass.
 - Imports

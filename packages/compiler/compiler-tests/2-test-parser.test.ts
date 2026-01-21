@@ -39,3 +39,47 @@ describe('parse:', () => {
     expect(errorReport!.humanErrorMessage).toContain('App ui must be a view declaration')
   })
 })
+
+describe('module declaration visibility', () => {
+  // Module visibility modifiers
+  test.todo('parses file view declaration', async () => {
+    const doc = await parseAST(`file view PrivateView { }`)
+    const viewDecl = doc.topLevelStatements.first.as_ViewDeclaration
+    viewDecl.expect('name').toBe('PrivateView')
+    // TODO: Check visibility modifier once grammar is added
+  })
+
+  test.todo('parses share view declaration', async () => {
+    const doc = await parseAST(`share view PublicView { }`)
+    const viewDecl = doc.topLevelStatements.first.as_ViewDeclaration
+    viewDecl.expect('name').toBe('PublicView')
+    // TODO: Check visibility modifier once grammar is added
+  })
+
+  test.todo('parses file app declaration', async () => {
+    const doc = await parseAST(`
+      file app PrivateApp { ui MyView }
+      view MyView { }
+    `)
+    const appDecl = doc.topLevelStatements.first.as_AppDeclaration
+    appDecl.expect('name').toBe('PrivateApp')
+    // TODO: Check visibility modifier once grammar is added
+  })
+
+  test.todo('parses share app declaration', async () => {
+    const doc = await parseAST(`
+      share app PublicApp { ui MyView }
+      view MyView { }
+    `)
+    const appDecl = doc.topLevelStatements.first.as_AppDeclaration
+    appDecl.expect('name').toBe('PublicApp')
+    // TODO: Check visibility modifier once grammar is added
+  })
+
+  test.todo('parses declaration without visibility modifier (default)', async () => {
+    const doc = await parseAST(`view DefaultView { }`)
+    const viewDecl = doc.topLevelStatements.first.as_ViewDeclaration
+    viewDecl.expect('name').toBe('DefaultView')
+    // TODO: Verify no visibility modifier is set (undefined)
+  })
+})
