@@ -22,23 +22,26 @@ _create-dev-env:
     echo "\tSetup Tao Lang dev environment:"
     just _install_mise
     curl https://cursor.com/install -fsS | bash > /dev/null 2>&1
-    # TODO: Make this work again: eval "$({{ MISE_CMD }} activate zsh)"
     just _setup_git_repo
     just _configure_zsh
     just _install_ide_extensions
     just _print_setup_done
 
-_setup_git_repo:
-    #!{{ SHELL_INIT }}
-    {{ MISE_CMD }} trust --quiet --yes
-    {{ MISE_CMD }} install 2> /dev/null
-    {{ MISE_CMD }} doctor 1> /dev/null
+_update-dev-env:
+    just _install_mise # Update mise to latest version
+    {{ MISE_CMD }} install
+    {{ MISE_CMD }} self-update --yes
+    {{ MISE_CMD }} doctor
     just build-all
-    echo "test" > ./test-file.txt
+
+_setup_git_repo:
+    {{ MISE_CMD }} trust --quiet --yes
+    {{ MISE_CMD }} install
+    just build-all
 
 _install_mise:
     @ echo "\tInstall mise..."
-    @ curl -sS https://mise.run | MISE_VERSION=v2025.12.1 sh 2> /dev/null
+    curl -sS https://mise.run | {{ MISE_VERSION_DEF }} sh 2> /dev/null
     @ just _trust_mise
 
 _trust_mise:

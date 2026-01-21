@@ -11,7 +11,10 @@ help:
 # Create "enter-tao" dev environment
 create-dev-env:
     just _create-dev-env
-    just setup
+
+# Update the dev environment
+update-dev-env:
+    just _update-dev-env
 
 setup:
     just _setup_git_repo
