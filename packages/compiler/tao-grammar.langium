@@ -1,9 +1,19 @@
 grammar TaoLang
 
 entry TaoFile:
-    topLevelStatements += (
-        BaseStatement
-    )*;
+    useStatements += UseStatement*
+    topLevelStatements += BaseStatement*;
+
+// Imports
+//////////
+
+UseStatement:
+    'use' modulePath=RELATIVE_PATH importedNames+=ID (',' importedNames+=ID)*;
+
+terminal RELATIVE_PATH: /\.\.?\/[a-zA-Z0-9_\-\/]*/;
+
+// Statements
+/////////////
 
 BaseStatement:
     ( Declaration

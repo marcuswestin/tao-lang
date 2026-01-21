@@ -63,6 +63,9 @@ describe('module declaration visibility', () => {
     const appDecl = doc.topLevelStatements.first.as_AppDeclaration
     appDecl.expect('name').toBe('PrivateApp')
     appDecl.expect('visibility').toBe('file')
+    const myView = doc.topLevelStatements.second.as_ViewDeclaration
+    myView.expect('name').toBe('MyView')
+    myView.expect('visibility').toBeUndefined()
   })
 
   test('parses share app declaration', async () => {
