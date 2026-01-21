@@ -41,45 +41,44 @@ describe('parse:', () => {
 })
 
 describe('module declaration visibility', () => {
-  // Module visibility modifiers
-  test.todo('parses file view declaration', async () => {
+  test('parses file view declaration', async () => {
     const doc = await parseAST(`file view PrivateView { }`)
     const viewDecl = doc.topLevelStatements.first.as_ViewDeclaration
     viewDecl.expect('name').toBe('PrivateView')
-    // TODO: Check visibility modifier once grammar is added
+    viewDecl.expect('visibility').toBe('file')
   })
 
-  test.todo('parses share view declaration', async () => {
+  test('parses share view declaration', async () => {
     const doc = await parseAST(`share view PublicView { }`)
     const viewDecl = doc.topLevelStatements.first.as_ViewDeclaration
     viewDecl.expect('name').toBe('PublicView')
-    // TODO: Check visibility modifier once grammar is added
+    viewDecl.expect('visibility').toBe('share')
   })
 
-  test.todo('parses file app declaration', async () => {
+  test('parses file app declaration', async () => {
     const doc = await parseAST(`
       file app PrivateApp { ui MyView }
       view MyView { }
     `)
     const appDecl = doc.topLevelStatements.first.as_AppDeclaration
     appDecl.expect('name').toBe('PrivateApp')
-    // TODO: Check visibility modifier once grammar is added
+    appDecl.expect('visibility').toBe('file')
   })
 
-  test.todo('parses share app declaration', async () => {
+  test('parses share app declaration', async () => {
     const doc = await parseAST(`
       share app PublicApp { ui MyView }
       view MyView { }
     `)
     const appDecl = doc.topLevelStatements.first.as_AppDeclaration
     appDecl.expect('name').toBe('PublicApp')
-    // TODO: Check visibility modifier once grammar is added
+    appDecl.expect('visibility').toBe('share')
   })
 
-  test.todo('parses declaration without visibility modifier (default)', async () => {
+  test('parses declaration without visibility modifier (default)', async () => {
     const doc = await parseAST(`view DefaultView { }`)
     const viewDecl = doc.topLevelStatements.first.as_ViewDeclaration
     viewDecl.expect('name').toBe('DefaultView')
-    // TODO: Verify no visibility modifier is set (undefined)
+    viewDecl.expect('visibility').toBeUndefined()
   })
 })
