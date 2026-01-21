@@ -54,8 +54,8 @@ Goal: Implement the basic parsing and resolution of `file`, `share`, and `use` d
   - [x] Make tests non-todo, and ensure they pass.
 - Imports
   - [x] Add grammar for `use` imports with relative paths only:
-  - [ ] Add test harness functions for parsing multiple files.
-  - [ ] Write TODO tests for parsing `use` imports with multiple files.
+  - [x] Add test harness functions for parsing multiple files.
+  - [x] Write TODO tests for parsing `use` imports with multiple files.
   - [ ] Make tests non-todo, and ensure they pass.
 - Resolution
   - [ ] Write TODO tests for resolving `use` imports to the corresponding module files.
