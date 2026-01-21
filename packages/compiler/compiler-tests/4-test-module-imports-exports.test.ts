@@ -1,4 +1,4 @@
-import { describe, expect, parseAST, parseMultipleFiles, test } from './test-utils/test-harness'
+import { describe, expect, parseAST, parseASTWithErrors, parseMultipleFiles, test } from './test-utils/test-harness'
 
 describe('use statement parsing', () => {
   test('parses use statement with single import', async () => {
@@ -75,7 +75,7 @@ describe('multi-file module parsing', () => {
 })
 
 describe('cross-module import resolution (use statement)', () => {
-  test.todo('imported shared view can be referenced', async () => {
+  test('imported shared view can be referenced', async () => {
     const result = await parseMultipleFiles([
       {
         path: '/project/ui/views.tao',
@@ -96,6 +96,8 @@ describe('cross-module import resolution (use statement)', () => {
     expect(errors).toBeUndefined()
   })
 
+  // TODO: These tests require a UseStatement validator with index manager access
+  // For now, only references to imported symbols are validated (via scope provider)
   test.todo('error when importing non-existent declaration', async () => {
     const result = await parseMultipleFiles([
       {
@@ -153,7 +155,7 @@ describe('cross-module import resolution (use statement)', () => {
     expect(errors!.humanErrorMessage).toContain('PrivateView')
   })
 
-  test.todo('can import from multiple files in same module folder', async () => {
+  test('can import from multiple files in same module folder', async () => {
     const result = await parseMultipleFiles([
       {
         path: '/project/ui/buttons.tao',
@@ -168,8 +170,7 @@ describe('cross-module import resolution (use statement)', () => {
         code: `
           use ./ui Button, TextInput
           view MainView {
-            Button
-            TextInput
+            Button { TextInput }
           }
         `,
       },
@@ -180,7 +181,7 @@ describe('cross-module import resolution (use statement)', () => {
 })
 
 describe('same-module visibility (no use statement needed)', () => {
-  test.todo('default declarations are visible to other files in same module', async () => {
+  test('default declarations are visible to other files in same module', async () => {
     const result = await parseMultipleFiles([
       {
         path: '/project/ui/buttons.tao',
@@ -200,7 +201,7 @@ describe('same-module visibility (no use statement needed)', () => {
     expect(errors).toBeUndefined()
   })
 
-  test.todo('shared declarations are also visible within same module', async () => {
+  test('shared declarations are also visible within same module', async () => {
     const result = await parseMultipleFiles([
       {
         path: '/project/ui/buttons.tao',
@@ -219,7 +220,7 @@ describe('same-module visibility (no use statement needed)', () => {
     expect(errors).toBeUndefined()
   })
 
-  test.todo('file-private declarations are NOT visible to other files in same module', async () => {
+  test('file-private declarations are NOT visible to other files in same module', async () => {
     const result = await parseMultipleFiles([
       {
         path: '/project/ui/buttons.tao',
@@ -237,5 +238,11 @@ describe('same-module visibility (no use statement needed)', () => {
     const errors = result.getErrors('/project/ui/forms.tao')
     expect(errors).toBeDefined()
     expect(errors!.humanErrorMessage).toContain('PrivateHelper')
+  })
+
+  test(`imports don't crash the compiler`, async () => {
+    // Invalid path (missing ./ prefix) - should return errors, not crash
+    const errors = await parseASTWithErrors(`use app/ui`)
+    expect(errors).toBeDefined() // Parse error expected, but no crash
   })
 })

@@ -1,10 +1,10 @@
-use tao/ui Text
+// use tao/ui Text
 
-app MyApp {
-    ui AppScreen
-}
+// app MyApp {
+//     ui AppScreen
+// }
 
-view AppScreen {
-    Text value Greeting
-}
+// view AppScreen {
+//     Text value Greeting
+// }
 

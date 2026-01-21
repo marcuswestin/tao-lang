@@ -1,4 +1,1 @@
-// app Fridge {
-//     ui RootView
-// }
-
+view FridgeView { }

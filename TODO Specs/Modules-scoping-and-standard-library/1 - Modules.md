@@ -61,12 +61,22 @@ Goal: Implement the basic parsing and resolution of `file`, `share`, and `use` d
   - [x] Write TODO tests for resolving `use` imports to the corresponding module files.
   - [x] Add TaoScopeComputation to export `share` declarations.
   - [x] Add TaoScopeProvider for resolving `use` imports.
-  - [ ] Make tests non-todo, and ensure they pass.
+  - [x] Make tests non-todo, and ensure they pass (11 pass, 3 todo for UseStatement validation).
 
 ### TODO: Followups:
 
 - Cleanups:
+  - "This activation event can be removed as VS Code generates these automatically from your package.json contribution declarations."
+    - This is for "activationEvents": ["onLanguage:tao"]
   - TaoScopeProvider has a lot of super-specific logic that should be generalized for references.
+  - Newline whitespace sensitivity?:
+    ```tao
+    view MainView {
+        Button
+        TextInput
+    }
+    ```
+- Fix `test.todo('error when importing non-existent declaration'`
 - Standard Library
 - Scoping
 - Module metadata

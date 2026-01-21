@@ -1,69 +1,69 @@
-view Button title string {
-    does press
-}
+// view Button title string {
+//     does press
+// }
 
-action LogEvent -> event LogEvent {
-    Log "LogEvent: " + event.message
-}
+// action LogEvent -> event LogEvent {
+//     Log "LogEvent: " + event.message
+// }
 
-action LogEvent -> event LogEvent {
-    Log "LogEvent: " + event.message
-}
+// action LogEvent -> event LogEvent {
+//     Log "LogEvent: " + event.message
+// }
 
-view LoginScreen {
-    LoginForm {
-        on submit -> LogEvent
-        on submit -> username string, password string {
-            Session.login(username, password)
-        }
+// view LoginScreen {
+//     LoginForm {
+//         on submit -> LogEvent
+//         on submit -> username string, password string {
+//             Session.login(username, password)
+//         }
 
-        on submit -> {
-            Log "LoginForm submitted"
-        }
+//         on submit -> {
+//             Log "LoginForm submitted"
+//         }
 
-        on submit -> 
-    }
-}
+//         on submit -> 
+//     }
+// }
 
-view LoginForm {
-    does submit username string, password string
+// view LoginForm {
+//     does submit username string, password string
 
-    Col {
-        on render -> event RenderEvent {
-            Log "LoginForm rendered"
-        }
+//     Col {
+//         on render -> event RenderEvent {
+//             Log "LoginForm rendered"
+//         }
 
-        state username = ""
-        Text "Username"
-        TextInput username
-        state password = ""
-        Text "Password"
-        TextInput password
-        Button "Login" {
-            on press -> SubmitHandler(username, password)
-        }
-    }
-}
+//         state username = ""
+//         Text "Username"
+//         TextInput username
+//         state password = ""
+//         Text "Password"
+//         TextInput password
+//         Button "Login" {
+//             on press -> SubmitHandler(username, password)
+//         }
+//     }
+// }
 
 
-view Foo {
-    event submit -> SubmitHandler message string
+// view Foo {
+//     event submit -> SubmitHandler message string
     
-    Button {
-        handler HoverHandler -> event HoverEvent {
-            Log "Hovering: " + message
-        }
-        on press -> {
-            notify SubmitHandler "Hello, World!"
-        }
-        on hover -> HoverHandler
-    }
-}
-handler SubmitHandler -> event String {
-    Log "Submitted: " + message
-}
+//     Button {
+//         handler HoverHandler -> event HoverEvent {
+//             Log "Hovering: " + message
+//         }
+//         on press -> {
+//             notify SubmitHandler "Hello, World!"
+//         }
+//         on hover -> HoverHandler
+//     }
+// }
+// handler SubmitHandler -> event String {
+//     Log "Submitted: " + message
+// }
 
 
-handler AGeneralHandler -> event PressEvent, name String {
-    Log "HERE " + name
-}
+// handler AGeneralHandler -> event PressEvent, name String {
+//     Log "HERE " + name
+// }

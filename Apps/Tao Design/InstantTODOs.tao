@@ -1,129 +1,129 @@
-// From https://github.com/instantdb/instant-examples/tree/main/todos/src
+// // From https://github.com/instantdb/instant-examples/tree/main/todos/src
 
-datasource TODOs {
-    provider InstantDB {
-        appKey "xyz"
-    }
-    user User {
-        email string unique indexed
-        imageURL string
-        type string optional
-        guestUsers User[] cascade delete
-    }
-    model Todo {
-        isCompleted boolean optional default false
-        text string optional default ""
-    }
-    files {
-        path string unique indexed
-        url string
-    }
-    presence Todos {
-        presence ??
-    }
-}
+// datasource TODOs {
+//     provider InstantDB {
+//         appKey "xyz"
+//     }
+//     user User {
+//         email string unique indexed
+//         imageURL string
+//         type string optional
+//         guestUsers User[] cascade delete
+//     }
+//     model Todo {
+//         isCompleted boolean optional default false
+//         text string optional default ""
+//     }
+//     files {
+//         path string unique indexed
+//         url string
+//     }
+//     presence Todos {
+//         presence ??
+//     }
+// }
 
-handler createTodo (text: string) {
-    create Todo with text = NewTodoText, isCompleted = false
-}
-handler deleteTodo (todoId: string) {
-    delete Todo where id = todoId
-}
+// handler createTodo (text: string) {
+//     create Todo with text = NewTodoText, isCompleted = false
+// }
+// handler deleteTodo (todoId: string) {
+//     delete Todo where id = todoId
+// }
 
-handler toggleTodo (todo: Todo) {
-    update Todo where id = todo.id set isCompleted = !todo.isCompleted
-}
+// handler toggleTodo (todo: Todo) {
+//     update Todo where id = todo.id set isCompleted = !todo.isCompleted
+// }
 
-handler deleteCompletedTodos (todoIds: string[]) {
-    Todo transaction {
-        for todoId in todoIds {
-            delete Todo where id = todoId
-}}}
+// handler deleteCompletedTodos (todoIds: string[]) {
+//     Todo transaction {
+//         for todoId in todoIds {
+//             delete Todo where id = todoId
+// }}}
 
-handler toggleAllTodos (todos: Todo[]) {
-    let notCompletedTodos = todos.filter(t => !t.isCompleted);
-    if (notCompletedTodos.length > 0) {
-        Todo transaction {
-            for todo in notCompletedTodos {
-                update Todo where id = todo.id set isCompleted = true
-    }}}
-    else {
-        Todo transaction {
-            for todo in todos {
-                update Todo where id = todo.id set isCompleted = false
-        }}
-        // or
-        transact todos { |todo|
-            update Todo where id = todo.id set isCompleted = false
-        }
-        // or
-        Todo transaction {
-            todos |> update Todo where id = #.id set isCompleted = false
-            // or
-            todos |> update Todo where id = .id set isCompleted = false
-}}}
+// handler toggleAllTodos (todos: Todo[]) {
+//     let notCompletedTodos = todos.filter(t => !t.isCompleted);
+//     if (notCompletedTodos.length > 0) {
+//         Todo transaction {
+//             for todo in notCompletedTodos {
+//                 update Todo where id = todo.id set isCompleted = true
+//     }}}
+//     else {
+//         Todo transaction {
+//             for todo in todos {
+//                 update Todo where id = todo.id set isCompleted = false
+//         }}
+//         // or
+//         transact todos { |todo|
+//             update Todo where id = todo.id set isCompleted = false
+//         }
+//         // or
+//         Todo transaction {
+//             todos |> update Todo where id = #.id set isCompleted = false
+//             // or
+//             todos |> update Todo where id = .id set isCompleted = false
+// }}}
 
-theme TodosTheme {
-    // import { Geist, Geist_Mono } from 'next/font/google';
-}
+// theme TodosTheme {
+//     // import { Geist, Geist_Mono } from 'next/font/google';
+// }
 
 
-app TodosApp {
-    ui {
-        state text = ""
-        let todos = query Todo get all
-        let peers = rooms Todos 'todos'
+// app TodosApp {
+//     ui {
+//         state text = ""
+//         let todos = query Todo get all
+//         let peers = rooms Todos 'todos'
 
-        guard todos info {
-            let color = #text-red-600 if info.error else null
-            Col [items fill center] {
-                Text 'LOADING' <font 2xl bold color>
-        }}
+//         guard todos info {
+//             let color = #text-red-600 if info.error else null
+//             Col [items fill center] {
+//                 Text 'LOADING' <font 2xl bold color>
+//         }}
         
-        Col [items fill center] {
-            Box [hug, absolute top 6 right 6] {
-                let numOnline = peers.count
-                let text = '1 PERSON' if numOnline == 1 else '{numOnline} PEOPLE'
-                Text text <font lg bold #black>
-            }
-            Col {
-                Text 'TO·DO'
-                Col {
-                    state text = ""
-                    TextInput text, placeholder('NEW TASK')
-                    Button 'ADD' {
-                        on enter {
-                            if text.trim() {
-                                create Todo with text = text
-                                text = ""
-            }}}}}
-            Col [border #black 4] {
-                if todos.isEmpty {
-                    Text 'NO TASKS YET' <font lg bold #gray-400>
-                } else {
-                    List todos {
-                        |todo|
-                        Row {
-                            Checkbox todo.isCompleted {
-                                on change {
-                                    toggleTodo(todo)
-                            }}
-                            Text todo.text <font lg bold #black>
-                            Button 'DEL' {
-                                on click {
-                                    deleteTodo(todo.id)
-            }}}}}}
-            if !todos.isEmpty {
-                Row {
-                    Button 'TOGGLE ALL' {
-                        on click {
-                            toggleAllTodos(todos)
-                }}}
-                let completedTodoIds = todos |> filter isCompleted |> map(t => t.id)
-                if completedTodoIds.hasItems {
-                    Button 'CLEAR DONE ${completedTodoIds.count}' {
-                        on click {
-                            deleteCompletedTodos(completedTodoIds)
-}}}}}}}
+//         Col [items fill center] {
+//             Box [hug, absolute top 6 right 6] {
+//                 let numOnline = peers.count
+//                 let text = '1 PERSON' if numOnline == 1 else '{numOnline} PEOPLE'
+//                 Text text <font lg bold #black>
+//             }
+//             Col {
+//                 Text 'TO·DO'
+//                 Col {
+//                     state text = ""
+//                     TextInput text, placeholder('NEW TASK')
+//                     Button 'ADD' {
+//                         on enter {
+//                             if text.trim() {
+//                                 create Todo with text = text
+//                                 text = ""
+//             }}}}}
+//             Col [border #black 4] {
+//                 if todos.isEmpty {
+//                     Text 'NO TASKS YET' <font lg bold #gray-400>
+//                 } else {
+//                     List todos {
+//                         |todo|
+//                         Row {
+//                             Checkbox todo.isCompleted {
+//                                 on change {
+//                                     toggleTodo(todo)
+//                             }}
+//                             Text todo.text <font lg bold #black>
+//                             Button 'DEL' {
+//                                 on click {
+//                                     deleteTodo(todo.id)
+//             }}}}}}
+//             if !todos.isEmpty {
+//                 Row {
+//                     Button 'TOGGLE ALL' {
+//                         on click {
+//                             toggleAllTodos(todos)
+//                 }}}
+//                 let completedTodoIds = todos |> filter isCompleted |> map(t => t.id)
+//                 if completedTodoIds.hasItems {
+//                     Button 'CLEAR DONE ${completedTodoIds.count}' {
+//                         on click {
+//                             deleteCompletedTodos(completedTodoIds)
+// }}}}}}}
 
 

@@ -1,33 +1,33 @@
-app DevApp {
-    ui HelloWorld
-}
+// app DevApp {
+//     ui HelloWorld
+// }
 
-view AView foo string, bar number {
+// view AView foo string, bar number {
     
-}
+// }
 
-view HelloWorld {
-    Col {
-        Row {
-            [align top left]
-            Text | value "Hello", title "Test" |
-            List {
-                |
-                    data [1, 2, 3, 4, 5]
-                    item view {
-                        | data: number |
-                        Row {
-                            Text value "Item: " + data
-                        }
-                    }
-                    header view {
-                        Row {
-                            Text value "Header"
-                        }
-                    }
-                |
-            }
+// view HelloWorld {
+//     Col {
+//         Row {
+//             [align top left]
+//             Text | value "Hello", title "Test" |
+//             List {
+//                 |
+//                     data [1, 2, 3, 4, 5]
+//                     item view {
+//                         | data: number |
+//                         Row {
+//                             Text value "Item: " + data
+//                         }
+//                     }
+//                     header view {
+//                         Row {
+//                             Text value "Header"
+//                         }
+//                     }
+//                 |
+//             }
 
-        }
-    }
-}
+//         }
+//     }
+// }

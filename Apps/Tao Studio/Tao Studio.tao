@@ -1,9 +1,9 @@
-app TaoStudio {
-    ui RootView
-    // ui Text
-    // ui Button
-}
+// app TaoStudio {
+//     ui RootView
+//     // ui Text
+//     // ui Button
+// }
 
-view RootView {
-    Text value "Hello World" { }
-}
+// view RootView {
+//     Text value "Hello World" { }
+// }

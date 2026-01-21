@@ -1,14 +1,14 @@
-app MyApp {
-    ui AppScreen
-}
+// app MyApp {
+//     ui AppScreen
+// }
 
-view AppScreen {
-    TextView value "Hello World"
-}
+// view AppScreen {
+//     TextView value "Hello World"
+// }
 
-view TextView value string {
-    inject ```ts
-        const value = ALRuntimeScope.getParameterValue('value')
-        return ALRuntime.ui.renderTextView({ value })
-    ```
-}
+// view TextView value string {
+//     inject ```ts
+//         const value = ALRuntimeScope.getParameterValue('value')
+//         return ALRuntime.ui.renderTextView({ value })
+//     ```
+// }

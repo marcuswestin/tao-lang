@@ -3,9 +3,11 @@ view KnifeBlock {
 }
 
 view RootView {
-    KnifeBlock {}
+    KnifeBlock { }
 }
 
 view RootView {
-    KnifeBlock {}
+    KnifeBlock { }
 }
+
+view Text { }
