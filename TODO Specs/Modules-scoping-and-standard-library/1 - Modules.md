@@ -66,17 +66,17 @@ Goal: Implement the basic parsing and resolution of `file`, `share`, and `use` d
 ### TODO: Followups:
 
 - Cleanups:
-  - "This activation event can be removed as VS Code generates these automatically from your package.json contribution declarations."
+  - [x] "This activation event can be removed as VS Code generates these automatically from your package.json contribution declarations."
     - This is for "activationEvents": ["onLanguage:tao"]
-  - TaoScopeProvider has a lot of super-specific logic that should be generalized for references.
-  - Newline whitespace sensitivity?:
+  - [ ] TaoScopeProvider has a lot of super-specific logic that should be generalized for references.
+  - [ ] Newline whitespace sensitivity?:
     ```tao
     view MainView {
         Button
         TextInput
     }
     ```
-- Fix `test.todo('error when importing non-existent declaration'`
-- Standard Library
-- Scoping
-- Module metadata
+- [ ] Fix `test.todo('error when importing non-existent declaration'`
+- [ ] Standard Library: Add a standard library of declarations that are importable to all modules.
+- [ ] Scoping
+- [ ] Module metadata: Add a way to add metadata to a module.
