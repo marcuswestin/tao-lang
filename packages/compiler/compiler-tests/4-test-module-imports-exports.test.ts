@@ -1,7 +1,7 @@
 import { describe, expect, parseAST, parseMultipleFiles, test } from './test-utils/test-harness'
 
 describe('use statement parsing', () => {
-  test.todo('parses use statement with single import', async () => {
+  test('parses use statement with single import', async () => {
     const doc = await parseAST(`
       use ./ui/views PublicView
       view MyView { }
@@ -11,7 +11,7 @@ describe('use statement parsing', () => {
     expect(useStmt.importedNames).toEqual(['PublicView'])
   })
 
-  test.todo('parses use statement with multiple imports', async () => {
+  test('parses use statement with multiple imports', async () => {
     const doc = await parseAST(`
       use ./ui/views PublicView, AnotherView, ThirdView
       view MyView { }
@@ -21,7 +21,7 @@ describe('use statement parsing', () => {
     expect(useStmt.importedNames).toEqual(['PublicView', 'AnotherView', 'ThirdView'])
   })
 
-  test.todo('parses use statement with parent path', async () => {
+  test('parses use statement with parent path', async () => {
     const doc = await parseAST(`
       use ../shared/components Button
       view MyView { }
@@ -31,7 +31,7 @@ describe('use statement parsing', () => {
     expect(useStmt.importedNames).toEqual(['Button'])
   })
 
-  test.todo('parses multiple use statements', async () => {
+  test('parses multiple use statements', async () => {
     const doc = await parseAST(`
       use ./ui/views PublicView
       use ./ui/components Button, Input
@@ -42,7 +42,7 @@ describe('use statement parsing', () => {
     expect(doc.useStatements[1].modulePath).toBe('./ui/components')
   })
 
-  test.todo('use statements come before declarations', async () => {
+  test('use statements come before declarations', async () => {
     const doc = await parseAST(`
       use ./ui/views PublicView
       view MyView { }
@@ -54,7 +54,7 @@ describe('use statement parsing', () => {
 })
 
 describe('multi-file module parsing', () => {
-  test.todo('parses files with use imports referencing other files', async () => {
+  test('parses files with use imports referencing other files', async () => {
     const result = await parseMultipleFiles([
       {
         path: '/project/ui/views.tao',
