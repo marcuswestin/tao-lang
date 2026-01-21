@@ -1,253 +1,332 @@
+# Langium Scoping: The Definitive Guide
+
+This guide covers implementing scoping in Langium—the mechanism that determines which symbols are visible at any point in your language.
+
+## Core Mental Model
+
+Scoping in Langium is a **two-phase system**:
+
+| Phase             | Class              | Question Answered                     | When It Runs                                   |
+| ----------------- | ------------------ | ------------------------------------- | ---------------------------------------------- |
+| **1. Export**     | `ScopeComputation` | "What symbols does this file expose?" | After parsing, during **Indexing**.            |
+| **2. Resolution** | `ScopeProvider`    | "What symbols are visible here?"      | During **Linking**, when resolving references. |
+
+> **Critical Rule:** You cannot resolve references before indexing completes. **Never** access `.ref` properties inside `ScopeComputation`. This causes circular dependencies and deadlocks.
+
 ---
-description: Use these instructions when implementing scoping and modules in Langium.
-alwaysApply: false
-------------------
 
-# Langium Scoping & Modules: The Expert’s Handbook
+## Architecture Overview
 
-This guide is for engineers building production-grade module systems in langium. It bypasses the defaults to focus on **Folder-Based Scoping**, **Strict Visibility**, **StdLib Mapping**, and **Import Validation**.
-
-When making changes, always write tests in `4-test-module-imports-exports.test.ts` to demonstrate the intended behavior.
-
-Use `bun test packages/compiler/scoping-tests` to run scoping tests.
-
-## 1. The Mental Model
-
-Scoping in Langium is a conversation between the **Index** (Export) and the **Provider** (Resolution).
-
-- **The Indexer (`ScopeComputation`):** Runs on parse. Decides what symbols enter the Index.
-
-  - _Tao Rule:_ `file` is private (do not index). `share` is public. Default is folder-protected.
-
-- **Lifecycle:** Parsed → indexed → linked → validated. You cannot resolve references before the document is indexed.
-
-- **The Metadata:** Never parse a file inside `ScopeProvider`, it is too slow. To avoid re-parsing files during resolution and to filter exports without parsing files, we must store `visibility` in the `AstNodeDescription` (`share`, `file` and `default`).
-
-- **The Resolver (`ScopeProvider`):** `ScopeProvider.getScope(context)` is where you implement “what names exist here?” logic.When resolving a reference langium calls `ScopeProvider.getScope(context, reference)`. You return a `Scope` which chains scopes containing visible symbols:
-
-  - **Local** (Variables) → **Siblings** (Same folder) → **Imports** (Explicit) → **Global**.
-
-  - _Shadowing:_ Siblings shadow Imports. This forces the user to use Qualified Names (e.g., `ui.Col`) if local collision exists.
-
-- ** The Standard Library:** lives in `packages/std-lib`. We must load all stdlib `.tao` files automatically.
-
-## 2. Code Patterns
-
-### Workspace Manager
-
-E.g **`src/language/tao-module.ts`**:
+Scope-related classes are registered in your language module (`my-lang-module.ts`).
 
 ```typescript
-export const TaoModule: Module<X> = {
-  // ...
-  references: {
-    ScopeComputation: (services) => new TaoScopeComputation(services),
-    ScopeProvider: (services) => new TaoScopeProvider(services),
-  },
+// my-lang-module.ts
+import { Module } from 'langium'
+
+export const MyLangModule: Module<MyLangServices, PartialLangiumServices> = {
   workspace: {
-    WorkspaceManager: (services) => new TaoWorkspaceManager(services),
-    AstNodeDescriptionProvider: (services) => new TaoDescriptionProvider(services), // to store visibility metadata
+    // Responsible for creating the Global Scope Index
+    ScopeComputation: (services) => new MyLangScopeComputation(services),
+
+    // Responsible for storing metadata (visibility, types) in the Index
+    AstNodeDescriptionProvider: (services) => new MyLangDescriptionProvider(services),
+
+    // Responsible for loading initial files (stdlib)
+    WorkspaceManager: (services) => new MyLangWorkspaceManager(services),
   },
-  validation: {
-    TaoValidator: (services) => new TaoValidator(services),
+  references: {
+    // Responsible for calculating the scope for a specific reference
+    ScopeProvider: (services) => new MyLangScopeProvider(services),
   },
-  // ...
 }
 ```
 
-### Indexer
+---
 
-E.g **`src/language/tao-index.ts`**:
+## Quick Reference
+
+| Task                               | Class                        | Method                      |
+| ---------------------------------- | ---------------------------- | --------------------------- |
+| **Export symbols to other files**  | `ScopeComputation`           | `computeExports()`          |
+| **Define local variable scopes**   | `ScopeComputation`           | `computeLocalScopes()`      |
+| **Resolve a reference**            | `ScopeProvider`              | `getScope()`                |
+| **Store metadata on symbols**      | `AstNodeDescriptionProvider` | `createDescription()`       |
+| **Load additional files (stdlib)** | `WorkspaceManager`           | `loadAdditionalDocuments()` |
+
+---
+
+## Phase 1: Exporting Symbols (ScopeComputation)
+
+This phase populates the Global Index and defines local block scoping.
+
+### Basic Pattern
 
 ```typescript
-export class TaoDescriptionProvider extends DefaultAstNodeDescriptionProvider {
-  override createDescription(node: AstNode, name: string, document: LangiumDocument): AstNodeDescription {
-    const desc = super.createDescription(node, name, document)
+import {
+  AstNode,
+  AstNodeDescription,
+  AstUtils,
+  DefaultScopeComputation,
+  Interruptable,
+  LangiumDocument,
+  MultiMap,
+  PrecomputedScopes,
+} from 'langium'
+import { CancellationToken } from 'vscode-languageserver'
+import * as ast from './generated/ast.js'
 
-    // Capture visibility in the lightweight description
-    if (ast.isView(node)) {
-      desc.metadata = {
-        visibility: node.visibility,
+export class MyLangScopeComputation extends DefaultScopeComputation {
+  /**
+   * computeExports: Symbols visible to OTHER files (cross-file references).
+   * These enter the global IndexManager.
+   */
+  override async computeExports(
+    document: LangiumDocument,
+    cancelToken?: CancellationToken,
+  ): Promise<AstNodeDescription[]> {
+    const exports: AstNodeDescription[] = []
+    const root = document.parseResult.value
+    if (!root) {
+      return exports
+    }
+
+    for (const node of AstUtils.streamAllContents(root)) {
+      await Interruptable.check(cancelToken)
+
+      // Example: Export Functions that aren't private
+      if (ast.isFunctionDecl(node) && node.name) {
+        if (node.visibility !== 'private') {
+          exports.push(this.descriptions.createDescription(node, node.name, document))
+        }
+      }
+      // Example: Export all Types
+      if (ast.isTypeDecl(node) && node.name) {
+        exports.push(this.descriptions.createDescription(node, node.name, document))
       }
     }
+    return exports
+  }
+
+  /**
+   * computeLocalScopes: Symbols visible WITHIN this file (block scoping).
+   * These are stored in the document, not the global index.
+   */
+  override async computeLocalScopes(
+    document: LangiumDocument,
+    cancelToken?: CancellationToken,
+  ): Promise<PrecomputedScopes> {
+    const scopes = new MultiMap<AstNode, AstNodeDescription>()
+    const root = document.parseResult.value
+    if (!root) {
+      return scopes
+    }
+
+    for (const node of AstUtils.streamAllContents(root)) {
+      await Interruptable.check(cancelToken)
+
+      // 1. Function parameters are visible inside the function body
+      if (ast.isFunctionDecl(node)) {
+        for (const param of node.parameters) {
+          if (param.name) {
+            // We add the parameter to the scope of the *Function Node*
+            // This makes it visible to all children of the function
+            scopes.add(node, this.descriptions.createDescription(param, param.name, document))
+          }
+        }
+      }
+
+      // 2. Let bindings are visible in their containing block
+      if (ast.isLetStatement(node) && node.name) {
+        const container = node.$container
+        if (container) {
+          scopes.add(container, this.descriptions.createDescription(node, node.name, document))
+        }
+      }
+    }
+    return scopes
+  }
+}
+```
+
+### Storing Metadata (Type-Safe)
+
+To filter symbols efficiently (e.g., checking "visibility" without parsing the file), store metadata in the `AstNodeDescription`.
+
+```typescript
+import { AstNode, AstNodeDescription, DefaultAstNodeDescriptionProvider, LangiumDocument } from 'langium'
+import * as ast from './generated/ast.js'
+
+// 1. Define the custom interface
+export interface MyLangAstNodeDescription extends AstNodeDescription {
+  visibility?: string
+}
+
+export class MyLangDescriptionProvider extends DefaultAstNodeDescriptionProvider {
+  // 2. Override createDescription to populate the metadata
+  override createDescription(node: AstNode, name: string, document: LangiumDocument): AstNodeDescription {
+    // Create the standard description
+    const desc = super.createDescription(node, name, document) as MyLangAstNodeDescription
+
+    // Add custom properties
+    if (ast.isFunctionDecl(node)) {
+      desc.visibility = node.visibility ?? 'default'
+    }
+
     return desc
   }
 }
 ```
 
-### Scope Computation
+---
 
-E.g **`src/language/tao-scope-computation.ts`**:
+## Phase 2: Resolving References (ScopeProvider)
+
+The **Scope Chain** is consulted during linking. Resolution walks:
+`Local Scope` → `File Scope` → `Global Scope`.
+
+### Basic Pattern & Imports
 
 ```typescript
-import { AstNodeDescription, DefaultScopeComputation, LangiumDocument } from 'langium'
-import * as ast from './generated/ast'
+import {
+  AstNodeDescription,
+  AstUtils,
+  DefaultScopeProvider,
+  MapScope,
+  ReferenceInfo,
+  Scope,
+  UriUtils, // Added missing import
+} from 'langium'
+import * as ast from './generated/ast.js'
+// Fixed import path to match the class implementation
+import { MyLangAstNodeDescription } from './my-lang-scope-computation.js'
 
-export class TaoScopeComputation extends DefaultScopeComputation {
-  override async computeExports(document: LangiumDocument): Promise<AstNodeDescription[]> {
-    const exports: AstNodeDescription[] = []
+export class MyLangScopeProvider extends DefaultScopeProvider {
+  override getScope(context: ReferenceInfo): Scope {
+    // 1. Custom handling for specific properties (e.g., Types)
+    if (context.property === 'type' && ast.isParameter(context.container)) {
+      // return this.getTypeScope(context); // Implement custom logic
+    }
 
-    // For each root level declaration:
-    //  - If it is marked file, skip it
-    //  - If it is marked share, add it to the exports as shared
-    //  - If it is marked default, add it to the exports as module-local
+    // 2. Handle Member Access (e.g., myModule.myFunction)
+    if (ast.isMemberAccess(context.container) && context.property === 'member') {
+      const receiver = context.container.receiver
+      // Note: We access .ref here because we are in the Linking phase!
+      if (ast.isReference(receiver) && receiver.ref) {
+        // Return a scope containing only elements strictly inside that receiver
+        // Note: You must implement createScopeForNode or similar custom logic
+        return this.createScopeForNode(receiver.ref)
+      }
+    }
 
-    return exports
+    return super.getScope(context)
   }
-}
-```
 
-### Scope Provision: The Layered Logic
-
-We override `getGlobalScope` (not `getScope`) to ensure Local Scope takes precedence over Global Scope.
-
-E.g **`src/language/tao-scope-provider.ts`**:
-
-```typescript
-import { AstNodeDescription, DefaultScopeProvider, MapScope, ReferenceInfo, Scope, UriUtils } from 'langium'
-import { URI, Utils } from 'vscode-uri'
-
-export class TaoScopeProvider extends DefaultScopeProvider {
-  // Override Global Scope to implement Modules.
-  // Chain: Siblings (Inner) -> Imports (Outer) -> Pre-existing Globals
+  /**
+   * Override Global Scope to handle Imports.
+   * By default, Langium makes EVERYTHING in the index visible.
+   * We want to restrict it to imports.
+   */
   protected override getGlobalScope(referenceType: string, context: ReferenceInfo): Scope {
-    const siblings: AstNodeDescription[] = []
-    const imports: AstNodeDescription[] = []
+    const document = AstUtils.getDocument(context.container)
+    const root = document.parseResult.value as ast.Program
 
-    // 1. Process Siblings
-    // 2. Process Imports
-    //    - Calculate implicit alias for Qualification (e.g. "tao/ui" -> "ui")
-    //    - Add Unqualified and Qualified names to scope (`Col` + `ui.Col`)
-    //    - Add wildcard imports to scope (`use tao/ui`)
+    // If no imports, use default global scope (everything) OR just built-ins
+    if (!root.imports || root.imports.length === 0) {
+      return super.getGlobalScope(referenceType, context)
+    }
 
-    // 3. Create Chain: Siblings (Inner) -> Imports (Outer)
-    // Siblings shadow Imports.
-    return this.createScope(siblings, this.createScope(imports, super.getGlobalScope(referenceType, context)))
+    const importedSymbols: AstNodeDescription[] = []
+
+    for (const importStmt of root.imports) {
+      // Resolve the path to a URI
+      const targetUri = this.resolveImportUri(importStmt.path, document)
+      if (!targetUri) {
+        continue
+      }
+
+      // Filter the IndexManager for symbols from that specific file
+      const exported = this.indexManager
+        .allElements(referenceType)
+        .filter(d => d.documentUri.toString() === targetUri.toString())
+
+      importedSymbols.push(...exported)
+    }
+
+    // Create a scope chain:
+    // Imported Symbols -> Empty (stops looking globally) or StdLib
+    // Using super.getGlobalScope here would defeat the purpose of "restricting" imports
+    return this.createScope(importedSymbols, Scope.EMPTY)
   }
 
-  // PATH MAPPING
-  public resolveImportUri(path: string, baseDir: URI): URI | undefined {
-    if (path.startsWith('tao/')) {
-      // Map "tao/ui" -> "packages/std-lib/tao/ui"
+  /** * Helper to resolve string paths to URIs
+   */
+  private resolveImportUri(path: string, document: LangiumDocument): string | undefined {
+    if (!path) {
+      return undefined
+    }
+    try {
+      return UriUtils.resolvePath(document.uri, path).toString()
+    } catch {
+      return undefined
     }
   }
 }
 ```
 
-### Standard Library Loading
+### Visibility & Access Control Pattern
 
-Load the `.tao` files in `packages/std-lib` automatically.
-
-**`src/language/tao-workspace-manager.ts`**
-
-```typescript
-import { DefaultWorkspaceManager, LangiumDocument } from 'langium'
-import { WorkspaceFolder } from 'vscode-languageserver'
-
-export class TaoWorkspaceManager extends DefaultWorkspaceManager {
-  override async loadAdditionalDocuments(
-    folders: WorkspaceFolder[],
-    collector: (document: LangiumDocument) => void,
-  ): Promise<void> {
-    await super.loadAdditionalDocuments(folders, collector)
-    // Load StdLib ...
-      // await this.loadDocumentsInFolder(...)
-  }
-}
-```
----
-
-## 5. The Expert’s Edge: Validation & Errors
-
-### A. The "Explicit Import" Warning
-
-We allow Wildcards in the scope for flexibility (and Qualified Names), but enforce strictness via the Validator.
-
-**`src/language/tao-validator.ts`**
+**Pattern:** Folder-Based Visibility (Internal vs Public).
+Symbols are visible only within the same directory, unless marked `public`.
 
 ```typescript
-export class TaoValidator {
-  checkExplicitImports(ref: Reference, accept: ValidationAcceptor): void {
-    // PSEUDO CODE:
+protected override getGlobalScope(referenceType: string, context: ReferenceInfo): Scope {
+    const document = AstUtils.getDocument(context.container);
+    // Get the folder of the current file
+    const currentDir = document.uri.path.substring(0, document.uri.path.lastIndexOf('/'));
 
-    // If not resolved, ignore (linking error handles this)
+    const visible = this.indexManager.allElements(referenceType).filter(desc => {
+        // Cast to our custom description to read the metadata
+        const customDesc = desc as MyLangAstNodeDescription;
+        const visibility = customDesc.visibility ?? 'default';
 
-    // If same module, ignore (sibling/local)
+        if (visibility === 'public') return true;
+        
+        // If private/default, allow only if in same directory
+        const descDir = desc.documentUri.path.substring(0, desc.documentUri.path.lastIndexOf('/'));
+        return descDir.startsWith(currentDir);
+    });
 
-    // Ignore if qualified access (e.g. ui.Col) - that is explicit enough
-
-    // Check if the name appears in an explicit import list
-
-    if (!nameAppearsInExplicitImportList) {
-      accept('warning', `Symbol '${ref.$refText}' is used via wildcard. Import explicitly for clarity.`, { node: ref })
-    }
-  }
+    return this.createScope(visible);
 }
 ```
 
 ---
 
-## 6. Testing Strategy
+## Common Patterns & Pitfalls
 
-**`test/scoping.test.ts`**
+### ✅ DO: Use `createScope` for Chaining
+
+Scopes are hierarchical. To shadow global symbols with local ones, pass the outer scope as the second argument.
 
 ```typescript
-import { expectScope } from 'langium/test'
-
-test('Sibling visibility is implicit', async () => {
-  await expectScope(services)({
-    source: `share view Neighbor {}`,
-    reference: `view App { Neighbor }`, // Should resolve
-  })
-})
-
-test('Private "file" views are invisible to siblings', async () => {
-  await expectScope(services)({
-    source: `file view Secret {}`,
-    reference: `view App { Secret }`,
-  }, (scope) => {
-    expect(scope.getElement('Secret')).toBeUndefined()
-  })
-})
+// Local shadows Imported, Imported shadows Global
+return this.createScope(localSymbols, this.createScope(importedSymbols, globalScope))
 ```
 
----
+### ❌ DON'T: Resolve References in ScopeComputation
 
-# Example Implementation Plan
+Accessing `.ref` triggers the `ScopeProvider`. If you do this inside `ScopeComputation` (which runs before the scope is ready), you crash the linker.
 
-These are a rough outline of the types of steps that would be included in an implementation.
+```typescript
+// WRONG in ScopeComputation
+const type = node.typeRef.ref // CRASH
+```
 
-### 1. Grammar (`tao.lang`)
+### ✅ DO: Use `DocumentBuilder.build()` in tests
 
-- [ ] Add `Visibility` rule (`share` | `file`).
-- [ ] Add `Import` rule (`use path elements`).
-- [ ] Update `Declaration` to use `Visibility`.
-- [ ] Add `QualifiedName` rule (`ID ('.' ID)*`) to `Reference`.
+In unit tests, parsing produces the AST, but it does **not** run scope computation automatically unless you use the builder or the `parseHelper` with validation enabled.
 
-### 2. Architecture (`tao-module.ts`)
-
-- [ ] Register `TaoScopeComputation`, `TaoScopeProvider`, `TaoWorkspaceManager`, `TaoDescriptionProvider`.
-
-### 3. Indexing (`tao-index.ts`, `tao-scope-computation.ts`)
-
-- [ ] **Computation:** If `visibility == 'file'`, skip indexing.
-- [ ] **Index:** Store `{ visibility: node.visibility }` in `desc.metadata`.
-
-### 4. Resolution (`tao-scope-provider.ts`)
-
-- [ ] **Override:** `getGlobalScope`.
-- [ ] **Siblings:** Filter Index by `dir(doc) == dir(target)`.
-- [ ] **Imports:**
-- Map `tao/` -> `packages/std-lib/tao/`.
-- Filter Index by `dir(target)` AND `visibility == 'share'`.
-- Add Qualified Names (`ui.Col`) to scope automatically based on path suffix.
-
-- [ ] **Chain:** Return `createScope(Siblings, createScope(Imports, super...))`.
-
-### 5. Workspace (`tao-workspace-manager.ts`)
-
-- [ ] **Load:** Scan `packages/std-lib` and load documents on startup.
-
-### 6. Validation (`tao-validator.ts`)
-
-- [ ] **Check:** If reference resolved via Wildcard Import (not in named list) and is unqualified, emit `warning`.
+```typescript
+// In tests
+await services.shared.workspace.DocumentBuilder.build([document])
+```

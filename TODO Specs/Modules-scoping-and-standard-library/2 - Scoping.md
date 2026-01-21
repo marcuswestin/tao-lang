@@ -1,3 +1,7 @@
+IGNORE THIS DOCUMENT FOR NOW. IT NEEDS TO BE UPDATED BEFORE IMPLEMENTING.
+
+=======================
+
 A strict stage of the validator will require that any used declaration is explicitly imported.
 
 ```tao
