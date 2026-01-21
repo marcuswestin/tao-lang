@@ -54,6 +54,9 @@ watch-tests *PATTERNS:
 build:
     just build-all
 
+gen:
+    cd packages/compiler && just gen
+
 # Alias
 build-all:
     just _build-all

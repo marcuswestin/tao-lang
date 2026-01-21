@@ -50,7 +50,7 @@ Goal: Implement the basic parsing and resolution of `file`, `share`, and `use` d
 
 - Declarations
   - [x] Write TODO tests for parsing `file`, `share` declarations.
-  - [ ] Add grammar for `file`, `share` declarations.
+  - [x] Add grammar for `file`, `share` declarations.
   - [ ] Make tests non-todo, and ensure they pass.
 - Imports
   - [ ] Add grammar for `use` imports with relative paths only:

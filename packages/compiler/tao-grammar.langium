@@ -15,11 +15,17 @@ Declaration:
     | ViewDeclaration
     );
 
+// Declarations
+///////////////
+
+DeclarationVisibility returns string:
+    'file' | 'share';
+
 AppDeclaration:
-    type='app' name=ID '{' appStatements += AppStatement* '}';
+    visibility=DeclarationVisibility? type='app' name=ID '{' appStatements += AppStatement* '}';
 
 ViewDeclaration:
-    type='view' name=ID parameterList=ParameterList? '{'
+    visibility=DeclarationVisibility? type='view' name=ID parameterList=ParameterList? '{'
         viewStatements += ViewStatement*
     '}';
 
