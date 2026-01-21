@@ -14,7 +14,7 @@ watch-test *PATTERNS:
 build:
     bun install
     just gen
-    tsc
+    bunx tsc
 
 gen:
     bunx langium generate --mode=development

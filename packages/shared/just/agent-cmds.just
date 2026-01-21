@@ -1,3 +1,5 @@
+import "./_shared-vars.just"
+
 ##########################
 # Agent Generated Commands
 # ------------------------
@@ -31,7 +33,7 @@ _agent-git *args:
 
 # Execute mise commands:
 _agent-mise *args:
-    mise {{ args }}
+    {{ MISE_CMD }} {{ args }}
 
 # Print a file (read-only helper for AI agents).
 _agent-cat *args:

@@ -11,11 +11,11 @@ _print_help:
     echo
 
 _install-mise-deps:
-    mise install
+    {{ MISE_CMD }} install
 
 _update-deps:
-    mise self-update --yes
-    mise install
+    {{ MISE_CMD }} self-update --yes
+    {{ MISE_CMD }} install
 
 # Setup development environment
 _create-dev-env:
@@ -30,9 +30,9 @@ _create-dev-env:
 
 _setup_git_repo:
     #!{{ SHELL_INIT }}
-    mise trust --quiet --yes
-    mise install 2> /dev/null
-    mise doctor 1> /dev/null
+    {{ MISE_CMD }} trust --quiet --yes
+    {{ MISE_CMD }} install 2> /dev/null
+    {{ MISE_CMD }} doctor 1> /dev/null
     just build-all
     echo "test" > ./test-file.txt
 
@@ -40,6 +40,9 @@ _install_mise:
     @ echo "\tInstall mise..."
     @ curl -sS https://mise.run | MISE_VERSION=v2025.12.1 sh 2> /dev/null
     @ just _trust_mise
+
+_trust_mise:
+    {{ MISE_CMD }} trust --quiet --yes
 
 _configure_zsh:
     #!{{ SHELL_INIT }}

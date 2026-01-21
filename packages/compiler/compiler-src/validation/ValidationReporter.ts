@@ -57,7 +57,6 @@ export class Reporter<NodeT extends AstNode> {
     location?: Location<NodeT, ErrorNodeT> | ErrorNodeT,
     extraInfo?: ExtraInfo<ErrorNodeT>,
   ) {
-    Log('QWEQWE', !!extraInfo, !!extraInfo?.alsoCheck)
     this.validationAcceptor('error', message, this.diagnosticsInfo(location, extraInfo))
   }
 
