@@ -18,7 +18,7 @@ build:
 
 gen:
     bunx langium generate --mode=development
-    just q-dev merge-tm-files
+    just q-dev gen-syntax-tmLanguage-files
 
 watch-compiler:
     bun -e "import 'compiler-src/compiler-main'; console.log('Reload...'); " --watch --no-clear-screen

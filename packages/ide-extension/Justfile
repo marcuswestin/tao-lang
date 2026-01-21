@@ -21,6 +21,7 @@ run:
 
 # Package the extension. This calls `just _npm-package-script_vscode-prepublish` via package.json script `vscode:prepublish`.
 package:
+    just compiler gen
     bunx @vscode/vsce package --allow-missing-repository --out ../../.builds 1> /dev/null
 
 _npm-package-script_vscode-prepublish:
