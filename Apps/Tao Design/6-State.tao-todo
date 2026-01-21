@@ -1,0 +1,41 @@
+app MyApp {
+    ui AppScreen
+}
+
+view AppScreen {
+    state Count = 0
+    Text value Count
+    Button title "Increment" {
+        on press -> { Count += 1 }
+    }
+}
+
+view Button title string {
+    does press
+
+    inject ```ts
+
+        return ALRuntime.ui.renderView('Button', RN.Button, {
+
+            RNProps: {
+
+                title: ALRuntimeScope.getParameterValue('title'),
+
+                onPress() {
+
+                    const actionArguments = {
+
+                        Message: ALRuntime.Literal('Hello World')
+
+                    }
+
+                    ALRuntimeScope.notifyDo('press', { actionArguments })
+
+                }
+
+            }
+
+        })
+
+    ```
+}
