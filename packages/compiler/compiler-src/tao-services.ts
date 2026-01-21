@@ -4,6 +4,7 @@ import * as LSP from 'langium/lsp'
 import { TaoLangGeneratedModule, TaoLangGeneratedSharedModule } from '@tao-compiler/_gen-tao-parser/module'
 
 import { TaoScopeComputation } from '@tao-compiler/TaoScopeComputation'
+import { TaoScopeProvider } from '@tao-compiler/TaoScopeProvider'
 import { validator } from '@tao-compiler/validation/tao-lang-validator.js'
 import TaoFormatter from '../formatter-src/TaoFormatter'
 
@@ -31,6 +32,7 @@ export function createTaoServices(context: LSP.DefaultSharedModuleContext): TaoS
       },
       references: {
         ScopeComputation: (services) => new TaoScopeComputation(services),
+        ScopeProvider: (services) => new TaoScopeProvider(services),
       },
       validation: {
         TaoLangValidator: () => validator,
