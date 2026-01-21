@@ -73,3 +73,169 @@ describe('multi-file module parsing', () => {
     expect(appFile.useStatements.first.importedNames).toEqual(['PublicView'])
   })
 })
+
+describe('cross-module import resolution (use statement)', () => {
+  test.todo('imported shared view can be referenced', async () => {
+    const result = await parseMultipleFiles([
+      {
+        path: '/project/ui/views.tao',
+        code: `share view Button { }`,
+      },
+      {
+        path: '/project/app.tao',
+        code: `
+          use ./ui/views Button
+          view MainView {
+            Button
+          }
+        `,
+      },
+    ])
+    // Should have no errors - Button is resolved from the import
+    const errors = result.getErrors('/project/app.tao')
+    expect(errors).toBeUndefined()
+  })
+
+  test.todo('error when importing non-existent declaration', async () => {
+    const result = await parseMultipleFiles([
+      {
+        path: '/project/ui/views.tao',
+        code: `share view Button { }`,
+      },
+      {
+        path: '/project/app.tao',
+        code: `
+          use ./ui/views NonExistent
+          view MainView { }
+        `,
+      },
+    ])
+    const errors = result.getErrors('/project/app.tao')
+    expect(errors).toBeDefined()
+    expect(errors!.humanErrorMessage).toContain('NonExistent')
+  })
+
+  test.todo('error when importing non-shared declaration from another module', async () => {
+    const result = await parseMultipleFiles([
+      {
+        path: '/project/ui/views.tao',
+        code: `view InternalView { }`, // Not shared - only visible within ui/ module
+      },
+      {
+        path: '/project/app.tao',
+        code: `
+          use ./ui/views InternalView
+          view MainView { }
+        `,
+      },
+    ])
+    const errors = result.getErrors('/project/app.tao')
+    expect(errors).toBeDefined()
+    expect(errors!.humanErrorMessage).toContain('InternalView')
+  })
+
+  test.todo('error when importing file-private declaration', async () => {
+    const result = await parseMultipleFiles([
+      {
+        path: '/project/ui/views.tao',
+        code: `file view PrivateView { }`, // Explicitly private to file
+      },
+      {
+        path: '/project/app.tao',
+        code: `
+          use ./ui/views PrivateView
+          view MainView { }
+        `,
+      },
+    ])
+    const errors = result.getErrors('/project/app.tao')
+    expect(errors).toBeDefined()
+    expect(errors!.humanErrorMessage).toContain('PrivateView')
+  })
+
+  test.todo('can import from multiple files in same module folder', async () => {
+    const result = await parseMultipleFiles([
+      {
+        path: '/project/ui/buttons.tao',
+        code: `share view Button { }`,
+      },
+      {
+        path: '/project/ui/inputs.tao',
+        code: `share view TextInput { }`,
+      },
+      {
+        path: '/project/app.tao',
+        code: `
+          use ./ui Button, TextInput
+          view MainView {
+            Button
+            TextInput
+          }
+        `,
+      },
+    ])
+    const errors = result.getErrors('/project/app.tao')
+    expect(errors).toBeUndefined()
+  })
+})
+
+describe('same-module visibility (no use statement needed)', () => {
+  test.todo('default declarations are visible to other files in same module', async () => {
+    const result = await parseMultipleFiles([
+      {
+        path: '/project/ui/buttons.tao',
+        code: `view Button { }`, // Default visibility - visible within module
+      },
+      {
+        path: '/project/ui/forms.tao',
+        code: `
+          view LoginForm {
+            Button
+          }
+        `,
+      },
+    ])
+    // No use statement needed - Button is in same module
+    const errors = result.getErrors('/project/ui/forms.tao')
+    expect(errors).toBeUndefined()
+  })
+
+  test.todo('shared declarations are also visible within same module', async () => {
+    const result = await parseMultipleFiles([
+      {
+        path: '/project/ui/buttons.tao',
+        code: `share view Button { }`,
+      },
+      {
+        path: '/project/ui/forms.tao',
+        code: `
+          view LoginForm {
+            Button
+          }
+        `,
+      },
+    ])
+    const errors = result.getErrors('/project/ui/forms.tao')
+    expect(errors).toBeUndefined()
+  })
+
+  test.todo('file-private declarations are NOT visible to other files in same module', async () => {
+    const result = await parseMultipleFiles([
+      {
+        path: '/project/ui/buttons.tao',
+        code: `file view PrivateHelper { }`, // File-private
+      },
+      {
+        path: '/project/ui/forms.tao',
+        code: `
+          view LoginForm {
+            PrivateHelper
+          }
+        `,
+      },
+    ])
+    const errors = result.getErrors('/project/ui/forms.tao')
+    expect(errors).toBeDefined()
+    expect(errors!.humanErrorMessage).toContain('PrivateHelper')
+  })
+})
