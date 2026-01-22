@@ -3,7 +3,6 @@ import { compileTao } from '@tao-compiler'
 import chokidar from 'chokidar'
 import { mkdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
-import { Log } from '../../compiler/compiler-src/@shared/Log'
 import {
   Assert,
   TaoError,
@@ -53,7 +52,6 @@ type TaoSDK_compileOpts = {
 }
 type TaoSDK_compileResult = { outputPath: string; result?: { code: string }; error?: TaoError }
 export async function TaoSDK_compile(opts: TaoSDK_compileOpts): Promise<TaoSDK_compileResult> {
-  Log.debug(`TaoSDK_compile opts: ${JSON.stringify(opts, null, 2)}`)
   if (!opts.path && !opts.code) {
     throwUserInputRejectionError('Missing <path>')
   } else if (opts.code && opts.path) {

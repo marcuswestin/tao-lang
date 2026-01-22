@@ -1,19 +1,14 @@
 import * as langium from 'langium'
-import { dirname, join } from 'node:path'
+import * as path from 'node:path'
 import * as ast from './_gen-tao-parser/ast'
 
-/**
- * TaoScopeProvider filters the global index based on module visibility rules.
- *
- * Visibility rules:
- * - Same module (folder): default + share declarations are visible
- * - Cross-module (via `use`): only `share` declarations can be imported
- * - `file` declarations: never visible outside their file (not in global index)
- */
+// TaoScopeProvider receives the global symbol index and filters `share`-marked declarations
+// for `use` statement contexts; and filters `share`-marked and unmarked declarations for
+// same-module contexts.
 export class TaoScopeProvider extends langium.DefaultScopeProvider {
-  /**
-   * Get the scope for a reference. Filters by module visibility.
-   */
+  // Get the scope of available symbols for a given reference and its context.
+  // E.g for `RecipeView { }`, the scope is the set of all non-`file` top level declarations in the same module,
+  // plus all `use`-imported declarations.
   override getScope(context: langium.ReferenceInfo): langium.Scope {
     // For view references (like in ViewRenderStatement), apply module visibility rules
     if (context.property === 'view' && ast.isViewRenderStatement(context.container)) {
@@ -34,7 +29,7 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
   private getModuleScopedDeclarations(context: langium.ReferenceInfo): langium.Scope {
     const document = langium.AstUtils.getDocument(context.container)
     const taoFile = document.parseResult.value as ast.TaoFile
-    const currentDir = dirname(document.uri.path)
+    const currentDir = path.dirname(document.uri.path)
 
     // 1. Collect explicitly imported names via `use` statements
     const importedSymbols = this.getImportedSymbols(taoFile, document, context)
@@ -68,19 +63,23 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
       const targetUris = this.resolveModulePath(useStmt.modulePath, document)
 
       for (const targetUri of targetUris) {
-        // Get all exported symbols from target URI
-        const exports = this.indexManager
+        // Get all workspace exported symbols of the target type AND within the target URI
+        const allRelevantExports = this.indexManager
           .allElements(referenceType, new Set([targetUri]))
-          .toArray()
 
-        // Filter to only include symbols that were explicitly imported by name
-        // AND have `share` visibility
-        for (const desc of exports) {
-          if (useStmt.importedNames.includes(desc.name)) {
-            // Check visibility - only share can be imported cross-module
-            const node = desc.node
-            if (node && ast.isDeclaration(node) && node.visibility === 'share') {
-              imported.push(desc)
+        for (const description of allRelevantExports) {
+          if (useStmt.importedNames.includes(description.name)) {
+            const node = description.node
+            // Retrieve shared declarations:
+            // Declaration nodes, wrapped in a VisibilityMarkedDeclaration, with 'share' visibility.
+            if (!node) {
+              continue
+            } else if (!ast.isDeclaration(node) || !ast.isVisibilityMarkedDeclaration(node.$container)) {
+              continue
+            } else if (node.$container.visibility !== 'share') {
+              continue
+            } else {
+              imported.push(description)
             }
           }
         }
@@ -93,6 +92,12 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
   /**
    * Get symbols from the same module (folder).
    * Both default and share visibility are visible within the same module.
+   *
+   * Performance note: This queries all elements of the target type from the global index,
+   * then filters by directory. For large workspaces, this could be optimized by:
+   * - Caching a directory-to-URIs mapping
+   * - Or only exporting same-module declarations to a module-scoped index
+   * However, for typical Tao Lang projects (10-100 files), this is acceptable.
    */
   private getSameModuleSymbols(
     currentDir: string,
@@ -104,7 +109,7 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
     return this.indexManager
       .allElements(referenceType)
       .filter((desc) => {
-        const descDir = dirname(desc.documentUri.path)
+        const descDir = path.dirname(desc.documentUri.path)
         // Same module = same directory, but exclude current file (handled by local scope)
         return descDir === currentDir && desc.documentUri.toString() !== currentDocument.uri.toString()
       })
@@ -141,6 +146,14 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
   }
 
   /**
+   * Normalize and join path parts, removing trailing slashes for consistent comparison.
+   * This ensures paths like `../` are normalized the same way as `dirname()` results.
+   */
+  private normalizeModulePath(...parts: string[]): string {
+    return path.normalize(path.join(...parts)).replace(/\/+$/, '')
+  }
+
+  /**
    * Resolve a module path to document URIs.
    * - `./ui/views` can match `/project/ui/views.tao` (file) or all .tao files in `/project/ui/views/` (folder)
    */
@@ -153,14 +166,14 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
     }
 
     try {
-      const currentDir = dirname(document.uri.path)
-      const targetPath = join(currentDir, modulePath)
+      const currentDir = path.dirname(document.uri.path)
+      const targetPath = this.normalizeModulePath(currentDir, modulePath)
       const targetFileWithExt = targetPath + '.tao'
 
       const uris: string[] = []
       for (const doc of this.indexManager.allElements()) {
         const docPath = doc.documentUri.path
-        const docDir = dirname(docPath)
+        const docDir = this.normalizeModulePath(path.dirname(docPath))
 
         // Match exact file (e.g., ./ui/views -> /project/ui/views.tao)
         if (docPath === targetFileWithExt) {

@@ -1,33 +1,33 @@
-// view Col_TODO {
-//     inject ```ts
-//         const renderViewParams = { children, params: {}, styles: {}, layouts: {}, uiLabel: '', RNProps: {}, RNStyle:{} }
-//         renderViewParams.styles = { flexDirection: 'column', backgroundColor: 'blue', padding: 10 }
-//         return ALRuntime.ui.renderView('Col', RN.View, renderViewParams)
-//     ```
-// }
+view Col_TODO {
+    inject ```ts
+        const renderViewParams = { children, params: {}, styles: {}, layouts: {}, uiLabel: '', RNProps: {}, RNStyle:{} }
+        renderViewParams.styles = { flexDirection: 'column', backgroundColor: 'blue', padding: 10 }
+        return ALRuntime.ui.renderView('Col', RN.View, renderViewParams)
+    ```
+}
 
-// view Row_TODO {
-//     inject ```ts
-//         const renderViewParams = { children, params: {}, styles: {}, layouts: {}, uiLabel: '', RNProps: {}, RNStyle:{} }
-//         renderViewParams.styles = { flexDirection: 'row', backgroundColor: 'yellow' }
-//         return ALRuntime.ui.renderView('Col', RN.View, renderViewParams)
-//     ```
-// }
+view Row_TODO {
+    inject ```ts
+        const renderViewParams = { children, params: {}, styles: {}, layouts: {}, uiLabel: '', RNProps: {}, RNStyle:{} }
+        renderViewParams.styles = { flexDirection: 'row', backgroundColor: 'yellow' }
+        return ALRuntime.ui.renderView('Col', RN.View, renderViewParams)
+    ```
+}
 
-// view Text_TODO value string {
-//     inject ```ts
-//         const renderViewParams = { value, params: {}, styles: {}, layouts: {}, children: [], uiLabel: '', RNProps: {}, RNStyle:{} }
-//         renderViewParams.RNStyle = { color: 'green', padding: 10, fontSize: 40, fontWeight: 'bold' }
-//         return ALRuntime.ui.renderTextView(renderViewParams)
-//     ```
-// }
+view Text_TODO value string {
+    inject ```ts
+        const renderViewParams = { value, params: {}, styles: {}, layouts: {}, children: [], uiLabel: '', RNProps: {}, RNStyle:{} }
+        renderViewParams.RNStyle = { color: 'green', padding: 10, fontSize: 40, fontWeight: 'bold' }
+        return ALRuntime.ui.renderTextView(renderViewParams)
+    ```
+}
 
-// view Button_TODO title string {
-//     // TODO: does press
-//     inject ```ts
-//         const renderViewParams = { children, params: {}, styles: {}, layouts: {}, uiLabel: '', RNProps: {}, RNStyle:{} }
-//         renderViewParams.styles = { backgroundColor: 'green', padding: 10 }
-//         renderViewParams.RNProps = { title, onPress: on_action_press }
-//         return ALRuntime.ui.renderView('Button', RN.Button, renderViewParams)
-//     ```
-// }
+view Button_TODO title string {
+    // TODO: does press
+    inject ```ts
+        const renderViewParams = { children, params: {}, styles: {}, layouts: {}, uiLabel: '', RNProps: {}, RNStyle:{} }
+        renderViewParams.styles = { backgroundColor: 'green', padding: 10 }
+        renderViewParams.RNProps = { title, onPress: on_action_press }
+        return ALRuntime.ui.renderView('Button', RN.Button, renderViewParams)
+    ```
+}

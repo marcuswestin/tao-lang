@@ -2,7 +2,7 @@ grammar TaoLang
 
 entry TaoFile:
     useStatements += UseStatement*
-    topLevelStatements += BaseStatement*;
+    topLevelStatements += TopLevelStatement*;
 
 // Imports
 //////////
@@ -10,7 +10,16 @@ entry TaoFile:
 UseStatement:
     'use' modulePath=RELATIVE_PATH importedNames+=ID (',' importedNames+=ID)*;
 
-terminal RELATIVE_PATH: /\.\.?\/[a-zA-Z0-9_\-\/]*/;
+terminal RELATIVE_PATH: /(\.\.\/)+[a-zA-Z0-9_\-\/]*|\.\/[a-zA-Z0-9_\-\/]*/;
+
+TopLevelStatement:
+    BaseStatement | VisibilityMarkedDeclaration;
+
+DeclarationVisibility returns string:
+    'file' | 'share';
+
+VisibilityMarkedDeclaration:
+    visibility=DeclarationVisibility declaration=Declaration;
 
 // Statements
 /////////////
@@ -28,14 +37,11 @@ Declaration:
 // Declarations
 ///////////////
 
-DeclarationVisibility returns string:
-    'file' | 'share';
-
 AppDeclaration:
-    visibility=DeclarationVisibility? type='app' name=ID '{' appStatements += AppStatement* '}';
+    type='app' name=ID '{' appStatements += AppStatement* '}';
 
 ViewDeclaration:
-    visibility=DeclarationVisibility? type='view' name=ID parameterList=ParameterList? '{'
+    type='view' name=ID parameterList=ParameterList? '{'
         viewStatements += ViewStatement*
     '}';
 
@@ -49,6 +55,7 @@ Injection:
 
 // Shared Grammer
 /////////////////
+
 ParameterList:
     parameters += Parameter (',' parameter += Parameter)*;
 

@@ -1,4 +1,8 @@
-view KnifeBlock {
+use ../ FridgeView //
+
+view Test { }
+
+share view KnifeBlock {
     Text value "Knife Block"
 }
 
@@ -8,6 +12,7 @@ view RootView {
 
 view RootView {
     KnifeBlock { }
+    FridgeView { }
 }
 
 view Text { }
