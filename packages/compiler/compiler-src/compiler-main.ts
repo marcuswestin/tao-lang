@@ -1,7 +1,7 @@
 import { LangiumDocument } from 'langium'
 import * as LangiumGen from 'langium/generate'
 import { Assert } from './@shared/TaoErrors'
-import { isInjection, isViewRenderStatement } from './_gen-tao-parser/ast'
+import { isDeclaration, isInjection, isVisibilityMarkedDeclaration, isViewRenderStatement } from './_gen-tao-parser/ast'
 import {
   assertNever,
   Compiled,
@@ -67,14 +67,15 @@ function generateTypescript(taoFile: AST.TaoFile): Compiled {
     ${compileNodeListProperty(taoFile, 'topLevelStatements', compileTopLevelStatement)}
   `
 }
-
-function compileTopLevelStatement(statement: AST.Declaration | AST.Injection): Compiled {
+function compileTopLevelStatement(statement: AST.TopLevelStatement): Compiled {
   switch (statement.$type) {
     case 'AppDeclaration':
     case 'ViewDeclaration':
       return compileDeclaration(statement)
     case 'Injection':
       return compileInjection(statement)
+    case 'VisibilityMarkedDeclaration':
+      return compileDeclaration(statement.declaration)
     default:
       assertNever(statement)
   }
