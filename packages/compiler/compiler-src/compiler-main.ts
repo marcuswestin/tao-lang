@@ -1,7 +1,7 @@
 import { LangiumDocument } from 'langium'
 import * as LangiumGen from 'langium/generate'
 import { Assert } from './@shared/TaoErrors'
-import { isDeclaration, isInjection, isVisibilityMarkedDeclaration, isViewRenderStatement } from './_gen-tao-parser/ast'
+import { isInjection, isViewRenderStatement } from './_gen-tao-parser/ast'
 import {
   assertNever,
   Compiled,

@@ -32,12 +32,13 @@
           "meta.embedded.block.ts.taolang": "typescript"
         }
       },
-
       {
         "language": "tao-markdown-injection",
         "scopeName": "markdown.tao.codeblock",
         "path": "./ide-syntaxes/_gen-syntaxes/tao-lang.markdown-embed.tmLanguage.json",
-        "injectTo": ["text.html.markdown"],
+        "injectTo": [
+          "text.html.markdown"
+        ],
         "embeddedLanguages": {
           "meta.embedded.block.tao": "tao"
         }

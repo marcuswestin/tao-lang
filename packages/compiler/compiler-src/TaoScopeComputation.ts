@@ -113,9 +113,9 @@ export class TaoScopeComputation extends langium.DefaultScopeComputation {
     if (!scopeNode) {
       return
     }
-    const name = this.nameProvider.getName(node);
+    const name = this.nameProvider.getName(node)
     if (name) {
-        localSymbols.add(scopeNode, this.descriptions.createDescription(node, name, document));
+      localSymbols.add(scopeNode, this.descriptions.createDescription(node, name, document))
     }
   }
 

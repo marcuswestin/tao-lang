@@ -31,8 +31,8 @@ export function createTaoServices(context: LSP.DefaultSharedModuleContext): TaoS
         Formatter: () => new TaoFormatter(),
       },
       references: {
-        ScopeComputation: (services) => new TaoScopeComputation(services),
-        ScopeProvider: (services) => new TaoScopeProvider(services),
+        ScopeComputation: (services: langium.LangiumCoreServices) => new TaoScopeComputation(services),
+        ScopeProvider: (services: langium.LangiumCoreServices) => new TaoScopeProvider(services),
       },
       validation: {
         TaoLangValidator: () => validator,

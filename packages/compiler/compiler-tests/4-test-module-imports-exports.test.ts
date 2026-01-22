@@ -238,7 +238,7 @@ describe('cross-module import resolution (use statement)', () => {
     const errors = result.getErrors('/project/src/app.tao')
     expect(errors).toBeUndefined()
   })
-  
+
   test('shared and file (default) declarations are accessible from within the same file', async () => {
     const result = await parseMultipleFiles([
       {
