@@ -88,6 +88,10 @@ fix:
 check: build
     just _check
 
+# Just lint
+lint:
+    just _lint
+
 # Run mise MCP server
 mcp-run:
     screen -dmS mise-mcp mise mcp

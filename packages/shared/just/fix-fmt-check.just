@@ -31,10 +31,11 @@ _fix: _fmt
     cd packages/expo-runtime && ts-autofix fix --tsCliArgs --noUnusedLocals
     cd packages/expo-runtime && bunx expo lint --fix
     cd packages/expo-runtime && bunx eslint --fix
+    # code . --command workbench.action.organizeImports --command workbench.action.formatWorkspace
 
 [no-quiet]
 _check:
-    {{ OXLINT_CMD }}
+    just lint
     dprint check
     cd packages/compiler && tsc --noEmit --noUnusedLocals
     cd packages/tao-cli && tsc --noEmit --noUnusedLocals
@@ -43,3 +44,6 @@ _check:
     cd packages/expo-runtime && tsc --noEmit --noUnusedLocals
     cd packages/expo-runtime && bunx expo lint
     cd packages/expo-runtime && bunx eslint
+
+_lint:
+    {{ OXLINT_CMD }}
