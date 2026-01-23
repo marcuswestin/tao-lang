@@ -1,6 +1,9 @@
-It's time to tidy up and wrap up the work done in this branch. In order I'd like to do something like:
+It's time to tidy up and wrap up the work done in this branch. Make all comparisons to the main branch:
 
-- Review what's changed, and think through whether any of the changes can be improved. Note it down for later.
+- Review what's changed between this branch and main, and think through whether any of the changes can be improved. Note it down for later.
+  - First just look at the log messages to create an overview.
+  - Then look at the code changes, and think through what should be added to the change list.
+  - Then look at the changes and consider what improvements can and should be made before merging.
 - Consider what the logical next three feature branches should be.
 - Make a plan for what needs to be cleaned up among the new changes. Let's get it is squeeky clean and ready to be merged:
   - Run `just fix` and `just check` to ensure everything is clean.
