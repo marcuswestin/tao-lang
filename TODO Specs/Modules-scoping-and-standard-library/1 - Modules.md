@@ -163,6 +163,7 @@ Goal: Implement the basic parsing and resolution of `file`, `share`, and `use` d
   - [x] Add TaoScopeProvider for resolving `use` imports.
   - [x] Make tests non-todo, and ensure they pass (11 pass, 3 todo for UseStatement validation).
 - Scoped declarations
+  - [ ] Use eslint to make switch statements exhaustive in `just lint`
   - [ ] Add "let" definitions
   - [ ] Require shared declarations to be explained in some way (e.g text describing its functionality, intended use, and expected behavior)
   - [ ] Examine whitespace newline sensitivity necessary or not. `view TestView { Col \n Row }` should be valid, without `view TestView { Col { } Row }`
