@@ -6,7 +6,7 @@ describe('use statement parsing', () => {
       use ./ui/views PublicView
       view MyView { }
     `)
-    const useStmt = doc.useStatements.first
+    const useStmt = doc.topLevelStatements.first.as_UseStatement
     expect(useStmt.modulePath).toBe('./ui/views')
     expect(useStmt.importedNames).toEqual(['PublicView'])
   })
@@ -16,7 +16,7 @@ describe('use statement parsing', () => {
       use ./ui/views PublicView, AnotherView, ThirdView
       view MyView { }
     `)
-    const useStmt = doc.useStatements.first
+    const useStmt = doc.topLevelStatements.first.as_UseStatement
     expect(useStmt.modulePath).toBe('./ui/views')
     expect(useStmt.importedNames).toEqual(['PublicView', 'AnotherView', 'ThirdView'])
   })
@@ -26,7 +26,7 @@ describe('use statement parsing', () => {
       use ../shared/components Button
       view MyView { }
     `)
-    const useStmt = doc.useStatements.first
+    const useStmt = doc.topLevelStatements.first.as_UseStatement
     expect(useStmt.modulePath).toBe('../shared/components')
     expect(useStmt.importedNames).toEqual(['Button'])
   })
@@ -37,19 +37,9 @@ describe('use statement parsing', () => {
       use ./ui/components Button, Input
       view MyView { }
     `)
-    expect(doc.useStatements.length).toBe(2)
-    expect(doc.useStatements[0].modulePath).toBe('./ui/views')
-    expect(doc.useStatements[1].modulePath).toBe('./ui/components')
-  })
-
-  test('use statements come before declarations', async () => {
-    const doc = await parseAST(`
-      use ./ui/views PublicView
-      view MyView { }
-      app MyApp { ui MyView }
-    `)
-    expect(doc.useStatements.length).toBe(1)
-    expect(doc.topLevelStatements.length).toBe(2)
+    expect(doc.topLevelStatements.length).toBe(3)
+    expect(doc.topLevelStatements[0].as_UseStatement.modulePath).toBe('./ui/views')
+    expect(doc.topLevelStatements[1].as_UseStatement.modulePath).toBe('./ui/components')
   })
 })
 
@@ -70,7 +60,7 @@ describe('multi-file module parsing', () => {
       },
     ])
     const appFile = result.getFile('/project/app.tao')
-    expect(appFile.useStatements.first.importedNames).toEqual(['PublicView'])
+    expect(appFile.topLevelStatements.first.as_UseStatement.importedNames).toEqual(['PublicView'])
   })
 })
 

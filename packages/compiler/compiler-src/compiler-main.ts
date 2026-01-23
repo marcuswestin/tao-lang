@@ -1,6 +1,7 @@
 import { LangiumDocument } from 'langium'
 import * as LangiumGen from 'langium/generate'
 import { Assert } from './@shared/TaoErrors'
+import { switchItemType_Exhaustive } from './@shared/TypeSafety'
 import { isInjection, isViewRenderStatement } from './_gen-tao-parser/ast'
 import {
   assertNever,
@@ -68,17 +69,19 @@ function generateTypescript(taoFile: AST.TaoFile): Compiled {
   `
 }
 function compileTopLevelStatement(statement: AST.TopLevelStatement): Compiled {
-  switch (statement.$type) {
-    case 'AppDeclaration':
-    case 'ViewDeclaration':
-      return compileDeclaration(statement)
-    case 'Injection':
-      return compileInjection(statement)
-    case 'VisibilityMarkedDeclaration':
-      return compileDeclaration(statement.declaration)
-    default:
-      assertNever(statement)
-  }
+  return switchItemType_Exhaustive(statement, {
+    'UseStatement': compileUseStatement,
+    'AppDeclaration': compileDeclaration,
+    'ViewDeclaration': compileDeclaration,
+    'Injection': compileInjection,
+    'VisibilityMarkedDeclaration': (vmd) => compileDeclaration(vmd.declaration),
+  })
+}
+
+function compileUseStatement(useStatement: AST.UseStatement): Compiled {
+  return compileNode(useStatement)`
+    // Tao: use ${useStatement.modulePath} ${useStatement.importedNames.join(', ')}
+  `
 }
 
 function compileDeclaration(declaration: AST.Declaration): Compiled {
@@ -94,6 +97,8 @@ function compileDeclaration(declaration: AST.Declaration): Compiled {
           return <>${compileList(declaration, renderStatements, compileViewRenderStatement)}</>
         }
       `
+    default:
+      assertNever(declaration)
   }
 }
 

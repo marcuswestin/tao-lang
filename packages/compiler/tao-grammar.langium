@@ -1,7 +1,6 @@
 grammar TaoLang
 
 entry TaoFile:
-    useStatements += UseStatement*
     topLevelStatements += TopLevelStatement*;
 
 // Imports
@@ -13,7 +12,7 @@ UseStatement:
 terminal RELATIVE_PATH: /(\.\.\/)+[a-zA-Z0-9_\-\/]*|\.\/[a-zA-Z0-9_\-\/]*/;
 
 TopLevelStatement:
-    BaseStatement | VisibilityMarkedDeclaration;
+    UseStatement | BaseStatement | VisibilityMarkedDeclaration;
 
 DeclarationVisibility returns string:
     'file' | 'share';

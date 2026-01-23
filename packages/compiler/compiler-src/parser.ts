@@ -6,6 +6,7 @@ import { createHash } from 'node:crypto'
 import { statSync } from 'node:fs'
 import { createTaoServices } from 'tao-compiler'
 import { throwUserInputRejectionError } from './@shared/TaoErrors'
+import { assertNever } from './compiler-utils'
 import { AST } from './grammar'
 import { ErrorReport, getDocumentErrors } from './parse-errors'
 
@@ -104,7 +105,9 @@ function createErrorResult(opts: ParseOptions, errorReport: ErrorReport): ParseR
 
 function getValidationOptions(opts: ParseOptions): Langium.ValidationOptions | boolean {
   const categories = opts.skipSlowValidation ? ['fast'] : undefined
-  switch (opts.validateUpToStage ?? 'all') {
+  const validateUpToStage = opts.validateUpToStage ?? 'all'
+
+  switch (validateUpToStage) {
     case 'none':
       return false
     case 'all':
@@ -115,6 +118,8 @@ function getValidationOptions(opts: ParseOptions): Langium.ValidationOptions | b
       return { categories, stopAfterParsingErrors: true }
     case 'linking':
       return { categories, stopAfterLinkingErrors: true }
+    default:
+      assertNever(validateUpToStage)
   }
 }
 

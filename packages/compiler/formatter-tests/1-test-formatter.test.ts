@@ -271,4 +271,34 @@ describe('Formatter', () => {
           Child { }
       }
     `)
+
+  // testFormatter('Single use statement')
+  // .format(`
+  //   use   ./ui/views   Button
+  // `)
+  // .equals(`
+  //   use ./ui/views Button //
+  //   app MyApp { }
+  // `)
+
+  testFormatter('use statement newline')
+    .format(`
+      use ./ui/views Button
+      view MyView {}
+    `)
+    .equals(`
+      use ./ui/views Button
+      
+      view MyView { }
+    `)
+
+  // testFormatter('Use statement ')
+  //   .format(`
+  //     use   ./ui/views   Button //
+  //     app MyApp {}
+  //   `)
+  //   .equals(`
+  //     use ./ui/views Button //
+  //     app MyApp { }
+  //   `)
 })

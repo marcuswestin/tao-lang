@@ -59,7 +59,8 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
     const referenceType = this.reflection.getReferenceType(context)
     const imported: langium.AstNodeDescription[] = []
 
-    for (const useStmt of taoFile.useStatements) {
+    const useStatements = taoFile.topLevelStatements.filter((stmt) => ast.isUseStatement(stmt))
+    for (const useStmt of useStatements) {
       const targetUris = this.resolveModulePath(useStmt.modulePath, document)
 
       for (const targetUri of targetUris) {

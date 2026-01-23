@@ -3,6 +3,7 @@ import { AST } from '@tao-compiler/grammar'
 import { AstNode, LangiumDocument } from 'langium'
 import { AbstractFormatter, Formatting } from 'langium/lsp'
 import { DocumentFormattingParams, TextEdit } from 'vscode-languageserver'
+import { switchBindItemType_Exhaustive } from '../compiler-src/@shared/TypeSafety' // TODO: Fix this to be @shared/TypeSafety
 import * as ast from '../compiler-src/_gen-tao-parser/ast'
 import extensivelyFormatInjectionBlocks from './injectionFormatter'
 
@@ -32,30 +33,24 @@ export default class TaoFormatter extends AbstractFormatter {
     return edits
   }
 
-  protected format(node: AstNode): void {
-    if (ast.isTaoFile(node)) {
-      this.formatTaoFile(node)
-    } else if (ast.isAppDeclaration(node)) {
-      this.formatAppDeclaration(node)
-    } else if (ast.isAppStatement(node)) {
-      this.formatAppStatement(node)
-    } else if (ast.isViewDeclaration(node)) {
-      this.formatViewDeclaration(node)
-    } else if (ast.isViewRenderStatement(node)) {
-      this.formatViewRenderStatement(node)
-    } else if (ast.isViewBody(node)) {
-      this.formatViewBody(node)
-    } else if (ast.isArgsList(node)) {
-      this.formatArgsList(node)
-    } else if (ast.isArgument(node)) {
-      this.formatArgument(node)
-    } else if (ast.isParameterList(node)) {
-      this.formatParameterList(node)
-    } else if (ast.isParameter(node)) {
-      this.formatParameter(node)
-    } else if (ast.isInjection(node)) {
-      this.formatInjection(node)
-    }
+  protected format(node: ast.TaoLangAstType[keyof ast.TaoLangAstType]): void {
+    return switchBindItemType_Exhaustive(node, this, {
+      'TaoFile': this.formatTaoFile,
+      'UseStatement': this.formatUseStatement,
+      'AppDeclaration': this.formatAppDeclaration,
+      'VisibilityMarkedDeclaration': this.formatVisibilityMarkedDeclaration,
+      'AppStatement': this.formatAppStatement,
+      'ViewDeclaration': this.formatViewDeclaration,
+      'ViewRenderStatement': this.formatViewRenderStatement,
+      'ViewBody': this.formatViewBody,
+      'ArgsList': this.formatArgsList,
+      'Argument': this.formatArgument,
+      'Injection': this.formatInjection,
+      'Parameter': this.formatParameter,
+      'ParameterList': this.formatParameterList,
+      'NumberLiteral': this.formatNumberLiteral,
+      'StringLiteral': this.formatStringLiteral,
+    })
   }
 
   private formatTaoFile(node: ast.TaoFile): void {
@@ -64,12 +59,24 @@ export default class TaoFormatter extends AbstractFormatter {
     if (firstStatement) {
       f.node(firstStatement).prepend(Formatting.noSpace())
     }
+
     for (let i = 1; i < node.topLevelStatements.length; i++) {
       f.node(node.topLevelStatements[i]).prepend(Formatting.newLines(2))
     }
   }
 
+  private formatUseStatement(node: ast.UseStatement): void {
+    const f = this.getNodeFormatter(node)
+    // Space after 'ui' keyword: "ui MyView"
+    f.keyword('use').prepend(Formatting.noSpace()).append(Formatting.oneSpace())
+    f.property('modulePath').append(Formatting.oneSpace())
+    f.property('importedNames').append(Formatting.newLine())
+    f.node(node).append(Formatting.newLine())
+  }
+
   private formatAppDeclaration(node: ast.AppDeclaration): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('app').prepend(Formatting.noSpace())
     this._spaceAroundName(node)
     this._indentBlock(node, 'appStatements')
   }
@@ -84,6 +91,12 @@ export default class TaoFormatter extends AbstractFormatter {
     this._spaceAroundName(node)
     this._spaceAfterProperty(node, 'parameterList')
     this._indentBlock(node, 'viewStatements')
+  }
+
+  private formatVisibilityMarkedDeclaration(node: ast.VisibilityMarkedDeclaration): void {
+    this._spaceAroundName(node)
+    this._spaceAfterProperty(node, 'visibility')
+    this._spaceAfterProperty(node, 'declaration')
   }
 
   private formatViewRenderStatement(node: ast.ViewRenderStatement): void {
@@ -111,6 +124,14 @@ export default class TaoFormatter extends AbstractFormatter {
 
   private formatParameter(node: ast.Parameter): void {
     this._spaceAfterProperty(node, 'key')
+  }
+
+  private formatNumberLiteral(_node: ast.NumberLiteral): void {
+    // No formatting for number literals
+  }
+
+  private formatStringLiteral(_node: ast.StringLiteral): void {
+    // No formatting for string literals
   }
 
   private formatInjection(node: ast.Injection): void {
