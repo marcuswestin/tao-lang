@@ -164,7 +164,15 @@ Goal: Implement the basic parsing and resolution of `file`, `share`, and `use` d
   - [x] Make tests non-todo, and ensure they pass (11 pass, 3 todo for UseStatement validation).
 - Scoped declarations
   - [ ] Use eslint to make switch statements exhaustive in `just lint`
+  - [ ] Duplicate declarations in a module should give an error.
+  - [ ] Fix ALL doc comments to be in the correct format
+    - [ ] Add AGENTS.md or cursor rule for how to write doc comments
+    - [ ] Make commends optional for private and internal functions
   - [ ] Add "let" definitions
+  - [ ] REALLY review UseStatementValidator.ts
+    - [ ] Make "file" visibility into "hide".
+  - [ ] Fix shared module tsconfigs so that all can import each other
+  - [ ] Combine, or restructure, validators. (UseStatement and TaoLangValidator)
   - [ ] Require shared declarations to be explained in some way (e.g text describing its functionality, intended use, and expected behavior)
   - [ ] Examine whitespace newline sensitivity necessary or not. `view TestView { Col \n Row }` should be valid, without `view TestView { Col { } Row }`
     - OR, do we require rendering block for now? `view TestView { Col { } Row { } }`

@@ -15,7 +15,7 @@ TopLevelStatement:
     UseStatement | BaseStatement | VisibilityMarkedDeclaration;
 
 DeclarationVisibility returns string:
-    'file' | 'share';
+    'hide' | 'share'; // Defaults to module-visible
 
 VisibilityMarkedDeclaration:
     visibility=DeclarationVisibility declaration=Declaration;
