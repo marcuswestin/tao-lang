@@ -1,5 +1,5 @@
 import { describe, expect, test } from '../compiler-tests/test-utils/test-harness'
-import { dedent, formatCode, testFormatter, visualize } from './formatter-test-utils'
+import { dedent, testFormatter, visualize } from './formatter-test-utils'
 
 describe('Formatter', () => {
   test('stub test', () => expect(true).toBe(true))
@@ -42,19 +42,6 @@ describe('Formatter', () => {
     app MyApp { }
     `)
 
-  test.todo('Postfix whitespace remove and newline insertion', async () => {
-    const formattedCode = await formatCode(`app MyApp {}`)
-    expect(formattedCode).toBe(
-      dedent(`app MyApp { }`).trim() + '\n',
-    )
-    expect(
-      await formatCode(`
-        
-        app MyApp {}
-        
-        `),
-    ).toBe(dedent(`app MyApp { }`).trim() + '\n')
-  })
   testFormatter('Postfix whitespace remove and newline insertion')
     .format(`
     app MyApp {}
@@ -272,15 +259,6 @@ describe('Formatter', () => {
       }
     `)
 
-  // testFormatter('Single use statement')
-  // .format(`
-  //   use   ./ui/views   Button
-  // `)
-  // .equals(`
-  //   use ./ui/views Button //
-  //   app MyApp { }
-  // `)
-
   testFormatter('use statement newline')
     .format(`
       use ./ui/views Button
@@ -288,17 +266,102 @@ describe('Formatter', () => {
     `)
     .equals(`
       use ./ui/views Button
-      
+
       view MyView { }
     `)
+})
 
-  // testFormatter('Use statement ')
-  //   .format(`
-  //     use   ./ui/views   Button //
-  //     app MyApp {}
-  //   `)
-  //   .equals(`
-  //     use ./ui/views Button //
-  //     app MyApp { }
-  //   `)
+describe('formatter edge cases', () => {
+  testFormatter('deeply nested view structures')
+    .format(`
+      view Outer{Inner1{Inner2{Inner3{}}}}
+    `)
+    .equals(`
+      view Outer {
+          Inner1 {
+              Inner2 {
+                  Inner3 { }
+              }
+          }
+      }
+    `)
+
+  testFormatter('visibility modifiers - share')
+    .format(`
+      share view   Button{}
+    `)
+    .equals(`
+      share view Button { }
+    `)
+
+  testFormatter('visibility modifiers - file')
+    .format(`
+      file view   PrivateHelper{}
+    `)
+    .equals(`
+      file view PrivateHelper { }
+    `)
+
+  testFormatter('multiple declarations with visibility modifiers')
+    .format(`
+      share view Button{}
+      file view Helper{}
+      view Default{}
+    `)
+    .equals(`
+      share view Button { }
+
+      file view Helper { }
+
+      view Default { }
+    `)
+
+  testFormatter('empty view body')
+    .format(`view Empty{}`)
+    .equals(`
+      view Empty { }
+    `)
+
+  testFormatter('view with only whitespace in body')
+    .format(`view Whitespace{   }`)
+    .equals(`
+      view Whitespace { }
+    `)
+
+  testFormatter('app with view reference')
+    .format(`
+      app MyApp{ui MainView}
+      view MainView{}
+    `)
+    .equals(`
+      app MyApp {
+          ui MainView
+      }
+
+      view MainView { }
+    `)
+
+  
+   test.todo('TODO: Fix formatter to handle consecutive app declarations properly', () => {
+    testFormatter('multiple apps in file')
+      .format(`
+        app App1{ui View1}
+        app App2{ui View2}
+        view View1{}
+        view View2{}
+      `)
+      .equals(`
+        app App1 {
+            ui View1
+        }
+    
+        app App2 {
+            ui View2
+        }
+    
+        view View1 { }
+    
+        view View2 { }
+      `)
+    })
 })

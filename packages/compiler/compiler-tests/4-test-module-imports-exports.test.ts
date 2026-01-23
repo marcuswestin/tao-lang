@@ -86,9 +86,7 @@ describe('cross-module import resolution (use statement)', () => {
     expect(errors).toBeUndefined()
   })
 
-  // TODO: These tests require a UseStatement validator with index manager access
-  // For now, only references to imported symbols are validated (via scope provider)
-  test.todo('error when importing non-existent declaration', async () => {
+  test('error when importing non-existent declaration', async () => {
     const result = await parseMultipleFiles([
       {
         path: '/project/ui/views.tao',
@@ -107,7 +105,7 @@ describe('cross-module import resolution (use statement)', () => {
     expect(errors!.humanErrorMessage).toContain('NonExistent')
   })
 
-  test.todo('error when importing non-shared declaration from another module', async () => {
+  test('error when importing non-shared declaration from another module', async () => {
     const result = await parseMultipleFiles([
       {
         path: '/project/ui/views.tao',
@@ -126,7 +124,7 @@ describe('cross-module import resolution (use statement)', () => {
     expect(errors!.humanErrorMessage).toContain('InternalView')
   })
 
-  test.todo('error when importing file-private declaration', async () => {
+  test('error when importing file-private declaration', async () => {
     const result = await parseMultipleFiles([
       {
         path: '/project/ui/views.tao',
@@ -354,5 +352,138 @@ describe('cross-module import resolution (use statement)', () => {
       const errors = await parseASTWithErrors(`use app/ui`)
       expect(errors).toBeDefined() // Parse error expected, but no crash
     })
+  })
+})
+
+describe('module system edge cases', () => {
+  test('error when importing from non-existent module path', async () => {
+    const result = await parseMultipleFiles([
+      {
+        path: '/project/app.tao',
+        code: `
+          use ./non/existent/path Button
+          view MainView { }
+        `,
+      },
+    ])
+    const errors = result.getErrors('/project/app.tao')
+    expect(errors).toBeDefined()
+    expect(errors!.humanErrorMessage).toContain('Cannot resolve module path')
+  })
+
+  test('multiple files with same declaration name in same module', async () => {
+    // Both files have 'Button' declaration - both should be visible in same module
+    const result = await parseMultipleFiles([
+      {
+        path: '/project/ui/buttons.tao',
+        code: `view Button { }`,
+      },
+      {
+        path: '/project/ui/special-buttons.tao',
+        code: `view Button { }`, // Same name, different file
+      },
+      {
+        path: '/project/ui/forms.tao',
+        code: `
+          view Form {
+            Button
+          }
+        `,
+      },
+    ])
+    // Should work - Button is resolved (first match wins or last match, depends on impl)
+    const errors = result.getErrors('/project/ui/forms.tao')
+    expect(errors).toBeUndefined()
+  })
+
+  test('local declaration shadows imported declaration', async () => {
+    const result = await parseMultipleFiles([
+      {
+        path: '/project/ui/buttons.tao',
+        code: `share view Button { }`,
+      },
+      {
+        path: '/project/app.tao',
+        code: `
+          use ./ui/buttons Button
+          view Button { }
+          view MainView {
+            Button
+          }
+        `,
+      },
+    ])
+    // Should work - local Button shadows imported Button
+    const errors = result.getErrors('/project/app.tao')
+    expect(errors).toBeUndefined()
+  })
+
+  test('import multiple declarations from same module', async () => {
+    const result = await parseMultipleFiles([
+      {
+        path: '/project/ui/components.tao',
+        code: `
+          share view Button { }
+          share view Input { }
+          share view Label { }
+        `,
+      },
+      {
+        path: '/project/app.tao',
+        code: `
+          use ./ui/components Button, Input, Label
+          view Form {
+            Label { }
+            Input { }
+            Button { }
+          }
+        `,
+      },
+    ])
+    const errors = result.getErrors('/project/app.tao')
+    expect(errors).toBeUndefined()
+  })
+
+  test('error when trying to import default (non-share) declaration from another module', async () => {
+    const result = await parseMultipleFiles([
+      {
+        path: '/project/ui/internal.tao',
+        code: `view InternalHelper { }`, // No 'share' modifier
+      },
+      {
+        path: '/project/app.tao',
+        code: `
+          use ./ui/internal InternalHelper
+          view MainView { }
+        `,
+      },
+    ])
+    const errors = result.getErrors('/project/app.tao')
+    expect(errors).toBeDefined()
+    expect(errors!.humanErrorMessage).toContain('InternalHelper')
+  })
+
+  test('mixed visibility in same file - share and file declarations', async () => {
+    const result = await parseMultipleFiles([
+      {
+        path: '/project/ui/mixed.tao',
+        code: `
+          share view PublicButton { }
+          file view PrivateHelper { }
+          view ModuleOnlyView { }
+        `,
+      },
+      {
+        path: '/project/app.tao',
+        code: `
+          use ./ui/mixed PublicButton
+          view MainView {
+            PublicButton
+          }
+        `,
+      },
+    ])
+    const errors = result.getErrors('/project/app.tao')
+    expect(errors).toBeUndefined()
   })
 })

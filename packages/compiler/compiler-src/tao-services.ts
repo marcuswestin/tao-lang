@@ -6,6 +6,7 @@ import { TaoLangGeneratedModule, TaoLangGeneratedSharedModule } from '@tao-compi
 import { TaoScopeComputation } from '@tao-compiler/TaoScopeComputation'
 import { TaoScopeProvider } from '@tao-compiler/TaoScopeProvider'
 import { validator } from '@tao-compiler/validation/tao-lang-validator.js'
+import { UseStatementValidator } from '@tao-compiler/validation/UseStatementValidator'
 import TaoFormatter from '../formatter-src/TaoFormatter'
 
 export type TaoServices = LSP.LangiumServices
@@ -42,6 +43,12 @@ export function createTaoServices(context: LSP.DefaultSharedModuleContext): TaoS
 
   TaoModule.shared.ServiceRegistry.register(TaoModule)
   TaoModule.validation.ValidationRegistry.register(validator, TaoModule.validation.TaoLangValidator)
+
+  // Register UseStatement validator (needs services for IndexManager access)
+  const useStatementValidator = new UseStatementValidator(TaoModule)
+  TaoModule.validation.ValidationRegistry.register({
+    UseStatement: (node, accept) => useStatementValidator.checkUseStatement(node, accept),
+  })
 
   if (!context.connection) {
     // We're not inside a language server, so

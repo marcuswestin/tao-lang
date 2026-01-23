@@ -3,10 +3,12 @@ import { throwUnexpectedBehaviorError } from './@shared/TaoErrors'
 import * as ast from './_gen-tao-parser/ast'
 import { assertNever } from './compiler-utils'
 
+// TaoScopeComputation collects exported and local symbols for scoping.
+// It exports `share`-marked declarations for cross-file `use` imports,
+// and unmarked declarations for same-module references.
 export class TaoScopeComputation extends langium.DefaultScopeComputation {
-  // Collect all top level declarations that should be exported for
-  // other file `use` statements of `share`-marked declarations, and for
-  // same-module references of unmarked declarations.
+  // collectExportedSymbols gathers all top-level declarations that should be exported
+  // for other files' `use` statements and same-module references.
   override async collectExportedSymbols(
     document: langium.LangiumDocument,
     cancelToken = langium.Cancellation.CancellationToken.None,
@@ -25,6 +27,7 @@ export class TaoScopeComputation extends langium.DefaultScopeComputation {
     return exports
   }
 
+  // processStatementForExport creates a description for a statement if it should be exported.
   private processStatementForExport(
     statement: ast.TopLevelStatement,
     document: langium.LangiumDocument,
@@ -44,7 +47,8 @@ export class TaoScopeComputation extends langium.DefaultScopeComputation {
     return null
   }
 
-  // Collect local symbols visible within this file: views, lets, function parameters, etc.
+  // collectLocalSymbols gathers symbols visible within a file (views, lets, parameters)
+  // and maps them to their containing scope for local symbol resolution.
   override async collectLocalSymbols(
     document: langium.LangiumDocument,
     cancelToken = langium.Cancellation.CancellationToken.None,
@@ -67,6 +71,8 @@ export class TaoScopeComputation extends langium.DefaultScopeComputation {
   // Internal helpers
   // ----------------
 
+  // isExportableVisibilityDeclaration checks if a visibility-marked declaration should be exported.
+  // Returns true for `share` and default (module-visible) declarations, false for `file` (private).
   private isExportableVisibilityDeclaration(
     statement: ast.TopLevelStatement,
   ): statement is ast.VisibilityMarkedDeclaration {
@@ -92,6 +98,7 @@ export class TaoScopeComputation extends langium.DefaultScopeComputation {
     }
   }
 
+  // getTaoFile extracts the TaoFile AST from a document, throwing if not present.
   private getTaoFile(document: langium.LangiumDocument): ast.TaoFile {
     const taoFile = document.parseResult.value as ast.TaoFile | undefined
     if (!taoFile) {
@@ -103,6 +110,7 @@ export class TaoScopeComputation extends langium.DefaultScopeComputation {
     return taoFile
   }
 
+  // collectSymbolForScope adds a named node to the local symbols map for its containing scope.
   private collectSymbolForScope(
     node: langium.AstNode,
     document: langium.LangiumDocument,
@@ -119,6 +127,7 @@ export class TaoScopeComputation extends langium.DefaultScopeComputation {
     }
   }
 
+  // iterateAllNodesIn yields all AST nodes in a tree, checking for cancellation between nodes.
   private async *iterateAllNodesIn(
     rootNode: langium.AstNode,
     cancelToken: langium.Cancellation.CancellationToken,

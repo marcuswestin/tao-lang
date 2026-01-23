@@ -1,14 +1,13 @@
 import * as langium from 'langium'
 import * as path from 'node:path'
 import * as ast from './_gen-tao-parser/ast'
+import { normalizeModulePath } from './Paths'
 
-// TaoScopeProvider receives the global symbol index and filters `share`-marked declarations
-// for `use` statement contexts; and filters `share`-marked and unmarked declarations for
-// same-module contexts.
+// TaoScopeProvider filters symbols for reference resolution based on module visibility rules.
+// It handles `share`-marked declarations for `use` imports and same-module symbol access.
 export class TaoScopeProvider extends langium.DefaultScopeProvider {
-  // Get the scope of available symbols for a given reference and its context.
-  // E.g for `RecipeView { }`, the scope is the set of all non-`file` top level declarations in the same module,
-  // plus all `use`-imported declarations.
+  // getScope returns the scope of available symbols for a reference context.
+  // For view references, it applies module visibility rules (local -> imported -> same-module).
   override getScope(context: langium.ReferenceInfo): langium.Scope {
     // For view references (like in ViewRenderStatement), apply module visibility rules
     if (context.property === 'view' && ast.isViewRenderStatement(context.container)) {
@@ -23,9 +22,8 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
     return super.getScope(context)
   }
 
-  /**
-   * Get declarations visible based on module visibility rules.
-   */
+  // getModuleScopedDeclarations builds a scope chain: local -> imported -> same-module.
+  // Local symbols shadow imported ones, which shadow same-module symbols.
   private getModuleScopedDeclarations(context: langium.ReferenceInfo): langium.Scope {
     const document = langium.AstUtils.getDocument(context.container)
     const taoFile = document.parseResult.value as ast.TaoFile
@@ -47,10 +45,8 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
     return this.createScope(localScope, importedScope)
   }
 
-  /**
-   * Get symbols imported via `use` statements.
-   * Only `share` declarations can be imported from other modules.
-   */
+  // getImportedSymbols collects symbols from `use` statements.
+  // Only `share`-marked declarations can be imported from other modules.
   private getImportedSymbols(
     taoFile: ast.TaoFile,
     document: langium.LangiumDocument,
@@ -90,16 +86,9 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
     return imported
   }
 
-  /**
-   * Get symbols from the same module (folder).
-   * Both default and share visibility are visible within the same module.
-   *
-   * Performance note: This queries all elements of the target type from the global index,
-   * then filters by directory. For large workspaces, this could be optimized by:
-   * - Caching a directory-to-URIs mapping
-   * - Or only exporting same-module declarations to a module-scoped index
-   * However, for typical Tao Lang projects (10-100 files), this is acceptable.
-   */
+  // getSameModuleSymbols collects symbols from files in the same directory (module).
+  // Both default and `share` visibility declarations are visible within the same module.
+  // Note: Queries all elements then filters by directory; acceptable for typical project sizes.
   private getSameModuleSymbols(
     currentDir: string,
     context: langium.ReferenceInfo,
@@ -117,9 +106,8 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
       .toArray()
   }
 
-  /**
-   * Get local symbols from the document's local symbol table (declarations in the same file).
-   */
+  // getLocalScope retrieves local symbols from the document's symbol table.
+  // Walks up the AST container chain to find all symbols in enclosing scopes.
   private getLocalScope(
     context: langium.ReferenceInfo,
     document: langium.LangiumDocument,
@@ -146,18 +134,8 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
     return locals
   }
 
-  /**
-   * Normalize and join path parts, removing trailing slashes for consistent comparison.
-   * This ensures paths like `../` are normalized the same way as `dirname()` results.
-   */
-  private normalizeModulePath(...parts: string[]): string {
-    return path.normalize(path.join(...parts)).replace(/\/+$/, '')
-  }
-
-  /**
-   * Resolve a module path to document URIs.
-   * - `./ui/views` can match `/project/ui/views.tao` (file) or all .tao files in `/project/ui/views/` (folder)
-   */
+  // resolveModulePath converts a relative module path to document URIs.
+  // Matches either an exact file (./ui/views.tao) or all files in a folder (./ui/).
   private resolveModulePath(
     modulePath: string,
     document: langium.LangiumDocument,
@@ -168,13 +146,13 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
 
     try {
       const currentDir = path.dirname(document.uri.path)
-      const targetPath = this.normalizeModulePath(currentDir, modulePath)
+      const targetPath = normalizeModulePath(currentDir, modulePath)
       const targetFileWithExt = targetPath + '.tao'
 
       const uris: string[] = []
       for (const doc of this.indexManager.allElements()) {
         const docPath = doc.documentUri.path
-        const docDir = this.normalizeModulePath(path.dirname(docPath))
+        const docDir = normalizeModulePath(path.dirname(docPath))
 
         // Match exact file (e.g., ./ui/views -> /project/ui/views.tao)
         if (docPath === targetFileWithExt) {

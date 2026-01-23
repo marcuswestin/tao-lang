@@ -3,23 +3,18 @@ import { AST } from '@tao-compiler/grammar'
 import { AstNode, LangiumDocument } from 'langium'
 import { AbstractFormatter, Formatting } from 'langium/lsp'
 import { DocumentFormattingParams, TextEdit } from 'vscode-languageserver'
-import { switchBindItemType_Exhaustive } from '../compiler-src/@shared/TypeSafety' // TODO: Fix this to be @shared/TypeSafety
+// Note: Import path uses relative path due to formatter-src being outside compiler-src
+import { switchBindItemType_Exhaustive } from '../compiler-src/@shared/TypeSafety'
 import * as ast from '../compiler-src/_gen-tao-parser/ast'
 import extensivelyFormatInjectionBlocks from './injectionFormatter'
 
 const FORMAT_INJECTION_BLOCKS = true
 
-/**
- * Tao Lang Formatter
- *
- * Formatting rules based on the Langium Node-Centric Model:
- * - format() is called for each AST node
- * - We only format the current node's direct children and tokens
- * - interior() is used for indentation between braces
- * - Injection blocks have their content re-indented post-formatting
- */
+// TaoFormatter formats Tao code using the Langium Node-Centric Model.
+// format() is called for each AST node, formatting only direct children and tokens.
+// Uses interior() for brace indentation and applies injection block re-indentation post-formatting.
 export default class TaoFormatter extends AbstractFormatter {
-  // Override formatDocument to apply injection block re-indentation after standard formatting
+  // formatDocument applies standard formatting then re-indents injection blocks.
   override async formatDocument(
     document: LangiumDocument,
     params: DocumentFormattingParams,

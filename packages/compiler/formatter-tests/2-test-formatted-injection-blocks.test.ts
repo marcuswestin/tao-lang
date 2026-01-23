@@ -1,4 +1,4 @@
-import { describe, test } from '../compiler-tests/test-utils/test-harness'
+import { describe } from '../compiler-tests/test-utils/test-harness'
 import { testFormatter } from './formatter-test-utils'
 
 describe('Format Injections', () => {

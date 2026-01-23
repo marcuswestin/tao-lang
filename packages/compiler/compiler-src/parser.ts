@@ -3,8 +3,8 @@ import { NodeFileSystem } from 'langium/node'
 import path from 'node:path'
 
 import { createHash } from 'node:crypto'
-import { statSync } from 'node:fs'
 import { createTaoServices } from 'tao-compiler'
+import { fileExists } from './Paths'
 import { throwUserInputRejectionError } from './@shared/TaoErrors'
 import { assertNever } from './compiler-utils'
 import { AST } from './grammar'
@@ -120,14 +120,5 @@ function getValidationOptions(opts: ParseOptions): Langium.ValidationOptions | b
       return { categories, stopAfterLinkingErrors: true }
     default:
       assertNever(validateUpToStage)
-  }
-}
-
-// TODO WE NEED TO SHARE THESE
-function fileExists(path: string): boolean {
-  try {
-    return statSync(path).isFile()
-  } catch {
-    return false // does not exist or inaccessible
   }
 }
