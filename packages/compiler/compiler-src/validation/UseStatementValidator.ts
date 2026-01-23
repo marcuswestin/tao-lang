@@ -50,11 +50,15 @@ export class UseStatementValidator {
         const existsButNotShared = this.declarationExistsButNotShared(importedName, targetUris)
 
         if (existsButNotShared) {
-          accept('error', `'${importedName}' must be marked with 'share' to be used from here (outside of its module).`, {
-            node: useStatement,
-            property: 'importedNames',
-            index: i,
-          })
+          accept(
+            'error',
+            `'${importedName}' must be marked with 'share' to be used from here (outside of its module).`,
+            {
+              node: useStatement,
+              property: 'importedNames',
+              index: i,
+            },
+          )
         } else {
           accept('error', `'${importedName}' is not exported from '${useStatement.modulePath}'`, {
             node: useStatement,

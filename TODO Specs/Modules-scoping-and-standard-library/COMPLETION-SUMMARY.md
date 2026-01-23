@@ -22,6 +22,7 @@ use ../shared/utils Logger
 ```
 
 Key behaviors:
+
 - Only `share`-marked declarations can be imported
 - Relative paths resolve to files (`.tao`) or directories (all `.tao` files in folder)
 - Same-module visibility doesn't require imports

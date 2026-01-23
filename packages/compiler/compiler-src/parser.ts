@@ -4,11 +4,11 @@ import path from 'node:path'
 
 import { createHash } from 'node:crypto'
 import { createTaoServices } from 'tao-compiler'
-import { fileExists } from './Paths'
 import { throwUserInputRejectionError } from './@shared/TaoErrors'
 import { assertNever } from './compiler-utils'
 import { AST } from './grammar'
 import { ErrorReport, getDocumentErrors } from './parse-errors'
+import { fileExists } from './Paths'
 
 export type ParseOptions = {
   validateUpToStage?: 'lexing' | 'parsing' | 'linking' | 'all' | 'none'
