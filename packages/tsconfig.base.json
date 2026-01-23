@@ -29,7 +29,8 @@
   },
   "include": [
     "**/src/**/*",
-    "**/test/**/*"
+    "**/test/**/*",
+    "../shared/shared-src/**/*"
   ],
   "exclude": [
     "**/node_modules/**/*"

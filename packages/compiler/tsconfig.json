@@ -3,13 +3,13 @@
   "compilerOptions": {
     "module": "ESNext",
     "composite": true,
-    "rootDir": ".",
+    "rootDir": "..",
     "baseUrl": ".",
-    "paths": {
-      "@tao-compiler/*": ["compiler-src/*"],
-      "@tao-formatter/*": ["formatter/formatter-src/*"],
-      "@shared/*": ["../shared/shared-src/*"]
-    },
+    // "paths": {
+    //   "@tao-compiler/*": ["compiler-src/*"],
+    //   "@tao-formatter/*": ["formatter/formatter-src/*"],
+    //   "@shared/*": ["shared/shared-src/*"]
+    // },
 
     "emitDeclarationOnly": true,
     "outDir": "../../.builds/ts-packages/@tao-compiler"
