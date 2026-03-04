@@ -23,6 +23,8 @@
   "editor.formatOnType": true,
   "editor.defaultFormatter": "dprint.dprint",
   "dprint.path": ".config/MISE_DIR/installs/npm-dprint/latest/bin/dprint",
+  "dprint.experimentalLsp": true,
+
   // Code Formatting: Tao Lang's extension, for .tao files.
   "[tao]": {
     "editor.defaultFormatter": "tao.tao-lang-vscode-extension"
