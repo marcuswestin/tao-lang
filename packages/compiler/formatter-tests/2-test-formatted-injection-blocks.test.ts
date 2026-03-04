@@ -1,4 +1,4 @@
-import { describe } from '../compiler-tests/test-utils/test-harness'
+import { describe, test } from '../compiler-tests/test-utils/test-harness'
 import { testFormatter } from './formatter-test-utils'
 
 describe('Format Injections', () => {
@@ -13,26 +13,25 @@ describe('Format Injections', () => {
           \`\`\`
       }
     `)
-  test.todo('injection formatting 1', async () => {
-    // See next commented out test
+  test.todo('injection formatting 1', () => {
+    testFormatter('injection formatting 1')
+      .format(`
+      inject '''ts
+            const foo = '';
+            function bar() {
+                console.log('hi')
+            }
+            '''
+    `)
+      .equals(`
+        inject '''ts
+            const foo = '';
+            function bar() {
+                console.log('hi')
+            }
+        '''
+    `)
   })
-  // testFormatter('injection formatting 1')
-  //   .format(`
-  //     inject \'\'\'ts
-  //           const foo = '';
-  //           function bar() {
-  //               console.log('hi')
-  //           }
-  //           \'\'\'
-  //   `)
-  //   .equals(`
-  //       inject \'\'\'ts
-  //           const foo = '';
-  //           function bar() {
-  //               console.log('hi')
-  //           }
-  //       \'\'\'
-  //   `)
   testFormatter('inject formatting 2')
     .format(`
       inject \`\`\`ts

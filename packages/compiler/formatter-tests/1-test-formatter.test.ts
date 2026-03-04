@@ -341,15 +341,14 @@ describe('formatter edge cases', () => {
       view MainView { }
     `)
 
-  test.todo('TODO: Fix formatter to handle consecutive app declarations properly', () => {
-    testFormatter('multiple apps in file')
-      .format(`
+  testFormatter('multiple apps in file')
+    .format(`
         app App1{ui View1}
         app App2{ui View2}
         view View1{}
         view View2{}
       `)
-      .equals(`
+    .equals(`
         app App1 {
             ui View1
         }
@@ -362,5 +361,4 @@ describe('formatter edge cases', () => {
     
         view View2 { }
       `)
-  })
 })

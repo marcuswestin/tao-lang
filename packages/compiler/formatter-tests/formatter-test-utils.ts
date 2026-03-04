@@ -1,5 +1,5 @@
+import { expect, test } from '@tao-compiler/../compiler-tests/test-utils/test-harness'
 import { createTaoServices } from '@tao-compiler/tao-services'
-import { expect, test } from 'compiler-tests/test-utils/test-harness'
 import * as Langium from 'langium'
 import { NodeFileSystem } from 'langium/node'
 
@@ -68,7 +68,7 @@ export async function formatCode(code: string) {
 }
 
 /**
- * dedent2 takes a string, computes the shortest prefix of non-empty lines,
+ * dedent takes a string, computes the shortest prefix of non-empty lines,
  * and returns a new string with the same number of lines, where every line has that shortest prefix removed.
  * Whitespace-only lines are given the same length as the line before it (after dedenting).
  */

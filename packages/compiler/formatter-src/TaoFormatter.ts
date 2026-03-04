@@ -1,9 +1,8 @@
 import { NodePropName } from '@tao-compiler/compiler-utils'
 import { AST } from '@tao-compiler/grammar'
 import { AstNode, LangiumDocument } from 'langium'
-import { AbstractFormatter, Formatting } from 'langium/lsp'
+import { AbstractFormatter, Formatting, FormattingRegion } from 'langium/lsp'
 import { DocumentFormattingParams, TextEdit } from 'vscode-languageserver'
-// Note: Import path uses relative path due to formatter-src being outside compiler-src
 import { switchBindItemType_Exhaustive } from '../compiler-src/@shared/TypeSafety'
 import * as ast from '../compiler-src/_gen-tao-parser/ast'
 import extensivelyFormatInjectionBlocks from './injectionFormatter'
@@ -70,8 +69,6 @@ export default class TaoFormatter extends AbstractFormatter {
   }
 
   private formatAppDeclaration(node: ast.AppDeclaration): void {
-    const f = this.getNodeFormatter(node)
-    f.keyword('app').prepend(Formatting.noSpace())
     this._spaceAroundName(node)
     this._indentBlock(node, 'appStatements')
   }
@@ -153,8 +150,6 @@ export default class TaoFormatter extends AbstractFormatter {
     }
   }
 
-  // _indentBlock takes a node and a property name, where the property is an array of AstNodes,
-  // and indents the interior of the block.
   private _indentBlock<NodeT extends AstNode, K extends keyof NodeT>(
     node: NodeT,
     property: K & (NodeT[K] extends AstNode[] ? K : never),
@@ -162,14 +157,26 @@ export default class TaoFormatter extends AbstractFormatter {
     const f = this.getNodeFormatter(node)
     const open = f.keyword('{')
     const close = f.keyword('}')
+    this._indentBetween(node, property, open, close)
+  }
+
+  // _indentBlock takes a node and a property name, where the property is an array of AstNodes,
+  // and indents the interior of the block.
+  private _indentBetween<NodeT extends AstNode, K extends keyof NodeT>(
+    node: NodeT,
+    property: K,
+    openRegion: FormattingRegion,
+    closeRegion: FormattingRegion,
+  ): void {
+    const f = this.getNodeFormatter(node)
 
     if ((node[property] as NodeT[K] & AstNode[]).length === 0) {
       // Empty body: "{ }"
-      open.append(Formatting.oneSpace())
+      openRegion.append(Formatting.oneSpace())
     } else {
       // Populated body: indent interior
-      f.interior(open, close).prepend(Formatting.indent())
-      close.prepend(Formatting.newLine())
+      f.interior(openRegion, closeRegion).prepend(Formatting.indent())
+      closeRegion.prepend(Formatting.newLine())
     }
   }
 
