@@ -4,8 +4,6 @@
     "module": "ESNext",
     "composite": true,
     "rootDir": "..",
-    "baseUrl": ".",
-
     "emitDeclarationOnly": true,
     "outDir": "../../.builds/ts-packages/@tao-compiler"
   },
