@@ -75,7 +75,7 @@ import {
   LocalSymbols,
   MultiMap,
 } from 'langium'
-import * as ast from './generated/ast.js'
+import * as ast from './generated/ast'
 
 export class MyLangScopeComputation extends DefaultScopeComputation {
   /**
@@ -162,7 +162,7 @@ import {
   DefaultAstNodeDescriptionProvider,
   LangiumDocument,
 } from 'langium'
-import * as ast from './generated/ast.js'
+import * as ast from './generated/ast'
 
 // 1. Define the custom interface
 export interface MyLangAstNodeDescription extends AstNodeDescription {
@@ -205,7 +205,7 @@ import {
   Scope,
 } from 'langium'
 import { dirname, join } from 'node:path'
-import * as ast from './generated/ast.js'
+import * as ast from './generated/ast'
 
 export class MyLangScopeProvider extends DefaultScopeProvider {
   override getScope(context: ReferenceInfo): Scope {
@@ -288,7 +288,7 @@ import {
   Scope,
 } from 'langium'
 import { dirname } from 'node:path'
-import { MyLangAstNodeDescription } from './my-lang-description-provider.js'
+import { MyLangAstNodeDescription } from './my-lang-description-provider'
 
 export class MyLangScopeProvider extends DefaultScopeProvider {
   override getScope(context: ReferenceInfo): Scope {
