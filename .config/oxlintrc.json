@@ -96,7 +96,13 @@
     "no-unused-labels": "warn",
     "no-unused-private-class-members": "warn",
     "no-unused-import": "warn",
-    "no-unused-vars": "warn",
+    "no-unused-vars": ["warn", {
+      "argsIgnorePattern": "^_",
+      "varsIgnorePattern": "^_",
+      "caughtErrorsIgnorePattern": "^_",
+      "ignoreRestSiblings": true,
+      ""
+    }],
     "no-useless-backreference": "warn",
     "no-useless-catch": "warn",
     "no-useless-escape": "warn",
