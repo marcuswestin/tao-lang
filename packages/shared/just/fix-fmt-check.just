@@ -15,12 +15,12 @@ _fmt:
     just _fmt_newlines
 
 _fmt_just:
-    for f in $(git ls-files 'Justfile' '*.just'); do \
+    for f in $(git ls-files 'Justfile' '*.just' '*.Justfile'); do \
         just --fmt --unstable --justfile "$f"; \
     done
 
 _fmt_newlines:
-    git ls-files '*.ts' '*.just' '*.tsx' '*.js' '*.jsx' '*.json' '*.md' '*.yaml' '*.yml' '*.css' '*.html' '*.sh' '*.zsh' '*.toml' '*.txt' 'Justfile' '*.just' '*.langium' '*.tao' | while read f; do [ -s "$f" ] && [ -n "$(tail -c1 "$f")" ] && echo >> "$f"; done; true
+    git ls-files '*.ts' '*.just' '*.Justfile' '*.tsx' '*.js' '*.jsx' '*.json' '*.md' '*.yaml' '*.yml' '*.css' '*.html' '*.sh' '*.zsh' '*.toml' '*.txt' 'Justfile' '*.langium' '*.tao' | while read f; do [ -s "$f" ] && [ -n "$(tail -c1 "$f")" ] && echo >> "$f"; done; true
 
 [no-quiet]
 _fix: _fmt
@@ -31,7 +31,6 @@ _fix: _fmt
     cd packages/expo-runtime && ts-autofix fix --tsCliArgs --noUnusedLocals
     cd packages/expo-runtime && bunx expo lint --fix
     cd packages/expo-runtime && bunx eslint --fix
-    # code . --command workbench.action.organizeImports --command workbench.action.formatWorkspace
 
 [no-quiet]
 _check:
