@@ -55,6 +55,10 @@ backend = "npm:dprint"
 version = "1.32.0"
 backend = "npm:oxlint"
 
+[[tools."npm:oxlint-tsgolint"]]
+version = "0.11.2"
+backend = "npm:oxlint-tsgolint"
+
 [[tools."npm:ts-autofix"]]
 version = "1.0.0"
 backend = "npm:ts-autofix"
