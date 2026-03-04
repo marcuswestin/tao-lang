@@ -1,10 +1,10 @@
-import { TaoSDK_compile } from '@/_gen-tao-lib/tao-cli-main'
 import { describe, test } from '@jest/globals'
 import { render } from '@testing-library/react-native'
 import { spawn } from 'node:child_process'
 import { copyFileSync, mkdirSync } from 'node:fs'
 import path from 'node:path'
 import { Text } from 'react-native'
+import { TaoSDK_compile } from '../_gen-tao-lib/tao-cli-main'
 
 describe('runtime:', () => {
   test('renders <MockTestView />', async () => {
