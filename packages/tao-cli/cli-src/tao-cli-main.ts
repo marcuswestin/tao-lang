@@ -3,6 +3,7 @@ import { compileTao } from '@tao-compiler'
 import chokidar from 'chokidar'
 import { mkdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
+import * as process from 'node:process'
 import {
   Assert,
   TaoError,

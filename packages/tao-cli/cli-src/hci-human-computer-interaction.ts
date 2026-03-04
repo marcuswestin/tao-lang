@@ -1,4 +1,5 @@
 import { appendFileSync } from 'node:fs'
+import * as process from 'node:process'
 import { bgWhiteBright, blackBright, bold, cyan, gray, red, yellow } from 'picocolors'
 import {
   getTaoError,

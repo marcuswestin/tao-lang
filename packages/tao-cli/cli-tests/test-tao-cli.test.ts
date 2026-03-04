@@ -1,12 +1,13 @@
 import { describe, expect, test } from 'bun:test'
-import { TaoSDK_compile } from 'cli-src/tao-cli-main'
+import path from 'node:path'
+import { TaoSDK_compile } from '../cli-src/tao-cli-main'
 
 describe('cli:', () => {
   test('stub test', () => expect(true).toBe(true))
 
   test('compile and run with cli', async () => {
     const { code, needle } = getRandomUI()
-    const res = await TaoSDK_compile({ code, runtimeDir: __dirname + '/../../expo-runtime/' })
+    const res = await TaoSDK_compile({ code, runtimeDir: path.resolve(__dirname, '../../expo-runtime/') })
     expect(res.result).toBeDefined()
     expect(res.result?.code).toContain(needle)
   })
