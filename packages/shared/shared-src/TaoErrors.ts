@@ -207,7 +207,7 @@ function getStackMessage(errorName: string, stack?: string): string {
 function safeJSONStringifyAdditionalInfo(value: unknown): string {
   try {
     return JSON.stringify(value)
-  } catch (error) {
+  } catch (_error) {
     return '<Could not JSON.stringify additional info>'
   }
 }

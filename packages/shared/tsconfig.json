@@ -10,10 +10,6 @@
   ],
   "compilerOptions": {
     "module": "ESNext",
-    "moduleResolution": "bundler",
-    "baseUrl": ".",
-    "paths": {
-      "@shared/*": ["../shared/shared-src/*"]
-    }
+    "moduleResolution": "bundler"
   }
 }

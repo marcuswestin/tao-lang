@@ -32,7 +32,7 @@ let transport: Transport = {
 // Object.keys(transport).forEach(f => transport[f as keyof Transport] = () => {})
 
 export function setLogTransport(t: Transport) {
-  // transport = t
+  transport = t
 }
 
 let wrapIndent = 0
