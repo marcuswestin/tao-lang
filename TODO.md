@@ -9,7 +9,8 @@ Next tasks, in order:
 - [x] Fix just check
 - [x] Merge shared and shared-tools
 - [x] Formatter
-- [ ] Scoping
+- [x] Scoping
+- [ ] Rename Agents.md to AGENTS.md
 
 #### Parser
 

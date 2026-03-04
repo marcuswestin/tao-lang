@@ -7,7 +7,7 @@ _print_help:
     echo "\n For more commands, run:\n"
     echo "    just <recipe>"
     echo
-    just --list --unsorted --color=always | grep -v "_"
+    just --list --unsorted --color=always
     echo
 
 _install-mise-deps:

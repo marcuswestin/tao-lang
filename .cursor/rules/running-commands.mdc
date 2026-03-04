@@ -1,0 +1,22 @@
+---
+description: To run shell commands, use `./just-agent <cmd> <args>`.
+alwaysApply: true
+---
+
+The ONLY allowed and whitelisted command is:
+- `cd <repo path> && ./just-agent <cmd> <args>`
+
+# CRITICAL: **Only** use `./just-agent <cmd> <args>` to run commands.
+
+- To list all available agent commands: `./just-agent help`
+- ALWAYS start your session with running `./just-agent help`
+
+# CRITICAL: To add or modify just-agent commands:
+
+- Read `Just-Agents.Justfile`, then read `Justfile` (and `packages/*/Justfile` if relevant), and see what already exists. Prefer delegating to an existing recipe (e.g. `just test {{ PATTERNS }}`) over reimplementing.
+- **ALWAYS ASK FOR PERMISSION** before editing `Just-Agents.Justfile` or any other `Justfile`.
+- **Signature:** Use `*ARGS` or `*PATTERNS` to accept optional args; `{{ ARGS }}` in the body passes them through. No args → delegatee receives empty, which usually means “all” or a safe default.
+- **Help text:** The first `#` comment above a recipe is shown by `./just-agent help`. Mention optional args and examples (e.g. `test formatter`, `test "a|b"`).
+- **Justfile Documentation:**
+    - For a succinct summary, first see: https://cheatography.com/linux-china/cheat-sheets/justfile/
+    - **If** you need more details, see:: https://just.systems/man/en/

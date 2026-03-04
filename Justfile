@@ -36,6 +36,7 @@ test *PATTERNS:
 test-fast *PATTERNS:
     bun test --reporter=dot --test-name-pattern "{{ PATTERNS }}"
 
+# Run tests with watch and bail on failure
 test-bail *PATTERNS:
     bun test --watch --bail --test-name-pattern "{{ PATTERNS }}"
 
