@@ -40,7 +40,7 @@ Here is a real code sample adapted from the DomainModelFormatter recipe:
 
 import { AstNode } from 'langium';
 import { AbstractFormatter, Formatting } from 'langium/lsp';
-import * as ast from './generated/ast.js';
+import * as ast from './generated/ast;
 
 export class DomainModelFormatter extends AbstractFormatter {
 
@@ -160,8 +160,8 @@ GitHub
 Once you’ve implemented your formatter class (e.g., DomainModelFormatter or EntitiesFormatter), you bind it into your Langium language services via the module:
 
 import { Module } from 'langium';
-import { YourLanguageServices, YourAddedServices } from './your-language-module.js';
-import { CustomFormatter } from './your-formatter.js';
+import { YourLanguageServices, YourAddedServices } from './your-language-module';
+import { CustomFormatter } from './your-formatter';
 
 export const YourCustomModule: Module<YourLanguageServices, Partial<YourAddedServices>> = {
   lsp: {
@@ -252,7 +252,7 @@ Note that most predefined Formatting methods accept additional arguments which m
 Full Code Sample
 import { AstNode } from 'langium';
 import { AbstractFormatter, Formatting } from 'langium/lsp';
-import * as ast from './generated/ast.js';
+import * as ast from './generated/ast';
 
 export class DomainModelFormatter extends AbstractFormatter {
 

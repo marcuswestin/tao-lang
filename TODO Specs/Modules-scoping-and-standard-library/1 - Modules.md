@@ -164,6 +164,7 @@ Goal: Implement the basic parsing and resolution of `file`, `share`, and `use` d
   - [x] Make tests non-todo, and ensure they pass (11 pass, 3 todo for UseStatement validation).
 - Scoped declarations
   - [ ] Use eslint to make switch statements exhaustive in `just lint`
+  - [x] Ensure that worktrees use mise for correct tool versions (e.g justfile `f"\ ...` doesn't work rn)
   - [ ] Duplicate declarations in a module should give an error.
   - [ ] Fix ALL doc comments to be in the correct format
     - [ ] Add AGENTS.md or cursor rule for how to write doc comments

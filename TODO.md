@@ -2,6 +2,12 @@
 
 Tao Lang TODOs.
 
+## Tools next:
+
+- [ ] Conductor
+- [ ] Whispr flow
+- [ ] Clawdbot
+
 ## STACK
 
 Next tasks, in order:
@@ -11,6 +17,7 @@ Next tasks, in order:
 - [x] Formatter
 - [x] Scoping
 - [ ] Rename Agents.md to AGENTS.md
+- [ ] Update OXLINT_CMD: `OXLINT_CMD := "oxlint --ignore-path .gitignore --type-aware"`
 
 #### Parser
 
