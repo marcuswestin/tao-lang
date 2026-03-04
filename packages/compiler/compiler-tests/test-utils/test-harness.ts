@@ -5,15 +5,12 @@ import { Assert } from '@tao-compiler/@shared/TaoErrors'
 import { TaoFile } from '@tao-compiler/_gen-tao-parser/ast'
 import { ErrorReport, getDocumentErrors } from '@tao-compiler/parse-errors'
 import { TaoParser } from '@tao-compiler/parser'
-import * as BunTest from 'bun:test'
+import { createTaoServices } from '@tao-compiler/tao-services'
 import * as Langium from 'langium'
 import { NodeFileSystem } from 'langium/node'
-import { createTaoServices } from 'tao-compiler'
 import { wrap, Wrapped } from './AST-Wrapper'
 
-export const describe = BunTest.describe
-export const expect = BunTest.expect
-export const test = BunTest.test
+export { describe, expect, test } from 'bun:test'
 
 // Lexing
 /////////
@@ -24,10 +21,25 @@ export async function lexTokens(code: string) {
   return result.errorReport?.lexerErrors ?? []
 }
 
-// lex the code, and expect lexing errors.
+// lex the code, and expect lexing errors. Optionally assert each unexpectedCharacter appears in some error (message or at offset in code).
 export async function lexTokensWithErrors(code: string, ...unexpectedCharacters: string[]) {
   const lexErrors = await lexTokens(code)
   Assert(lexErrors.length > 0, 'lexTokensWithErrors expected lexing errors, but got none.')
+  for (const ch of unexpectedCharacters) {
+    const atOffset = lexErrors.some((e) => {
+      const offset = (e as { offset?: number }).offset
+      return typeof offset === 'number' && code.slice(offset).startsWith(ch)
+    })
+    // Only use message when character isn't at offset (e.g. unclosed string – error may point at EOF). Match quoted/highlighted form to avoid false positives (e.g. "x" in "offset").
+    const inMessage = lexErrors.some((e) => {
+      const msg = (e as { message?: string }).message ?? ''
+      return msg.includes(`->${ch}<-`) || msg.includes(`"${ch}"`) || msg.includes(`'${ch}'`)
+    })
+    Assert(
+      atOffset || inMessage,
+      `lexTokensWithErrors expected an error involving "${ch}", but none of the ${lexErrors.length} error(s) matched.`,
+    )
+  }
   return lexErrors
 }
 
