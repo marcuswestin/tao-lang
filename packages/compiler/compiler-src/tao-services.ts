@@ -5,9 +5,10 @@ import { TaoLangGeneratedModule, TaoLangGeneratedSharedModule } from '@tao-compi
 
 import { TaoScopeComputation } from '@tao-compiler/TaoScopeComputation'
 import { TaoScopeProvider } from '@tao-compiler/TaoScopeProvider'
-import { validator } from '@tao-compiler/validation/tao-lang-validator.js'
+import { validator } from '@tao-compiler/validation/tao-lang-validator'
 import { UseStatementValidator } from '@tao-compiler/validation/UseStatementValidator'
 import TaoFormatter from '../formatter-src/TaoFormatter'
+import { AST } from './grammar'
 
 export type TaoServices = LSP.LangiumServices
 
@@ -24,6 +25,7 @@ export function createTaoServices(context: LSP.DefaultSharedModuleContext): TaoS
     LSP.createDefaultSharedModule(context),
     TaoLangGeneratedSharedModule,
   )
+
   const TaoModule = langium.inject(
     LSP.createDefaultModule({ shared: sharedTaoModule }),
     TaoLangGeneratedModule,
@@ -35,19 +37,20 @@ export function createTaoServices(context: LSP.DefaultSharedModuleContext): TaoS
         ScopeComputation: (services: langium.LangiumCoreServices) => new TaoScopeComputation(services),
         ScopeProvider: (services: langium.LangiumCoreServices) => new TaoScopeProvider(services),
       },
-      validation: {
-        TaoLangValidator: () => validator,
-      },
     },
   )
 
   TaoModule.shared.ServiceRegistry.register(TaoModule)
-  TaoModule.validation.ValidationRegistry.register(validator, TaoModule.validation.TaoLangValidator)
 
-  // Register UseStatement validator (needs services for IndexManager access)
-  const useStatementValidator = new UseStatementValidator(TaoModule)
-  TaoModule.validation.ValidationRegistry.register({
-    UseStatement: (node, accept) => useStatementValidator.checkUseStatement(node, accept),
+  // Validation registration
+  const useStatementValidator = new UseStatementValidator(
+    sharedTaoModule.workspace.IndexManager,
+    sharedTaoModule.workspace.LangiumDocuments,
+  )
+  TaoModule.validation.ValidationRegistry.register<AST.TaoLangAstType>({
+    // TODO: Use validator instead of separate class
+    UseStatement: useStatementValidator.checkUseStatement.bind(useStatementValidator),
+    AppDeclaration: validator.AppDeclaration,
   })
 
   if (!context.connection) {

@@ -57,27 +57,38 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
 
     const useStatements = taoFile.topLevelStatements.filter((stmt) => ast.isUseStatement(stmt))
     for (const useStmt of useStatements) {
-      const targetUris = this.resolveModulePath(useStmt.modulePath, document)
+      this.getExportedSymbolsForUseStatement(useStmt, referenceType, imported, document)
+    }
 
-      for (const targetUri of targetUris) {
-        // Get all workspace exported symbols of the target type AND within the target URI
-        const allRelevantExports = this.indexManager
-          .allElements(referenceType, new Set([targetUri]))
+    return imported
+  }
 
-        for (const description of allRelevantExports) {
-          if (useStmt.importedNames.includes(description.name)) {
-            const node = description.node
-            // Retrieve shared declarations:
-            // Declaration nodes, wrapped in a VisibilityMarkedDeclaration, with 'share' visibility.
-            if (!node) {
-              continue
-            } else if (!ast.isDeclaration(node) || !ast.isVisibilityMarkedDeclaration(node.$container)) {
-              continue
-            } else if (node.$container.visibility !== 'share') {
-              continue
-            } else {
-              imported.push(description)
-            }
+  private getExportedSymbolsForUseStatement(
+    useStmt: ast.UseStatement,
+    referenceType: string,
+    imported: langium.AstNodeDescription[],
+    document: langium.LangiumDocument,
+  ): langium.AstNodeDescription[] {
+    const targetUris = this.resolveModulePath(useStmt.modulePath, document)
+
+    for (const targetUri of targetUris) {
+      // Get all workspace exported symbols of the target type AND within the target URI
+      const allRelevantExports = this.indexManager
+        .allElements(referenceType, new Set([targetUri]))
+
+      for (const description of allRelevantExports) {
+        if (useStmt.importedNames.includes(description.name)) {
+          const node = description.node
+          // Retrieve shared declarations:
+          // Declaration nodes, wrapped in a VisibilityMarkedDeclaration, with 'share' visibility.
+          if (!node) {
+            continue
+          } else if (!ast.isDeclaration(node) || !ast.isVisibilityMarkedDeclaration(node.$container)) {
+            continue
+          } else if (node.$container.visibility !== 'share') {
+            continue
+          } else {
+            imported.push(description)
           }
         }
       }

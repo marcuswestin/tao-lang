@@ -117,7 +117,7 @@ export class TaoScopeComputation extends langium.DefaultScopeComputation {
     localSymbols: langium.MultiMap<langium.AstNode, langium.AstNodeDescription>,
     scopeNode?: langium.AstNode,
   ): void {
-    scopeNode = scopeNode ?? node.$container
+    scopeNode ??= node.$container
     if (!scopeNode) {
       return
     }

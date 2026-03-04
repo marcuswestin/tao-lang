@@ -21,8 +21,7 @@ export type ErrorReport = {
 ////////////////
 
 export function getDocumentErrors(document: Langium.LangiumDocument): ErrorReport | undefined {
-  const lexerErrors = document.parseResult.lexerErrors
-  const parserErrors = document.parseResult.parserErrors
+  const { lexerErrors, parserErrors } = document.parseResult
   const diagnostics = document.diagnostics || []
   const errorStrings = getErrorStrings(lexerErrors, parserErrors, diagnostics)
   if (errorStrings.length > 0) {

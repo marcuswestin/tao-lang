@@ -6,13 +6,10 @@ import { normalizeModulePath } from '../Paths'
 // UseStatementValidator validates that imported names in use statements exist
 // and are marked as 'share' declarations in the target module.
 export class UseStatementValidator {
-  private readonly indexManager: langium.IndexManager
-  private readonly documents: langium.LangiumDocuments
-
-  constructor(services: langium.LangiumCoreServices) {
-    this.indexManager = services.shared.workspace.IndexManager
-    this.documents = services.shared.workspace.LangiumDocuments
-  }
+  constructor(
+    private readonly indexManager: langium.IndexManager,
+    private readonly documents: langium.LangiumDocuments,
+  ) {}
 
   // checkUseStatement validates a use statement's imported names against the target module.
   checkUseStatement(
