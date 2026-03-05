@@ -1,5 +1,5 @@
 import { expect, test } from '@tao-compiler/../compiler-tests/test-utils/test-harness'
-import { createTaoServices } from '@tao-compiler/tao-services'
+import { createTaoWorkspace } from '@tao-compiler/tao-services'
 import * as Langium from 'langium'
 import { NodeFileSystem } from 'langium/node'
 
@@ -39,16 +39,16 @@ export async function testFormatCode(code: string, expectedFormattedCode: string
 }
 
 export async function formatCode(code: string) {
-  const { shared, Tao } = createTaoServices(NodeFileSystem)
+  const workspace = createTaoWorkspace(NodeFileSystem)
 
   const uri = Langium.URI.parse('tao-string://v0/test.tao')
-  const documentFactory = Tao.shared.workspace.LangiumDocumentFactory
+  const documentFactory = workspace.documentFactory
   const document = await documentFactory.fromString(code, uri)
 
-  Tao.shared.workspace.LangiumDocuments.addDocument(document)
-  await shared.workspace.DocumentBuilder.build([document])
+  workspace.documents.addDocument(document)
+  await workspace.documentBuilder.build([document])
 
-  const formatter = Tao.lsp.Formatter
+  const formatter = workspace.formatter
   if (!formatter) {
     throw new Error('Formatter not available')
   }

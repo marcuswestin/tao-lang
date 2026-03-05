@@ -34,9 +34,10 @@ describe('parse:', () => {
         view MyView {
             Text value "Hello World"
         }
-    `)!
-    expect(errorReport!.humanErrorMessage).toContain('Could not resolve reference')
-    expect(errorReport!.humanErrorMessage).toContain('App ui must be a view declaration')
+    `)
+    const msg = errorReport.getHumanErrorMessages()[0]
+    expect(msg).toContain('Could not resolve reference')
+    expect(msg).toContain('App ui must be a view declaration')
   })
 })
 

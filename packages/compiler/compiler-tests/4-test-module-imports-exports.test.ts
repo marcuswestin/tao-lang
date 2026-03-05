@@ -82,8 +82,8 @@ describe('cross-module import resolution (use statement)', () => {
       },
     ])
     // Should have no errors - Button is resolved from the import
-    const errors = result.getErrors('/project/app.tao')
-    expect(errors).toBeUndefined()
+    const errors = result.getErrors()
+    expect(errors.errorCount()).toBe(0)
   })
 
   test('error when importing non-existent declaration', async () => {
@@ -100,9 +100,9 @@ describe('cross-module import resolution (use statement)', () => {
         `,
       },
     ])
-    const errors = result.getErrors('/project/app.tao')
-    expect(errors).toBeDefined()
-    expect(errors!.humanErrorMessage).toContain('NonExistent')
+    const errors = result.getErrors()
+    expect(errors.errorCount()).toBe(1)
+    expect(errors.getHumanErrorMessage()).toContain('NonExistent')
   })
 
   test('error when importing non-shared declaration from another module', async () => {
@@ -119,9 +119,9 @@ describe('cross-module import resolution (use statement)', () => {
         `,
       },
     ])
-    const errors = result.getErrors('/project/app.tao')
-    expect(errors).toBeDefined()
-    expect(errors!.humanErrorMessage).toContain('InternalView')
+    const errors = result.getErrors()
+    expect(errors.errorCount()).toBe(1)
+    expect(errors.getHumanErrorMessage()).toContain('InternalView')
   })
 
   test('error when importing file-private declaration', async () => {
@@ -138,9 +138,9 @@ describe('cross-module import resolution (use statement)', () => {
         `,
       },
     ])
-    const errors = result.getErrors('/project/app.tao')
-    expect(errors).toBeDefined()
-    expect(errors!.humanErrorMessage).toContain('PrivateView')
+    const errors = result.getErrors()
+    expect(errors.errorCount()).toBe(1)
+    expect(errors.getHumanErrorMessage()).toContain('PrivateView')
   })
 
   test('can import from multiple files in same module folder', async () => {
@@ -163,8 +163,8 @@ describe('cross-module import resolution (use statement)', () => {
         `,
       },
     ])
-    const errors = result.getErrors('/project/app.tao')
-    expect(errors).toBeUndefined()
+    const errors = result.getErrors()
+    expect(errors.errorCount()).toBe(0)
   })
 
   test('can import from subdirectory relative path', async () => {
@@ -183,8 +183,8 @@ describe('cross-module import resolution (use statement)', () => {
         `,
       },
     ])
-    const errors = result.getErrors('/project/kitchen/Kitchen Sink.tao')
-    expect(errors).toBeUndefined()
+    const errors = result.getErrors()
+    expect(errors.errorCount()).toBe(0)
   })
 
   test('can import from subdirectory and use in view render', async () => {
@@ -203,8 +203,8 @@ describe('cross-module import resolution (use statement)', () => {
         `,
       },
     ])
-    const errors = result.getErrors('/project/app/Kitchen.tao')
-    expect(errors).toBeUndefined()
+    const errors = result.getErrors()
+    expect(errors.errorCount()).toBe(0)
   })
 
   test('can import from nested subdirectory with multiple levels', async () => {
@@ -223,8 +223,8 @@ describe('cross-module import resolution (use statement)', () => {
         `,
       },
     ])
-    const errors = result.getErrors('/project/src/app.tao')
-    expect(errors).toBeUndefined()
+    const errors = result.getErrors()
+    expect(errors.errorCount()).toBe(0)
   })
 
   test('shared and file (default) declarations are accessible from within the same file', async () => {
@@ -243,8 +243,8 @@ describe('cross-module import resolution (use statement)', () => {
         `,
       },
     ])
-    const errors = result.getErrors('/project/app/Views.tao')
-    expect(errors).toBeUndefined()
+    const errors = result.getErrors()
+    expect(errors.errorCount()).toBe(0)
   })
 
   test('can import from parent directory using ../', async () => {
@@ -263,8 +263,8 @@ describe('cross-module import resolution (use statement)', () => {
         `,
       },
     ])
-    const errors = result.getErrors('/project/app/views/Login.tao')
-    expect(errors).toBeUndefined()
+    const errors = result.getErrors()
+    expect(errors.errorCount()).toBe(0)
   })
 
   test('can import from parent directory using ".." only', async () => {
@@ -283,8 +283,8 @@ describe('cross-module import resolution (use statement)', () => {
         `,
       },
     ])
-    const errors = result.getErrors('/project/app/kitchen/Kitchen.tao')
-    expect(errors).toBeUndefined()
+    const errors = result.getErrors()
+    expect(errors.errorCount()).toBe(0)
   })
 
   describe('same-module visibility (no use statement needed)', () => {
@@ -304,8 +304,8 @@ describe('cross-module import resolution (use statement)', () => {
         },
       ])
       // No use statement needed - Button is in same module
-      const errors = result.getErrors('/project/ui/forms.tao')
-      expect(errors).toBeUndefined()
+      const errors = result.getErrors()
+      expect(errors.errorCount()).toBe(0)
     })
 
     test('shared declarations are also visible within same module', async () => {
@@ -323,8 +323,8 @@ describe('cross-module import resolution (use statement)', () => {
         `,
         },
       ])
-      const errors = result.getErrors('/project/ui/forms.tao')
-      expect(errors).toBeUndefined()
+      const errors = result.getErrors()
+      expect(errors.errorCount()).toBe(0)
     })
 
     test('file-private declarations are NOT visible to other files in same module', async () => {
@@ -342,9 +342,9 @@ describe('cross-module import resolution (use statement)', () => {
         `,
         },
       ])
-      const errors = result.getErrors('/project/ui/forms.tao')
-      expect(errors).toBeDefined()
-      expect(errors!.humanErrorMessage).toContain('PrivateHelper')
+      const errors = result.getErrors()
+      expect(errors.errorCount()).toBe(1)
+      expect(errors.getHumanErrorMessage()).toContain('PrivateHelper')
     })
 
     test(`imports don't crash the compiler`, async () => {
@@ -366,9 +366,9 @@ describe('module system edge cases', () => {
         `,
       },
     ])
-    const errors = result.getErrors('/project/app.tao')
-    expect(errors).toBeDefined()
-    expect(errors!.humanErrorMessage).toContain('Cannot resolve module path')
+    const errors = result.getErrors()
+    expect(errors.errorCount()).toBe(1)
+    expect(errors.getHumanErrorMessage()).toContain('Cannot resolve module path')
   })
 
   test('multiple files with same declaration name in same module', async () => {
@@ -392,8 +392,8 @@ describe('module system edge cases', () => {
       },
     ])
     // Should work - Button is resolved (first match wins or last match, depends on impl)
-    const errors = result.getErrors('/project/ui/forms.tao')
-    expect(errors).toBeUndefined()
+    const errors = result.getErrors()
+    expect(errors.errorCount()).toBe(0)
   })
 
   test('local declaration shadows imported declaration', async () => {
@@ -414,8 +414,8 @@ describe('module system edge cases', () => {
       },
     ])
     // Should work - local Button shadows imported Button
-    const errors = result.getErrors('/project/app.tao')
-    expect(errors).toBeUndefined()
+    const errors = result.getErrors()
+    expect(errors.errorCount()).toBe(0)
   })
 
   test('import multiple declarations from same module', async () => {
@@ -440,8 +440,8 @@ describe('module system edge cases', () => {
         `,
       },
     ])
-    const errors = result.getErrors('/project/app.tao')
-    expect(errors).toBeUndefined()
+    const errors = result.getErrors()
+    expect(errors.errorCount()).toBe(0)
   })
 
   test('error when trying to import default (non-share) declaration from another module', async () => {
@@ -458,9 +458,9 @@ describe('module system edge cases', () => {
         `,
       },
     ])
-    const errors = result.getErrors('/project/app.tao')
-    expect(errors).toBeDefined()
-    expect(errors!.humanErrorMessage).toContain('InternalHelper')
+    const errors = result.getErrors()
+    expect(errors.errorCount()).toBe(1)
+    expect(errors.getHumanErrorMessage()).toContain('InternalHelper')
   })
 
   test('mixed visibility in same file - share and file declarations', async () => {
@@ -483,7 +483,7 @@ describe('module system edge cases', () => {
         `,
       },
     ])
-    const errors = result.getErrors('/project/app.tao')
-    expect(errors).toBeUndefined()
+    const errors = result.getErrors()
+    expect(errors.errorCount()).toBe(0)
   })
 })

@@ -3,9 +3,9 @@
 
 import { Assert } from '@tao-compiler/@shared/TaoErrors'
 import { TaoFile } from '@tao-compiler/_gen-tao-parser/ast'
-import { ErrorReport, getDocumentErrors } from '@tao-compiler/parse-errors'
+import { getDocumentErrors, TaoErrorReport } from '@tao-compiler/parse-errors'
 import { TaoParser } from '@tao-compiler/parser'
-import { createTaoServices } from '@tao-compiler/tao-services'
+import { createTaoWorkspace } from '@tao-compiler/tao-services'
 import * as Langium from 'langium'
 import { NodeFileSystem } from 'langium/node'
 import { wrap, Wrapped } from './AST-Wrapper'
@@ -17,8 +17,8 @@ export { describe, expect, test } from 'bun:test'
 
 // lex the code, and check only for lexing errors - skip parse, link and validation errors
 export async function lexTokens(code: string) {
-  const result = await TaoParser.parseString(code, { validateUpToStage: 'lexing', suppressThrowOnError: true })
-  return result.errorReport?.lexerErrors ?? []
+  const result = await TaoParser.parseString(code, { validateUpToStage: 'lexing' })
+  return result.errorReport.lexerErrors
 }
 
 // lex the code, and expect lexing errors. Optionally assert each unexpectedCharacter appears in some error (message or at offset in code).
@@ -46,27 +46,30 @@ export async function lexTokensWithErrors(code: string, ...unexpectedCharacters:
 // parse the code, and check only for lex and parse errors - Skips link and validation errors
 export async function parseAST(code: string): Promise<Wrapped<TaoFile>> {
   const { errorReport, taoFileAST } = await TaoParser.parseString(code, { validateUpToStage: 'parsing' })
-  Assert(!errorReport, 'paseAST expected no errors, but got: ' + errorReport?.humanErrorMessage)
+  Assert(
+    !errorReport.hasError(),
+    'parseAST expected no errors, but got: ' + errorReport.getHumanErrorMessage(),
+  )
   return wrap(taoFileAST!)
 }
 
 // parse the code, and check for all errors - lex, parse, link and validation errors
-export async function parseASTWithErrors(code: string): Promise<ErrorReport> {
+export async function parseASTWithErrors(code: string): Promise<TaoErrorReport> {
   const { errorReport } = await TaoParser.parseString(code, { validateUpToStage: 'all' })
-  Assert(errorReport, 'parseASTWithErrors expected an error report, but got none.')
+  Assert(errorReport.hasError(), 'parseASTWithErrors expected at least one error report, but got none.')
   return errorReport
 }
 
 // parse the code and resolve reference links - skips validation errors
 export async function resolveReferences(code: string): Promise<Wrapped<TaoFile>> {
   const { errorReport, taoFileAST } = await TaoParser.parseString(code, { validateUpToStage: 'linking' })
-  Assert(!errorReport, 'Expected no errors, but got: ' + errorReport?.humanErrorMessage)
+  Assert(!errorReport.hasError(), 'Expected no errors, but got: ' + errorReport.getHumanErrorMessage())
   return wrap(taoFileAST!)
 }
 
 export async function parseTaoFully(code: string): Promise<Wrapped<TaoFile>> {
   const { errorReport, taoFileAST } = await TaoParser.parseString(code, { validateUpToStage: 'all' })
-  Assert(!errorReport, 'Expected no errors, but got: ' + errorReport?.humanErrorMessage)
+  Assert(!errorReport.hasError(), 'Expected no errors, but got: ' + errorReport.getHumanErrorMessage())
   return wrap(taoFileAST!)
 }
 
@@ -83,7 +86,7 @@ export type MultiFileParseResult = {
   /** Get the parsed AST for a specific file path */
   getFile(path: string): Wrapped<TaoFile>
   /** Get errors for a specific file path, or undefined if no errors */
-  getErrors(path: string): ErrorReport | undefined
+  getErrors(): TaoErrorReport
   /** All documents keyed by path */
   documents: Map<string, Langium.LangiumDocument<TaoFile>>
 }
@@ -93,34 +96,35 @@ export type MultiFileParseResult = {
  * Files are given virtual paths to simulate a directory structure.
  */
 export async function parseMultipleFiles(files: VirtualFile[]): Promise<MultiFileParseResult> {
-  const { shared, Tao } = createTaoServices(NodeFileSystem)
-  const documentFactory = Tao.shared.workspace.LangiumDocumentFactory
+  const workspace = createTaoWorkspace(NodeFileSystem)
+  const documentFactory = workspace.documentFactory
   const documents = new Map<string, Langium.LangiumDocument<TaoFile>>()
 
   // Create all documents
   for (const file of files) {
     const uri = Langium.URI.parse(`file://${file.path}`, true)
     const document = documentFactory.fromString<TaoFile>(file.code, uri)
-    Tao.shared.workspace.LangiumDocuments.addDocument(document)
+    workspace.documents.addDocument(document)
     documents.set(file.path, document)
   }
 
   // Build all documents together
   const allDocs = Array.from(documents.values())
-  await shared.workspace.DocumentBuilder.build(allDocs, { validation: true })
+  await workspace.documentBuilder.build(allDocs, { validation: true })
 
   return {
     getFile(path: string): Wrapped<TaoFile> {
       const doc = documents.get(path)
       Assert(doc, `No document found for path: ${path}`)
-      const errorReport = getDocumentErrors(doc)
-      Assert(!errorReport, `Expected no errors for ${path}, but got: ${errorReport?.humanErrorMessage}`)
+      const errorReports = getDocumentErrors(...documents.values())
+      Assert(
+        !errorReports.hasError(),
+        `Expected no errors for ${path}, but got: ${errorReports.getHumanErrorMessage()}`,
+      )
       return wrap(doc.parseResult.value)
     },
-    getErrors(path: string): ErrorReport | undefined {
-      const doc = documents.get(path)
-      Assert(doc, `No document found for path: ${path}`)
-      return getDocumentErrors(doc)
+    getErrors(): TaoErrorReport {
+      return getDocumentErrors(...documents.values())
     },
     documents,
   }
