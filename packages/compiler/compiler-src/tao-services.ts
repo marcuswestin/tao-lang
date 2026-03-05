@@ -10,17 +10,18 @@ import { UseStatementValidator } from '@tao-compiler/validation/UseStatementVali
 import TaoFormatter from '../formatter-src/TaoFormatter'
 import { AST } from './grammar'
 
-export type TaoServices = LSP.LangiumServices
-
-export type TaoServicesResult = {
-  shared: LSP.LangiumSharedServices
-  Tao: LSP.LangiumServices
-  metaData: langium.LanguageMetaData
+export type TaoWorkspace = {
+  documents: langium.LangiumDocuments
+  documentBuilder: langium.DocumentBuilder
+  fileExtensions: readonly string[]
+  documentFactory: langium.LangiumDocumentFactory
+  formatter: LSP.Formatter & TaoFormatter
 }
 
-// Create the services required by Langium.
+// Create the parser services required by Langium.
 // This is a pretty opaque process, but it's how langium expects it.
-export function createTaoServices(context: LSP.DefaultSharedModuleContext): TaoServicesResult {
+// TODO: Return named object with factory, builder, etc directly named instead of `shared`
+export function createTaoWorkspace(context: LSP.DefaultSharedModuleContext): TaoWorkspace {
   const sharedTaoModule = langium.inject(
     LSP.createDefaultSharedModule(context),
     TaoLangGeneratedSharedModule,
@@ -60,5 +61,26 @@ export function createTaoServices(context: LSP.DefaultSharedModuleContext): TaoS
   }
 
   // TODO: Is there a difference between sharedTaoModule and TaoModule.shared?
-  return { shared: sharedTaoModule, Tao: TaoModule, metaData: TaoModule.LanguageMetaData }
+  return {
+    documents: TaoModule.shared.workspace.LangiumDocuments,
+    documentBuilder: TaoModule.shared.workspace.DocumentBuilder,
+    fileExtensions: TaoModule.LanguageMetaData.fileExtensions,
+    documentFactory: TaoModule.shared.workspace.LangiumDocumentFactory,
+    formatter: TaoModule.lsp.Formatter,
+  }
 }
+
+// class TaoWorkspace {
+//   constructor(private readonly shared: LSP.LangiumSharedServices, private readonly Tao: LSP.LangiumServices) {
+//   }
+
+//   get documents() {
+//     return this.shared.workspace.LangiumDocuments
+//   }
+
+//   buildDocument()
+
+//   get builder() {
+//     return this.shared.workspace.DocumentBuilder
+//   }
+// }
