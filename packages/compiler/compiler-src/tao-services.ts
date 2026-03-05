@@ -11,6 +11,7 @@ import TaoFormatter from '../formatter-src/TaoFormatter'
 import { AST } from './grammar'
 
 export type TaoWorkspace = {
+  shared: LSP.LangiumSharedServices
   documents: langium.LangiumDocuments
   documentBuilder: langium.DocumentBuilder
   fileExtensions: readonly string[]
@@ -62,6 +63,7 @@ export function createTaoWorkspace(context: LSP.DefaultSharedModuleContext): Tao
 
   // TODO: Is there a difference between sharedTaoModule and TaoModule.shared?
   return {
+    shared: sharedTaoModule,
     documents: TaoModule.shared.workspace.LangiumDocuments,
     documentBuilder: TaoModule.shared.workspace.DocumentBuilder,
     fileExtensions: TaoModule.LanguageMetaData.fileExtensions,
