@@ -17,7 +17,7 @@ describe('runtime:', () => {
     const { code, needle, runtimeDir, targetPath } = makeNeedleApp()
 
     const result = await TaoSDK_compile({ code, runtimeDir })
-    expect(result.result.errorReport).toBeUndefined()
+    expect(result.result.errorReport.errorCount()).toBe(0)
     expect(result.outputPath).toBeDefined()
     expect(result.result?.code).toContain(needle)
 
