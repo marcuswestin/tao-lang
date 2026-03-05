@@ -139,7 +139,7 @@ share view PublicView { } // Any file can import this declaration by name.
 To import a declaration from a module:
 
 ```tao
-use ./ui/views PublicView, ExampleView2 // <- makes `PublicView` and `ExampleView2` declarations in files from `./ui/views` directory visible and available to this file. They must both be declared and marked with `share`.
+use PublicView, ExampleView2 from ./ui/views // <- makes `PublicView` and `ExampleView2` declarations in files from `./ui/views` directory visible and available to this file. They must both be declared and marked with `share`.
 ```
 
 ## Implementation Guide:

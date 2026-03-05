@@ -81,7 +81,7 @@ function compileTopLevelStatement(statement: AST.TopLevelStatement): Compiled {
 
 function compileUseStatement(useStatement: AST.UseStatement): Compiled {
   return compileNode(useStatement)`
-    // Tao: use ${useStatement.modulePath} ${useStatement.importedNames.join(', ')}
+    // Tao: use ${useStatement.importedNames.join(', ')} from ${useStatement.modulePath}
   `
 }
 

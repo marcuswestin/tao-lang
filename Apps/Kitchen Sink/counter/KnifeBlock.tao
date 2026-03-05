@@ -1,4 +1,4 @@
-use ../ FridgeView //
+use FridgeView from ../
 
 view Test { }
 

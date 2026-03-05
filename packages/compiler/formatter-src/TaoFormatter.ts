@@ -61,10 +61,11 @@ export default class TaoFormatter extends AbstractFormatter {
 
   private formatUseStatement(node: ast.UseStatement): void {
     const f = this.getNodeFormatter(node)
-    // Space after 'ui' keyword: "ui MyView"
+    // "use X, Y, Z from <module>"
     f.keyword('use').prepend(Formatting.noSpace()).append(Formatting.oneSpace())
-    f.property('modulePath').append(Formatting.oneSpace())
-    f.property('importedNames').append(Formatting.newLine())
+    f.property('importedNames').append(Formatting.oneSpace())
+    f.keyword('from').append(Formatting.oneSpace())
+    f.property('modulePath').append(Formatting.newLine())
     f.node(node).append(Formatting.newLine())
   }
 

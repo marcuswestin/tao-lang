@@ -17,8 +17,8 @@ Implemented three visibility levels for declarations:
 Implemented `use` statement syntax for cross-module imports:
 
 ```tao
-use ./ui/components Button, Input
-use ../shared/utils Logger
+use Button, Input from ./ui/components
+use Logger from ../shared/utils
 ```
 
 Key behaviors:

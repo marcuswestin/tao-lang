@@ -1,5 +1,5 @@
-use ./counter KnifeBlock
-// use tao/ui Col, Row, Text
+use KnifeBlock from ./counter
+// use Col, Row, Text from tao/ui
 
 app KitchenSink {
     ui RootView

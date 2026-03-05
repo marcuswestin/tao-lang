@@ -261,11 +261,11 @@ describe('Formatter', () => {
 
   testFormatter('use statement newline')
     .format(`
-      use ./ui/views Button
+      use Button from ./ui/views
       view MyView {}
     `)
     .equals(`
-      use ./ui/views Button
+      use Button from ./ui/views
 
       view MyView { }
     `)

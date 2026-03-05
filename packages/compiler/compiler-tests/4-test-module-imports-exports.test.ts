@@ -3,7 +3,7 @@ import { describe, expect, parseAST, parseASTWithErrors, parseMultipleFiles, tes
 describe('use statement parsing', () => {
   test('parses use statement with single import', async () => {
     const doc = await parseAST(`
-      use ./ui/views PublicView
+      use PublicView from ./ui/views
       view MyView { }
     `)
     const useStmt = doc.topLevelStatements.first.as_UseStatement
@@ -13,7 +13,7 @@ describe('use statement parsing', () => {
 
   test('parses use statement with multiple imports', async () => {
     const doc = await parseAST(`
-      use ./ui/views PublicView, AnotherView, ThirdView
+      use PublicView, AnotherView, ThirdView from ./ui/views
       view MyView { }
     `)
     const useStmt = doc.topLevelStatements.first.as_UseStatement
@@ -23,7 +23,7 @@ describe('use statement parsing', () => {
 
   test('parses use statement with parent path', async () => {
     const doc = await parseAST(`
-      use ../shared/components Button
+      use Button from ../shared/components
       view MyView { }
     `)
     const useStmt = doc.topLevelStatements.first.as_UseStatement
@@ -33,8 +33,8 @@ describe('use statement parsing', () => {
 
   test('parses multiple use statements', async () => {
     const doc = await parseAST(`
-      use ./ui/views PublicView
-      use ./ui/components Button, Input
+      use PublicView from ./ui/views
+      use Button, Input from ./ui/components
       view MyView { }
     `)
     expect(doc.topLevelStatements.length).toBe(3)
@@ -53,7 +53,7 @@ describe('multi-file module parsing', () => {
       {
         path: '/project/app.tao',
         code: `
-          use ./ui/views PublicView
+          use PublicView from ./ui/views
           app MyApp { ui MainView }
           view MainView { }
         `,
@@ -74,7 +74,7 @@ describe('cross-module import resolution (use statement)', () => {
       {
         path: '/project/app.tao',
         code: `
-          use ./ui/views Button
+          use Button from ./ui/views
           view MainView {
             Button
           }
@@ -95,7 +95,7 @@ describe('cross-module import resolution (use statement)', () => {
       {
         path: '/project/app.tao',
         code: `
-          use ./ui/views NonExistent
+          use NonExistent from ./ui/views
           view MainView { }
         `,
       },
@@ -114,7 +114,7 @@ describe('cross-module import resolution (use statement)', () => {
       {
         path: '/project/app.tao',
         code: `
-          use ./ui/views InternalView
+          use InternalView from ./ui/views
           view MainView { }
         `,
       },
@@ -133,7 +133,7 @@ describe('cross-module import resolution (use statement)', () => {
       {
         path: '/project/app.tao',
         code: `
-          use ./ui/views PrivateView
+          use PrivateView from ./ui/views
           view MainView { }
         `,
       },
@@ -156,7 +156,7 @@ describe('cross-module import resolution (use statement)', () => {
       {
         path: '/project/app.tao',
         code: `
-          use ./ui Button, TextInput
+          use Button, TextInput from ./ui
           view MainView {
             Button { TextInput }
           }
@@ -176,7 +176,7 @@ describe('cross-module import resolution (use statement)', () => {
       {
         path: '/project/kitchen/Kitchen Sink.tao',
         code: `
-          use ./counter KnifeBlock
+          use KnifeBlock from ./counter
           view MainView {
             KnifeBlock { }
           }
@@ -196,7 +196,7 @@ describe('cross-module import resolution (use statement)', () => {
       {
         path: '/project/app/Kitchen.tao',
         code: `
-          use ./components/counter KnifeBlock
+          use KnifeBlock from ./components/counter
           view Text {
             KnifeBlock { }
           }
@@ -216,7 +216,7 @@ describe('cross-module import resolution (use statement)', () => {
       {
         path: '/project/src/app.tao',
         code: `
-          use ./ui/components/buttons Button
+          use Button from ./ui/components/buttons
           view MainView {
             Button { }
           }
@@ -256,7 +256,7 @@ describe('cross-module import resolution (use statement)', () => {
       {
         path: '/project/app/views/Login.tao',
         code: `
-          use ../../shared/components Button
+          use Button from ../../shared/components
           view LoginView {
             Button { }
           }
@@ -276,7 +276,7 @@ describe('cross-module import resolution (use statement)', () => {
       {
         path: '/project/app/kitchen/Kitchen.tao',
         code: `
-          use ../ FridgeView
+          use FridgeView from ../
           view KitchenView {
             FridgeView { }
           }
@@ -349,7 +349,7 @@ describe('cross-module import resolution (use statement)', () => {
 
     test(`imports don't crash the compiler`, async () => {
       // Invalid path (missing ./ prefix) - should return errors, not crash
-      const errors = await parseASTWithErrors(`use app/ui`)
+      const errors = await parseASTWithErrors(`use Foo from app/ui`)
       expect(errors).toBeDefined() // Parse error expected, but no crash
     })
   })
@@ -361,7 +361,7 @@ describe('module system edge cases', () => {
       {
         path: '/project/app.tao',
         code: `
-          use ./non/existent/path Button
+          use Button from ./non/existent/path
           view MainView { }
         `,
       },
@@ -405,7 +405,7 @@ describe('module system edge cases', () => {
       {
         path: '/project/app.tao',
         code: `
-          use ./ui/buttons Button
+          use Button from ./ui/buttons
           view Button { }
           view MainView {
             Button
@@ -431,7 +431,7 @@ describe('module system edge cases', () => {
       {
         path: '/project/app.tao',
         code: `
-          use ./ui/components Button, Input, Label
+          use Button, Input, Label from ./ui/components
           view Form {
             Label { }
             Input { }
@@ -453,7 +453,7 @@ describe('module system edge cases', () => {
       {
         path: '/project/app.tao',
         code: `
-          use ./ui/internal InternalHelper
+          use InternalHelper from ./ui/internal
           view MainView { }
         `,
       },
@@ -476,7 +476,7 @@ describe('module system edge cases', () => {
       {
         path: '/project/app.tao',
         code: `
-          use ./ui/mixed PublicButton
+          use PublicButton from ./ui/mixed
           view MainView {
             PublicButton
           }
