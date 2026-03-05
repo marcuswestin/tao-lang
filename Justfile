@@ -116,7 +116,7 @@ ide-extension *ARGS:
 shared *ARGS:
     cd packages/shared && just {{ ARGS }}
 
-tao-cli *ARGS:
+cli *ARGS:
     cd packages/tao-cli && just {{ ARGS }}
 
 [no-cd]

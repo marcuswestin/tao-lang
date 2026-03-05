@@ -6,11 +6,11 @@ build:
     just _install_deps
     # Hermes (expo runner) requires import.meta.url to be defined.
     # It's a hack, and I'd like to make it cleaner.
-    just tao-cli build-lib {{ justfile_directory() }}/_gen-tao-lib
+    just cli build-lib {{ justfile_directory() }}/_gen-tao-lib
 
 watch:
     just _install_deps
-    just tao-cli watch-lib {{ justfile_directory() }}/_gen-tao-lib
+    just cli watch-lib {{ justfile_directory() }}/_gen-tao-lib
 
 release-prep: build test
     npx expo prebuild
