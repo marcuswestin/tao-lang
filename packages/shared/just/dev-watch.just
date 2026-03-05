@@ -65,7 +65,7 @@ _watch-typecheck-extension:
     cd packages/ide-extension && tsc -b tsconfig.json --watch --preserveWatchOutput
 
 _watch-esbuild-extension:
-    cd packages/ide-extension && node esbuild.mjs --watch
+    cd packages/ide-extension && node esbuild.config.ts --watch
 
 _watch-fmt-justfile:
     watchexec --filter '**/*.just' --filter '**/Justfile' -- 'just _fmt_just'
