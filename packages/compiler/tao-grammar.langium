@@ -7,7 +7,7 @@ entry TaoFile:
 //////////
 
 UseStatement:
-    'use' importedNames+=ID (',' importedNames+=ID)* 'from' modulePath=RELATIVE_PATH;
+    'use' importedNames+=ID (',' importedNames+=ID)* ('from' modulePath=RELATIVE_PATH)?;
 
 terminal RELATIVE_PATH: /(\.\.\/)+[a-zA-Z0-9_\-\/]*|\.\/[a-zA-Z0-9_\-\/]*/;
 

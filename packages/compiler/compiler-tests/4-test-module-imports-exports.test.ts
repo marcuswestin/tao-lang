@@ -41,6 +41,26 @@ describe('use statement parsing', () => {
     expect(doc.topLevelStatements[0].as_UseStatement.modulePath).toBe('./ui/views')
     expect(doc.topLevelStatements[1].as_UseStatement.modulePath).toBe('./ui/components')
   })
+
+  test('parses same-module use statement (no from clause)', async () => {
+    const doc = await parseAST(`
+      use Button
+      view MyView { }
+    `)
+    const useStmt = doc.topLevelStatements.first.as_UseStatement
+    useStmt.expect('modulePath').toBeUndefined()
+    expect(useStmt.importedNames).toEqual(['Button'])
+  })
+
+  test('parses same-module use statement with multiple imports', async () => {
+    const doc = await parseAST(`
+      use Button, Input, Label
+      view MyView { }
+    `)
+    const useStmt = doc.topLevelStatements.first.as_UseStatement
+    useStmt.expect('modulePath').toBeUndefined()
+    expect(useStmt.importedNames).toEqual(['Button', 'Input', 'Label'])
+  })
 })
 
 describe('multi-file module parsing', () => {
@@ -287,28 +307,28 @@ describe('cross-module import resolution (use statement)', () => {
     expect(errors.errorCount()).toBe(0)
   })
 
-  describe('same-module visibility (no use statement needed)', () => {
-    test('default declarations are visible to other files in same module', async () => {
+  describe('same-module imports (use Foo)', () => {
+    test('default declarations are accessible via use statement', async () => {
       const result = await parseMultipleFiles([
         {
           path: '/project/ui/buttons.tao',
-          code: `view Button { }`, // Default visibility - visible within module
+          code: `view Button { }`,
         },
         {
           path: '/project/ui/forms.tao',
           code: `
+          use Button
           view LoginForm {
             Button
           }
         `,
         },
       ])
-      // No use statement needed - Button is in same module
       const errors = result.getErrors()
       expect(errors.errorCount()).toBe(0)
     })
 
-    test('shared declarations are also visible within same module', async () => {
+    test('shared declarations are accessible via use statement', async () => {
       const result = await parseMultipleFiles([
         {
           path: '/project/ui/buttons.tao',
@@ -317,6 +337,7 @@ describe('cross-module import resolution (use statement)', () => {
         {
           path: '/project/ui/forms.tao',
           code: `
+          use Button
           view LoginForm {
             Button
           }
@@ -327,15 +348,36 @@ describe('cross-module import resolution (use statement)', () => {
       expect(errors.errorCount()).toBe(0)
     })
 
-    test('file-private declarations are NOT visible to other files in same module', async () => {
+    test('same-module symbols are NOT accessible without use statement', async () => {
       const result = await parseMultipleFiles([
         {
           path: '/project/ui/buttons.tao',
-          code: `file view PrivateHelper { }`, // File-private
+          code: `view Button { }`,
         },
         {
           path: '/project/ui/forms.tao',
           code: `
+          view LoginForm {
+            Button
+          }
+        `,
+        },
+      ])
+      const errors = result.getErrors()
+      expect(errors.errorCount()).toBe(1)
+      expect(errors.getHumanErrorMessage()).toContain('Button')
+    })
+
+    test('file-private declarations are NOT accessible via use statement', async () => {
+      const result = await parseMultipleFiles([
+        {
+          path: '/project/ui/buttons.tao',
+          code: `file view PrivateHelper { }`,
+        },
+        {
+          path: '/project/ui/forms.tao',
+          code: `
+          use PrivateHelper
           view LoginForm {
             PrivateHelper
           }
@@ -343,14 +385,38 @@ describe('cross-module import resolution (use statement)', () => {
         },
       ])
       const errors = result.getErrors()
-      expect(errors.errorCount()).toBe(1)
+      expect(errors.errorCount()).toBeGreaterThanOrEqual(1)
       expect(errors.getHumanErrorMessage()).toContain('PrivateHelper')
     })
 
+    test('same-module use does not require share', async () => {
+      const result = await parseMultipleFiles([
+        {
+          path: '/project/ui/buttons.tao',
+          code: `view Button { }`,
+        },
+        {
+          path: '/project/ui/labels.tao',
+          code: `share view Label { }`,
+        },
+        {
+          path: '/project/ui/forms.tao',
+          code: `
+          use Button, Label
+          view LoginForm {
+            Button { }
+            Label { }
+          }
+        `,
+        },
+      ])
+      const errors = result.getErrors()
+      expect(errors.errorCount()).toBe(0)
+    })
+
     test(`imports don't crash the compiler`, async () => {
-      // Invalid path (missing ./ prefix) - should return errors, not crash
       const errors = await parseASTWithErrors(`use Foo from app/ui`)
-      expect(errors).toBeDefined() // Parse error expected, but no crash
+      expect(errors).toBeDefined()
     })
   })
 })
@@ -372,7 +438,6 @@ describe('module system edge cases', () => {
   })
 
   test('multiple files with same declaration name in same module', async () => {
-    // Both files have 'Button' declaration - both should be visible in same module
     const result = await parseMultipleFiles([
       {
         path: '/project/ui/buttons.tao',
@@ -380,18 +445,18 @@ describe('module system edge cases', () => {
       },
       {
         path: '/project/ui/special-buttons.tao',
-        code: `view Button { }`, // Same name, different file
+        code: `view Button { }`,
       },
       {
         path: '/project/ui/forms.tao',
         code: `
+          use Button
           view Form {
             Button
           }
         `,
       },
     ])
-    // Should work - Button is resolved (first match wins or last match, depends on impl)
     const errors = result.getErrors()
     expect(errors.errorCount()).toBe(0)
   })

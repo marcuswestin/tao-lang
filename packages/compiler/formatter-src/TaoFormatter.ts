@@ -49,24 +49,24 @@ export default class TaoFormatter extends AbstractFormatter {
 
   private formatTaoFile(node: ast.TaoFile): void {
     const f = this.getNodeFormatter(node)
-    const firstStatement = node.topLevelStatements[0]
-    if (firstStatement) {
-      f.node(firstStatement).prepend(Formatting.noSpace())
+    const stmts = node.topLevelStatements
+    if (stmts[0]) {
+      f.node(stmts[0]).prepend(Formatting.noSpace())
     }
 
-    for (let i = 1; i < node.topLevelStatements.length; i++) {
-      f.node(node.topLevelStatements[i]).prepend(Formatting.newLines(2))
+    for (let i = 1; i < stmts.length; i++) {
+      const consecutiveUse = ast.isUseStatement(stmts[i - 1]) && ast.isUseStatement(stmts[i])
+      f.node(stmts[i]).prepend(consecutiveUse ? Formatting.newLines(1) : Formatting.newLines(2))
     }
   }
 
   private formatUseStatement(node: ast.UseStatement): void {
     const f = this.getNodeFormatter(node)
-    // "use X, Y, Z from <module>"
-    f.keyword('use').prepend(Formatting.noSpace()).append(Formatting.oneSpace())
-    f.property('importedNames').append(Formatting.oneSpace())
-    f.keyword('from').append(Formatting.oneSpace())
-    f.property('modulePath').append(Formatting.newLine())
-    f.node(node).append(Formatting.newLine())
+    f.keyword('use').append(Formatting.oneSpace())
+    if (node.modulePath) {
+      f.property('importedNames').append(Formatting.oneSpace())
+      f.keyword('from').append(Formatting.oneSpace())
+    }
   }
 
   private formatAppDeclaration(node: ast.AppDeclaration): void {

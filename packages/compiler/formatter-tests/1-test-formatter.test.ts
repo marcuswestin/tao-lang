@@ -269,6 +269,32 @@ describe('Formatter', () => {
 
       view MyView { }
     `)
+
+  testFormatter('consecutive use statements')
+    .format(`
+      use KnifeBlock from ./counter
+      use FridgeView
+      view MyView {}
+    `)
+    .equals(`
+      use KnifeBlock from ./counter
+      use FridgeView
+
+      view MyView { }
+    `)
+
+  testFormatter('consecutive same-module use statements')
+    .format(`
+      use Button
+      use Label
+      view MyView {}
+    `)
+    .equals(`
+      use Button
+      use Label
+
+      view MyView { }
+    `)
 })
 
 describe('formatter edge cases', () => {

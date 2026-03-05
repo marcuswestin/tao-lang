@@ -5,17 +5,13 @@ import * as ast from './_gen-tao-parser/ast'
 import { normalizeModulePath } from './Paths'
 
 // TaoScopeProvider filters symbols for reference resolution based on module visibility rules.
-// It handles `share`-marked declarations for `use` imports and same-module symbol access.
 export class TaoScopeProvider extends langium.DefaultScopeProvider {
   // getScope returns the scope of available symbols for a reference context.
-  // For view references, it applies module visibility rules (local -> imported -> same-module).
   override getScope(context: langium.ReferenceInfo): langium.Scope {
-    // For view references (like in ViewRenderStatement), apply module visibility rules
     if (context.property === 'view' && ast.isViewRenderStatement(context.container)) {
       return this.getModuleScopedDeclarations(context)
     }
 
-    // For app ui references
     if (context.property === 'ui' && ast.isAppStatement(context.container)) {
       return this.getModuleScopedDeclarations(context)
     }
@@ -23,31 +19,19 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
     return super.getScope(context)
   }
 
-  // getModuleScopedDeclarations builds a scope chain: local -> imported -> same-module.
-  // Local symbols shadow imported ones, which shadow same-module symbols.
+  // getModuleScopedDeclarations builds a scope chain: local -> imported.
   private getModuleScopedDeclarations(context: langium.ReferenceInfo): langium.Scope {
     const document = langium.AstUtils.getDocument(context.container)
-    const taoFile = document.parseResult.value as ast.TaoFile
-    const currentDir = path.dirname(document.uri.path)
+    const taoFileNode = document.parseResult.value as ast.TaoFile
 
-    // 1. Collect explicitly imported names via `use` statements
-    const importedSymbols = this.getImportedSymbols(taoFile, document, context)
-
-    // 2. Collect same-module symbols (default + share visibility)
-    const sameModuleSymbols = this.getSameModuleSymbols(currentDir, context)
-
-    // 3. Get local file symbols from document's local symbol table
+    const importedSymbols = this.getImportedSymbols(taoFileNode, document, context)
     const localScope = this.getLocalScope(context, document)
 
-    // Build scope chain: local -> imported -> same-module
-    // Local symbols shadow imported, imported shadow same-module
-    const sameModuleScope = this.createScope(sameModuleSymbols)
-    const importedScope = this.createScope(importedSymbols, sameModuleScope)
+    const importedScope = this.createScope(importedSymbols)
     return this.createScope(localScope, importedScope)
   }
 
   // getImportedSymbols collects symbols from `use` statements.
-  // Only `share`-marked declarations can be imported from other modules.
   private getImportedSymbols(
     taoFile: ast.TaoFile,
     document: langium.LangiumDocument,
@@ -58,41 +42,53 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
 
     const useStatements = taoFile.topLevelStatements.filter((stmt) => ast.isUseStatement(stmt))
     for (const useStmt of useStatements) {
-      this.getExportedSymbolsForUseStatement(useStmt, referenceType, imported, document)
+      const imports = this.getImportedSymbolsForUseStatement(useStmt, referenceType, document)
+      imported.push(...imports)
     }
 
     return imported
   }
 
-  // getExportedSymbolsForUseStatement collects symbols from `use` statements.
-  // Only `share`-marked declarations can be imported from other modules.
-  private getExportedSymbolsForUseStatement(
+  // getImportedSymbolsForUseStatement resolves symbols for a `use` statement.
+  // Same-module imports (`use Foo` or `use Foo from ./`) accept default + share visibility.
+  // Cross-module imports require `share` visibility.
+  private getImportedSymbolsForUseStatement(
     useStmt: ast.UseStatement,
     referenceType: string,
-    imported: langium.AstNodeDescription[],
     document: langium.LangiumDocument,
   ): langium.AstNodeDescription[] {
-    const targetUris = this.resolveModulePath(useStmt.modulePath, document)
+    const imported: langium.AstNodeDescription[] = []
+    const sameModule = this.isSameModuleImport(useStmt, document)
+    const targetUris = sameModule
+      ? this.getSameModuleUris(document)
+      : this.resolveModulePath(useStmt.modulePath!, document)
 
     for (const targetUri of targetUris) {
-      // Get all workspace exported symbols of the target type AND within the target URI
       const allRelevantExports = this.indexManager
         .allElements(referenceType, new Set([targetUri]))
 
       for (const description of allRelevantExports) {
-        if (useStmt.importedNames.includes(description.name)) {
-          const node = description.node
-          // Retrieve shared declarations:
-          // Declaration nodes, wrapped in a VisibilityMarkedDeclaration, with 'share' visibility.
-          if (!node) {
+        if (!useStmt.importedNames.includes(description.name)) {
+          continue
+        }
+
+        const node = description.node
+        if (!node) {
+          continue
+        }
+
+        if (sameModule) {
+          // Same-module: all exported declarations are accessible (file-private already excluded by ScopeComputation)
+          imported.push(description)
+        } else {
+          // Cross-module: only `share`-marked declarations
+          if (!ast.isDeclaration(node) || !ast.isVisibilityMarkedDeclaration(node.$container)) {
             continue
-          } else if (!ast.isDeclaration(node) || !ast.isVisibilityMarkedDeclaration(node.$container)) {
-            continue
-          } else if (node.$container.visibility !== 'share') {
-            continue
-          } else {
-            imported.push(description)
           }
+          if (node.$container.visibility !== 'share') {
+            continue
+          }
+          imported.push(description)
         }
       }
     }
@@ -100,28 +96,33 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
     return imported
   }
 
-  // getSameModuleSymbols collects symbols from files in the same directory (module).
-  // Both default and `share` visibility declarations are visible within the same module.
-  // Note: Queries all elements then filters by directory; acceptable for typical project sizes.
-  private getSameModuleSymbols(
-    currentDir: string,
-    context: langium.ReferenceInfo,
-  ): langium.AstNodeDescription[] {
-    const referenceType = this.reflection.getReferenceType(context)
-    const currentDocument = langium.AstUtils.getDocument(context.container)
+  // isSameModuleImport returns true when a `use` statement targets the same module (directory).
+  // `use Foo` (no path) is always same-module. `use Foo from ./` also resolves to same module.
+  private isSameModuleImport(useStmt: ast.UseStatement, document: langium.LangiumDocument): boolean {
+    if (!useStmt.modulePath) {
+      return true
+    }
+    const currentDir = path.dirname(document.uri.path)
+    const targetPath = normalizeModulePath(currentDir, useStmt.modulePath)
+    return targetPath === normalizeModulePath(currentDir)
+  }
 
-    return this.indexManager
-      .allElements(referenceType)
-      .filter((desc) => {
-        const descDir = path.dirname(desc.documentUri.path)
-        // Same module = same directory, but exclude current file (handled by local scope)
-        return descDir === currentDir && desc.documentUri.toString() !== currentDocument.uri.toString()
-      })
-      .toArray()
+  // getSameModuleUris returns document URIs for all files in the same directory, excluding the current file.
+  private getSameModuleUris(document: langium.LangiumDocument): string[] {
+    const currentDir = normalizeModulePath(path.dirname(document.uri.path))
+    const uriSet = new Set<string>()
+
+    for (const desc of this.indexManager.allElements()) {
+      const descDir = normalizeModulePath(path.dirname(desc.documentUri.path))
+      if (descDir === currentDir && desc.documentUri.toString() !== document.uri.toString()) {
+        uriSet.add(desc.documentUri.toString())
+      }
+    }
+
+    return [...uriSet]
   }
 
   // getLocalScope retrieves local symbols from the document's symbol table.
-  // Walks up the AST container chain to find all symbols in enclosing scopes.
   private getLocalScope(
     context: langium.ReferenceInfo,
     document: langium.LangiumDocument,
@@ -149,7 +150,6 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
   }
 
   // resolveModulePath converts a relative module path to document URIs.
-  // Matches either an exact file (./ui/views.tao) or all files in a folder (./ui/).
   private resolveModulePath(
     modulePath: string,
     document: langium.LangiumDocument,
@@ -158,28 +158,23 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
       return []
     }
 
-    try {
-      const currentDir = path.dirname(document.uri.path)
-      const targetPath = normalizeModulePath(currentDir, modulePath)
-      const targetFileWithExt = targetPath + TAO_EXT
+    const currentDir = path.dirname(document.uri.path)
+    const targetPath = normalizeModulePath(currentDir, modulePath)
+    const targetFileWithExt = targetPath + TAO_EXT
 
-      const uris: string[] = []
-      for (const doc of this.indexManager.allElements()) {
-        const docPath = doc.documentUri.path
-        const docDir = normalizeModulePath(path.dirname(docPath))
+    const uris: string[] = []
+    for (const doc of this.indexManager.allElements()) {
+      const docPath = doc.documentUri.path
+      const docDir = normalizeModulePath(path.dirname(docPath))
 
-        // Match exact file (e.g., ./ui/views -> /project/ui/views.tao)
-        if (docPath === targetFileWithExt) {
-          uris.push(doc.documentUri.toString())
-        } // Match folder (e.g., ./ui -> all files in /project/ui/)
-        else if (docDir === targetPath) {
-          uris.push(doc.documentUri.toString())
-        }
+      if (docPath === targetFileWithExt) {
+        uris.push(doc.documentUri.toString())
+      } else if (docDir === targetPath) {
+        uris.push(doc.documentUri.toString())
       }
-
-      return [...new Set(uris)] // Deduplicate
-    } catch {
-      return []
     }
+
+    // Remove duplicates
+    return [...new Set(uris)]
   }
 }

@@ -104,7 +104,11 @@ async function loadEntryAndReachable(
 }
 
 // getUseStatementModuleDirectory returns the directory of a use statement's module.
-function getUseStatementModuleDirectory(ast: AST.UseStatement, currentDir: string): string {
+// Returns undefined for same-module imports (no modulePath), which are handled by addSameDirectoryTaoFiles.
+function getUseStatementModuleDirectory(ast: AST.UseStatement, currentDir: string): string | undefined {
+  if (!ast.modulePath) {
+    return undefined
+  }
   const isRelativeModulePath = ast.modulePath.startsWith('.')
   if (!isRelativeModulePath) {
     throwNotYetImplementedError('Named module imports are not supported yet')
@@ -138,11 +142,14 @@ async function addReachableTaoFiles(
 
   // collect all documents reachable from the entry document
   for (const ast of document.parseResult.value.topLevelStatements) {
-    if (!AST.isUseStatement(ast) || !ast.modulePath) {
+    if (!AST.isUseStatement(ast)) {
       continue
     }
 
     const directory = getUseStatementModuleDirectory(ast, path.dirname(document.uri.path))
+    if (!directory) {
+      continue
+    }
     const moduleTaoFiles = getModuleTaoFiles(workspace, directory)
     for (const moduleTaoFile of moduleTaoFiles) {
       if (!seenFilePaths.has(moduleTaoFile)) {

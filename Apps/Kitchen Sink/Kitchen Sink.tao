@@ -1,4 +1,5 @@
 use KnifeBlock from ./counter
+use FridgeView
 // use Col, Row, Text from tao/ui
 
 app KitchenSink {

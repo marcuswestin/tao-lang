@@ -80,8 +80,9 @@ function compileTopLevelStatement(statement: AST.TopLevelStatement): Compiled {
 }
 
 function compileUseStatement(useStatement: AST.UseStatement): Compiled {
+  const fromClause = useStatement.modulePath ? ` from ${useStatement.modulePath}` : ''
   return compileNode(useStatement)`
-    // Tao: use ${useStatement.importedNames.join(', ')} from ${useStatement.modulePath}
+    // Tao: use ${useStatement.importedNames.join(', ')}${fromClause}
   `
 }
 
