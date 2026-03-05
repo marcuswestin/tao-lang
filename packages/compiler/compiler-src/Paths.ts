@@ -1,4 +1,4 @@
-import { statSync } from 'node:fs'
+import { readdirSync, statSync } from 'node:fs'
 import * as path from 'node:path'
 
 // normalizeModulePath joins and normalizes path parts, removing trailing slashes.
@@ -14,4 +14,25 @@ export function fileExists(filePath: string): boolean {
   } catch {
     return false // does not exist or inaccessible
   }
+}
+
+// isDirectory returns true if the path exists and is a directory.
+export function isDirectory(filePath: string): boolean {
+  try {
+    return statSync(filePath).isDirectory()
+  } catch {
+    return false
+  }
+}
+
+export function readDir(filePath: string): string[] {
+  try {
+    return readdirSync(filePath)
+  } catch {
+    return []
+  }
+}
+
+export function resolvePath(filePath: string): string {
+  return path.resolve(filePath)
 }
