@@ -54,12 +54,16 @@ export function throwNotYetImplementedError(
 }
 
 // Assert condition is true. If not, halt execution with an unexpected behavior error.
-export function Assert<T>(condition: T, expectedConditionDescription: string): asserts condition is NonNullable<T> {
+export function Assert<T>(
+  condition: T,
+  expectedConditionDescription: string,
+  ...logInfo: Record<string, unknown>[]
+): asserts condition is NonNullable<T> {
   if (!condition) {
     throw new UnexpectedBehaviorError({
-      humanMessage: `Expected ${expectedConditionDescription}`,
+      humanMessage: `Expected: ${expectedConditionDescription}`,
       cause: new Error('AssertError'),
-      logInfo: { condition: condition },
+      logInfo: { condition: condition, info: logInfo },
     })
   }
 }
@@ -114,7 +118,7 @@ abstract class BaseTaoError extends Error {
   }
 }
 
-class UserInputRejectionError extends BaseTaoError {
+export class UserInputRejectionError extends BaseTaoError {
   override readonly name = 'UserInputRejectionError'
 
   getLogMessage(): string {
