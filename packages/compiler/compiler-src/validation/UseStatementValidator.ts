@@ -1,5 +1,6 @@
 import * as langium from 'langium'
 import * as path from 'node:path'
+import { TAO_EXT } from '../@shared/TaoPaths'
 import * as ast from '../_gen-tao-parser/ast'
 import { normalizeModulePath } from '../Paths'
 
@@ -130,7 +131,7 @@ export class UseStatementValidator {
     try {
       const currentDir = path.dirname(document.uri.path)
       const targetPath = normalizeModulePath(currentDir, modulePath)
-      const targetFileWithExt = targetPath + '.tao'
+      const targetFileWithExt = targetPath + TAO_EXT
 
       const uris: string[] = []
       for (const doc of this.documents.all) {
