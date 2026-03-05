@@ -100,8 +100,7 @@
       "argsIgnorePattern": "^_",
       "varsIgnorePattern": "^_",
       "caughtErrorsIgnorePattern": "^_",
-      "ignoreRestSiblings": true,
-      ""
+      "ignoreRestSiblings": true
     }],
     "no-useless-backreference": "warn",
     "no-useless-catch": "warn",
