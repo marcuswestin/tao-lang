@@ -89,9 +89,9 @@ async function loadEntryAndReachable(
   documentsToBuild: Langium.LangiumDocument<AST.TaoFile>[]
 }> {
   const documentFactory = workspace.documentFactory
-  const entryDocument = await (evalString !== null
+  const entryDocument = evalString !== null
     ? documentFactory.fromString<AST.TaoFile>(evalString, uri)
-    : documentFactory.fromUri<AST.TaoFile>(uri))
+    : await documentFactory.fromUri<AST.TaoFile>(uri)
 
   workspace.documents.addDocument(entryDocument)
 
