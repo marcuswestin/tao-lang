@@ -16,6 +16,9 @@ Next tasks, in order:
 - [x] Merge shared and shared-tools
 - [x] Formatter
 - [x] Scoping
+- [ ] Fix build
+- [ ] Make modules `use Col, Row from tao/ui`, as well as `use FridgeView` for same-module imports
+- [ ] Add standard library support -- `use tao/ui Col, Row, Text`
 - [ ] Rename Agents.md to AGENTS.md
 - [ ] Update OXLINT_CMD: `OXLINT_CMD := "oxlint --ignore-path .gitignore --type-aware"`
 
