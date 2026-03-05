@@ -48,6 +48,12 @@ lint:
 check:
     just {{ MAIN_JUSTFILE }} check
 
+build: clean-ts-packages
+    just {{ MAIN_JUSTFILE }} build
+
+clean-ts-packages:
+    rm -rf .builds/ts-packages
+
 # Private helpers
 #================
 
