@@ -13,7 +13,7 @@ import {
   genNodePropertyRef,
 } from './compiler-utils'
 import { AST } from './grammar'
-import { ErrorReport } from './parse-errors'
+import { TaoErrorReport } from './parse-errors'
 import { TaoParser } from './parser'
 
 // export type File = {
@@ -22,7 +22,7 @@ import { TaoParser } from './parser'
 
 export type CompileResult = {
   code: string
-  errorReport?: ErrorReport
+  errorReport: TaoErrorReport
   document?: LangiumDocument<AST.TaoFile>
 }
 
@@ -30,25 +30,26 @@ export type CompileOpts = { file: string }
 
 export async function compileTao(opts: CompileOpts): Promise<CompileResult> {
   const parsed = await TaoParser.parseFile(opts.file)
-  Assert(parsed.taoFileAST, 'Expected TaoFileAST, but got none.')
-  if (parsed.errorReport) {
-    return { errorReport: parsed.errorReport, code: getErrorAppString(parsed.errorReport.humanErrorMessage) }
+  if (parsed.errorReport.hasError()) {
+    return { errorReport: parsed.errorReport, code: getErrorAppString(parsed.errorReport) }
   }
+  Assert(parsed.taoFileAST, 'taoFileAST is defined', parsed)
   const result = generateTypescript(parsed.taoFileAST)
   return { code: LangiumGen.toString(result), errorReport: parsed.errorReport, document: parsed.document }
 }
 
-function getErrorAppString(message: string) {
+function getErrorAppString(errorReport: TaoErrorReport) {
+  const messages = errorReport.getHumanErrorMessage()
   return `
   import * as RN from 'react-native'
 
-  const message = \`${message}\`.replace('\`', '\\\`')
+  const message = \`${messages}\`.replace('\`', '\\\`')
 
   export default function CompiledTaoApp() {
     // Center view in parent
     return <RN.View style={{ backgroundColor: 'red', maxWidth: 400, flex: 1, justifyContent: 'center', alignItems: 'center' }}>
       <RN.Text>Error compiling file</RN.Text>
-      <RN.Text>${message}</RN.Text>
+      <RN.Text>${messages}</RN.Text>
     </RN.View>
   }`
 }
