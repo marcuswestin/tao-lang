@@ -5,7 +5,6 @@ import { mkdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from 'no
 import path from 'node:path'
 import * as process from 'node:process'
 import {
-  Assert,
   TaoError,
   throwUserInputRejectionError,
 } from '../../compiler/compiler-src/@shared/TaoErrors'
@@ -59,23 +58,25 @@ export async function TaoSDK_compile(opts: TaoSDK_compileOpts): Promise<TaoSDK_c
     throwUserInputRejectionError('Provide EITHER <path> or --code, but not both')
   }
 
+  let path = opts.path
   if (opts.code) {
-    opts.path = `/tmp/tao-cli-temp-${Date.now()}.tao`
-    writeFileSync(opts.path, opts.code)
+    path = `/tmp/tao-cli-temp-${Date.now()}.tao`
+    writeFileSync(path, opts.code)
+  } else {
+    path = opts.path!
   }
-  Assert(opts.path, 'path is set')
 
   try {
     const outputPath = await checkUserInputs(opts)
-    const result = await compileTao({ file: opts.path })
+    const result = await compileTao({ file: path })
     await writeFile(outputPath, result.code)
-    if (result.errorReport) {
-      throwUserInputRejectionError(result.errorReport.humanErrorMessage)
+    if (result.errorReport.hasError()) {
+      throwUserInputRejectionError(result.errorReport.getHumanErrorMessage())
     }
     return { outputPath, result }
   } finally {
     if (opts.code) {
-      unlinkSync(opts.path)
+      unlinkSync(path)
     }
   }
 }
