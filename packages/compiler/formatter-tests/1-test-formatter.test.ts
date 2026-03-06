@@ -295,6 +295,24 @@ describe('Formatter', () => {
 
       view MyView { }
     `)
+
+  testFormatter('use with multiple imports normalizes spacing')
+    .format(`use Row ,   Col`)
+    .equals(`
+      use Row, Col
+    `)
+
+  testFormatter('use with multiple imports no spaces')
+    .format(`use Row,Col,Text`)
+    .equals(`
+      use Row, Col, Text
+    `)
+
+  testFormatter('use with multiple imports and from path')
+    .format(`use Row ,   Col from tao/ui`)
+    .equals(`
+      use Row, Col from tao/ui
+    `)
 })
 
 describe('formatter edge cases', () => {

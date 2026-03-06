@@ -18,7 +18,8 @@ Next tasks, in order:
 - [x] Scoping
 - [x] Fix build
 - [x] Make modules `use Col, Row from tao/ui`, as well as `use FridgeView` for same-module imports
-- [ ] Add standard library support -- `use tao/ui Col, Row, Text`
+- [x] Add standard library support -- `use tao/ui Col, Row, Text`
+- [x] Format the symbols in imports, e.g `Row ,   Col` → `Row, Col`
 - [ ] Rename Agents.md to AGENTS.md
 - [ ] Update OXLINT_CMD: `OXLINT_CMD := "oxlint --ignore-path .gitignore --type-aware"`
 

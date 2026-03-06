@@ -63,6 +63,7 @@ export default class TaoFormatter extends AbstractFormatter {
   private formatUseStatement(node: ast.UseStatement): void {
     const f = this.getNodeFormatter(node)
     f.keyword('use').append(Formatting.oneSpace())
+    this._spaceBetweenCommaSeperatedItems(node)
     if (node.modulePath) {
       f.property('importedNames').append(Formatting.oneSpace())
       f.keyword('from').append(Formatting.oneSpace())
