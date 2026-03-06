@@ -5,6 +5,7 @@ import { Assert } from '@tao-compiler/@shared/TaoErrors'
 import { TaoFile } from '@tao-compiler/_gen-tao-parser/ast'
 import { getDocumentErrors, TaoErrorReport } from '@tao-compiler/parse-errors'
 import { TaoParser } from '@tao-compiler/parser'
+import type { TaoWorkspace } from '@tao-compiler/tao-services'
 import { createTaoWorkspace } from '@tao-compiler/tao-services'
 import * as Langium from 'langium'
 import { NodeFileSystem } from 'langium/node'
@@ -92,7 +93,26 @@ export type MultiFileParseResult = {
 }
 
 export type ParseMultipleFilesOpts = {
-  stdLibRoot: string
+  stdLibRoot?: string
+}
+
+// buildWorkspaceAndDocuments creates a workspace, adds virtual files, and builds. Shared by parseMultipleFiles and buildWorkspaceWithFiles.
+async function buildWorkspaceAndDocuments(
+  files: VirtualFile[],
+  stdLibRoot?: string,
+): Promise<{ workspace: TaoWorkspace; documents: Map<string, Langium.LangiumDocument<TaoFile>> }> {
+  const workspace = createTaoWorkspace(NodeFileSystem, { stdLibRoot })
+  const documentFactory = workspace.documentFactory
+  const documents = new Map<string, Langium.LangiumDocument<TaoFile>>()
+  for (const file of files) {
+    const uri = Langium.URI.parse(`file://${file.path}`, true)
+    const document = documentFactory.fromString<TaoFile>(file.code, uri)
+    workspace.documents.addDocument(document)
+    documents.set(file.path, document)
+  }
+  const allDocs = Array.from(documents.values())
+  await workspace.documentBuilder.build(allDocs, { validation: true })
+  return { workspace, documents }
 }
 
 // parseMultipleFiles parses virtual files together, allowing cross-file references.
@@ -101,21 +121,7 @@ export async function parseMultipleFiles(
   files: VirtualFile[],
   opts: ParseMultipleFilesOpts = { stdLibRoot: '' },
 ): Promise<MultiFileParseResult> {
-  const workspace = createTaoWorkspace(NodeFileSystem, { stdLibRoot: opts.stdLibRoot })
-  const documentFactory = workspace.documentFactory
-  const documents = new Map<string, Langium.LangiumDocument<TaoFile>>()
-
-  // Create all documents
-  for (const file of files) {
-    const uri = Langium.URI.parse(`file://${file.path}`, true)
-    const document = documentFactory.fromString<TaoFile>(file.code, uri)
-    workspace.documents.addDocument(document)
-    documents.set(file.path, document)
-  }
-
-  // Build all documents together
-  const allDocs = Array.from(documents.values())
-  await workspace.documentBuilder.build(allDocs, { validation: true })
+  const { documents } = await buildWorkspaceAndDocuments(files, opts.stdLibRoot)
 
   return {
     getFile(path: string): Wrapped<TaoFile> {
@@ -132,5 +138,34 @@ export async function parseMultipleFiles(
       return getDocumentErrors(...documents.values())
     },
     documents,
+  }
+}
+
+// buildWorkspaceWithFiles parses virtual files and returns the workspace plus documents.
+// Use this when you need access to LSP services (e.g. definitionProvider) for testing.
+export async function buildWorkspaceWithFiles(
+  files: VirtualFile[],
+  opts: ParseMultipleFilesOpts = {},
+): Promise<{
+  workspace: TaoWorkspace
+  documents: Map<string, Langium.LangiumDocument<TaoFile>>
+  getFile: (path: string) => Wrapped<TaoFile>
+  getErrors: () => TaoErrorReport
+}> {
+  const { workspace, documents } = await buildWorkspaceAndDocuments(files, opts.stdLibRoot ?? undefined)
+
+  return {
+    workspace,
+    documents,
+    getFile(path: string): Wrapped<TaoFile> {
+      const doc = documents.get(path)
+      Assert(doc, `No document found for path: ${path}`)
+      const errorReports = getDocumentErrors(...documents.values())
+      Assert(!errorReports.hasError(), `Expected no errors: ${errorReports.getHumanErrorMessage()}`)
+      return wrap(doc.parseResult.value)
+    },
+    getErrors(): TaoErrorReport {
+      return getDocumentErrors(...documents.values())
+    },
   }
 }
