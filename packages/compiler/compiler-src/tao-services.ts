@@ -16,15 +16,47 @@ export type TaoWorkspaceConfig = {
   stdLibRoot?: string
 }
 
-export type TaoWorkspace = {
-  shared: LSP.LangiumSharedServices
-  documents: langium.LangiumDocuments
-  documentBuilder: langium.DocumentBuilder
-  fileExtensions: readonly string[]
-  documentFactory: langium.LangiumDocumentFactory
-  formatter: LSP.Formatter & TaoFormatter
-  definitionProvider: LSP.DefinitionProvider
-  stdLibRoot?: string
+export class TaoWorkspace {
+  readonly shared: LSP.LangiumSharedServices
+  readonly documents: langium.LangiumDocuments
+  readonly documentBuilder: langium.DocumentBuilder
+  readonly fileExtensions: readonly string[]
+  readonly documentFactory: langium.LangiumDocumentFactory
+  readonly formatter: LSP.Formatter & TaoFormatter
+  readonly definitionProvider: LSP.DefinitionProvider
+  readonly stdLibRoot?: string
+
+  private readonly seenFilePaths = new Set<string>()
+
+  constructor(opts: {
+    shared: LSP.LangiumSharedServices
+    documents: langium.LangiumDocuments
+    documentBuilder: langium.DocumentBuilder
+    fileExtensions: readonly string[]
+    documentFactory: langium.LangiumDocumentFactory
+    formatter: LSP.Formatter & TaoFormatter
+    definitionProvider: LSP.DefinitionProvider
+    stdLibRoot?: string
+  }) {
+    this.shared = opts.shared
+    this.documents = opts.documents
+    this.documentBuilder = opts.documentBuilder
+    this.fileExtensions = opts.fileExtensions
+    this.documentFactory = opts.documentFactory
+    this.formatter = opts.formatter
+    this.definitionProvider = opts.definitionProvider
+    this.stdLibRoot = opts.stdLibRoot
+  }
+
+  // addDocument adds the document to the workspace only if its uri.path has not been seen before.
+  addDocument(document: langium.LangiumDocument): void {
+    const path = document.uri.path
+    if (this.seenFilePaths.has(path)) {
+      return
+    }
+    this.seenFilePaths.add(path)
+    this.documents.addDocument(document)
+  }
 }
 
 // createTaoWorkspace creates the Langium services for parsing and validating Tao files.
@@ -80,7 +112,7 @@ export function createTaoWorkspace(
   }
 
   // TODO: Is there a difference between sharedTaoModule and TaoModule.shared?
-  return {
+  return new TaoWorkspace({
     shared: sharedTaoModule,
     documents: TaoModule.shared.workspace.LangiumDocuments,
     documentBuilder: TaoModule.shared.workspace.DocumentBuilder,
@@ -89,20 +121,6 @@ export function createTaoWorkspace(
     formatter: TaoModule.lsp.Formatter,
     definitionProvider: TaoModule.lsp.DefinitionProvider,
     stdLibRoot: config.stdLibRoot,
-  }
+  })
 }
 
-// class TaoWorkspace {
-//   constructor(private readonly shared: LSP.LangiumSharedServices, private readonly Tao: LSP.LangiumServices) {
-//   }
-
-//   get documents() {
-//     return this.shared.workspace.LangiumDocuments
-//   }
-
-//   buildDocument()
-
-//   get builder() {
-//     return this.shared.workspace.DocumentBuilder
-//   }
-// }

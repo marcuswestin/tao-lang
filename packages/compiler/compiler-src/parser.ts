@@ -98,7 +98,7 @@ async function loadEntryAndReachable(
     ? documentFactory.fromString<AST.TaoFile>(evalString, uri)
     : await documentFactory.fromUri<AST.TaoFile>(uri)
 
-  workspace.documents.addDocument(entryDocument)
+  workspace.addDocument(entryDocument)
 
   await addAllStdLibFiles(workspace)
   await addReachableTaoFiles(entryDocument, workspace)
@@ -194,14 +194,9 @@ function getModuleTaoFiles(workspace: TaoWorkspace, directory: string): string[]
 // addReachableTaoFileDocument adds a .tao file document to the parser's workspace if not already present.
 async function addReachableTaoFileDocument(workspace: TaoWorkspace, filePath: string) {
   const langiumUri = toLangiumFileURI(filePath)
-  const uriString = langiumUri.toString()
-  const alreadyPresent = Array.from(workspace.documents.all).some((d) => d.uri.toString() === uriString)
-  if (alreadyPresent) {
-    return
-  }
   const docFactory = workspace.documentFactory
   const doc = await docFactory.fromUri<AST.TaoFile>(langiumUri)
-  workspace.documents.addDocument(doc)
+  workspace.addDocument(doc)
 }
 
 // toLangiumFileURI builds a Langium file URI from an absolute path. Use path.resolve first when needed.
