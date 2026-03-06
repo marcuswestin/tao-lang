@@ -42,17 +42,12 @@ export async function formatCode(code: string) {
   const workspace = createTaoWorkspace(NodeFileSystem)
 
   const uri = Langium.URI.parse('tao-string://v0/test.tao')
-  const documentFactory = workspace.documentFactory
-  const document = await documentFactory.fromString(code, uri)
+  const document = workspace.createDocumentFromString(code, uri)
 
-  workspace.documents.addDocument(document)
-  await workspace.documentBuilder.build([document])
+  workspace.addDocument(document)
+  await workspace.buildDocument(document)
 
-  const formatter = workspace.formatter
-  if (!formatter) {
-    throw new Error('Formatter not available')
-  }
-  const edits = await formatter.formatDocument(document, {
+  const edits = await workspace.formatDocument(document, {
     textDocument: { uri: document.uri.toString() },
     options: {
       insertSpaces: true,

@@ -11,10 +11,7 @@ async function getDefinitionAt(
   character: number,
 ) {
   const doc = result.documents.get(docPath)!
-  return result.workspace.definitionProvider.getDefinition(doc, {
-    textDocument: { uri: doc.uri.toString() },
-    position: { line, character },
-  })
+  return result.workspace.getDocumentDefinition(doc, { line, character })
 }
 
 describe('TaoDefinitionProvider', () => {

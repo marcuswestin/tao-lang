@@ -65,16 +65,16 @@ async function internalParseTaoCode(
 ): Promise<ParseResult> {
   const workspace = createTaoWorkspace(NodeFileSystem, { stdLibRoot: opts.stdLibRoot })
   const ext = path.extname(uri.path)
-  if (!workspace.fileExtensions.includes(ext)) {
+  if (!workspace.supportsExtension(ext)) {
     throwUserInputRejectionError(
-      `Unsupported extension: ${ext}. (Supported: ${workspace.fileExtensions.join(', ')})`,
+      `Unsupported extension: ${ext}. (Supported: ${workspace.getFileExtensions().join(', ')})`,
     )
   }
 
   const { entryDocument, usedDocuments } = await loadEntryAndReachable(uri, evalString, workspace)
   const validation = getValidationOptions(opts)
-  await workspace.documentBuilder.build(usedDocuments, { validation, eagerLinking: true })
-  await workspace.documentBuilder.build([entryDocument], { validation, eagerLinking: true })
+  await workspace.buildDocuments(usedDocuments, { validation, eagerLinking: true })
+  await workspace.buildDocument(entryDocument, { validation, eagerLinking: true })
   const errorReport = getDocumentErrors(entryDocument, ...usedDocuments)
 
   return {
@@ -93,17 +93,16 @@ async function loadEntryAndReachable(
   entryDocument: Langium.LangiumDocument<AST.TaoFile>
   usedDocuments: Langium.LangiumDocument<AST.TaoFile>[]
 }> {
-  const documentFactory = workspace.documentFactory
   const entryDocument = evalString !== null
-    ? documentFactory.fromString<AST.TaoFile>(evalString, uri)
-    : await documentFactory.fromUri<AST.TaoFile>(uri)
+    ? workspace.createDocumentFromString(evalString, uri)
+    : await workspace.createDocumentFromUri(uri)
 
   workspace.addDocument(entryDocument)
 
   await addAllStdLibFiles(workspace)
   await addReachableTaoFiles(entryDocument, workspace)
   await addSameDirectoryTaoFiles(entryDocument, workspace)
-  const allDocuments = Array.from(workspace.documents.all) as Langium.LangiumDocument<AST.TaoFile>[]
+  const allDocuments = workspace.getAllDocuments()
   // Ensure use references are built before the files that depend on them.
   const usedDocuments = allDocuments.reverse().filter(doc => doc.uri.path !== entryDocument.uri.path)
   return { entryDocument, usedDocuments }
@@ -111,10 +110,12 @@ async function loadEntryAndReachable(
 
 // addAllStdLibFiles loads all .tao files from stdLibRoot into the workspace.
 async function addAllStdLibFiles(workspace: TaoWorkspace) {
-  if (!workspace.stdLibRoot) {
+  if (!workspace.hasStdLib()) {
     return
   }
-  const taoFilesStream = streamFilesIn(workspace.stdLibRoot, { includeOnlyExtension: '.tao' })
+  const taoFilesStream = streamFilesIn(workspace.getStdLibRoot()!, {
+    includeOnlyExtensions: workspace.getFileExtensions(),
+  })
   for await (const filePath of taoFilesStream) {
     await addReachableTaoFileDocument(workspace, filePath)
   }
@@ -168,7 +169,7 @@ async function addReachableTaoFiles(
     const directory = getUseStatementModuleDirectory(
       ast,
       path.dirname(document.uri.path),
-      workspace.stdLibRoot,
+      workspace.getStdLibRoot(),
     )
     if (!directory) {
       continue
@@ -185,17 +186,15 @@ async function addReachableTaoFiles(
 
 // getModuleTaoFiles returns all .tao files paths in a directory.
 function getModuleTaoFiles(workspace: TaoWorkspace, directory: string): string[] {
-  const fileExtensions = workspace.fileExtensions
   return readDir(directory)
-    .filter((name) => fileExtensions.includes(path.extname(name)))
+    .filter((name) => workspace.supportsExtension(path.extname(name)))
     .map((name) => path.resolve(directory, name))
 }
 
 // addReachableTaoFileDocument adds a .tao file document to the parser's workspace if not already present.
 async function addReachableTaoFileDocument(workspace: TaoWorkspace, filePath: string) {
   const langiumUri = toLangiumFileURI(filePath)
-  const docFactory = workspace.documentFactory
-  const doc = await docFactory.fromUri<AST.TaoFile>(langiumUri)
+  const doc = await workspace.createDocumentFromUri(langiumUri)
   workspace.addDocument(doc)
 }
 

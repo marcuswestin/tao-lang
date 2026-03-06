@@ -102,16 +102,15 @@ async function buildWorkspaceAndDocuments(
   stdLibRoot?: string,
 ): Promise<{ workspace: TaoWorkspace; documents: Map<string, Langium.LangiumDocument<TaoFile>> }> {
   const workspace = createTaoWorkspace(NodeFileSystem, { stdLibRoot })
-  const documentFactory = workspace.documentFactory
   const documents = new Map<string, Langium.LangiumDocument<TaoFile>>()
   for (const file of files) {
     const uri = Langium.URI.parse(`file://${file.path}`, true)
-    const document = documentFactory.fromString<TaoFile>(file.code, uri)
-    workspace.documents.addDocument(document)
+    const document = workspace.createDocumentFromString(file.code, uri)
+    workspace.addDocument(document)
     documents.set(file.path, document)
   }
   const allDocs = Array.from(documents.values())
-  await workspace.documentBuilder.build(allDocs, { validation: true })
+  await workspace.buildDocuments(allDocs, { validation: true })
   return { workspace, documents }
 }
 

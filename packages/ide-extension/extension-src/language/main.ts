@@ -14,4 +14,4 @@ const stdLibRoot = path.resolve(__dirname, '../tao-std-lib')
 const parser = createTaoWorkspace({ connection, ...NodeFileSystem }, { stdLibRoot })
 
 // Start the language server with the shared services
-startLanguageServer(parser.shared)
+startLanguageServer(parser.getShared())

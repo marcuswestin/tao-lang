@@ -16,37 +16,27 @@ export type TaoWorkspaceConfig = {
   stdLibRoot?: string
 }
 
+export type TaoWorkspaceBuildOptions = {
+  validation?: langium.ValidationOptions | boolean
+  eagerLinking?: boolean
+}
+
+export type TaoDocument = langium.LangiumDocument<AST.TaoFile>
+
 export class TaoWorkspace {
-  readonly shared: LSP.LangiumSharedServices
-  readonly documents: langium.LangiumDocuments
-  readonly documentBuilder: langium.DocumentBuilder
-  readonly fileExtensions: readonly string[]
-  readonly documentFactory: langium.LangiumDocumentFactory
-  readonly formatter: LSP.Formatter & TaoFormatter
-  readonly definitionProvider: LSP.DefinitionProvider
-  readonly stdLibRoot?: string
+  constructor(
+    private readonly shared: LSP.LangiumSharedServices,
+    private readonly documents: langium.LangiumDocuments,
+    private readonly documentBuilder: langium.DocumentBuilder,
+    private readonly fileExtensions: readonly string[],
+    private readonly documentFactory: langium.LangiumDocumentFactory,
+    private readonly formatter: LSP.Formatter & TaoFormatter,
+    private readonly definitionProvider: LSP.DefinitionProvider,
+    private readonly stdLibRoot?: string,
+  ) {
+  }
 
   private readonly seenFilePaths = new Set<string>()
-
-  constructor(opts: {
-    shared: LSP.LangiumSharedServices
-    documents: langium.LangiumDocuments
-    documentBuilder: langium.DocumentBuilder
-    fileExtensions: readonly string[]
-    documentFactory: langium.LangiumDocumentFactory
-    formatter: LSP.Formatter & TaoFormatter
-    definitionProvider: LSP.DefinitionProvider
-    stdLibRoot?: string
-  }) {
-    this.shared = opts.shared
-    this.documents = opts.documents
-    this.documentBuilder = opts.documentBuilder
-    this.fileExtensions = opts.fileExtensions
-    this.documentFactory = opts.documentFactory
-    this.formatter = opts.formatter
-    this.definitionProvider = opts.definitionProvider
-    this.stdLibRoot = opts.stdLibRoot
-  }
 
   // addDocument adds the document to the workspace only if its uri.path has not been seen before.
   addDocument(document: langium.LangiumDocument): void {
@@ -56,6 +46,63 @@ export class TaoWorkspace {
     }
     this.seenFilePaths.add(path)
     this.documents.addDocument(document)
+  }
+
+  supportsExtension(ext: string): boolean {
+    return this.fileExtensions.includes(ext)
+  }
+
+  getFileExtensions(): readonly string[] {
+    return this.fileExtensions
+  }
+
+  getStdLibRoot(): string | undefined {
+    return this.stdLibRoot
+  }
+
+  getShared(): LSP.LangiumSharedServices {
+    return this.shared
+  }
+
+  hasStdLib(): boolean {
+    return this.stdLibRoot !== undefined
+  }
+
+  async buildDocument(doc: TaoDocument, opts?: TaoWorkspaceBuildOptions): Promise<void> {
+    await this.documentBuilder.build([doc], opts)
+  }
+
+  async buildDocuments(docs: TaoDocument[], opts?: TaoWorkspaceBuildOptions): Promise<void> {
+    await this.documentBuilder.build(docs, opts)
+  }
+
+  createDocumentFromString(content: string, uri: langium.URI): TaoDocument {
+    return this.documentFactory.fromString<AST.TaoFile>(content, uri) as TaoDocument
+  }
+
+  async createDocumentFromUri(uri: langium.URI): Promise<TaoDocument> {
+    return await this.documentFactory.fromUri<AST.TaoFile>(uri)
+  }
+
+  getAllDocuments(): TaoDocument[] {
+    return Array.from(this.documents.all) as TaoDocument[]
+  }
+
+  async formatDocument(
+    document: langium.LangiumDocument,
+    options: Parameters<LSP.Formatter['formatDocument']>[1],
+  ): Promise<ReturnType<LSP.Formatter['formatDocument']>> {
+    return await this.formatter.formatDocument(document, options)
+  }
+
+  getDocumentDefinition(
+    doc: TaoDocument,
+    position: { line: number; character: number },
+  ): ReturnType<LSP.DefinitionProvider['getDefinition']> {
+    return this.definitionProvider.getDefinition(doc, {
+      textDocument: { uri: doc.uri.toString() },
+      position,
+    })
   }
 }
 
@@ -112,15 +159,14 @@ export function createTaoWorkspace(
   }
 
   // TODO: Is there a difference between sharedTaoModule and TaoModule.shared?
-  return new TaoWorkspace({
-    shared: sharedTaoModule,
-    documents: TaoModule.shared.workspace.LangiumDocuments,
-    documentBuilder: TaoModule.shared.workspace.DocumentBuilder,
-    fileExtensions: TaoModule.LanguageMetaData.fileExtensions,
-    documentFactory: TaoModule.shared.workspace.LangiumDocumentFactory,
-    formatter: TaoModule.lsp.Formatter,
-    definitionProvider: TaoModule.lsp.DefinitionProvider,
-    stdLibRoot: config.stdLibRoot,
-  })
+  return new TaoWorkspace(
+    sharedTaoModule,
+    TaoModule.shared.workspace.LangiumDocuments,
+    TaoModule.shared.workspace.DocumentBuilder,
+    TaoModule.LanguageMetaData.fileExtensions,
+    TaoModule.shared.workspace.LangiumDocumentFactory,
+    TaoModule.lsp.Formatter,
+    TaoModule.lsp.DefinitionProvider,
+    config.stdLibRoot,
+  )
 }
-

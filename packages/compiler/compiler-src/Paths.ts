@@ -52,29 +52,29 @@ export function resolvePath(filePath: string): string {
 type StreamFilesOptions = {
   includeDirectories?: boolean
   includeHidden?: boolean
-  includeOnlyExtension?: string | null
+  includeOnlyExtensions?: readonly string[]
 }
 
 // streamFilesIn yields file paths under dirPath recursively, with optional filtering.
 export async function* streamFilesIn(dirPath: string, opts: StreamFilesOptions = {}): AsyncGenerator<string> {
-  const { includeDirectories = false, includeHidden = false, includeOnlyExtension = null } = opts
+  const { includeDirectories = false, includeHidden = false, includeOnlyExtensions = [] } = opts
 
   for await (const entry of readDir(dirPath)) {
     const fullPath = path.join(dirPath, entry)
 
     if (!includeHidden && entry.startsWith('.')) {
       continue
-    }
-    if (isDirectory(fullPath)) {
+    } else if (isDirectory(fullPath)) {
       if (includeDirectories) {
         yield fullPath
       }
       yield* streamFilesIn(fullPath, opts)
       continue
-    } else {
-      if (includeOnlyExtension && !entry.endsWith(includeOnlyExtension)) {
+    } else if (includeOnlyExtensions.length > 0) {
+      if (!includeOnlyExtensions.includes(path.extname(entry))) {
         continue
       }
+    } else {
       yield fullPath
     }
   }
