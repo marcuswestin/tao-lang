@@ -19,7 +19,7 @@ describe('runtime:', () => {
     const result = await TaoSDK_compile({ code, runtimeDir })
     expect(result.result.errorReport.errorCount()).toBe(0)
     expect(result.outputPath).toBeDefined()
-    expect(result.result?.code).toContain(needle)
+    expect(result.result.code).toContain(needle)
 
     await checkNeedleInApp(needle, result.outputPath, targetPath)
   })
