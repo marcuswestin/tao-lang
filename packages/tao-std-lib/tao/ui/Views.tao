@@ -1,4 +1,4 @@
-view Col {
+share view Col {
     inject ```ts
         const renderViewParams = { children, params: {}, styles: {}, layouts: {}, uiLabel: '', RNProps: {}, RNStyle:{} }
         renderViewParams.styles = { flexDirection: 'column', backgroundColor: 'blue', padding: 10 }
@@ -6,7 +6,7 @@ view Col {
     ```
 }
 
-view Row {
+share view Row {
     inject ```ts
         const renderViewParams = { children, params: {}, styles: {}, layouts: {}, uiLabel: '', RNProps: {}, RNStyle:{} }
         renderViewParams.styles = { flexDirection: 'row', backgroundColor: 'yellow' }
@@ -14,15 +14,15 @@ view Row {
     ```
 }
 
-view Text value string {
+share view Text value string {
     inject ```ts
-        const renderViewParams = { value, params: {}, styles: {}, layouts: {}, children: [], uiLabel: '', RNProps: {}, RNStyle:{} }
+        const renderViewParams = { value: props.value, params: {}, styles: {}, layouts: {}, children: [], uiLabel: '', RNProps: {}, RNStyle:{} }
         renderViewParams.RNStyle = { color: 'green', padding: 10, fontSize: 40, fontWeight: 'bold' }
         return ALRuntime.ui.renderTextView(renderViewParams)
     ```
 }
 
-view Button title string {
+share view Button title string {
     // TODO: does press
     inject ```ts
         const renderViewParams = { children, params: {}, styles: {}, layouts: {}, uiLabel: '', RNProps: {}, RNStyle:{} }
