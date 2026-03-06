@@ -1,8 +1,7 @@
 import * as langium from 'langium'
-import * as path from 'node:path'
 import { TAO_EXT } from '../@shared/TaoPaths'
 import * as ast from '../_gen-tao-parser/ast'
-import { normalizeModulePath } from '../Paths'
+import { normalizedDirOfPath, resolveModulePathFromFile } from '../Paths'
 import { isStdLibImport, resolveStdLibModuleDirectory } from '../StdLibPaths'
 
 // UseStatementValidator validates that imported names in use statements exist
@@ -24,6 +23,14 @@ export class UseStatementValidator {
 
     // Skip validation for non-file URIs (e.g., tao-string:// used in single-file parsing tests)
     if (document.uri.scheme !== 'file') {
+      return
+    }
+
+    if (useStatement.modulePath && isStdLibImport(useStatement.modulePath) && !this.stdLibRoot) {
+      accept('error', 'Standard library root is not configured; cannot resolve tao/... imports.', {
+        node: useStatement,
+        property: 'modulePath',
+      })
       return
     }
 
@@ -120,17 +127,17 @@ export class UseStatementValidator {
     if (isStdLibImport(useStatement.modulePath)) {
       return false
     }
-    const currentDir = path.dirname(document.uri.path)
-    const targetPath = normalizeModulePath(currentDir, useStatement.modulePath)
-    return targetPath === normalizeModulePath(currentDir)
+    const currentDir = normalizedDirOfPath(document.uri.path)
+    const targetPath = resolveModulePathFromFile(document.uri.path, useStatement.modulePath)
+    return targetPath === currentDir
   }
 
   // getSameModuleUris returns document URIs for all files in the same directory, excluding current file.
   private getSameModuleUris(document: langium.LangiumDocument): string[] {
-    const currentDir = normalizeModulePath(path.dirname(document.uri.path))
+    const currentDir = normalizedDirOfPath(document.uri.path)
     const uris: string[] = []
     for (const doc of this.documents.all) {
-      const docDir = normalizeModulePath(path.dirname(doc.uri.path))
+      const docDir = normalizedDirOfPath(doc.uri.path)
       if (docDir === currentDir && doc.uri.toString() !== document.uri.toString()) {
         uris.push(doc.uri.toString())
       }
@@ -233,18 +240,20 @@ export class UseStatementValidator {
     if (!modulePath) {
       return []
     }
+    if (isStdLibImport(modulePath) && !this.stdLibRoot) {
+      return []
+    }
 
     try {
       const targetPath = isStdLibImport(modulePath)
         ? resolveStdLibModuleDirectory(modulePath, this.stdLibRoot!)
-        : normalizeModulePath(path.dirname(document.uri.path), modulePath)
+        : resolveModulePathFromFile(document.uri.path, modulePath)
 
       const targetFileWithExt = targetPath + TAO_EXT
-
       const uris: string[] = []
       for (const doc of this.documents.all) {
         const docPath = doc.uri.path
-        const docDir = normalizeModulePath(path.dirname(docPath))
+        const docDir = normalizedDirOfPath(docPath)
 
         if (docPath === targetFileWithExt) {
           uris.push(doc.uri.toString())
