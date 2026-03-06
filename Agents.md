@@ -2,12 +2,12 @@
 
 ---
 
-## CRITICAL: **Only** run commands with `./just-agent`:
+## CRITICAL: **Only** run commands with `./just-agents`:
 
-- **ALWAYS** use `./just-agent <cmd> <args>` for all commands
-- **NEVER** run commands any other way than `./just-agent`
+- **ALWAYS** use `./just-agents <cmd> <args>` for all commands
+- **NEVER** run commands any other way than `./just-agents`
 - **ALWAYS** consult `.cursor/rules/running-commands.mdc` for instructions on running commands
-- **ALWAYS** start your session with running `./just-agent help`
+- **ALWAYS** start your session with running `./just-agents help`
 
 ---
 
