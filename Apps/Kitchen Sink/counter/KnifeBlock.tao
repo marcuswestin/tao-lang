@@ -1,4 +1,5 @@
 use FridgeView from ../
+use Text from tao/ui
 
 view Test { }
 
@@ -8,11 +9,6 @@ share view KnifeBlock {
 
 view RootView {
     KnifeBlock { }
-}
-
-view RootView {
-    KnifeBlock { }
     FridgeView { }
 }
 
-view Text { }
