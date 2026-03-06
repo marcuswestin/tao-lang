@@ -36,3 +36,33 @@ export function readDir(filePath: string): string[] {
 export function resolvePath(filePath: string): string {
   return path.resolve(filePath)
 }
+
+type StreamFilesOptions = {
+  includeDirectories?: boolean
+  includeHidden?: boolean
+  includeOnlyExtension?: string | null
+}
+
+export async function* streamFilesIn(dirPath: string, opts: StreamFilesOptions = {}): AsyncGenerator<string> {
+  const { includeDirectories = false, includeHidden = false, includeOnlyExtension = null } = opts
+
+  for await (const entry of readDir(dirPath)) {
+    const fullPath = path.join(dirPath, entry)
+
+    if (!includeHidden && entry.startsWith('.')) {
+      continue
+    }
+    if (isDirectory(fullPath)) {
+      if (includeDirectories) {
+        yield fullPath
+      }
+      yield* streamFilesIn(fullPath, opts)
+      continue
+    } else {
+      if (includeOnlyExtension && !entry.endsWith(includeOnlyExtension)) {
+        continue
+      }
+      yield fullPath
+    }
+  }
+}

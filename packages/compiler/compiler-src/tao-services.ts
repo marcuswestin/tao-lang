@@ -5,13 +5,14 @@ import { TaoLangGeneratedModule, TaoLangGeneratedSharedModule } from '@tao-compi
 
 import { TaoScopeComputation } from '@tao-compiler/TaoScopeComputation'
 import { TaoScopeProvider } from '@tao-compiler/TaoScopeProvider'
+import { TaoWorkspaceManager } from '@tao-compiler/TaoWorkspaceManager'
 import { validator } from '@tao-compiler/validation/tao-lang-validator'
 import { UseStatementValidator } from '@tao-compiler/validation/UseStatementValidator'
 import TaoFormatter from '../formatter-src/TaoFormatter'
 import { AST } from './grammar'
 
 export type TaoWorkspaceConfig = {
-  stdLibRoot: string
+  stdLibRoot?: string
 }
 
 export type TaoWorkspace = {
@@ -21,18 +22,24 @@ export type TaoWorkspace = {
   fileExtensions: readonly string[]
   documentFactory: langium.LangiumDocumentFactory
   formatter: LSP.Formatter & TaoFormatter
-  stdLibRoot: string
+  stdLibRoot?: string
 }
 
 // createTaoWorkspace creates the Langium services for parsing and validating Tao files.
 // TODO: Return named object with factory, builder, etc directly named instead of `shared`
 export function createTaoWorkspace(
   context: LSP.DefaultSharedModuleContext,
-  config: TaoWorkspaceConfig = { stdLibRoot: '' },
+  config: TaoWorkspaceConfig = {},
 ): TaoWorkspace {
   const sharedTaoModule = langium.inject(
     LSP.createDefaultSharedModule(context),
     TaoLangGeneratedSharedModule,
+    {
+      workspace: {
+        WorkspaceManager: (services: langium.LangiumSharedCoreServices) =>
+          new TaoWorkspaceManager(services, config.stdLibRoot),
+      },
+    },
   )
 
   const TaoModule = langium.inject(

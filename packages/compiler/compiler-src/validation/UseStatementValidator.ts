@@ -12,7 +12,7 @@ export class UseStatementValidator {
   constructor(
     private readonly indexManager: langium.IndexManager,
     private readonly documents: langium.LangiumDocuments,
-    private readonly stdLibRoot: string,
+    private readonly stdLibRoot?: string,
   ) {}
 
   // checkUseStatement validates a use statement's imported names against the target module.
@@ -236,7 +236,7 @@ export class UseStatementValidator {
 
     try {
       const targetPath = isStdLibImport(modulePath)
-        ? resolveStdLibModuleDirectory(modulePath, this.stdLibRoot)
+        ? resolveStdLibModuleDirectory(modulePath, this.stdLibRoot!)
         : normalizeModulePath(path.dirname(document.uri.path), modulePath)
 
       const targetFileWithExt = targetPath + TAO_EXT

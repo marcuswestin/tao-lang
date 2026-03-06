@@ -7,18 +7,18 @@ import { throwUserInputRejectionError } from './@shared/TaoErrors'
 import { assertNever } from './compiler-utils'
 import { AST } from './grammar'
 import { getDocumentErrors, TaoErrorReport } from './parse-errors'
-import { fileExists, readDir } from './Paths'
+import { fileExists, readDir, streamFilesIn } from './Paths'
 import { isStdLibImport, resolveStdLibModuleDirectory } from './StdLibPaths'
 
 export type ParseOptions = {
-  stdLibRoot: string
+  stdLibRoot?: string
   validateUpToStage?: 'lexing' | 'parsing' | 'linking' | 'all' | 'none'
   skipSlowValidation?: boolean
 }
 
 export type ParseResult = {
   taoFileAST?: AST.TaoFile
-  document?: Langium.LangiumDocument<AST.TaoFile>
+  usedFilesASTs: AST.TaoFile[]
   errorReport: TaoErrorReport
 }
 
@@ -71,11 +71,17 @@ async function internalParseTaoCode(
     )
   }
 
-  const { entryDocument, documentsToBuild } = await loadEntryAndReachable(uri, evalString, workspace)
-  const buildOptions = { validation: getValidationOptions(opts), eagerLinking: true }
-  await workspace.documentBuilder.build(documentsToBuild, buildOptions)
-  const errorReport = getDocumentErrors(...documentsToBuild)
-  return { taoFileAST: entryDocument.parseResult.value, document: entryDocument, errorReport }
+  const { entryDocument, usedDocuments } = await loadEntryAndReachable(uri, evalString, workspace)
+  const validation = getValidationOptions(opts)
+  await workspace.documentBuilder.build(usedDocuments, { validation, eagerLinking: true })
+  await workspace.documentBuilder.build([entryDocument], { validation, eagerLinking: true })
+  const errorReport = getDocumentErrors(entryDocument, ...usedDocuments)
+
+  return {
+    taoFileAST: entryDocument.parseResult.value,
+    usedFilesASTs: usedDocuments.map(doc => doc.parseResult.value),
+    errorReport,
+  }
 }
 
 // loadEntryAndReachable loads the entry document (from string or file) and returns it plus the list of documents to build.
@@ -85,7 +91,7 @@ async function loadEntryAndReachable(
   workspace: TaoWorkspace,
 ): Promise<{
   entryDocument: Langium.LangiumDocument<AST.TaoFile>
-  documentsToBuild: Langium.LangiumDocument<AST.TaoFile>[]
+  usedDocuments: Langium.LangiumDocument<AST.TaoFile>[]
 }> {
   const documentFactory = workspace.documentFactory
   const entryDocument = evalString !== null
@@ -94,12 +100,24 @@ async function loadEntryAndReachable(
 
   workspace.documents.addDocument(entryDocument)
 
+  await addAllStdLibFiles(workspace)
   await addReachableTaoFiles(entryDocument, workspace)
   await addSameDirectoryTaoFiles(entryDocument, workspace)
-  const documentsToBuild = Array.from(workspace.documents.all) as Langium.LangiumDocument<AST.TaoFile>[]
-  // Ensure the entry document is last in the list, so it's built last.
-  documentsToBuild.reverse()
-  return { entryDocument, documentsToBuild }
+  const allDocuments = Array.from(workspace.documents.all) as Langium.LangiumDocument<AST.TaoFile>[]
+  // Ensure use references are built before the files that depend on them.
+  const usedDocuments = allDocuments.reverse().filter(doc => doc.uri.path !== entryDocument.uri.path)
+  return { entryDocument, usedDocuments }
+}
+
+// addAllStdLibFiles loads all .tao files from stdLibRoot into the workspace.
+async function addAllStdLibFiles(workspace: TaoWorkspace) {
+  if (!workspace.stdLibRoot) {
+    return
+  }
+  const taoFilesStream = streamFilesIn(workspace.stdLibRoot, { includeOnlyExtension: '.tao' })
+  for await (const filePath of taoFilesStream) {
+    await addReachableTaoFileDocument(workspace, filePath)
+  }
 }
 
 // getUseStatementModuleDirectory returns the directory of a use statement's module.
@@ -107,13 +125,13 @@ async function loadEntryAndReachable(
 function getUseStatementModuleDirectory(
   ast: AST.UseStatement,
   currentDir: string,
-  stdLibRoot: string,
+  stdLibRoot?: string,
 ): string | undefined {
   if (!ast.modulePath) {
     return undefined
   }
   if (isStdLibImport(ast.modulePath)) {
-    return resolveStdLibModuleDirectory(ast.modulePath, stdLibRoot)
+    return resolveStdLibModuleDirectory(ast.modulePath, stdLibRoot!)
   }
   return path.resolve(currentDir, ast.modulePath)
 }

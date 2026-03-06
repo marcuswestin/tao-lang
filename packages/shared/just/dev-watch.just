@@ -54,6 +54,7 @@ _watch-kitchen-sink-build APP_PATH="./Apps/Kitchen Sink/Kitchen Sink.tao":
     cd packages/tao-cli && bun run  --watch --no-clear-screen \
         ./tao-cli.ts compile "`pwd`/../../{{ APP_PATH }}" \
             --runtime-dir "../expo-runtime" \
+            --std-lib-root "../tao-std-lib" \
             --verbose --watch
 
 _watch-runtime-reload:

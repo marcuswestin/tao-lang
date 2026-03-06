@@ -1,5 +1,6 @@
 import { context } from 'esbuild'
 import type { Plugin } from 'esbuild'
+import { cpSync } from 'node:fs'
 import process from 'node:process'
 
 const watch = process.argv.includes('--watch')
@@ -23,6 +24,7 @@ const plugins: Plugin[] = [{
   setup(build) {
     build.onEnd(result => {
       if (result.errors.length === 0) {
+        cpSync('../tao-std-lib', '_gen-ide-extension/tao-std-lib', { recursive: true })
         console.log(getTime() + success)
       }
     })

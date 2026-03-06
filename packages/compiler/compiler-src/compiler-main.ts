@@ -1,4 +1,3 @@
-import { LangiumDocument } from 'langium'
 import * as LangiumGen from 'langium/generate'
 import { Assert } from './@shared/TaoErrors'
 import { switchItemType_Exhaustive } from './@shared/TypeSafety'
@@ -23,12 +22,11 @@ import { TaoParser } from './parser'
 export type CompileResult = {
   code: string
   errorReport: TaoErrorReport
-  document?: LangiumDocument<AST.TaoFile>
 }
 
 export type CompileOpts = {
   file: string
-  stdLibRoot: string
+  stdLibRoot?: string
 }
 
 export async function compileTao(opts: CompileOpts): Promise<CompileResult> {
@@ -37,8 +35,9 @@ export async function compileTao(opts: CompileOpts): Promise<CompileResult> {
     return { errorReport: parsed.errorReport, code: getErrorAppString(parsed.errorReport) }
   }
   Assert(parsed.taoFileAST, 'taoFileAST is defined', parsed)
-  const result = generateTypescript(parsed.taoFileAST)
-  return { code: LangiumGen.toString(result), errorReport: parsed.errorReport, document: parsed.document }
+  const result = generateTypescript(parsed.taoFileAST, parsed.usedFilesASTs)
+
+  return { code: LangiumGen.toString(result), errorReport: parsed.errorReport }
 }
 
 function getErrorAppString(errorReport: TaoErrorReport) {
@@ -57,20 +56,22 @@ function getErrorAppString(errorReport: TaoErrorReport) {
   }`
 }
 
-function generateTypescript(taoFile: AST.TaoFile): Compiled {
-  return compileNode(taoFile)`
-    import * as RN from 'react-native'
+function generateTypescript(taoFile: AST.TaoFile, usedFilesASTs: AST.TaoFile[]): Compiled {
+  const result = new LangiumGen.CompositeGeneratorNode()
+  for (const usedFile of usedFilesASTs) {
+    const compiled = compileNode(usedFile)`
+      // ${usedFile.$document!.uri}
+      ${compileNodeListProperty(usedFile, 'topLevelStatements', compileTopLevelStatement)}
+    `
+    result.append(compiled)
+  }
 
-    export default function CompiledTaoApp() {
-      return (
-        <RN.View style={{ flex: 1, backgroundColor: 'red' }}>
-          <AppUIView />
-        </RN.View>
-      )
-    }
-    
+  result.append(compileNode(taoFile)`
+    // ${taoFile.$document!.uri}
     ${compileNodeListProperty(taoFile, 'topLevelStatements', compileTopLevelStatement)}
-  `
+  `)
+
+  return result
 }
 function compileTopLevelStatement(statement: AST.TopLevelStatement): Compiled {
   return switchItemType_Exhaustive(statement, {

@@ -7,9 +7,9 @@ import { isStdLibImport, resolveStdLibModuleDirectory } from './StdLibPaths'
 
 // TaoScopeProvider filters symbols for reference resolution based on module visibility rules.
 export class TaoScopeProvider extends langium.DefaultScopeProvider {
-  private readonly stdLibRoot: string
+  private readonly stdLibRoot?: string
 
-  constructor(services: langium.LangiumCoreServices, stdLibRoot: string) {
+  constructor(services: langium.LangiumCoreServices, stdLibRoot?: string) {
     super(services)
     this.stdLibRoot = stdLibRoot
   }
@@ -170,7 +170,7 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
     }
 
     const targetPath = isStdLibImport(modulePath)
-      ? resolveStdLibModuleDirectory(modulePath, this.stdLibRoot)
+      ? resolveStdLibModuleDirectory(modulePath, this.stdLibRoot!)
       : normalizeModulePath(path.dirname(document.uri.path), modulePath)
 
     const targetFileWithExt = targetPath + TAO_EXT

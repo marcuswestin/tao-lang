@@ -20,14 +20,15 @@ export function taoCliMain() {
     .option('--code <code>', 'Compile the given string of text, rather than a file')
     .option('--watch', 'Watch the file and recompile when it changes')
     .option('--verbose', 'Verbose output', false)
-    .action(async (path, { watch, verbose, code, runtimeDir }) => {
+    .option('--std-lib-root <path>', 'The root directory of the standard library', (value) => path.resolve(value))
+    .action(async (path, { watch, verbose, code, runtimeDir, stdLibRoot }) => {
       verbose = true
       hci.setVerbose(verbose)
       hci.wrapExecution(async () => {
         async function compileAndWrite() {
           hci.verboselyInform(`Compiling...`)
-          const outputPath = await TaoSDK_compile({ path, code, runtimeDir })
-          hci.inform(`Compiled to ${outputPath}`)
+          const result = await TaoSDK_compile({ path, code, runtimeDir, stdLibRoot })
+          hci.inform(`Compiled to ${result.outputPath}`)
         }
 
         if (watch) {
@@ -35,6 +36,9 @@ export function taoCliMain() {
             throwUserInputRejectionError('Watch mode requires a file to be provided')
           }
           chokidar.watch(path).on('change', compileAndWrite)
+          if (stdLibRoot) {
+            chokidar.watch(stdLibRoot).on('change', compileAndWrite)
+          }
         }
 
         await compileAndWrite()
@@ -86,6 +90,10 @@ async function checkUserInputs(opts: TaoSDK_compileOpts) {
   const runtimeDir = path.resolve(opts.runtimeDir)
   if (!isDirectory(runtimeDir)) {
     throwUserInputRejectionError(`Runtime path is not a directory: ${runtimeDir}`)
+  }
+  const stdLibRoot = opts.stdLibRoot
+  if (stdLibRoot && !isDirectory(stdLibRoot)) {
+    throwUserInputRejectionError(`Standard library path is not a directory: ${stdLibRoot}`)
   }
   const packageJsonPath = path.resolve(runtimeDir, 'package.json')
   if (!fileExists(packageJsonPath)) {
