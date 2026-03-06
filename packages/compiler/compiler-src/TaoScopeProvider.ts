@@ -1,8 +1,7 @@
 import * as langium from 'langium'
-import * as path from 'node:path'
 import { TAO_EXT } from './@shared/TaoPaths'
 import * as ast from './_gen-tao-parser/ast'
-import { normalizeModulePath } from './Paths'
+import { normalizedDirOfPath, resolveModulePathFromFile } from './Paths'
 import { isStdLibImport, resolveStdLibModuleDirectory } from './StdLibPaths'
 
 // TaoScopeProvider filters symbols for reference resolution based on module visibility rules.
@@ -113,18 +112,18 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
     if (isStdLibImport(useStmt.modulePath)) {
       return false
     }
-    const currentDir = path.dirname(document.uri.path)
-    const targetPath = normalizeModulePath(currentDir, useStmt.modulePath)
-    return targetPath === normalizeModulePath(currentDir)
+    const currentDir = normalizedDirOfPath(document.uri.path)
+    const targetPath = resolveModulePathFromFile(document.uri.path, useStmt.modulePath)
+    return targetPath === currentDir
   }
 
   // getSameModuleUris returns document URIs for all files in the same directory, excluding the current file.
   private getSameModuleUris(document: langium.LangiumDocument): string[] {
-    const currentDir = normalizeModulePath(path.dirname(document.uri.path))
+    const currentDir = normalizedDirOfPath(document.uri.path)
     const uriSet = new Set<string>()
 
     for (const desc of this.indexManager.allElements()) {
-      const descDir = normalizeModulePath(path.dirname(desc.documentUri.path))
+      const descDir = normalizedDirOfPath(desc.documentUri.path)
       if (descDir === currentDir && desc.documentUri.toString() !== document.uri.toString()) {
         uriSet.add(desc.documentUri.toString())
       }
@@ -171,14 +170,14 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
 
     const targetPath = isStdLibImport(modulePath)
       ? resolveStdLibModuleDirectory(modulePath, this.stdLibRoot!)
-      : normalizeModulePath(path.dirname(document.uri.path), modulePath)
+      : resolveModulePathFromFile(document.uri.path, modulePath)
 
     const targetFileWithExt = targetPath + TAO_EXT
 
     const uris: string[] = []
     for (const doc of this.indexManager.allElements()) {
       const docPath = doc.documentUri.path
-      const docDir = normalizeModulePath(path.dirname(docPath))
+      const docDir = normalizedDirOfPath(docPath)
 
       if (docPath === targetFileWithExt) {
         uris.push(doc.documentUri.toString())
