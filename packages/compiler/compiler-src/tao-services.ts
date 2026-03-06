@@ -3,6 +3,7 @@ import * as LSP from 'langium/lsp'
 
 import { TaoLangGeneratedModule, TaoLangGeneratedSharedModule } from '@tao-compiler/_gen-tao-parser/module'
 
+import { TaoDefinitionProvider } from '@tao-compiler/TaoDefinitionProvider'
 import { TaoScopeComputation } from '@tao-compiler/TaoScopeComputation'
 import { TaoScopeProvider } from '@tao-compiler/TaoScopeProvider'
 import { TaoWorkspaceManager } from '@tao-compiler/TaoWorkspaceManager'
@@ -22,6 +23,7 @@ export type TaoWorkspace = {
   fileExtensions: readonly string[]
   documentFactory: langium.LangiumDocumentFactory
   formatter: LSP.Formatter & TaoFormatter
+  definitionProvider: LSP.DefinitionProvider
   stdLibRoot?: string
 }
 
@@ -48,6 +50,7 @@ export function createTaoWorkspace(
     {
       lsp: {
         Formatter: () => new TaoFormatter(),
+        DefinitionProvider: (services: LSP.LangiumServices) => new TaoDefinitionProvider(services, config.stdLibRoot),
       },
       references: {
         ScopeComputation: (services: langium.LangiumCoreServices) => new TaoScopeComputation(services),
@@ -84,6 +87,7 @@ export function createTaoWorkspace(
     fileExtensions: TaoModule.LanguageMetaData.fileExtensions,
     documentFactory: TaoModule.shared.workspace.LangiumDocumentFactory,
     formatter: TaoModule.lsp.Formatter,
+    definitionProvider: TaoModule.lsp.DefinitionProvider,
     stdLibRoot: config.stdLibRoot,
   }
 }
