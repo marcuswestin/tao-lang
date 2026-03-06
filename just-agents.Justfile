@@ -20,9 +20,13 @@ help:
 list-commands:
     just {{ AGENT_JUSTFILE }} --summary --unsorted
 
-# Exec git: Execute whitelisted git command, e.g `./just-agent git add ./Docs`. Whitelist: `log`, `status`, `diff`, `add`, `commit`
+# Exec git: Execute whitelisted git command, e.g `./just-agents git add ./Docs`. Whitelist: `log`, `status`, `diff`, `add`, `commit`. For commits with a message use `git-commit "message"`.
 git SUB_CMD *ARGS:
     just {{ AGENT_JUSTFILE }} _execute_whitelisted_subcommand "|log|status|diff|add|commit|" git {{ SUB_CMD }} {{ ARGS }}
+
+# Git commit: Commit staged changes with message, e.g. `./just-agents git-commit "fix(compiler): do the thing"`
+git-commit MESSAGE:
+    git commit -m {{ '"' + MESSAGE + '"' }}
 
 # Exec shell: Execute whitelisted shell command, e.g `./just-agent shell ls`. Whitelist: `cd`, `ls`, `pwd`, `echo`, `cat`
 shell EXEC_CMD *ARGS:
