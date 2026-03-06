@@ -7,6 +7,16 @@ export function normalizeModulePath(...parts: string[]): string {
   return path.normalize(path.join(...parts)).replace(/\/+$/, '')
 }
 
+// normalizedDirOfPath returns the normalized directory path of the given file path.
+export function normalizedDirOfPath(filePath: string): string {
+  return normalizeModulePath(path.dirname(filePath))
+}
+
+// resolveModulePathFromFile resolves a relative module path from the directory of the given file path.
+export function resolveModulePathFromFile(filePath: string, modulePath: string): string {
+  return normalizeModulePath(normalizedDirOfPath(filePath), modulePath)
+}
+
 // fileExists checks if a file exists at the given path.
 export function fileExists(filePath: string): boolean {
   try {
