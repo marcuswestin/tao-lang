@@ -71,6 +71,16 @@ function generateTypescript(taoFile: AST.TaoFile, usedFilesASTs: AST.TaoFile[]):
     ${compileNodeListProperty(taoFile, 'topLevelStatements', compileTopLevelStatement)}
   `)
 
+  result.append(compileNode(taoFile)`
+    export default function CompiledTaoApp() {
+      return (
+        <RN.View style={{ flex: 1, backgroundColor: 'red' }}>
+          <AppUIView />
+        </RN.View>
+      )
+    }
+  `)
+
   return result
 }
 function compileTopLevelStatement(statement: AST.TopLevelStatement): Compiled {
