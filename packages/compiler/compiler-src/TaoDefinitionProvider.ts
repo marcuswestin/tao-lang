@@ -2,10 +2,12 @@ import * as langium from 'langium'
 import { DefaultDefinitionProvider, type LangiumServices } from 'langium/lsp'
 import type { DefinitionParams } from 'vscode-languageserver'
 import { LocationLink } from 'vscode-languageserver'
-import { TAO_EXT } from './@shared/TaoPaths'
 import * as ast from './_gen-tao-parser/ast'
-import { normalizedDirOfPath, resolveModulePathFromFile } from './Paths'
-import { isStdLibImport, resolveStdLibModuleDirectory } from './StdLibPaths'
+import {
+  getSameModuleUris,
+  isSameModuleImport,
+  resolveModulePathToUris,
+} from './ModuleResolution'
 
 // TaoDefinitionProvider adds go-to-definition for imported names in use statements.
 export class TaoDefinitionProvider extends DefaultDefinitionProvider {
@@ -68,57 +70,27 @@ export class TaoDefinitionProvider extends DefaultDefinitionProvider {
     useStmt: ast.UseStatement,
     document: langium.LangiumDocument,
   ): string[] {
-    const sameModule = this.isSameModuleImport(useStmt, document)
+    const sameModule = isSameModuleImport(useStmt, document.uri.path)
     if (sameModule) {
-      return this.getSameModuleUris(document)
+      const indexUrisAndPaths = Array.from(this.indexManager.allElements(), (desc) => ({
+        uri: desc.documentUri.toString(),
+        path: desc.documentUri.path,
+      }))
+      return getSameModuleUris(document.uri.path, document.uri.toString(), indexUrisAndPaths)
     }
     if (!useStmt.modulePath) {
       return []
     }
-    return this.resolveModulePath(useStmt.modulePath, document)
-  }
-
-  private isSameModuleImport(useStmt: ast.UseStatement, document: langium.LangiumDocument): boolean {
-    if (!useStmt.modulePath) {
-      return true
-    }
-    if (isStdLibImport(useStmt.modulePath)) {
-      return false
-    }
-    const currentDir = normalizedDirOfPath(document.uri.path)
-    const targetPath = resolveModulePathFromFile(document.uri.path, useStmt.modulePath)
-    return targetPath === currentDir
-  }
-
-  private getSameModuleUris(document: langium.LangiumDocument): string[] {
-    const currentDir = normalizedDirOfPath(document.uri.path)
-    const uriSet = new Set<string>()
-    for (const desc of this.indexManager.allElements()) {
-      const descDir = normalizedDirOfPath(desc.documentUri.path)
-      if (descDir === currentDir && desc.documentUri.toString() !== document.uri.toString()) {
-        uriSet.add(desc.documentUri.toString())
-      }
-    }
-    return [...uriSet]
-  }
-
-  private resolveModulePath(modulePath: string, document: langium.LangiumDocument): string[] {
-    if (!modulePath) {
-      return []
-    }
-    const targetPath = isStdLibImport(modulePath)
-      ? resolveStdLibModuleDirectory(modulePath, this.stdLibRoot!)
-      : resolveModulePathFromFile(document.uri.path, modulePath)
-    const targetFileWithExt = targetPath + TAO_EXT
-    const uris: string[] = []
-    for (const doc of this.documents.all) {
-      const docPath = doc.uri.path
-      const docDir = normalizedDirOfPath(docPath)
-      if (docPath === targetFileWithExt || docDir === targetPath) {
-        uris.push(doc.uri.toString())
-      }
-    }
-    return [...new Set(uris)]
+    const docUrisAndPaths = Array.from(this.documents.all, (doc) => ({
+      uri: doc.uri.toString(),
+      path: doc.uri.path,
+    }))
+    return resolveModulePathToUris(
+      useStmt.modulePath,
+      document.uri.path,
+      this.stdLibRoot,
+      docUrisAndPaths,
+    )
   }
 
   private findDeclarationInUris(
@@ -127,7 +99,7 @@ export class TaoDefinitionProvider extends DefaultDefinitionProvider {
     useStmt: ast.UseStatement,
     document: langium.LangiumDocument,
   ): langium.AstNodeDescription | undefined {
-    const sameModule = this.isSameModuleImport(useStmt, document)
+    const sameModule = isSameModuleImport(useStmt, document.uri.path)
     const targetUriSet = new Set(targetUris)
 
     for (const desc of this.indexManager.allElements(ast.Declaration.$type, targetUriSet)) {

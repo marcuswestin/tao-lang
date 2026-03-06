@@ -1,8 +1,12 @@
 import * as langium from 'langium'
-import { TAO_EXT } from '../@shared/TaoPaths'
 import * as ast from '../_gen-tao-parser/ast'
-import { normalizedDirOfPath, resolveModulePathFromFile } from '../Paths'
-import { isStdLibImport, resolveStdLibModuleDirectory } from '../StdLibPaths'
+import {
+  getSameModuleUris,
+  isSameModuleImport,
+  resolveModulePathToUris,
+  type UriAndPath,
+} from '../ModuleResolution'
+import { isStdLibImport } from '../StdLibPaths'
 
 // UseStatementValidator validates that imported names in use statements exist
 // and have appropriate visibility for the import context.
@@ -34,10 +38,7 @@ export class UseStatementValidator {
       return
     }
 
-    const sameModule = this.isSameModuleImport(useStatement, document)
-    const targetUris = sameModule
-      ? this.getSameModuleUris(document)
-      : this.resolveModulePath(useStatement.modulePath!, document)
+    const { targetUris, sameModule } = this.getTargetUrisForUseStatement(useStatement, document)
 
     if (targetUris.length === 0 && !sameModule) {
       accept('error', `Cannot resolve module path '${useStatement.modulePath}'`, {
@@ -119,30 +120,30 @@ export class UseStatementValidator {
     }
   }
 
-  // isSameModuleImport returns true when a `use` statement targets the same module.
-  private isSameModuleImport(useStatement: ast.UseStatement, document: langium.LangiumDocument): boolean {
-    if (!useStatement.modulePath) {
-      return true
-    }
-    if (isStdLibImport(useStatement.modulePath)) {
-      return false
-    }
-    const currentDir = normalizedDirOfPath(document.uri.path)
-    const targetPath = resolveModulePathFromFile(document.uri.path, useStatement.modulePath)
-    return targetPath === currentDir
+  // getDocUrisAndPaths returns URI and path pairs for all documents in the workspace.
+  private getDocUrisAndPaths(): UriAndPath[] {
+    return Array.from(this.documents.all, (doc) => ({
+      uri: doc.uri.toString(),
+      path: doc.uri.path,
+    }))
   }
 
-  // getSameModuleUris returns document URIs for all files in the same directory, excluding current file.
-  private getSameModuleUris(document: langium.LangiumDocument): string[] {
-    const currentDir = normalizedDirOfPath(document.uri.path)
-    const uris: string[] = []
-    for (const doc of this.documents.all) {
-      const docDir = normalizedDirOfPath(doc.uri.path)
-      if (docDir === currentDir && doc.uri.toString() !== document.uri.toString()) {
-        uris.push(doc.uri.toString())
-      }
-    }
-    return [...new Set(uris)] // Remove duplicates
+  // getTargetUrisForUseStatement resolves a use statement to the target document URIs and whether it is same-module.
+  private getTargetUrisForUseStatement(
+    useStatement: ast.UseStatement,
+    document: langium.LangiumDocument,
+  ): { targetUris: string[]; sameModule: boolean } {
+    const docUrisAndPaths = this.getDocUrisAndPaths()
+    const sameModule = isSameModuleImport(useStatement, document.uri.path)
+    const targetUris = sameModule
+      ? getSameModuleUris(document.uri.path, document.uri.toString(), docUrisAndPaths)
+      : resolveModulePathToUris(
+        useStatement.modulePath!,
+        document.uri.path,
+        this.stdLibRoot,
+        docUrisAndPaths,
+      )
+    return { targetUris, sameModule }
   }
 
   // getAccessibleSameModuleDeclarations returns all indexed declarations from same-module URIs.
@@ -233,38 +234,5 @@ export class UseStatementValidator {
     }
 
     return false
-  }
-
-  // resolveModulePath resolves a module path (relative or std-lib) to document URIs.
-  private resolveModulePath(modulePath: string, document: langium.LangiumDocument): string[] {
-    if (!modulePath) {
-      return []
-    }
-    if (isStdLibImport(modulePath) && !this.stdLibRoot) {
-      return []
-    }
-
-    try {
-      const targetPath = isStdLibImport(modulePath)
-        ? resolveStdLibModuleDirectory(modulePath, this.stdLibRoot!)
-        : resolveModulePathFromFile(document.uri.path, modulePath)
-
-      const targetFileWithExt = targetPath + TAO_EXT
-      const uris: string[] = []
-      for (const doc of this.documents.all) {
-        const docPath = doc.uri.path
-        const docDir = normalizedDirOfPath(docPath)
-
-        if (docPath === targetFileWithExt) {
-          uris.push(doc.uri.toString())
-        } else if (docDir === targetPath) {
-          uris.push(doc.uri.toString())
-        }
-      }
-
-      return [...new Set(uris)] // Remove duplicates
-    } catch {
-      return []
-    }
   }
 }

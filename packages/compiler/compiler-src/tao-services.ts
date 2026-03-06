@@ -12,17 +12,21 @@ import { UseStatementValidator } from '@tao-compiler/validation/UseStatementVali
 import TaoFormatter from '../formatter-src/TaoFormatter'
 import { AST } from './grammar'
 
+// TaoWorkspaceConfig configures createTaoWorkspace (e.g. std lib root path).
 export type TaoWorkspaceConfig = {
   stdLibRoot?: string
 }
 
+// TaoWorkspaceBuildOptions options passed to buildDocument/buildDocuments (validation and eagerLinking).
 export type TaoWorkspaceBuildOptions = {
   validation?: langium.ValidationOptions | boolean
   eagerLinking?: boolean
 }
 
+// TaoDocument is a Langium document whose parse result is a TaoFile AST.
 export type TaoDocument = langium.LangiumDocument<AST.TaoFile>
 
+// TaoWorkspace holds Langium services for parsing, validating, and formatting Tao files; provides a focused API for documents and building.
 export class TaoWorkspace {
   constructor(
     private readonly shared: LSP.LangiumSharedServices,
@@ -48,46 +52,57 @@ export class TaoWorkspace {
     this.documents.addDocument(document)
   }
 
+  // supportsExtension returns whether the given file extension is supported (e.g. .tao).
   supportsExtension(ext: string): boolean {
     return this.fileExtensions.includes(ext)
   }
 
+  // getFileExtensions returns the list of supported file extensions.
   getFileExtensions(): readonly string[] {
     return this.fileExtensions
   }
 
+  // getStdLibRoot returns the configured standard library root path, or undefined.
   getStdLibRoot(): string | undefined {
     return this.stdLibRoot
   }
 
+  // getShared returns the Langium shared services (e.g. for startLanguageServer).
   getShared(): LSP.LangiumSharedServices {
     return this.shared
   }
 
+  // hasStdLib returns true when a standard library root is configured.
   hasStdLib(): boolean {
     return this.stdLibRoot !== undefined
   }
 
+  // buildDocument builds a single document with optional validation and eagerLinking.
   async buildDocument(doc: TaoDocument, opts?: TaoWorkspaceBuildOptions): Promise<void> {
     await this.documentBuilder.build([doc], opts)
   }
 
+  // buildDocuments builds multiple documents with optional validation and eagerLinking.
   async buildDocuments(docs: TaoDocument[], opts?: TaoWorkspaceBuildOptions): Promise<void> {
     await this.documentBuilder.build(docs, opts)
   }
 
+  // createDocumentFromString creates a Tao document from a string and URI (synchronous).
   createDocumentFromString(content: string, uri: langium.URI): TaoDocument {
     return this.documentFactory.fromString<AST.TaoFile>(content, uri) as TaoDocument
   }
 
+  // createDocumentFromUri creates a Tao document by loading from the given URI.
   async createDocumentFromUri(uri: langium.URI): Promise<TaoDocument> {
     return await this.documentFactory.fromUri<AST.TaoFile>(uri)
   }
 
+  // getAllDocuments returns all documents currently in the workspace.
   getAllDocuments(): TaoDocument[] {
     return Array.from(this.documents.all) as TaoDocument[]
   }
 
+  // formatDocument runs the formatter on the document and returns text edits.
   async formatDocument(
     document: langium.LangiumDocument,
     options: Parameters<LSP.Formatter['formatDocument']>[1],
@@ -95,6 +110,7 @@ export class TaoWorkspace {
     return await this.formatter.formatDocument(document, options)
   }
 
+  // getDocumentDefinition returns definition locations for the given document and position (go-to-definition).
   getDocumentDefinition(
     doc: TaoDocument,
     position: { line: number; character: number },

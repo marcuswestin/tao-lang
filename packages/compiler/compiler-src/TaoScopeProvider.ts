@@ -1,8 +1,10 @@
 import * as langium from 'langium'
-import { TAO_EXT } from './@shared/TaoPaths'
 import * as ast from './_gen-tao-parser/ast'
-import { normalizedDirOfPath, resolveModulePathFromFile } from './Paths'
-import { isStdLibImport, resolveStdLibModuleDirectory } from './StdLibPaths'
+import {
+  getSameModuleUris,
+  isSameModuleImport,
+  resolveModulePathToUris,
+} from './ModuleResolution'
 
 // TaoScopeProvider filters symbols for reference resolution based on module visibility rules.
 export class TaoScopeProvider extends langium.DefaultScopeProvider {
@@ -65,10 +67,19 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
     document: langium.LangiumDocument,
   ): langium.AstNodeDescription[] {
     const imported: langium.AstNodeDescription[] = []
-    const sameModule = this.isSameModuleImport(useStmt, document)
+    const sameModule = isSameModuleImport(useStmt, document.uri.path)
+    const indexUrisAndPaths = Array.from(this.indexManager.allElements(), (desc) => ({
+      uri: desc.documentUri.toString(),
+      path: desc.documentUri.path,
+    }))
     const targetUris = sameModule
-      ? this.getSameModuleUris(document)
-      : this.resolveModulePath(useStmt.modulePath!, document)
+      ? getSameModuleUris(document.uri.path, document.uri.toString(), indexUrisAndPaths)
+      : resolveModulePathToUris(
+        useStmt.modulePath!,
+        document.uri.path,
+        this.stdLibRoot,
+        indexUrisAndPaths,
+      )
 
     for (const targetUri of targetUris) {
       const allRelevantExports = this.indexManager
@@ -103,35 +114,6 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
     return imported
   }
 
-  // isSameModuleImport returns true when a `use` statement targets the same module (directory).
-  // `use Foo` (no path) is always same-module. `use Foo from ./` also resolves to same module.
-  private isSameModuleImport(useStmt: ast.UseStatement, document: langium.LangiumDocument): boolean {
-    if (!useStmt.modulePath) {
-      return true
-    }
-    if (isStdLibImport(useStmt.modulePath)) {
-      return false
-    }
-    const currentDir = normalizedDirOfPath(document.uri.path)
-    const targetPath = resolveModulePathFromFile(document.uri.path, useStmt.modulePath)
-    return targetPath === currentDir
-  }
-
-  // getSameModuleUris returns document URIs for all files in the same directory, excluding the current file.
-  private getSameModuleUris(document: langium.LangiumDocument): string[] {
-    const currentDir = normalizedDirOfPath(document.uri.path)
-    const uriSet = new Set<string>()
-
-    for (const desc of this.indexManager.allElements()) {
-      const descDir = normalizedDirOfPath(desc.documentUri.path)
-      if (descDir === currentDir && desc.documentUri.toString() !== document.uri.toString()) {
-        uriSet.add(desc.documentUri.toString())
-      }
-    }
-
-    return [...uriSet]
-  }
-
   // getLocalScope retrieves local symbols from the document's symbol table.
   private getLocalScope(
     context: langium.ReferenceInfo,
@@ -157,35 +139,5 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
     }
 
     return locals
-  }
-
-  // resolveModulePath converts a module path (relative or std-lib) to document URIs.
-  private resolveModulePath(
-    modulePath: string,
-    document: langium.LangiumDocument,
-  ): string[] {
-    if (!modulePath) {
-      return []
-    }
-
-    const targetPath = isStdLibImport(modulePath)
-      ? resolveStdLibModuleDirectory(modulePath, this.stdLibRoot!)
-      : resolveModulePathFromFile(document.uri.path, modulePath)
-
-    const targetFileWithExt = targetPath + TAO_EXT
-
-    const uris: string[] = []
-    for (const doc of this.indexManager.allElements()) {
-      const docPath = doc.documentUri.path
-      const docDir = normalizedDirOfPath(docPath)
-
-      if (docPath === targetFileWithExt) {
-        uris.push(doc.documentUri.toString())
-      } else if (docDir === targetPath) {
-        uris.push(doc.documentUri.toString())
-      }
-    }
-
-    return [...new Set(uris)] // Remove duplicates
   }
 }
