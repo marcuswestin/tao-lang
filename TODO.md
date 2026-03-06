@@ -24,7 +24,7 @@ Next tasks, in order:
 - [ ] Get kitchen sink build working and rendering
 - [ ] Implement tracing properly
 - [ ] Figure out how to test the ide extension in test-ide-extension.test.ts
-- [ ] Rename Agents.md to AGENTS.md
+- [x] Rename Agents.md to AGENTS.md
 - [x] Update OXLINT_CMD: `OXLINT_CMD := "oxlint --ignore-path .gitignore --type-aware"`
 
 #### Parser
