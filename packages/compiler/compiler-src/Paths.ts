@@ -35,6 +35,7 @@ export function isDirectory(filePath: string): boolean {
   }
 }
 
+// readDir returns directory entries for the given path, or empty array on error.
 export function readDir(filePath: string): string[] {
   try {
     return readdirSync(filePath)
@@ -43,6 +44,7 @@ export function readDir(filePath: string): string[] {
   }
 }
 
+// resolvePath resolves the given path to an absolute path.
 export function resolvePath(filePath: string): string {
   return path.resolve(filePath)
 }
@@ -53,6 +55,7 @@ type StreamFilesOptions = {
   includeOnlyExtension?: string | null
 }
 
+// streamFilesIn yields file paths under dirPath recursively, with optional filtering.
 export async function* streamFilesIn(dirPath: string, opts: StreamFilesOptions = {}): AsyncGenerator<string> {
   const { includeDirectories = false, includeHidden = false, includeOnlyExtension = null } = opts
 

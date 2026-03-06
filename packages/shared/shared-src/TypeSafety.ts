@@ -2,6 +2,7 @@ type HandlerMap<U extends { $type: PropertyKey }, R> = {
   [K in U['$type']]: (item: Extract<U, { $type: K }>) => R
 }
 
+// switchItemType_Exhaustive dispatches on item.$type with a handler map; enforces exhaustive handling.
 export function switchItemType_Exhaustive<
   ItemT extends { $type: PropertyKey },
   R,
@@ -10,6 +11,7 @@ export function switchItemType_Exhaustive<
   return handlers[key](item as Extract<ItemT, { $type: typeof key }>)
 }
 
+// switch_Exhaustive same as switchItemType_Exhaustive; alias for consistent naming.
 export function switch_Exhaustive<
   ItemT extends { $type: PropertyKey },
   R,
@@ -18,6 +20,7 @@ export function switch_Exhaustive<
   return handlers[key](item as Extract<ItemT, { $type: typeof key }>)
 }
 
+// switchBindItemType_Exhaustive dispatches with handlers bound to bindThis; enforces exhaustive handling.
 export function switchBindItemType_Exhaustive<
   ItemT extends { $type: PropertyKey },
   R,
