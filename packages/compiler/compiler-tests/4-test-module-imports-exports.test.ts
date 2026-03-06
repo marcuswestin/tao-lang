@@ -582,6 +582,21 @@ describe('standard library imports (use tao/...)', () => {
     expect(useStmt.importedNames).toEqual(['Col', 'Row', 'Text'])
   })
 
+  test('error when using tao/ import without std lib root configured', async () => {
+    const result = await parseMultipleFiles([
+      {
+        path: '/project/app.tao',
+        code: `
+          use Col from tao/ui
+          view MainView { }
+        `,
+      },
+    ])
+    const errors = result.getErrors()
+    expect(errors.errorCount()).toBe(1)
+    expect(errors.getHumanErrorMessage()).toContain('Standard library root is not configured')
+  })
+
   test('imported std-lib view can be referenced', async () => {
     const result = await parseMultipleFiles([
       {
