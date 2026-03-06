@@ -1,4 +1,10 @@
-import { describe, expect, parseAST, parseASTWithErrors, parseMultipleFiles, test } from './test-utils/test-harness'
+import {
+  describe,
+  expect,
+  parseAST,
+  parseMultipleFiles,
+  test,
+} from './test-utils/test-harness'
 
 describe('use statement parsing', () => {
   test('parses use statement with single import', async () => {
@@ -414,9 +420,9 @@ describe('cross-module import resolution (use statement)', () => {
       expect(errors.errorCount()).toBe(0)
     })
 
-    test(`imports don't crash the compiler`, async () => {
-      const errors = await parseASTWithErrors(`use Foo from app/ui`)
-      expect(errors).toBeDefined()
+    test('named module path parses without crashing', async () => {
+      const doc = await parseAST(`use Foo from app/ui`)
+      expect(doc.topLevelStatements.first.as_UseStatement.modulePath).toBe('app/ui')
     })
   })
 })
@@ -548,6 +554,170 @@ describe('module system edge cases', () => {
         `,
       },
     ])
+    const errors = result.getErrors()
+    expect(errors.errorCount()).toBe(0)
+  })
+})
+
+describe('standard library imports (use tao/...)', () => {
+  const STD_LIB_ROOT = '/tao-std-lib'
+
+  test('parses use statement with tao/ module path', async () => {
+    const doc = await parseAST(`
+      use Col from tao/ui
+      view MyView { }
+    `)
+    const useStmt = doc.topLevelStatements.first.as_UseStatement
+    expect(useStmt.modulePath).toBe('tao/ui')
+    expect(useStmt.importedNames).toEqual(['Col'])
+  })
+
+  test('parses use statement with multiple std-lib imports', async () => {
+    const doc = await parseAST(`
+      use Col, Row, Text from tao/ui
+      view MyView { }
+    `)
+    const useStmt = doc.topLevelStatements.first.as_UseStatement
+    expect(useStmt.modulePath).toBe('tao/ui')
+    expect(useStmt.importedNames).toEqual(['Col', 'Row', 'Text'])
+  })
+
+  test('imported std-lib view can be referenced', async () => {
+    const result = await parseMultipleFiles([
+      {
+        path: '/tao-std-lib/tao/ui/Views.tao',
+        code: `share view Col { }`,
+      },
+      {
+        path: '/project/app.tao',
+        code: `
+          use Col from tao/ui
+          view MainView {
+            Col
+          }
+        `,
+      },
+    ], { stdLibRoot: STD_LIB_ROOT })
+    const errors = result.getErrors()
+    expect(errors.errorCount()).toBe(0)
+  })
+
+  test('can import multiple std-lib views', async () => {
+    const result = await parseMultipleFiles([
+      {
+        path: '/tao-std-lib/tao/ui/Views.tao',
+        code: `
+          share view Col { }
+          share view Row { }
+          share view Text { }
+        `,
+      },
+      {
+        path: '/project/app.tao',
+        code: `
+          use Col, Row, Text from tao/ui
+          view MainView {
+            Col {
+              Row {
+                Text
+              }
+            }
+          }
+        `,
+      },
+    ], { stdLibRoot: STD_LIB_ROOT })
+    const errors = result.getErrors()
+    expect(errors.errorCount()).toBe(0)
+  })
+
+  test('error when importing non-existent name from std-lib', async () => {
+    const result = await parseMultipleFiles([
+      {
+        path: '/tao-std-lib/tao/ui/Views.tao',
+        code: `share view Col { }`,
+      },
+      {
+        path: '/project/app.tao',
+        code: `
+          use NonExistent from tao/ui
+          view MainView { }
+        `,
+      },
+    ], { stdLibRoot: STD_LIB_ROOT })
+    const errors = result.getErrors()
+    expect(errors.errorCount()).toBe(1)
+    expect(errors.getHumanErrorMessage()).toContain('NonExistent')
+  })
+
+  test('error when importing non-shared std-lib declaration', async () => {
+    const result = await parseMultipleFiles([
+      {
+        path: '/tao-std-lib/tao/ui/Internal.tao',
+        code: `view InternalHelper { }`,
+      },
+      {
+        path: '/project/app.tao',
+        code: `
+          use InternalHelper from tao/ui
+          view MainView { }
+        `,
+      },
+    ], { stdLibRoot: STD_LIB_ROOT })
+    const errors = result.getErrors()
+    expect(errors.errorCount()).toBe(1)
+    expect(errors.getHumanErrorMessage()).toContain('InternalHelper')
+  })
+
+  test('std-lib and relative imports can coexist', async () => {
+    const result = await parseMultipleFiles([
+      {
+        path: '/tao-std-lib/tao/ui/Views.tao',
+        code: `share view Col { }`,
+      },
+      {
+        path: '/project/components/Button.tao',
+        code: `share view Button { }`,
+      },
+      {
+        path: '/project/app.tao',
+        code: `
+          use Col from tao/ui
+          use Button from ./components
+          view MainView {
+            Col {
+              Button
+            }
+          }
+        `,
+      },
+    ], { stdLibRoot: STD_LIB_ROOT })
+    const errors = result.getErrors()
+    expect(errors.errorCount()).toBe(0)
+  })
+
+  test('std-lib imports from multiple tao/ submodules', async () => {
+    const result = await parseMultipleFiles([
+      {
+        path: '/tao-std-lib/tao/ui/Views.tao',
+        code: `share view Col { }`,
+      },
+      {
+        path: '/tao-std-lib/tao/nav/Navigation.tao',
+        code: `share view TabBar { }`,
+      },
+      {
+        path: '/project/app.tao',
+        code: `
+          use Col from tao/ui
+          use TabBar from tao/nav
+          view MainView {
+            Col {
+              TabBar
+            }
+          }
+        `,
+      },
+    ], { stdLibRoot: STD_LIB_ROOT })
     const errors = result.getErrors()
     expect(errors.errorCount()).toBe(0)
   })

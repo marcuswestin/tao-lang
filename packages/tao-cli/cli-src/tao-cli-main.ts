@@ -48,6 +48,7 @@ type TaoSDK_compileOpts = {
   path?: string | undefined
   code?: string | undefined
   runtimeDir: string
+  stdLibRoot?: string
   outputFileName?: string
 }
 type TaoSDK_compileResult = { outputPath: string; result?: { code: string }; error?: TaoError }
@@ -68,7 +69,7 @@ export async function TaoSDK_compile(opts: TaoSDK_compileOpts): Promise<TaoSDK_c
 
   try {
     const outputPath = await checkUserInputs(opts)
-    const result = await compileTao({ file: path })
+    const result = await compileTao({ file: path, stdLibRoot: opts.stdLibRoot })
     await writeFile(outputPath, result.code)
     if (result.errorReport.hasError()) {
       throwUserInputRejectionError(result.errorReport.getHumanErrorMessage())

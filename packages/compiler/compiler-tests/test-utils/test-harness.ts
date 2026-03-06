@@ -16,8 +16,8 @@ export { describe, expect, test } from 'bun:test'
 /////////
 
 // lex the code, and check only for lexing errors - skip parse, link and validation errors
-export async function lexTokens(code: string) {
-  const result = await TaoParser.parseString(code, { validateUpToStage: 'lexing' })
+export async function lexTokens(code: string, stdLibRoot = '') {
+  const result = await TaoParser.parseString(code, { stdLibRoot, validateUpToStage: 'lexing' })
   return result.errorReport.lexerErrors
 }
 
@@ -44,8 +44,8 @@ export async function lexTokensWithErrors(code: string, ...unexpectedCharacters:
 }
 
 // parse the code, and check only for lex and parse errors - Skips link and validation errors
-export async function parseAST(code: string): Promise<Wrapped<TaoFile>> {
-  const { errorReport, taoFileAST } = await TaoParser.parseString(code, { validateUpToStage: 'parsing' })
+export async function parseAST(code: string, stdLibRoot = ''): Promise<Wrapped<TaoFile>> {
+  const { errorReport, taoFileAST } = await TaoParser.parseString(code, { stdLibRoot, validateUpToStage: 'parsing' })
   Assert(
     !errorReport.hasError(),
     'parseAST expected no errors, but got: ' + errorReport.getHumanErrorMessage(),
@@ -54,21 +54,21 @@ export async function parseAST(code: string): Promise<Wrapped<TaoFile>> {
 }
 
 // parse the code, and check for all errors - lex, parse, link and validation errors
-export async function parseASTWithErrors(code: string): Promise<TaoErrorReport> {
-  const { errorReport } = await TaoParser.parseString(code, { validateUpToStage: 'all' })
+export async function parseASTWithErrors(code: string, stdLibRoot = ''): Promise<TaoErrorReport> {
+  const { errorReport } = await TaoParser.parseString(code, { stdLibRoot, validateUpToStage: 'all' })
   Assert(errorReport.hasError(), 'parseASTWithErrors expected at least one error report, but got none.')
   return errorReport
 }
 
 // parse the code and resolve reference links - skips validation errors
-export async function resolveReferences(code: string): Promise<Wrapped<TaoFile>> {
-  const { errorReport, taoFileAST } = await TaoParser.parseString(code, { validateUpToStage: 'linking' })
+export async function resolveReferences(code: string, stdLibRoot = ''): Promise<Wrapped<TaoFile>> {
+  const { errorReport, taoFileAST } = await TaoParser.parseString(code, { stdLibRoot, validateUpToStage: 'linking' })
   Assert(!errorReport.hasError(), 'Expected no errors, but got: ' + errorReport.getHumanErrorMessage())
   return wrap(taoFileAST!)
 }
 
-export async function parseTaoFully(code: string): Promise<Wrapped<TaoFile>> {
-  const { errorReport, taoFileAST } = await TaoParser.parseString(code, { validateUpToStage: 'all' })
+export async function parseTaoFully(code: string, stdLibRoot = ''): Promise<Wrapped<TaoFile>> {
+  const { errorReport, taoFileAST } = await TaoParser.parseString(code, { stdLibRoot, validateUpToStage: 'all' })
   Assert(!errorReport.hasError(), 'Expected no errors, but got: ' + errorReport.getHumanErrorMessage())
   return wrap(taoFileAST!)
 }
@@ -91,12 +91,17 @@ export type MultiFileParseResult = {
   documents: Map<string, Langium.LangiumDocument<TaoFile>>
 }
 
-/**
- * Parse multiple virtual files together, allowing cross-file references.
- * Files are given virtual paths to simulate a directory structure.
- */
-export async function parseMultipleFiles(files: VirtualFile[]): Promise<MultiFileParseResult> {
-  const workspace = createTaoWorkspace(NodeFileSystem)
+export type ParseMultipleFilesOpts = {
+  stdLibRoot: string
+}
+
+// parseMultipleFiles parses virtual files together, allowing cross-file references.
+// Pass stdLibRoot to resolve std-lib imports (tao/...) against virtual file paths.
+export async function parseMultipleFiles(
+  files: VirtualFile[],
+  opts: ParseMultipleFilesOpts = { stdLibRoot: '' },
+): Promise<MultiFileParseResult> {
+  const workspace = createTaoWorkspace(NodeFileSystem, { stdLibRoot: opts.stdLibRoot })
   const documentFactory = workspace.documentFactory
   const documents = new Map<string, Langium.LangiumDocument<TaoFile>>()
 

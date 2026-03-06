@@ -1,4 +1,4 @@
-view Col_TODO {
+view Col {
     inject ```ts
         const renderViewParams = { children, params: {}, styles: {}, layouts: {}, uiLabel: '', RNProps: {}, RNStyle:{} }
         renderViewParams.styles = { flexDirection: 'column', backgroundColor: 'blue', padding: 10 }
@@ -6,7 +6,7 @@ view Col_TODO {
     ```
 }
 
-view Row_TODO {
+view Row {
     inject ```ts
         const renderViewParams = { children, params: {}, styles: {}, layouts: {}, uiLabel: '', RNProps: {}, RNStyle:{} }
         renderViewParams.styles = { flexDirection: 'row', backgroundColor: 'yellow' }
@@ -14,7 +14,7 @@ view Row_TODO {
     ```
 }
 
-view Text_TODO value string {
+view Text value string {
     inject ```ts
         const renderViewParams = { value, params: {}, styles: {}, layouts: {}, children: [], uiLabel: '', RNProps: {}, RNStyle:{} }
         renderViewParams.RNStyle = { color: 'green', padding: 10, fontSize: 40, fontWeight: 'bold' }
@@ -22,7 +22,7 @@ view Text_TODO value string {
     ```
 }
 
-view Button_TODO title string {
+view Button title string {
     // TODO: does press
     inject ```ts
         const renderViewParams = { children, params: {}, styles: {}, layouts: {}, uiLabel: '', RNProps: {}, RNStyle:{} }

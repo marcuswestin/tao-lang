@@ -10,6 +10,10 @@ import { UseStatementValidator } from '@tao-compiler/validation/UseStatementVali
 import TaoFormatter from '../formatter-src/TaoFormatter'
 import { AST } from './grammar'
 
+export type TaoWorkspaceConfig = {
+  stdLibRoot: string
+}
+
 export type TaoWorkspace = {
   shared: LSP.LangiumSharedServices
   documents: langium.LangiumDocuments
@@ -17,12 +21,15 @@ export type TaoWorkspace = {
   fileExtensions: readonly string[]
   documentFactory: langium.LangiumDocumentFactory
   formatter: LSP.Formatter & TaoFormatter
+  stdLibRoot: string
 }
 
-// Create the parser services required by Langium.
-// This is a pretty opaque process, but it's how langium expects it.
+// createTaoWorkspace creates the Langium services for parsing and validating Tao files.
 // TODO: Return named object with factory, builder, etc directly named instead of `shared`
-export function createTaoWorkspace(context: LSP.DefaultSharedModuleContext): TaoWorkspace {
+export function createTaoWorkspace(
+  context: LSP.DefaultSharedModuleContext,
+  config: TaoWorkspaceConfig = { stdLibRoot: '' },
+): TaoWorkspace {
   const sharedTaoModule = langium.inject(
     LSP.createDefaultSharedModule(context),
     TaoLangGeneratedSharedModule,
@@ -37,7 +44,7 @@ export function createTaoWorkspace(context: LSP.DefaultSharedModuleContext): Tao
       },
       references: {
         ScopeComputation: (services: langium.LangiumCoreServices) => new TaoScopeComputation(services),
-        ScopeProvider: (services: langium.LangiumCoreServices) => new TaoScopeProvider(services),
+        ScopeProvider: (services: langium.LangiumCoreServices) => new TaoScopeProvider(services, config.stdLibRoot),
       },
     },
   )
@@ -48,6 +55,7 @@ export function createTaoWorkspace(context: LSP.DefaultSharedModuleContext): Tao
   const useStatementValidator = new UseStatementValidator(
     sharedTaoModule.workspace.IndexManager,
     sharedTaoModule.workspace.LangiumDocuments,
+    config.stdLibRoot,
   )
   TaoModule.validation.ValidationRegistry.register<AST.TaoLangAstType>({
     // TODO: Use validator instead of separate class
@@ -69,6 +77,7 @@ export function createTaoWorkspace(context: LSP.DefaultSharedModuleContext): Tao
     fileExtensions: TaoModule.LanguageMetaData.fileExtensions,
     documentFactory: TaoModule.shared.workspace.LangiumDocumentFactory,
     formatter: TaoModule.lsp.Formatter,
+    stdLibRoot: config.stdLibRoot,
   }
 }
 

@@ -3,6 +3,7 @@ import * as path from 'node:path'
 import { TAO_EXT } from '../@shared/TaoPaths'
 import * as ast from '../_gen-tao-parser/ast'
 import { normalizeModulePath } from '../Paths'
+import { isStdLibImport, resolveStdLibModuleDirectory } from '../StdLibPaths'
 
 // UseStatementValidator validates that imported names in use statements exist
 // and have appropriate visibility for the import context.
@@ -11,6 +12,7 @@ export class UseStatementValidator {
   constructor(
     private readonly indexManager: langium.IndexManager,
     private readonly documents: langium.LangiumDocuments,
+    private readonly stdLibRoot: string,
   ) {}
 
   // checkUseStatement validates a use statement's imported names against the target module.
@@ -115,6 +117,9 @@ export class UseStatementValidator {
     if (!useStatement.modulePath) {
       return true
     }
+    if (isStdLibImport(useStatement.modulePath)) {
+      return false
+    }
     const currentDir = path.dirname(document.uri.path)
     const targetPath = normalizeModulePath(currentDir, useStatement.modulePath)
     return targetPath === normalizeModulePath(currentDir)
@@ -130,7 +135,7 @@ export class UseStatementValidator {
         uris.push(doc.uri.toString())
       }
     }
-    return [...new Set(uris)]
+    return [...new Set(uris)] // Remove duplicates
   }
 
   // getAccessibleSameModuleDeclarations returns all indexed declarations from same-module URIs.
@@ -223,15 +228,17 @@ export class UseStatementValidator {
     return false
   }
 
-  // resolveModulePath resolves a relative module path to document URIs.
+  // resolveModulePath resolves a module path (relative or std-lib) to document URIs.
   private resolveModulePath(modulePath: string, document: langium.LangiumDocument): string[] {
     if (!modulePath) {
       return []
     }
 
     try {
-      const currentDir = path.dirname(document.uri.path)
-      const targetPath = normalizeModulePath(currentDir, modulePath)
+      const targetPath = isStdLibImport(modulePath)
+        ? resolveStdLibModuleDirectory(modulePath, this.stdLibRoot)
+        : normalizeModulePath(path.dirname(document.uri.path), modulePath)
+
       const targetFileWithExt = targetPath + TAO_EXT
 
       const uris: string[] = []
@@ -246,7 +253,7 @@ export class UseStatementValidator {
         }
       }
 
-      return [...new Set(uris)]
+      return [...new Set(uris)] // Remove duplicates
     } catch {
       return []
     }

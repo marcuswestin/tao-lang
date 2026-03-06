@@ -26,10 +26,13 @@ export type CompileResult = {
   document?: LangiumDocument<AST.TaoFile>
 }
 
-export type CompileOpts = { file: string }
+export type CompileOpts = {
+  file: string
+  stdLibRoot: string
+}
 
 export async function compileTao(opts: CompileOpts): Promise<CompileResult> {
-  const parsed = await TaoParser.parseFile(opts.file)
+  const parsed = await TaoParser.parseFile(opts.file, { stdLibRoot: opts.stdLibRoot })
   if (parsed.errorReport.hasError()) {
     return { errorReport: parsed.errorReport, code: getErrorAppString(parsed.errorReport) }
   }

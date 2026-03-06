@@ -27,8 +27,7 @@
       "@tao-compiler/*": ["./compiler/compiler-src/*"],
       "@tao-formatter/*": ["./compiler/formatter-src/*"],
       "@shared/*": ["./shared/shared-src/*"],
-      "@tao-cli/*": ["./tao-cli/cli-src/*"],
-      "@/*": ["./*"]
+      "@tao-cli/*": ["./tao-cli/cli-src/*"]
     }
   },
   "include": [

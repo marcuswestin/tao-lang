@@ -3,16 +3,15 @@ import * as Langium from 'langium'
 import { NodeFileSystem } from 'langium/node'
 import { createHash } from 'node:crypto'
 import path from 'node:path'
-import {
-  throwNotYetImplementedError,
-  throwUserInputRejectionError,
-} from './@shared/TaoErrors'
+import { throwUserInputRejectionError } from './@shared/TaoErrors'
 import { assertNever } from './compiler-utils'
 import { AST } from './grammar'
 import { getDocumentErrors, TaoErrorReport } from './parse-errors'
 import { fileExists, readDir } from './Paths'
+import { isStdLibImport, resolveStdLibModuleDirectory } from './StdLibPaths'
 
 export type ParseOptions = {
+  stdLibRoot: string
   validateUpToStage?: 'lexing' | 'parsing' | 'linking' | 'all' | 'none'
   skipSlowValidation?: boolean
 }
@@ -29,7 +28,7 @@ export const TaoParser = {
 }
 
 // parseString parses a Tao code string into a TaoFile AST.
-async function parseString(code: string, opts: ParseOptions = {}): Promise<ParseResult> {
+async function parseString(code: string, opts: ParseOptions): Promise<ParseResult> {
   const codeHash = getCodeHash(code)
   const evalCodeUri = `tao-string://v0/hash/${codeHash}.tao`
   const uri = Langium.URI.parse(evalCodeUri, STRICT_URIs)
@@ -37,7 +36,7 @@ async function parseString(code: string, opts: ParseOptions = {}): Promise<Parse
 }
 
 // parseFile parses a Tao file into a TaoFile AST.
-async function parseFile(filePath: string, opts: ParseOptions = {}): Promise<ParseResult> {
+async function parseFile(filePath: string, opts: ParseOptions): Promise<ParseResult> {
   const resolvedPath = path.resolve(filePath)
   const uri = toLangiumFileURI(resolvedPath)
   if (uri.scheme !== 'file') {
@@ -64,7 +63,7 @@ async function internalParseTaoCode(
   opts: ParseOptions,
   evalString: string | null,
 ): Promise<ParseResult> {
-  const workspace = createTaoWorkspace(NodeFileSystem)
+  const workspace = createTaoWorkspace(NodeFileSystem, { stdLibRoot: opts.stdLibRoot })
   const ext = path.extname(uri.path)
   if (!workspace.fileExtensions.includes(ext)) {
     throwUserInputRejectionError(
@@ -105,13 +104,16 @@ async function loadEntryAndReachable(
 
 // getUseStatementModuleDirectory returns the directory of a use statement's module.
 // Returns undefined for same-module imports (no modulePath), which are handled by addSameDirectoryTaoFiles.
-function getUseStatementModuleDirectory(ast: AST.UseStatement, currentDir: string): string | undefined {
+function getUseStatementModuleDirectory(
+  ast: AST.UseStatement,
+  currentDir: string,
+  stdLibRoot: string,
+): string | undefined {
   if (!ast.modulePath) {
     return undefined
   }
-  const isRelativeModulePath = ast.modulePath.startsWith('.')
-  if (!isRelativeModulePath) {
-    throwNotYetImplementedError('Named module imports are not supported yet')
+  if (isStdLibImport(ast.modulePath)) {
+    return resolveStdLibModuleDirectory(ast.modulePath, stdLibRoot)
   }
   return path.resolve(currentDir, ast.modulePath)
 }
@@ -140,13 +142,16 @@ async function addReachableTaoFiles(
 ) {
   const seenFilePaths = new Set<string>(document.uri.path)
 
-  // collect all documents reachable from the entry document
   for (const ast of document.parseResult.value.topLevelStatements) {
     if (!AST.isUseStatement(ast)) {
       continue
     }
 
-    const directory = getUseStatementModuleDirectory(ast, path.dirname(document.uri.path))
+    const directory = getUseStatementModuleDirectory(
+      ast,
+      path.dirname(document.uri.path),
+      workspace.stdLibRoot,
+    )
     if (!directory) {
       continue
     }

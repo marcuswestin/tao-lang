@@ -3,9 +3,17 @@ import * as path from 'node:path'
 import { TAO_EXT } from './@shared/TaoPaths'
 import * as ast from './_gen-tao-parser/ast'
 import { normalizeModulePath } from './Paths'
+import { isStdLibImport, resolveStdLibModuleDirectory } from './StdLibPaths'
 
 // TaoScopeProvider filters symbols for reference resolution based on module visibility rules.
 export class TaoScopeProvider extends langium.DefaultScopeProvider {
+  private readonly stdLibRoot: string
+
+  constructor(services: langium.LangiumCoreServices, stdLibRoot: string) {
+    super(services)
+    this.stdLibRoot = stdLibRoot
+  }
+
   // getScope returns the scope of available symbols for a reference context.
   override getScope(context: langium.ReferenceInfo): langium.Scope {
     if (context.property === 'view' && ast.isViewRenderStatement(context.container)) {
@@ -102,6 +110,9 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
     if (!useStmt.modulePath) {
       return true
     }
+    if (isStdLibImport(useStmt.modulePath)) {
+      return false
+    }
     const currentDir = path.dirname(document.uri.path)
     const targetPath = normalizeModulePath(currentDir, useStmt.modulePath)
     return targetPath === normalizeModulePath(currentDir)
@@ -149,7 +160,7 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
     return locals
   }
 
-  // resolveModulePath converts a relative module path to document URIs.
+  // resolveModulePath converts a module path (relative or std-lib) to document URIs.
   private resolveModulePath(
     modulePath: string,
     document: langium.LangiumDocument,
@@ -158,8 +169,10 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
       return []
     }
 
-    const currentDir = path.dirname(document.uri.path)
-    const targetPath = normalizeModulePath(currentDir, modulePath)
+    const targetPath = isStdLibImport(modulePath)
+      ? resolveStdLibModuleDirectory(modulePath, this.stdLibRoot)
+      : normalizeModulePath(path.dirname(document.uri.path), modulePath)
+
     const targetFileWithExt = targetPath + TAO_EXT
 
     const uris: string[] = []
@@ -174,7 +187,6 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
       }
     }
 
-    // Remove duplicates
-    return [...new Set(uris)]
+    return [...new Set(uris)] // Remove duplicates
   }
 }

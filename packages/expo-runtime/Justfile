@@ -1,6 +1,6 @@
 set unstable := true
 set fallback := true
-# set quiet := true
+set quiet := true
 
 build:
     just _install_deps
