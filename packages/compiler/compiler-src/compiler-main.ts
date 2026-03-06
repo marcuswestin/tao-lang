@@ -58,7 +58,7 @@ function getErrorAppString(errorReport: TaoErrorReport) {
 
 function generateTypescript(taoFile: AST.TaoFile, usedFilesASTs: AST.TaoFile[]): Compiled {
   const result = new LangiumGen.CompositeGeneratorNode()
-  result.append('/* Ignore all code')
+  result.append(`import * as RN from 'react-native'\n\n`)
   for (const usedFile of usedFilesASTs) {
     const compiled = compileNode(usedFile)`
       // ${usedFile.$document!.uri}
@@ -72,16 +72,13 @@ function generateTypescript(taoFile: AST.TaoFile, usedFilesASTs: AST.TaoFile[]):
     ${compileNodeListProperty(taoFile, 'topLevelStatements', compileTopLevelStatement)}
   `)
 
-  result.append('*/')
-
   result.append(compileNode(taoFile)`
     export default function CompiledTaoApp() {
-      return <></>
-      // return (
-      //   <RN.View style={{ flex: 1, backgroundColor: 'red' }}>
-      //     <AppUIView />
-      //   </RN.View>
-      // )
+      return (
+        <RN.View style={{ flex: 1, backgroundColor: 'red' }}>
+          <AppUIView />
+        </RN.View>
+      )
     }
   `)
 

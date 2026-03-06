@@ -65,7 +65,9 @@ export async function TaoSDK_compile(opts: TaoSDK_compileOpts): Promise<TaoSDK_c
 
   let path = opts.path
   if (opts.code) {
-    path = `/tmp/tao-cli-temp-${Date.now()}.tao`
+    const tempDir = `/tmp/tao-cli-temp-${Date.now()}`
+    mkdirSync(tempDir, { recursive: true })
+    path = `${tempDir}/tao-inline-code-build.tao`
     writeFileSync(path, opts.code)
   } else {
     path = opts.path!
