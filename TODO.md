@@ -30,7 +30,7 @@ Next tasks, in order:
 #### Parser
 
 - [ ] Flesh out Validation
-- [ ] Standard Library
+- [x] Standard Library
 - [ ] Type System
 
 #### Language
