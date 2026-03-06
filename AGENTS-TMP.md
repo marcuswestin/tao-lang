@@ -44,7 +44,7 @@ Human dev instructions:
 
 Agent dev instructions:
 
-- `Agents.md` - Agent instructions
+- `AGENTS-TMP.md` - Agent instructions
 - `just-agents` - Agent command runner
 - `just-agents.Justfile` - Agent commands
 

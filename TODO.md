@@ -19,13 +19,13 @@ Next tasks, in order:
 - [x] Fix build
 - [x] Make modules `use Col, Row from tao/ui`, as well as `use FridgeView` for same-module imports
 - [x] Add standard library support -- `use tao/ui Col, Row, Text`
-- [ ] Implement `class TaoWorkspace` instead of the ad-hoc services object
+- [x] Implement `class TaoWorkspace` instead of the ad-hoc services object
 - [x] Format the symbols in imports, e.g `Row ,   Col` → `Row, Col`
 - [ ] Get kitchen sink build working and rendering
 - [ ] Implement tracing properly
 - [ ] Figure out how to test the ide extension in test-ide-extension.test.ts
 - [ ] Rename Agents.md to AGENTS.md
-- [ ] Update OXLINT_CMD: `OXLINT_CMD := "oxlint --ignore-path .gitignore --type-aware"`
+- [x] Update OXLINT_CMD: `OXLINT_CMD := "oxlint --ignore-path .gitignore --type-aware"`
 
 #### Parser
 

@@ -4,7 +4,7 @@ import "./setups.just"
 # Formatting and linting
 ########################
 
-OXLINT_CMD := "oxlint --ignore-path .gitignore"
+OXLINT_CMD := "oxlint --ignore-path .gitignore --type-aware"
 
 _fmt:
     just _fmt_just
