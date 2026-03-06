@@ -2,8 +2,13 @@
   "name": "shared",
   "type": "module",
   "module": "shared.ts",
+  "dependencies": {
+    "@commander-js/extra-typings": "^14.0.0",
+    "object-deep-merge": "^2.0.0"
+  },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "concurrently": "^9.2.1"
   },
   "peerDependencies": {
     "typescript": "^5"

@@ -17,7 +17,6 @@ _watch-all-tests *PATTERNS:
     #!{{ SHELL_INIT }}
     while true; do
         just concurrently-named \
-            "tools" "cd packages/shared-tools && bun test --watch --silent --reporter=dot {{ PATTERNS }}" \
             "shared" "cd packages/shared && bun test --watch --silent --reporter=dot {{ PATTERNS }}" \
             "compiler" "cd packages/compiler && bun test --watch --silent --reporter=dot {{ PATTERNS }}" \
             "tao-cli" "cd packages/tao-cli && bun test --watch --silent --reporter=dot {{ PATTERNS }}" \
@@ -55,17 +54,19 @@ _watch-kitchen-sink-build APP_PATH="./Apps/Kitchen Sink/Kitchen Sink.tao":
     cd packages/tao-cli && bun run  --watch --no-clear-screen \
         ./tao-cli.ts compile "`pwd`/../../{{ APP_PATH }}" \
             --runtime-dir "../expo-runtime" \
+            --std-lib-root "../tao-std-lib" \
             --verbose --watch
 
 _watch-runtime-reload:
     cd packages/expo-runtime \
-        && EXPO_NO_CLEAR=true BROWSER="Google Chrome" npx expo start --ios --web \
+        && EXPO_NO_CLEAR=true BROWSER="Google Chrome" npx expo start --web \
+        # && EXPO_NO_CLEAR=true BROWSER="Google Chrome" npx expo start --ios --web \
 
 _watch-typecheck-extension:
     cd packages/ide-extension && tsc -b tsconfig.json --watch --preserveWatchOutput
 
 _watch-esbuild-extension:
-    cd packages/ide-extension && node esbuild.mjs --watch
+    cd packages/ide-extension && node esbuild.config.ts --watch
 
 _watch-fmt-justfile:
     watchexec --filter '**/*.just' --filter '**/Justfile' -- 'just _fmt_just'

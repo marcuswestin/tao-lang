@@ -13,6 +13,7 @@
   "files": [
     "_gen-ide-extension/",
     "ide-syntaxes/_gen-syntaxes/tao-lang.tmLanguage.json",
+    "ide-syntaxes/_gen-syntaxes/tao-lang.markdown-embed.tmLanguage.json",
     "language-configuration.json",
     "package.json",
     "README.md",
@@ -30,6 +31,17 @@
         "embeddedLanguages": {
           "meta.embedded.block.ts.taolang": "typescript"
         }
+      },
+      {
+        "language": "tao-markdown-injection",
+        "scopeName": "markdown.tao.codeblock",
+        "path": "./ide-syntaxes/_gen-syntaxes/tao-lang.markdown-embed.tmLanguage.json",
+        "injectTo": [
+          "text.html.markdown"
+        ],
+        "embeddedLanguages": {
+          "meta.embedded.block.tao": "tao"
+        }
       }
     ],
     "languages": [
@@ -46,12 +58,12 @@
           ".tao"
         ],
         "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "tao-markdown-injection"
       }
     ]
   },
-  "activationEvents": [
-    "onLanguage:tao"
-  ],
   "dependencies": {
     "vscode-languageclient": "~9.0.1",
     "vscode-languageserver": "~9.0.1"

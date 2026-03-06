@@ -13,6 +13,11 @@ build-lib OUTPUT_DIR:
         --outdir={{ OUTPUT_DIR }} --target=node \
         --define import.meta.url='"file:///__virtual__.js"'
 
+watch-lib OUTPUT_DIR:
+    bun build cli-src/tao-cli-main.ts --watch --keep-names \
+        --outdir={{ OUTPUT_DIR }} --target=node \
+        --define import.meta.url='"file:///__virtual__.js"'
+
 
 test *PATTERNS:
     bun test --reporter=dot {{ PATTERNS }}

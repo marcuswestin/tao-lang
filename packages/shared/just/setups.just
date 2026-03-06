@@ -7,45 +7,45 @@ _print_help:
     echo "\n For more commands, run:\n"
     echo "    just <recipe>"
     echo
-    just --list --unsorted --color=always | grep -v "_"
+    just --list --unsorted --color=always
     echo
 
-install-mise-deps:
-    mise install
+_install-mise-deps:
+    {{ MISE_CMD }} install
 
-update-deps:
-    mise self-update --yes
-    mise install
+_update-deps:
+    {{ MISE_CMD }} self-update --yes
+    {{ MISE_CMD }} install
 
 # Setup development environment
-setup:
+_create-dev-env:
     echo "\tSetup Tao Lang dev environment:"
     just _install_mise
-    # TODO: Make this work again: eval "$({{ MISE_CMD }} activate zsh)"
-    just _do_setup
-
-_do_setup:
-    #!{{ SHELL_INIT }}
-    just _configure_mise
+    curl https://cursor.com/install -fsS | bash > /dev/null 2>&1
+    just _setup_git_repo
     just _configure_zsh
-    just _install_deps
     just _install_ide_extensions
-    just _build_all
     just _print_setup_done
+
+_update-dev-env:
+    just _install_mise # Update mise to latest version
+    {{ MISE_CMD }} install
+    {{ MISE_CMD }} self-update --yes
+    {{ MISE_CMD }} doctor
+    just build-all
+
+_setup_git_repo:
+    {{ MISE_CMD }} trust --quiet --yes
+    {{ MISE_CMD }} install
+    just build-all
 
 _install_mise:
     @ echo "\tInstall mise..."
-    @ curl -sS https://mise.run | MISE_VERSION=v2025.12.1 sh 2> /dev/null
+    curl -sS https://mise.run | {{ MISE_VERSION_DEF }} sh 2> /dev/null
     @ just _trust_mise
 
 _trust_mise:
-    @ {{ MISE_CMD }} trust --quiet
-
-_configure_mise:
-    @ echo "\tConfigure mise..."
-    @ mise trust --quiet
-    @ mise install 2> /dev/null
-    @ mise doctor 1> /dev/null
+    {{ MISE_CMD }} trust --quiet --yes
 
 _configure_zsh:
     #!{{ SHELL_INIT }}
@@ -53,18 +53,9 @@ _configure_zsh:
     add_if_missing() { local line="$1" file="$2"; grep -qxF "$line" "$file" || echo "\n# Added by tao-lang dev env '_configure_zsh' justfile rule\n$line" >> "$file"; }
     add_if_missing "alias et=enter-tao && alias enter-tao='echo \" * Enter Tao Lang dev env * \" && cd $PWD && source .config/enter-tao-dev-env-source-configure.zsh'" ~/.zshrc
 
-_install_deps:
-    @ echo "\tInstall dependencies..."
-    @ curl https://cursor.com/install -fsS | bash > /dev/null 2>&1
-    @ mise install 2> /dev/null
-
 _install_ide_extensions:
     @ echo "\tInstall IDE extensions..."
     @ jq -r '.recommendations[]' .vscode/extensions.json | xargs -L 1 cursor --force --install-extension 1> /dev/null
-
-_build_all:
-    @ echo "\tBuild all packages..."
-    just build-all
 
 _print_setup_done:
     @ echo "\n\t*** Done ***"

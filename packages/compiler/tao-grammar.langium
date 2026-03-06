@@ -1,15 +1,40 @@
 grammar TaoLang
 
 entry TaoFile:
-    topLevelStatements += (
-        Declaration
-        | Injection
-    )*;
+    topLevelStatements += TopLevelStatement*;
+
+// Imports
+//////////
+
+UseStatement:
+    'use' importedNames+=ID (',' importedNames+=ID)* ('from' modulePath=MODULE_PATH)?;
+
+terminal MODULE_PATH: /[a-zA-Z.][a-zA-Z0-9._\-]*\/[a-zA-Z0-9._\-\/]*/;
+
+TopLevelStatement:
+    UseStatement | BaseStatement | VisibilityMarkedDeclaration;
+
+DeclarationVisibility returns string:
+    'file' | 'share'; // Defaults to module-visible
+
+VisibilityMarkedDeclaration:
+    visibility=DeclarationVisibility declaration=Declaration;
+
+// Statements
+/////////////
+
+BaseStatement:
+    ( Declaration
+    | Injection
+    );
 
 Declaration:
     ( AppDeclaration
     | ViewDeclaration
     );
+
+// Declarations
+///////////////
 
 AppDeclaration:
     type='app' name=ID '{' appStatements += AppStatement* '}';
@@ -29,6 +54,7 @@ Injection:
 
 // Shared Grammer
 /////////////////
+
 ParameterList:
     parameters += Parameter (',' parameter += Parameter)*;
 

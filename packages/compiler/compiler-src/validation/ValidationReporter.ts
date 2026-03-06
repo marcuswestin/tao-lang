@@ -1,4 +1,3 @@
-import { Log } from '@tao-compiler/@shared/Log'
 import { NodePropName } from '@tao-compiler/compiler-utils'
 import { AST } from '@tao-compiler/grammar'
 import {
@@ -57,7 +56,6 @@ export class Reporter<NodeT extends AstNode> {
     location?: Location<NodeT, ErrorNodeT> | ErrorNodeT,
     extraInfo?: ExtraInfo<ErrorNodeT>,
   ) {
-    Log('QWEQWE', !!extraInfo, !!extraInfo?.alsoCheck)
     this.validationAcceptor('error', message, this.diagnosticsInfo(location, extraInfo))
   }
 

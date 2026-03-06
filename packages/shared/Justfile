@@ -4,3 +4,6 @@ set fallback := true
 
 build:
     bun install
+
+sort-package-json-files:
+    bunx sort-package-json ../../packages/*/package.json

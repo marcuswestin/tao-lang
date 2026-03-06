@@ -1,90 +1,80 @@
-# Agents Guide
+# Tao Lang development agent instructions
 
-Best practices for AI agents working on the Tao Lang codebase.
+---
 
-## CRITICAL: Command Usage
+## CRITICAL: **Only** run commands with `./just-agents`:
 
-**AI agents MUST ONLY use commands from `Justfile`:**
+- **ALWAYS** use `./just-agents <cmd> <args>` for all commands
+- **NEVER** run commands any other way than `./just-agents`
+- **ALWAYS** consult `.cursor/rules/running-commands.mdc` for instructions on running commands
+- **ALWAYS** start your session with running `./just-agents help`
 
-```bash
-just <command recipe>
-```
+---
 
-**Add new recipe if needed** to the Agent Commands section in Justfile. You **MUST ask for permission** before adding it
+## Misc Instructions:
 
-**NEVER merge changes into main branch without asking for permission first.**
+- **ALWAYS** `test`, `fix` and `check` before committing
+- **NEVER** delete files without asking
+- **ALWAYS** document exported TS functions with `// <function name> <description>` (**never** use `/** ... */`)
 
-## Tooling
+### Main Tools used:
 
-- **Bun** over Node.js for running scripts, tests, and builds
-- **Just** for task running (Justfiles in root and each package)
-- **mise** for tool version management (bun, node, just, dprint, oxlint)
+See `.config/mise.toml` for a list of the main tools we use
 
-## Project Structure
+## Custom scripts:
 
-```
-Justfile                 # *All* commands necessary to develop Tao Lang
-packages/compiler/       # Langium-based parser/compiler for .tao files
-packages/ide-extension/  # VSCode IDE extension for Tao Lang
-packages/tao-cli/        # CLI tool built with Bun
-packages/expo-runtime/   # React Native/Expo runtime for Tao apps
-packages/shared-tools/   # Toosl & scripts for internal use
-Apps/                    # Example .tao applications (e.g., Tao Studio)
-Docs/                    # Language design documentation
-.config/                 # Configuration files for the repo
-.builds/                 # Build artifacts from the repo
-TODO.md                  # Upcoming Projects and Tasks
-TODO.Resolved.md         # Resolved Projects and Tasks
-```
+When justfile recipes are insufficient, use our TS script runner `q-dev.ts`:
 
-### Role of Each Package
+- `just q-dev help`
+- `just q-dev <cmd> <args>`
 
-- Compiler: The compiler is standalone, with an internal typescript API. It takes links to .tao files, and outputs a folder with typescript code to be run in the expo runtime.
-- Expo Runtime: The expo runtime takes receives a compiled .tao app, and runs it in a React Native/Expo environment.
-- Tao CLI: The cli is used to build apps with the compiler, run apps in expo runtimes, and more.
-- Internal Tools: Scripts for more complex internal functionality than is appropriate for the Justfile
+See `packages/shared/scripts/q-dev.ts` for implementation and adding new commands.
 
-## Testing
+---
 
-- Use `bun test` with `bun:test` imports for `packages/compiler` and `packages/tao-cli`
-- Use `jest` with `@testing-library/react-native` for `packages/expo-runtime`
-- Test files live in `packages/<package>/tests - <package>/` directories
-- Run all tests: `just test`
-- Run tests for one package: `cd packages/<package> && just test`
+## Project structure:
 
-## Available Commands
+### Root Directory:
 
-Run `just help` to list all available dev commands; and `just agent-help` to list additional available commands for agents. Key ones:
+Human dev instructions:
 
-- `just test` - Run all tests
-- `just pre-commit` - Run all checks.
-- `just _agent-git <args>` - Execute git commands
-- `just _agent-lint` - Run linting checks
+- `README.md` - Human dev instructions
+- `Justfile` - Human tasks runner file
+- `LICENSE` - Project license
 
-## MCP Integration
+Agent dev instructions:
 
-mise exposes project tasks to AI agents via MCP. The tasks are auto-generated from Justfile recipes prefixed with `_agent-` into `.config/mise-gen-just-commands.toml`.
+- `Agents.md` - Agent instructions
+- `just-agents` - Agent command runner
+- `just-agents.Justfile` - Agent commands
 
-### Regenerating mise-gen-just-commands.toml
+Tao Lang Project Docs:
 
-When `Agents.just` changes, regenerate the TOML file:
+- `Tao Chronicle/`- Roadmap, TODOs, and implementation history
+- `Tao Design Docs/` - Language specifications, examples, and documentations
 
-```bash
-just _agent-mise-tasks-gen
-```
+Misc configs and artifacts:
 
-This extracts all public recipes from `Justfile` and generates `.config/mise-gen-just-commands.toml` for mise MCP.
+- `.builds/` - build artifacts
+- `.config/` - configs for tools
+- `.cursor/` + `.vscode/` - IDE configs
+- `.*` - config files required in project root. Symlinked to `.config/*`
 
-## Command Design Principles
+### Tao Lang implementation: packages/*
 
-Commands in `Justfile` follow DRY (Don't Repeat Yourself) principles:
+- `packages/compiler/` - Parser, validator, compiler and formatter (using Langium)
+- `packages/tao-cli/` - Tao CLI: `tao <...>`
+- `packages/std-lib/` - Standard library: e.g `use tao/ui Col, Row, Text`
+- `packages/ide-extension/` - Tao Lang VSCode/Cursor Extension
+- `packages/expo-runtime/` - Tao App runtime: Expo react native harness for compiled Tao apps
+- `packages/shared/` - Code shared across all packages. TypeScript modules, internal scripts, etc
 
-- **Favor fewer commands with arguments** over many one-off commands
-- Commands should be reusable and composable
-- If you need a new command, ask for permission first
+For package-specific instructions, see their AGENTS.md file, e.g `packages/compiler/AGENTS.md`.
 
-## Development Workflow
+### Test files:
 
-1. Always use `just <command>` for any task
-2. Format code before committing: `just fmt`
-3. Run tests: `just test`
+- Test files are named `<name>.test.ts`
+- Tests are executed with `bun test`
+  - Except: `expo-runtime` tests can only be run using `node`/`jest`
+
+---

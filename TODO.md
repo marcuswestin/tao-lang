@@ -2,14 +2,47 @@
 
 Tao Lang TODOs.
 
+## Tools next:
+
+- [ ] Conductor
+- [ ] Whispr flow
+- [ ] Clawdbot
+
 ## STACK
 
 Next tasks, in order:
 
-#### Start compiling and running basic app
+- [x] Fix just check
+- [x] Merge shared and shared-tools
+- [x] Formatter
+- [x] Scoping
+- [x] Fix build
+- [x] Make modules `use Col, Row from tao/ui`, as well as `use FridgeView` for same-module imports
+- [x] Add standard library support -- `use tao/ui Col, Row, Text`
+- [ ] Implement `class TaoWorkspace` instead of the ad-hoc services object
+- [x] Format the symbols in imports, e.g `Row ,   Col` → `Row, Col`
+- [ ] Get kitchen sink build working and rendering
+- [ ] Implement tracing properly
+- [ ] Figure out how to test the ide extension in test-ide-extension.test.ts
+- [ ] Rename Agents.md to AGENTS.md
+- [ ] Update OXLINT_CMD: `OXLINT_CMD := "oxlint --ignore-path .gitignore --type-aware"`
+
+#### Parser
+
+- [ ] Flesh out Validation
+- [x] Standard Library
+- [ ] Type System
+
+#### Language
+
+- [ ] Let
+- [ ] State
+
+#### Improve Dev Environment
 
 First:
 
+- [ ] Create pre-commit hook to check for unstaged changes and ask to stash them before continuing
 - [ ] Commit!
   - [x] There are two almost idential justfiles in ide-extension...?
   - [ ] Fix the validator testing
@@ -35,6 +68,13 @@ First:
 - [ ] Create Validation testing helper
 - [ ] Create test watch runner for all test suites
 - [ ] Split up Justfile into smaller files
+
+- Check other LLM editor envs
+  - [ ] Try google antigravity
+  - [ ] Try Gemini code assist
+  - [ ] Try gemini cli
+  - [ ] Try Claude code direct
+  - [ ] Try Codex code direct
 
 Then:
 

@@ -10,18 +10,15 @@ _pre-commit:
     echo "> Stashing non-staged changes..." && git stash push --keep-index --include-untracked
     echo "> Running code checks..." && just check
     echo "> Building everything..." && just test
-    echo "> Checking builds..." && just check-run-builds
     echo "> Pre-commit checks complete. Unstashing changes..." && git stash pop
 
 _build-all:
     just install-mise-deps
-    cd packages/shared-tools && just build
     cd packages/shared && just build
     cd packages/compiler && just build
     cd packages/tao-cli && just build
     cd packages/expo-runtime && just build
     cd packages/ide-extension && just build
-    just _agent-mise-tasks-gen
 
 x-fix-file-associations:
     brew install duti --quiet

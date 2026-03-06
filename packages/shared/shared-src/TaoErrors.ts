@@ -54,14 +54,26 @@ export function throwNotYetImplementedError(
 }
 
 // Assert condition is true. If not, halt execution with an unexpected behavior error.
-export function Assert<T>(condition: T, expectedConditionDescription: string): asserts condition is NonNullable<T> {
+export function Assert<T>(
+  condition: T,
+  expectedConditionDescription: string,
+  ...logInfo: Record<string, unknown>[]
+): asserts condition is NonNullable<T> {
   if (!condition) {
     throw new UnexpectedBehaviorError({
-      humanMessage: `Expected ${expectedConditionDescription}`,
+      humanMessage: `Expected: ${expectedConditionDescription}`,
       cause: new Error('AssertError'),
-      logInfo: { condition: condition },
+      logInfo: { condition: condition, info: logInfo },
     })
   }
+}
+
+export function Halt(humanMessage?: string): never {
+  throw new UnexpectedBehaviorError({
+    humanMessage: humanMessage ?? 'Halt called',
+    cause: new Error('HaltError'),
+    logInfo: { humanMessage },
+  })
 }
 
 // Check if an error is a Tao error
@@ -69,7 +81,7 @@ export function isTaoError(error: unknown): error is TaoError {
   return error instanceof BaseTaoError
 }
 
-export function getTaoError(error: TaoError | unknown, logInfo?: Record<string, unknown>): TaoError {
+export function getTaoError(error: TaoError | Error | unknown, logInfo?: Record<string, unknown>): TaoError {
   if (isTaoError(error)) {
     return error
   }
@@ -106,7 +118,7 @@ abstract class BaseTaoError extends Error {
   }
 }
 
-class UserInputRejectionError extends BaseTaoError {
+export class UserInputRejectionError extends BaseTaoError {
   override readonly name = 'UserInputRejectionError'
 
   getLogMessage(): string {
@@ -159,7 +171,7 @@ class UnexpectedBehaviorError extends BaseTaoError {
 
     // Exclude this constructor from the stack so traces start at the call site.
     // We do this because constructor frames add noise without diagnostic value.
-    Error.captureStackTrace?.(this, UnexpectedBehaviorError)
+    // Error.captureStackTrace.(this, UnexpectedBehaviorError)
   }
 
   private static getCauseErrorAndLogInfo(
@@ -199,7 +211,7 @@ function getStackMessage(errorName: string, stack?: string): string {
 function safeJSONStringifyAdditionalInfo(value: unknown): string {
   try {
     return JSON.stringify(value)
-  } catch (error) {
+  } catch (_error) {
     return '<Could not JSON.stringify additional info>'
   }
 }

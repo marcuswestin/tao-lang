@@ -1,11 +1,10 @@
 import { Command } from '@commander-js/extra-typings'
-import { compile } from '@tao-compiler'
+import { compileTao } from '@tao-compiler'
 import chokidar from 'chokidar'
 import { mkdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
+import * as process from 'node:process'
 import {
-  Assert,
-  getTaoError,
   TaoError,
   throwUserInputRejectionError,
 } from '../../compiler/compiler-src/@shared/TaoErrors'
@@ -21,14 +20,15 @@ export function taoCliMain() {
     .option('--code <code>', 'Compile the given string of text, rather than a file')
     .option('--watch', 'Watch the file and recompile when it changes')
     .option('--verbose', 'Verbose output', false)
-    .action(async (path, { watch, verbose, code, runtimeDir }) => {
+    .option('--std-lib-root <path>', 'The root directory of the standard library', (value) => path.resolve(value))
+    .action(async (path, { watch, verbose, code, runtimeDir, stdLibRoot }) => {
       verbose = true
       hci.setVerbose(verbose)
       hci.wrapExecution(async () => {
         async function compileAndWrite() {
           hci.verboselyInform(`Compiling...`)
-          const outputPath = await TaoSDK_compile({ path, code, runtimeDir })
-          hci.inform(`Compiled to ${outputPath}`)
+          const result = await TaoSDK_compile({ path, code, runtimeDir, stdLibRoot })
+          hci.inform(`Compiled to ${result.outputPath}`)
         }
 
         if (watch) {
@@ -36,6 +36,9 @@ export function taoCliMain() {
             throwUserInputRejectionError('Watch mode requires a file to be provided')
           }
           chokidar.watch(path).on('change', compileAndWrite)
+          if (stdLibRoot) {
+            chokidar.watch(stdLibRoot).on('change', compileAndWrite)
+          }
         }
 
         await compileAndWrite()
@@ -45,55 +48,42 @@ export function taoCliMain() {
   program.parse(process.argv)
 }
 
-function getErrorAppString(message: string) {
-  return `
-  import * as RN from 'react-native'
-
-  const message = \`${message}\`.replace('\`', '\\\`')
-
-  export default function CompiledTaoApp() {
-    // Center view in parent
-    return <RN.View style={{ backgroundColor: 'red', maxWidth: 400, flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <RN.Text>Error compiling file</RN.Text>
-      <RN.Text>${message}</RN.Text>
-    </RN.View>
-  }`
-}
-
 type TaoSDK_compileOpts = {
   path?: string | undefined
   code?: string | undefined
   runtimeDir: string
+  stdLibRoot?: string
   outputFileName?: string
 }
 type TaoSDK_compileResult = { outputPath: string; result?: { code: string }; error?: TaoError }
 export async function TaoSDK_compile(opts: TaoSDK_compileOpts): Promise<TaoSDK_compileResult> {
-  hci.debug(`TaoSDK_compile opts: ${JSON.stringify(opts, null, 2)}`)
   if (!opts.path && !opts.code) {
     throwUserInputRejectionError('Missing <path>')
   } else if (opts.code && opts.path) {
     throwUserInputRejectionError('Provide EITHER <path> or --code, but not both')
   }
 
+  let path = opts.path
   if (opts.code) {
-    opts.path = `/tmp/tao-cli-temp-${Date.now()}.tao`
-    writeFileSync(opts.path, opts.code)
+    const tempDir = `/tmp/tao-cli-temp-${Date.now()}`
+    mkdirSync(tempDir, { recursive: true })
+    path = `${tempDir}/tao-inline-code-build.tao`
+    writeFileSync(path, opts.code)
+  } else {
+    path = opts.path!
   }
-  Assert(opts.path, 'path is set')
-
-  const outputPath = await checkUserInputs(opts)
 
   try {
-    const result = await compile({ file: opts.path })
+    const outputPath = await checkUserInputs(opts)
+    const result = await compileTao({ file: path, stdLibRoot: opts.stdLibRoot })
     await writeFile(outputPath, result.code)
+    if (result.errorReport.hasError()) {
+      throwUserInputRejectionError(result.errorReport.getHumanErrorMessage())
+    }
     return { outputPath, result }
-  } catch (error) {
-    const taoError = getTaoError(error, { 'context': 'TaoSDK_compile' })
-    await writeFile(outputPath, getErrorAppString(taoError.messageForEndUser))
-    return { outputPath, error: taoError }
   } finally {
     if (opts.code) {
-      unlinkSync(opts.path)
+      unlinkSync(path)
     }
   }
 }
@@ -102,6 +92,10 @@ async function checkUserInputs(opts: TaoSDK_compileOpts) {
   const runtimeDir = path.resolve(opts.runtimeDir)
   if (!isDirectory(runtimeDir)) {
     throwUserInputRejectionError(`Runtime path is not a directory: ${runtimeDir}`)
+  }
+  const stdLibRoot = opts.stdLibRoot
+  if (stdLibRoot && !isDirectory(stdLibRoot)) {
+    throwUserInputRejectionError(`Standard library path is not a directory: ${stdLibRoot}`)
   }
   const packageJsonPath = path.resolve(runtimeDir, 'package.json')
   if (!fileExists(packageJsonPath)) {

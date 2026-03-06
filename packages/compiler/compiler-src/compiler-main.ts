@@ -1,5 +1,6 @@
 import * as LangiumGen from 'langium/generate'
 import { Assert } from './@shared/TaoErrors'
+import { switchItemType_Exhaustive } from './@shared/TypeSafety'
 import { isInjection, isViewRenderStatement } from './_gen-tao-parser/ast'
 import {
   assertNever,
@@ -11,6 +12,7 @@ import {
   genNodePropertyRef,
 } from './compiler-utils'
 import { AST } from './grammar'
+import { TaoErrorReport } from './parse-errors'
 import { TaoParser } from './parser'
 
 // export type File = {
@@ -19,21 +21,58 @@ import { TaoParser } from './parser'
 
 export type CompileResult = {
   code: string
+  errorReport: TaoErrorReport
 }
 
-export type CompileOpts = { file: string }
-
-export async function compile(opts: CompileOpts): Promise<CompileResult> {
-  const parsed = await TaoParser.parseFile(opts.file)
-  Assert(parsed.taoFileAST, 'Expected TaoFileAST, but got none.')
-  const result = generateTypescript(parsed.taoFileAST)
-  return { code: LangiumGen.toString(result) }
+export type CompileOpts = {
+  file: string
+  stdLibRoot?: string
 }
 
-function generateTypescript(taoFile: AST.TaoFile): Compiled {
-  return compileNode(taoFile)`
-    import * as RN from 'react-native'
+export async function compileTao(opts: CompileOpts): Promise<CompileResult> {
+  const parsed = await TaoParser.parseFile(opts.file, { stdLibRoot: opts.stdLibRoot })
+  if (parsed.errorReport.hasError()) {
+    return { errorReport: parsed.errorReport, code: getErrorAppString(parsed.errorReport) }
+  }
+  Assert(parsed.taoFileAST, 'taoFileAST is defined', parsed)
+  const result = generateTypescript(parsed.taoFileAST, parsed.usedFilesASTs)
 
+  return { code: LangiumGen.toString(result), errorReport: parsed.errorReport }
+}
+
+function getErrorAppString(errorReport: TaoErrorReport) {
+  const messages = errorReport.getHumanErrorMessage()
+  return `
+  import * as RN from 'react-native'
+
+  const message = \`${messages}\`.replace('\`', '\\\`')
+
+  export default function CompiledTaoApp() {
+    // Center view in parent
+    return <RN.View style={{ backgroundColor: 'red', maxWidth: 400, flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <RN.Text>Error compiling file</RN.Text>
+      <RN.Text>${messages}</RN.Text>
+    </RN.View>
+  }`
+}
+
+function generateTypescript(taoFile: AST.TaoFile, usedFilesASTs: AST.TaoFile[]): Compiled {
+  const result = new LangiumGen.CompositeGeneratorNode()
+  result.append(`import * as RN from 'react-native'\n\n`)
+  for (const usedFile of usedFilesASTs) {
+    const compiled = compileNode(usedFile)`
+      // ${usedFile.$document!.uri}
+      ${compileNodeListProperty(usedFile, 'topLevelStatements', compileTopLevelStatement)}
+    `
+    result.append(compiled)
+  }
+
+  result.append(compileNode(taoFile)`
+    // ${taoFile.$document!.uri}
+    ${compileNodeListProperty(taoFile, 'topLevelStatements', compileTopLevelStatement)}
+  `)
+
+  result.append(compileNode(taoFile)`
     export default function CompiledTaoApp() {
       return (
         <RN.View style={{ flex: 1, backgroundColor: 'red' }}>
@@ -41,21 +80,25 @@ function generateTypescript(taoFile: AST.TaoFile): Compiled {
         </RN.View>
       )
     }
-    
-    ${compileNodeListProperty(taoFile, 'topLevelStatements', compileTopLevelStatement)}
-  `
+  `)
+
+  return result
+}
+function compileTopLevelStatement(statement: AST.TopLevelStatement): Compiled {
+  return switchItemType_Exhaustive(statement, {
+    'UseStatement': compileUseStatement,
+    'AppDeclaration': compileDeclaration,
+    'ViewDeclaration': compileDeclaration,
+    'Injection': compileInjection,
+    'VisibilityMarkedDeclaration': (vmd) => compileDeclaration(vmd.declaration),
+  })
 }
 
-function compileTopLevelStatement(statement: AST.Declaration | AST.Injection): Compiled {
-  switch (statement.$type) {
-    case 'AppDeclaration':
-    case 'ViewDeclaration':
-      return compileDeclaration(statement)
-    case 'Injection':
-      return compileInjection(statement)
-    default:
-      assertNever(statement)
-  }
+function compileUseStatement(useStatement: AST.UseStatement): Compiled {
+  const fromClause = useStatement.modulePath ? ` from ${useStatement.modulePath}` : ''
+  return compileNode(useStatement)`
+    // Tao: use ${useStatement.importedNames.join(', ')}${fromClause}
+  `
 }
 
 function compileDeclaration(declaration: AST.Declaration): Compiled {
@@ -71,6 +114,8 @@ function compileDeclaration(declaration: AST.Declaration): Compiled {
           return <>${compileList(declaration, renderStatements, compileViewRenderStatement)}</>
         }
       `
+    default:
+      assertNever(declaration)
   }
 }
 

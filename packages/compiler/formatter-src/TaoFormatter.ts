@@ -1,0 +1,215 @@
+import { NodePropName } from '@tao-compiler/compiler-utils'
+import { AST } from '@tao-compiler/grammar'
+import { AstNode, LangiumDocument } from 'langium'
+import { AbstractFormatter, Formatting, FormattingRegion } from 'langium/lsp'
+import { DocumentFormattingParams, TextEdit } from 'vscode-languageserver'
+import { switchBindItemType_Exhaustive } from '../compiler-src/@shared/TypeSafety'
+import * as ast from '../compiler-src/_gen-tao-parser/ast'
+import extensivelyFormatInjectionBlocks from './injectionFormatter'
+
+const FORMAT_INJECTION_BLOCKS = true
+
+// TaoFormatter formats Tao code using the Langium Node-Centric Model.
+// format() is called for each AST node, formatting only direct children and tokens.
+// Uses interior() for brace indentation and applies injection block re-indentation post-formatting.
+export default class TaoFormatter extends AbstractFormatter {
+  // formatDocument applies standard formatting then re-indents injection blocks.
+  override async formatDocument(
+    document: LangiumDocument,
+    params: DocumentFormattingParams,
+  ): Promise<TextEdit[]> {
+    const edits = await super.formatDocument(document, params)
+
+    if (FORMAT_INJECTION_BLOCKS) {
+      return extensivelyFormatInjectionBlocks(document, edits, params)
+    }
+
+    return edits
+  }
+
+  protected format(node: ast.TaoLangAstType[keyof ast.TaoLangAstType]): void {
+    return switchBindItemType_Exhaustive(node, this, {
+      'TaoFile': this.formatTaoFile,
+      'UseStatement': this.formatUseStatement,
+      'AppDeclaration': this.formatAppDeclaration,
+      'VisibilityMarkedDeclaration': this.formatVisibilityMarkedDeclaration,
+      'AppStatement': this.formatAppStatement,
+      'ViewDeclaration': this.formatViewDeclaration,
+      'ViewRenderStatement': this.formatViewRenderStatement,
+      'ViewBody': this.formatViewBody,
+      'ArgsList': this.formatArgsList,
+      'Argument': this.formatArgument,
+      'Injection': this.formatInjection,
+      'Parameter': this.formatParameter,
+      'ParameterList': this.formatParameterList,
+      'NumberLiteral': this.formatNumberLiteral,
+      'StringLiteral': this.formatStringLiteral,
+    })
+  }
+
+  private formatTaoFile(node: ast.TaoFile): void {
+    const f = this.getNodeFormatter(node)
+    const stmts = node.topLevelStatements
+    if (stmts[0]) {
+      f.node(stmts[0]).prepend(Formatting.noSpace())
+    }
+
+    for (let i = 1; i < stmts.length; i++) {
+      const consecutiveUse = ast.isUseStatement(stmts[i - 1]) && ast.isUseStatement(stmts[i])
+      f.node(stmts[i]).prepend(consecutiveUse ? Formatting.newLines(1) : Formatting.newLines(2))
+    }
+  }
+
+  private formatUseStatement(node: ast.UseStatement): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('use').append(Formatting.oneSpace())
+    this._spaceBetweenCommaSeperatedItems(node)
+    if (node.modulePath) {
+      f.property('importedNames').append(Formatting.oneSpace())
+      f.keyword('from').append(Formatting.oneSpace())
+    }
+  }
+
+  private formatAppDeclaration(node: ast.AppDeclaration): void {
+    this._spaceAroundName(node)
+    this._indentBlock(node, 'appStatements')
+  }
+
+  private formatAppStatement(node: ast.AppStatement): void {
+    const f = this.getNodeFormatter(node)
+    // Space after 'ui' keyword: "ui MyView"
+    f.keyword('ui').append(Formatting.oneSpace())
+  }
+
+  private formatViewDeclaration(node: ast.ViewDeclaration): void {
+    this._spaceAroundName(node)
+    this._spaceAfterProperty(node, 'parameterList')
+    this._indentBlock(node, 'viewStatements')
+  }
+
+  private formatVisibilityMarkedDeclaration(node: ast.VisibilityMarkedDeclaration): void {
+    this._spaceAroundName(node)
+    this._spaceAfterProperty(node, 'visibility')
+    this._spaceAfterProperty(node, 'declaration')
+  }
+
+  private formatViewRenderStatement(node: ast.ViewRenderStatement): void {
+    this._spaceBeforeProperty(node, 'args')
+    this._spaceBeforeProperty(node, 'body')
+  }
+  private formatViewBody(node: ast.ViewBody): void {
+    this._indentBlock(node, 'viewStatements')
+  }
+
+  private formatArgsList(node: ast.ArgsList): void {
+    this._spaceBetweenCommaSeperatedItems(node)
+  }
+
+  private formatArgument(node: ast.Argument): void {
+    const f = this.getNodeFormatter(node)
+    // Space between key and value: "value "hello""
+    f.property('key').append(Formatting.oneSpace())
+  }
+
+  private formatParameterList(node: ast.ParameterList): void {
+    this._spaceBetweenNodesInList(node, 'parameter')
+    this._spaceBetweenCommaSeperatedItems(node)
+  }
+
+  private formatParameter(node: ast.Parameter): void {
+    this._spaceAfterProperty(node, 'key')
+  }
+
+  private formatNumberLiteral(_node: ast.NumberLiteral): void {
+    // No formatting for number literals
+  }
+
+  private formatStringLiteral(_node: ast.StringLiteral): void {
+    // No formatting for string literals
+  }
+
+  private formatInjection(node: ast.Injection): void {
+    this._spaceAfterKeyword(node, 'inject')
+  }
+
+  // Private helpers
+  //////////////////
+
+  // Space around names, e.g "app MyApp {", "view MyView {", etc.
+  private _spaceAroundName(node: AstNode): void {
+    const f = this.getNodeFormatter(node)
+    f.property('name').surround(Formatting.oneSpace())
+  }
+
+  private _spaceAfterProperty<NodeT extends AstNode>(
+    node: NodeT,
+    property: NodePropName<NodeT>,
+  ): void {
+    const f = this.getNodeFormatter(node)
+    const prop = node[property] as AstNode | undefined
+    if (prop !== undefined && prop !== null) {
+      f.node(prop).append(Formatting.oneSpace())
+    }
+  }
+
+  private _indentBlock<NodeT extends AstNode, K extends keyof NodeT>(
+    node: NodeT,
+    property: K & (NodeT[K] extends AstNode[] ? K : never),
+  ): void {
+    const f = this.getNodeFormatter(node)
+    const open = f.keyword('{')
+    const close = f.keyword('}')
+    this._indentBetween(node, property, open, close)
+  }
+
+  // _indentBlock takes a node and a property name, where the property is an array of AstNodes,
+  // and indents the interior of the block.
+  private _indentBetween<NodeT extends AstNode, K extends keyof NodeT>(
+    node: NodeT,
+    property: K,
+    openRegion: FormattingRegion,
+    closeRegion: FormattingRegion,
+  ): void {
+    const f = this.getNodeFormatter(node)
+
+    if ((node[property] as NodeT[K] & AstNode[]).length === 0) {
+      // Empty body: "{ }"
+      openRegion.append(Formatting.oneSpace())
+    } else {
+      // Populated body: indent interior
+      f.interior(openRegion, closeRegion).prepend(Formatting.indent())
+      closeRegion.prepend(Formatting.newLine())
+    }
+  }
+
+  private _spaceBeforeProperty<NodeT extends AstNode, K extends keyof NodeT>(
+    node: NodeT,
+    property: K & (NodeT[K] extends AstNode | undefined ? K : never),
+  ): void {
+    const f = this.getNodeFormatter(node)
+    const prop = node[property] as AstNode | undefined
+    if (prop !== undefined && prop !== null) {
+      f.node(prop).prepend(Formatting.oneSpace())
+    }
+  }
+
+  private _spaceAfterKeyword(node: AstNode, keyword: AST.TaoLangKeywordNames): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword(keyword).append(Formatting.oneSpace())
+  }
+
+  private _spaceBetweenCommaSeperatedItems<NodeT extends AstNode>(node: NodeT): void {
+    const f = this.getNodeFormatter(node)
+    f.keywords(',').prepend(Formatting.noSpace()).append(Formatting.oneSpace())
+  }
+  private _spaceBetweenNodesInList<NodeT extends AstNode, K extends keyof NodeT>(
+    node: NodeT,
+    property: K & (NodeT[K] extends AstNode[] ? K : never),
+  ): void {
+    const f = this.getNodeFormatter(node)
+    const list = node[property] as AstNode[]
+    for (let i = 1; i < list.length; i++) {
+      f.node(list[i]).prepend(Formatting.oneSpace())
+    }
+  }
+}

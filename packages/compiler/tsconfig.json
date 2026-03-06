@@ -4,17 +4,14 @@
     "module": "ESNext",
     "composite": true,
     "rootDir": ".",
-    "baseUrl": ".",
-    "paths": {
-      "@tao-compiler/*": ["compiler-src/*"]
-    },
-
     "emitDeclarationOnly": true,
     "outDir": "../../.builds/ts-packages/@tao-compiler"
   },
   "include": [
     "tao-compiler.ts",
     "compiler-src/**/*",
-    "compiler-tests/**/*"
+    "compiler-tests/**/*",
+    "formatter-src/**/*",
+    "formatter-tests/**/*"
   ]
 }

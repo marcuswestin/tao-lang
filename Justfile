@@ -8,6 +8,17 @@ import "./packages/shared/just/all-imports.just"
 help:
     just _print_help
 
+# Create "enter-tao" dev environment
+create-dev-env:
+    just _create-dev-env
+
+# Update the dev environment
+update-dev-env:
+    just _update-dev-env
+
+setup:
+    just _setup_git_repo
+
 # Build and run all components
 dev:
     just _dev
@@ -19,12 +30,23 @@ tao *ARGS:
 # Run tests for whatever directory we're in
 [no-cd]
 test *PATTERNS:
-    just test-all {{ PATTERNS }}
+    just test-fast "{{ PATTERNS }}"
+
+# Run all tests
+test-fast *PATTERNS:
+    bun test --reporter=dot --test-name-pattern "{{ PATTERNS }}"
+
+# Run tests with watch and bail on failure
+test-bail *PATTERNS:
+    bun test --watch --bail --test-name-pattern "{{ PATTERNS }}"
 
 # Run all tests
 test-all *PATTERNS:
     bun test --reporter=dot {{ PATTERNS }}
     cd packages/expo-runtime && just test {{ PATTERNS }}
+
+test-formatter *PATTERNS:
+    bun test --watch --reporter=dot --test-name-pattern "{{ PATTERNS }}" packages/compiler/formatter-tests
 
 # Watch all tests
 watch-tests *PATTERNS:
@@ -35,6 +57,9 @@ watch-tests *PATTERNS:
 [no-quiet]
 build:
     just build-all
+
+gen:
+    cd packages/compiler && just gen
 
 # Alias
 build-all:
@@ -48,6 +73,10 @@ extension-build-package-and-install:
 pre-commit:
     just _pre-commit
 
+full-test:
+    echo "> Running code checks..." && just check
+    echo "> Building everything..." && just test
+
 # Format all files
 fmt:
     just _fmt
@@ -57,8 +86,12 @@ fix:
     just _fix
 
 # Check all code: lint, typecheck, etc.
-check:
+check: build
     just _check
+
+# Just lint
+lint:
+    just _lint
 
 # Run mise MCP server
 mcp-run:
@@ -68,13 +101,9 @@ mcp-run:
 mcp-halt:
     screen -X -S mise-mcp quit
 
-# Generate mise-gen-just-commands.toml from this file
-mise-tasks-gen:
-    cd packages/shared-tools && bun tools-src/gen-mise-tasks.ts
-
 # Sub-project commands
-
 # #####################
+
 compiler *ARGS:
     cd packages/compiler && just {{ ARGS }}
 
@@ -87,8 +116,22 @@ ide-extension *ARGS:
 shared *ARGS:
     cd packages/shared && just {{ ARGS }}
 
-shared-tools *ARGS:
-    cd packages/shared-tools && just {{ ARGS }}
-
-tao-cli *ARGS:
+cli *ARGS:
     cd packages/tao-cli && just {{ ARGS }}
+
+[no-cd]
+q-dev *ARGS:
+    bun {{ justfile_dir() }}/packages/shared/scripts/q-dev.ts {{ ARGS }}
+
+[no-cd]
+bun *ARGS:
+    bun {{ ARGS }}
+
+# Additional commands
+#####################
+
+install-mise-deps:
+    just _install-mise-deps
+
+update-deps:
+    just _update-deps

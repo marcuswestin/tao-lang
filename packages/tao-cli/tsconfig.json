@@ -1,8 +1,9 @@
 {
   "extends": "../tsconfig.base.json",
-  "references": [{
-    "path": "../compiler"
-  }],
+  "references": [
+    { "path": "../compiler" },
+    { "path": "../shared" }
+  ],
   "include": [
     "cli-src/**/*",
     "cli-tests/**/*",
@@ -10,10 +11,6 @@
   ],
   "compilerOptions": {
     "module": "ESNext",
-    "moduleResolution": "bundler",
-    "baseUrl": ".",
-    "paths": {
-      "@tao-compiler": ["../compiler/tao-compiler.ts"]
-    }
+    "moduleResolution": "bundler"
   }
 }

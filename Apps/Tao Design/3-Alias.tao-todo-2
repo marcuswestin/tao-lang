@@ -1,0 +1,10 @@
+use tao/ui Text
+
+app MyApp {
+    ui AppScreen
+}
+
+view AppScreen {
+    Text value Greeting
+}
+

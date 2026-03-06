@@ -1,22 +1,26 @@
+use KnifeBlock from ./counter
+use FridgeView
+use Col , Row, Text from tao/ui
 
 app KitchenSink {
-    // ui KitchenSink
-    // ui Text
     ui RootView
 }
 
 view RootView {
-    Text value "Standing on the edge of the worlds!" {}
-    MyView {}
+// MyView { }
+// MyView { }
 }
 
-view Text value string {
-    inject ```ts
-        return <RN.Text>{props.value}</RN.Text>
-    ```
-}
+// view MyView {
+//     Col {
+//         Row {
+//             Text { }
+//         }
+//     }
+// }
 
-view MyView {
-    // KitchenSink value "Hello World"
-    Text value "wooos" {}
-}
+// view Text {
+//     FridgeView { }
+//     KnifeBlock { }
+// }
+

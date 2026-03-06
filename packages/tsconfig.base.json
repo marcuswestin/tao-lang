@@ -17,11 +17,23 @@
     "noImplicitReturns": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noPropertyAccessFromIndexSignature": true
+    "noPropertyAccessFromIndexSignature": true,
+
+    "rootDir": ".",
+    "baseUrl": ".",
+    "paths": {
+      // Paths are relative to packages/ directory (where baseUrl is set)
+      "@tao-compiler": ["./compiler/tao-compiler.ts"],
+      "@tao-compiler/*": ["./compiler/compiler-src/*"],
+      "@tao-formatter/*": ["./compiler/formatter-src/*"],
+      "@shared/*": ["./shared/shared-src/*"],
+      "@tao-cli/*": ["./tao-cli/cli-src/*"]
+    }
   },
   "include": [
     "**/src/**/*",
-    "**/test/**/*"
+    "**/test/**/*",
+    "./shared/shared-src/**/*"
   ],
   "exclude": [
     "**/node_modules/**/*"

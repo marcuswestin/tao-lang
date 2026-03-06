@@ -21,10 +21,11 @@ run:
 
 # Package the extension. This calls `just _npm-package-script_vscode-prepublish` via package.json script `vscode:prepublish`.
 package:
+    just compiler gen
     bunx @vscode/vsce package --allow-missing-repository --out ../../.builds 1> /dev/null
 
 _npm-package-script_vscode-prepublish:
-    node esbuild.mjs
+    node esbuild.config.ts
 
 package-and-install:
     just package
@@ -42,7 +43,7 @@ restart-cursor:
 
 build: _install_deps
     cd ../compiler && just build
-    node esbuild.mjs
+    node esbuild.config.ts
 
 check:
     tsc -b tsconfig.json

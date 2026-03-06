@@ -1,0 +1,11 @@
+view CalendarAgendaView Calendar {
+    List with section Calendar.days {
+        on render Section -> Row [pad 10] {
+            let Day = Calendar.dayByIndex(Section)
+            view key Day.date
+            Text "Date: ${Day}"
+        }
+        on render Section Item -> Row {
+            
+        }
+}

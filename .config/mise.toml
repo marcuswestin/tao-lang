@@ -1,13 +1,12 @@
 [tools]
-just = "latest"
-node = "lts"
-bun = "latest"
-jq = "latest"
-watchexec = "latest"
+"just" = "1.44.1"
+"node" = "24.11.1"
+"bun" = "1.3.4"
+"jq" = "1.8.1"
+"watchexec" = "2.3.2"
 
-"npm:dprint" = "latest"
-"npm:oxlint" = "latest"
-"npm:typescript" = "latest"
-
-[task_config]
-includes = ["mise-gen-just-commands.toml"]
+"npm:dprint" = "0.50.2"
+"npm:oxlint" = "1.32.0"
+"npm:typescript" = "5.9.3"
+"npm:ts-autofix" = "1.0.0"
+"npm:oxlint-tsgolint" = "0.11.2"

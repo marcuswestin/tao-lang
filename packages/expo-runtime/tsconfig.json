@@ -2,11 +2,7 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
-    "paths": {
-      "@/*": [
-        "./*"
-      ]
-    }
+    "baseUrl": ".."
   },
   "include": [
     "**/*.ts",
@@ -15,6 +11,7 @@
     "expo-env.d.ts"
   ],
   "exclude": [
-    "app/_gen-runtime-tests/**/*"
+    "app/_gen-runtime-tests/**/*",
+    "app/_gen-tao-compiler/**/*"
   ]
 }

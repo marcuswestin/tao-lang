@@ -1,7 +1,8 @@
+import { Log, setLogTransport } from '@tao-compiler/@shared/Log.js'
+import * as process from 'node:process'
 import * as vscode from 'vscode'
 import type { LanguageClientOptions, ServerOptions } from 'vscode-languageclient/node.js'
 import { LanguageClient, TransportKind } from 'vscode-languageclient/node.js'
-import { Log, setLogTransport } from '../../../compiler/compiler-src/@shared/Log.js'
 
 let client: LanguageClient
 const channel = vscode.window.createOutputChannel('My Extension', { log: true })
@@ -18,6 +19,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       info: channel.info,
       warn: channel.warn,
       error: channel.trace,
+      taoError(error, ...args) {
+        channel.error(error.getLogMessage(), ...args)
+      },
       trace: channel.trace,
       success: channel.info,
       instruct: channel.info,
