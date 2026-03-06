@@ -191,9 +191,14 @@ function getModuleTaoFiles(workspace: TaoWorkspace, directory: string): string[]
     .map((name) => path.resolve(directory, name))
 }
 
-// addReachableTaoFileDocument adds a .tao file document to the parser's workspace.
+// addReachableTaoFileDocument adds a .tao file document to the parser's workspace if not already present.
 async function addReachableTaoFileDocument(workspace: TaoWorkspace, filePath: string) {
   const langiumUri = toLangiumFileURI(filePath)
+  const uriString = langiumUri.toString()
+  const alreadyPresent = Array.from(workspace.documents.all).some((d) => d.uri.toString() === uriString)
+  if (alreadyPresent) {
+    return
+  }
   const docFactory = workspace.documentFactory
   const doc = await docFactory.fromUri<AST.TaoFile>(langiumUri)
   workspace.documents.addDocument(doc)
