@@ -33,9 +33,11 @@ package-and-install:
 
 uninstall-extension:
     cursor --uninstall-extension tao.tao-lang-vscode-extension
+    code --uninstall-extension tao.tao-lang-vscode-extension
 
 install-extension:
     cursor --install-extension ../../.builds/tao-lang-vscode-extension-0.0.1.vsix --verbose --force
+    code --install-extension ../../.builds/tao-lang-vscode-extension-0.0.1.vsix --verbose --force
 
 restart-cursor:
     osascript -e 'quit app "Cursor"'
