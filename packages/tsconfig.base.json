@@ -20,9 +20,8 @@
     "noPropertyAccessFromIndexSignature": true,
 
     "rootDir": ".",
-    "baseUrl": ".",
     "paths": {
-      // Paths are relative to packages/ directory (where baseUrl is set)
+      // Paths are relative to packages/ (config file directory)
       "@tao-compiler": ["./compiler/tao-compiler.ts"],
       "@tao-compiler/*": ["./compiler/compiler-src/*"],
       "@tao-formatter/*": ["./compiler/formatter-src/*"],
