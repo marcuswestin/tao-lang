@@ -19,15 +19,16 @@ describe('Formatter', () => {
           3`))).toBe(visualize(`\n1\n 2\n  3`))
     expect(visualize(dedent(`
    2
-       
+
  1
        3
     `))).toBe(visualize(`
   2
-  
+
 1
       3
-      `))
+` // No whitespace on last line
+    ))
   })
 
   testFormatter('empty file')
@@ -35,7 +36,7 @@ describe('Formatter', () => {
     .equals(`\n`)
   testFormatter('Whitespace prefix removal')
     .format(`
-    
+
     app MyApp {}
     `)
     .equals(`
@@ -396,13 +397,13 @@ describe('formatter edge cases', () => {
         app App1 {
             ui View1
         }
-    
+
         app App2 {
             ui View2
         }
-    
+
         view View1 { }
-    
+
         view View2 { }
       `)
 

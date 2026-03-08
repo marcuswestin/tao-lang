@@ -26,7 +26,7 @@ FMT_NEWLINE_PERL := 'perl -0777 -i -pe "s/\n*\z/\n/" -- "$f"'
 
 _fmt_newlines:
     #!{{ SHELL_INIT }}
-    git ls-files -z {{ FMT_NEWLINE_FILTER}} -- {{ FMT_NEWLINE_FILES }} |
+    git ls-files -z {{ FMT_NEWLINE_FILTER }} -- {{ FMT_NEWLINE_FILES }} |
     while IFS= read -r -d '' f; do
         {{ FMT_NEWLINE_SKIP_LINKS }} || {{ FMT_NEWLINE_PERL }}
     done

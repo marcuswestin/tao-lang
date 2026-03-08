@@ -63,9 +63,9 @@ export async function formatCode(code: string) {
 }
 
 /**
- * dedent takes a string, computes the shortest prefix of non-empty lines,
- * and returns a new string with the same number of lines, where every line has that shortest prefix removed.
- * Whitespace-only lines are given the same length as the line before it (after dedenting).
+ * dedent takes a string, computes the shortest leading whitespace among non-empty lines,
+ * and returns a new string where every non-empty line has that prefix removed.
+ * Whitespace-only lines are replaced with no indentation (empty line).
  */
 export function dedent(text: string): string {
   const lines = text.split('\n')
@@ -77,17 +77,12 @@ export function dedent(text: string): string {
       .map(line => line.match(/^\s*/)?.[0].length ?? 0),
   )
 
-  let prevLength = 0
   const resultLines = lines.map(line => {
-    // Only dedent non-empty lines
     if (line.trim() !== '') {
-      const dedented = line.slice(shortestPrefix)
-      prevLength = /^\s*/.exec(dedented)?.[0].length ?? 0
-      return dedented
-    } else {
-      // For whitespace-only lines, use same length as previous line after dedenting
-      return ' '.repeat(prevLength)
+      return line.slice(shortestPrefix)
     }
+    // Whitespace-only lines get no indentation
+    return ''
   })
 
   return resultLines.join('\n')
