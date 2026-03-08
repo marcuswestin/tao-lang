@@ -11,4 +11,3 @@ view RootView {
     KnifeBlock { }
     FridgeView { }
 }
-

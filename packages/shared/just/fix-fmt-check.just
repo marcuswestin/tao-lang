@@ -19,8 +19,17 @@ _fmt_just:
         just --fmt --unstable --justfile "$f"; \
     done
 
+FMT_NEWLINE_FILTER := "--cached --others --exclude-standard"
+FMT_NEWLINE_FILES := "'*.ts' '*.just' '*.Justfile' '*.tsx' '*.js' '*.jsx' '*.json' '*.md' '*.yaml' '*.yml' '*.css' '*.html' '*.sh' '*.zsh' '*.toml' '*.txt' 'Justfile' '*.langium' '*.tao'"
+FMT_NEWLINE_SKIP_LINKS := "[[ -L $f ]]"
+FMT_NEWLINE_PERL := 'perl -0777 -i -pe "s/\n*\z/\n/" -- "$f"'
+
 _fmt_newlines:
-    git ls-files '*.ts' '*.just' '*.Justfile' '*.tsx' '*.js' '*.jsx' '*.json' '*.md' '*.yaml' '*.yml' '*.css' '*.html' '*.sh' '*.zsh' '*.toml' '*.txt' 'Justfile' '*.langium' '*.tao' | while read f; do [ -s "$f" ] && [ -n "$(tail -c1 "$f")" ] && echo >> "$f"; done; true
+    #!{{ SHELL_INIT }}
+    git ls-files -z {{ FMT_NEWLINE_FILTER}} -- {{ FMT_NEWLINE_FILES }} |
+    while IFS= read -r -d '' f; do
+        {{ FMT_NEWLINE_SKIP_LINKS }} || {{ FMT_NEWLINE_PERL }}
+    done
 
 [no-quiet]
 _fix: _fmt
@@ -31,6 +40,7 @@ _fix: _fmt
     cd packages/expo-runtime && ts-autofix fix --tsCliArgs --noUnusedLocals
     cd packages/expo-runtime && bunx expo lint --fix
     cd packages/expo-runtime && bunx eslint --fix
+    just _fmt
 
 [no-quiet]
 _check:

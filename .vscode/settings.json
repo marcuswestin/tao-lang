@@ -23,7 +23,9 @@
   "editor.formatOnType": true,
   "editor.defaultFormatter": "dprint.dprint",
   "dprint.path": ".config/MISE_DIR/installs/npm-dprint/latest/bin/dprint",
-  "dprint.experimentalLsp": true,
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true,
+  "files.trimTrailingWhitespace": true,
 
   // Code Formatting: Tao Lang's extension, for .tao files.
   "[tao]": {
