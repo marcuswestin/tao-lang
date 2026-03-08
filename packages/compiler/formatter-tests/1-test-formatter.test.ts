@@ -405,4 +405,12 @@ describe('formatter edge cases', () => {
     
         view View2 { }
       `)
+
+  testFormatter('use statement stability')
+    .format(`use Col, Row, Text from tao/ui`)
+    .equals(`use Col, Row, Text from tao/ui`)
+
+  testFormatter('use statement spacing')
+    .format(`use     Col,Row,    Text      from  tao/ui`)
+    .equals(`use Col, Row, Text from tao/ui`)
 })

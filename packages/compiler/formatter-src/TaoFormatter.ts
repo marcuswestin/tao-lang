@@ -65,8 +65,7 @@ export default class TaoFormatter extends AbstractFormatter {
     f.keyword('use').append(Formatting.oneSpace())
     this._spaceBetweenCommaSeperatedItems(node)
     if (node.modulePath) {
-      f.property('importedNames').append(Formatting.oneSpace())
-      f.keyword('from').append(Formatting.oneSpace())
+      f.keyword('from').prepend(Formatting.oneSpace()).append(Formatting.oneSpace())
     }
   }
 
