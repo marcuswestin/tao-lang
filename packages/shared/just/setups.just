@@ -13,10 +13,6 @@ _print_help:
 _install-mise-deps:
     {{ MISE_CMD }} install
 
-_update-deps:
-    {{ MISE_CMD }} self-update --yes
-    {{ MISE_CMD }} install
-
 # Setup development environment
 _create-dev-env:
     echo "\tSetup Tao Lang dev environment:"
@@ -29,15 +25,17 @@ _create-dev-env:
 
 _update-dev-env:
     just _install_mise # Update mise to latest version
-    {{ MISE_CMD }} install
     {{ MISE_CMD }} self-update --yes
     {{ MISE_CMD }} doctor
+    just _install-mise-deps
     just build-all
 
 _setup_git_repo:
     {{ MISE_CMD }} trust --quiet --yes
     {{ MISE_CMD }} install
     just build-all
+
+MISE_VERSION_DEF := "MISE_VERSION=v2026.3.5"
 
 _install_mise:
     @ echo "\tInstall mise..."

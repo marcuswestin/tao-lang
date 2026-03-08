@@ -132,6 +132,3 @@ bun *ARGS:
 
 install-mise-deps:
     just _install-mise-deps
-
-update-deps:
-    just _update-deps
