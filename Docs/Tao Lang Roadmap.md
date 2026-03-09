@@ -1,5 +1,11 @@
 # Tao Language Roadmap
 
+## Likely order
+
+- [ ] Let Statements
+- [ ] Minimal basic Type System
+- [ ] Functions
+
 ## Relationship to LLMs
 
 - [ ] Instructions for LLMs to use Tao Lang
@@ -36,7 +42,19 @@
 
 ## Foundational Blocks
 
+### Let Statements
+
+- [ ] Declare "let age = 1"
+- [ ] Reference e.g "Text "Age: {age}"
+
 ### Functions
+
+Project: ` /create-project Lets create a project for "Basic Functions":
+
+    - Declare function (takes parameters, returns value, no side effects)
+    - Invoke function (arguments)
+
+`
 
 - [ ] Parse functions, with positional arguments
 - [ ] Decide on outer vs inner parameters syntax
@@ -194,3 +212,9 @@
 - **Community Tools**: Develop community-driven tools and extensions
 - **Education Resources**: Create comprehensive learning materials and tutorials
 - **Enterprise Support**: Develop enterprise-grade features and support
+
+```
+```
+
+```
+```
