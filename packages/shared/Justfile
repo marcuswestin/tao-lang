@@ -1,6 +1,5 @@
 set unstable := true
 set fallback := true
-# set quiet := true
 
 build:
     bun install

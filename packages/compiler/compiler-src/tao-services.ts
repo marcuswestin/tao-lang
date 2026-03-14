@@ -166,6 +166,7 @@ export function createTaoWorkspace(
     // TODO: Use validator instead of separate class
     UseStatement: useStatementValidator.checkUseStatement.bind(useStatementValidator),
     AppDeclaration: validator.AppDeclaration,
+    AliasDeclaration: validator.AliasDeclaration,
   })
 
   if (!context.connection) {

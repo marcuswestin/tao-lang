@@ -1,5 +1,11 @@
 It's time to tidy up and wrap up the work done in this branch. Make all comparisons to the main branch:
 
+Start with updating main from origin.
+Them merge it into this branch.
+Resolve any merge conflicts.
+
+Then:
+
 - Review what's changed between this branch and main, and think through whether any of the changes can be improved. Note it down for later.
   - First just look at the log messages to create an overview.
   - Then look at the code changes, and think through what should be added to the change list.

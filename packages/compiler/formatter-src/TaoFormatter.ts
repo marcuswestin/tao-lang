@@ -32,16 +32,17 @@ export default class TaoFormatter extends AbstractFormatter {
       'TaoFile': this.formatTaoFile,
       'UseStatement': this.formatUseStatement,
       'AppDeclaration': this.formatAppDeclaration,
-      'VisibilityMarkedDeclaration': this.formatVisibilityMarkedDeclaration,
+      'TopLevelDeclaration': this.formatTopLevelDeclaration,
       'AppStatement': this.formatAppStatement,
       'ViewDeclaration': this.formatViewDeclaration,
       'ViewRenderStatement': this.formatViewRenderStatement,
-      'ViewBody': this.formatViewBody,
       'ArgsList': this.formatArgsList,
       'Argument': this.formatArgument,
       'Injection': this.formatInjection,
-      'Parameter': this.formatParameter,
+      'ParameterDeclaration': this.formatParameterDeclaration,
       'ParameterList': this.formatParameterList,
+      'AliasDeclaration': this.formatAliasDeclaration,
+      'NamedReference': this.formatNamedReference,
       'NumberLiteral': this.formatNumberLiteral,
       'StringLiteral': this.formatStringLiteral,
     })
@@ -86,17 +87,17 @@ export default class TaoFormatter extends AbstractFormatter {
     this._indentBlock(node, 'viewStatements')
   }
 
-  private formatVisibilityMarkedDeclaration(node: ast.VisibilityMarkedDeclaration): void {
-    this._spaceAroundName(node)
+  private formatTopLevelDeclaration(node: ast.TopLevelDeclaration): void {
     this._spaceAfterProperty(node, 'visibility')
     this._spaceAfterProperty(node, 'declaration')
   }
 
   private formatViewRenderStatement(node: ast.ViewRenderStatement): void {
     this._spaceBeforeProperty(node, 'args')
-    this._spaceBeforeProperty(node, 'body')
-  }
-  private formatViewBody(node: ast.ViewBody): void {
+    const f = this.getNodeFormatter(node)
+    // Space before optional block brace (e.g. "value x { }"). No-op when block omitted.
+    f.keyword('{').prepend(Formatting.oneSpace())
+    // Format block (empty -> "{ }", non-empty -> indented). Omitted block has no braces so _indentBlock no-ops.
     this._indentBlock(node, 'viewStatements')
   }
 
@@ -106,17 +107,17 @@ export default class TaoFormatter extends AbstractFormatter {
 
   private formatArgument(node: ast.Argument): void {
     const f = this.getNodeFormatter(node)
-    // Space between key and value: "value "hello""
-    f.property('key').append(Formatting.oneSpace())
+    // Space between name and value: "name "hello""
+    f.property('name').append(Formatting.oneSpace())
   }
 
   private formatParameterList(node: ast.ParameterList): void {
-    this._spaceBetweenNodesInList(node, 'parameter')
+    this._spaceBetweenNodesInList(node, 'parameters')
     this._spaceBetweenCommaSeperatedItems(node)
   }
 
-  private formatParameter(node: ast.Parameter): void {
-    this._spaceAfterProperty(node, 'key')
+  private formatParameterDeclaration(node: ast.ParameterDeclaration): void {
+    this._spaceAfterProperty(node, 'name')
   }
 
   private formatNumberLiteral(_node: ast.NumberLiteral): void {
@@ -125,6 +126,15 @@ export default class TaoFormatter extends AbstractFormatter {
 
   private formatStringLiteral(_node: ast.StringLiteral): void {
     // No formatting for string literals
+  }
+
+  private formatAliasDeclaration(node: ast.AliasDeclaration): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('alias').append(Formatting.oneSpace())
+    f.keyword('=').surround(Formatting.oneSpace())
+  }
+
+  private formatNamedReference(_node: ast.NamedReference): void {
   }
 
   private formatInjection(node: ast.Injection): void {

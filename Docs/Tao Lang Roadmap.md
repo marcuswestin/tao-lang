@@ -2,9 +2,12 @@
 
 ## Likely order
 
-- [ ] Let Statements
+- [x] Alias Statements
+- [ ] Composite expressions
 - [ ] Minimal basic Type System
 - [ ] Functions
+- [ ] Actions - events (ui interaction, time, network), state mutation, datasource updates, network requests
+- [ ] Control statements - if/else,
 
 ## Relationship to LLMs
 
@@ -42,10 +45,10 @@
 
 ## Foundational Blocks
 
-### Let Statements
+### Alias Statements
 
-- [ ] Declare "let age = 1"
-- [ ] Reference e.g "Text "Age: {age}"
+- [x] Declare "alias age = 1"
+- [x] Reference e.g "Text value age"
 
 ### Functions
 
@@ -168,6 +171,8 @@ Project: ` /create-project Lets create a project for "Basic Functions":
 ### Formatter
 
 - [ ] Re-order code: All consecutive use statements should be in alphabetical order
+  - [ ] Use statements alphabetically
+  - [ ] Object keys alphabetically
 
 ### Module system
 

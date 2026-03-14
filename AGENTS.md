@@ -11,24 +11,29 @@
 
 ---
 
+## Commit Workflow:
+
+```zsh
+./just-agents pre-commit-stash # Stash unstaged changes
+./just-agents pre-commit-fix # Run fixes
+./just-agents pre-commit-check # Run checks
+./just-agents git-commit '<commit message>' # Commit. Fails with unstaged changes.
+./just-agents post-commit-unstash # Unstash previous changes. Fails if unclean repo.
+```
+
+If you need to abort the commit workflow, and unstage all changes again, run:
+
+```zsh
+./just-agents abort-pre-commit # Abort pre-commit workflow. Unstages all changes.
+```
+
+---
+
 ## Misc Instructions:
 
-- **ALWAYS** `test`, `fix` and `check` before committing
+- **ALWAYS** Go through Commit workflow, unless explicitly instructed not to.
 - **NEVER** delete files without asking
 - **ALWAYS** document exported TS functions with `// <function name> <description>` (**never** use `/** ... */`)
-
-### Main Tools used:
-
-See `.config/mise.toml` for a list of the main tools we use
-
-## Custom scripts:
-
-When justfile recipes are insufficient, use our TS script runner `q-dev.ts`:
-
-- `just q-dev help`
-- `just q-dev <cmd> <args>`
-
-See `packages/shared/scripts/q-dev.ts` for implementation and adding new commands.
 
 ---
 
@@ -36,22 +41,17 @@ See `packages/shared/scripts/q-dev.ts` for implementation and adding new command
 
 ### Root Directory:
 
-Human dev instructions:
+Human instructions:
 
-- `README.md` - Human dev instructions
-- `Justfile` - Human tasks runner file
+- `README.md` - Human instructions
+- `Justfile` - Human command runner file (`just <command> <args>`)
 - `LICENSE` - Project license
 
-Agent dev instructions:
+Agent instructions:
 
 - `AGENTS.md` - Agent instructions
-- `just-agents` - Agent command runner
+- `just-agents` - Agent command runner (`./just-agents <command> <args>`)
 - `just-agents.Justfile` - Agent commands
-
-Tao Lang Project Docs:
-
-- `Tao Chronicle/`- Roadmap, TODOs, and implementation history
-- `Tao Design Docs/` - Language specifications, examples, and documentations
 
 Misc configs and artifacts:
 
@@ -60,11 +60,20 @@ Misc configs and artifacts:
 - `.cursor/` + `.vscode/` - IDE configs
 - `.*` - config files required in project root. Symlinked to `.config/*`
 
+Apps built with Tao Lang:
+
+- `Apps/Kitchen Sink` - Collection of Tao demonstrations
+- `Apps/Tao Studio` - Intended development environment for Tao Lang
+
+Tao Lang Project Docs:
+
+- `Docs/`- Dev Log, Code examples, Roadmap, & more,
+
 ### Tao Lang implementation: packages/*
 
 - `packages/compiler/` - Parser, validator, compiler and formatter (using Langium)
 - `packages/tao-cli/` - Tao CLI: `tao <...>`
-- `packages/std-lib/` - Standard library: e.g `use tao/ui Col, Row, Text`
+- `packages/tao-std-lib/` - Standard library: e.g `use tao/ui Col, Row, Text`
 - `packages/ide-extension/` - Tao Lang VSCode/Cursor Extension
 - `packages/expo-runtime/` - Tao App runtime: Expo react native harness for compiled Tao apps
 - `packages/shared/` - Code shared across all packages. TypeScript modules, internal scripts, etc

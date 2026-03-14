@@ -1,0 +1,25 @@
+---
+description: Creating new Dev Log projects with the standard folder and spec structure
+globs: Docs/Dev Log/**
+alwaysApply: false
+---
+
+# Dev Log Projects
+
+When starting a new project in the Dev Log:
+
+1. Create a folder: `Docs/Dev Log/<start date> - <project name>/`
+   - Date format: `YYYY-MM-DD` (e.g. `2026-03-08`)
+   - Project name: short, descriptive title
+
+2. Copy the spec template into the folder:
+   - Source: `Docs/Dev Log/Project Spec Template.md`
+   - Destination: `Docs/Dev Log/<start date> - <project name>/<project name> Spec.md`
+
+3. Fill out the spec collaboratively with the user:
+   - Title line: `# <start date> <project name>`
+   - Description: 1-2 sentence goal
+   - Scope: what needs this project addresses
+   - Steps: concrete checklist of work items with sub-steps
+
+4. Additional project files (notes, logs, artifacts) go in the same folder.

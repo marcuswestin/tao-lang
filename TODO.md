@@ -21,6 +21,26 @@ Next tasks, in order:
 - [x] Add standard library support -- `use tao/ui Col, Row, Text`
 - [x] Implement `class TaoWorkspace` instead of the ad-hoc services object
 - [x] Format the symbols in imports, e.g `Row ,   Col` → `Row, Col`
+- [x] Generalize Grammar
+  - [x] Determine if there are any additional grammar cleanups related to these, or others that we should do:
+  - [x] Statements = ViewBlock | FunctionBlock | HandlerBlock | TopLevelStatement | ..
+  - [x] Add instruction: All referencable grammar entities need to use key "name", not "key" or something else.
+  - [x] Naming: AliasStatement -> AliasDeclaration; NameBinding -> Declaration; Declaration = AliasDeclaration | StateDeclaration | ParameterDeclaration | ...;
+    - [x] Cleanup various ___Declaration references in ts code.
+  - [x] Inline ViewBody in ViewRenderStatement
+- [ ] Start using https://github.com/callstack/react-native-testing-library!
+- [ ] Simplify TaoWorkspace to receive the shared workspace instead of the shared services.
+- [ ] Change a bunch of function-oriented files to classes
+- [ ] Switch from // comments to /** ... */ comments for documentation
+- [ ] Don't duplicate all the shared packages from symlinks in vscode - ignore them.
+- [ ] Replace with compiler-ast-switch-exhaustive.mdc rule for AST dispatching.
+- [ ] Rename switchItemType_Exhaustive to switchNode_Exhaustive
+- [ ] Enable "suspicious" lint category
+- [ ] Enable "nursery" lint category
+- [ ] Make all justfile recipies snake_case
+- [ ] Consider adding warn for lint categories: "pedantic", "restriction", "style"
+- [ ] Make lint type-aware
+- [ ] Move typescript compiler generator into its own file (maybe class)
 - [ ] Get kitchen sink build working and rendering
 - [ ] Implement tracing properly
 - [ ] Figure out how to test the ide extension in test-ide-extension.test.ts
@@ -35,7 +55,7 @@ Next tasks, in order:
 
 #### Language
 
-- [ ] Let
+- [x] Alias
 - [ ] State
 
 #### Improve Dev Environment

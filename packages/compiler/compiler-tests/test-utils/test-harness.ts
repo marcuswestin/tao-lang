@@ -38,7 +38,9 @@ export async function lexTokensWithErrors(code: string, ...unexpectedCharacters:
     })
     Assert(
       atOffset || inMessage,
-      `lexTokensWithErrors expected an error involving "${ch}", but none of the ${lexErrors.length} error(s) matched.`,
+      `lexTokensWithErrors expected an error involving "${ch}", but none of the ${lexErrors.length} error(s) matched: ${
+        lexErrors.map(e => e.message).join(', ')
+      }`,
     )
   }
   return lexErrors

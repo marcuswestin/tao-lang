@@ -1,6 +1,5 @@
 set unstable := true
 set fallback := true
-# set quiet := true
 
 run:
     bun run tao-cli.ts help

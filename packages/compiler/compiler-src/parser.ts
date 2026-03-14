@@ -158,7 +158,7 @@ async function addSameDirectoryTaoFiles(
 async function addReachableTaoFiles(
   document: Langium.LangiumDocument<AST.TaoFile>,
   workspace: TaoWorkspace,
-) {
+): Promise<void> {
   const seenFilePaths = new Set<string>(document.uri.path)
 
   for (const ast of document.parseResult.value.topLevelStatements) {
@@ -192,7 +192,7 @@ function getModuleTaoFiles(workspace: TaoWorkspace, directory: string): string[]
 }
 
 // addReachableTaoFileDocument adds a .tao file document to the parser's workspace if not already present.
-async function addReachableTaoFileDocument(workspace: TaoWorkspace, filePath: string) {
+async function addReachableTaoFileDocument(workspace: TaoWorkspace, filePath: string): Promise<void> {
   const langiumUri = toLangiumFileURI(filePath)
   const doc = await workspace.createDocumentFromUri(langiumUri)
   workspace.addDocument(doc)

@@ -8,4 +8,10 @@ Write a summary. Infer the rationale for significant changes when possible, and 
 
 For each area/significant change, write a _short_ subsection that explains the change. Don't repeat what's in the commit history; instead add or compress information. Reference specific commit hashes as relevant.
 
-Finally, ask me to review, before attempting to merge into main with the above summary as the commit message. If there are any merge conflicts, notify me before completing the merge.
+Finally, ask me to review, before:
+
+1: Merge main into this branch
+2: Resolve any merge conflicts collaboratively with me
+3: Run pre-commit
+4: Commit any changes
+5: Squash merge this branch into main branch, with the summary as the commit message

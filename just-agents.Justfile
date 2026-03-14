@@ -3,7 +3,6 @@
 # - `shell` -> recipe step command: zsh, exit on error, error on unset variable, fail on pipefail
 # - `dotenv-load` -> Load environment variables from .env
 
-set quiet := true
 set shell := ["zsh", "-e", "-u", "-o", "pipefail", "-c"]
 set dotenv-load := true
 
@@ -23,10 +22,6 @@ list-commands:
 # Exec git: Execute whitelisted git command, e.g `./just-agents git add ./Docs`. Whitelist: `log`, `status`, `diff`, `add`, `commit`. For commits with a message use `git-commit "message"`.
 git SUB_CMD *ARGS:
     just {{ AGENT_JUSTFILE }} _execute_whitelisted_subcommand "|log|status|diff|add|commit|" git {{ SUB_CMD }} {{ ARGS }}
-
-# Git commit: Commit staged changes with message, e.g. `./just-agents git-commit "fix(compiler): do the thing"`
-git-commit MESSAGE:
-    git commit -m {{ '"' + MESSAGE + '"' }}
 
 # Exec shell: Execute whitelisted shell command, e.g `./just-agent shell ls`. Whitelist: `cd`, `ls`, `pwd`, `echo`, `cat`
 shell EXEC_CMD *ARGS:
@@ -48,15 +43,41 @@ test *TEST_PATTERNS:
 lint:
     just {{ MAIN_JUSTFILE }} lint
 
-# Checks: Run all checks: Lint, typecheck, check formatting, etc. Always run this before commits
-check:
-    just {{ MAIN_JUSTFILE }} check
+# Generate parser from grammar
+gen:
+    just {{ MAIN_JUSTFILE }} gen
 
-build: clean-ts-packages
+# Builds: Build all packages
+build:
     just {{ MAIN_JUSTFILE }} build
 
-clean-ts-packages:
-    rm -rf .builds/ts-packages
+# Commits
+#========
+
+# Stage all unstaged changes. First make sure that all intended changes are staged.
+pre-commit-stash:
+    just {{ MAIN_JUSTFILE }} _pre-commit-stash
+
+# Run pre-commit fixes: format, autofixes, etc.
+pre-commit-fix:
+    just {{ MAIN_JUSTFILE }} _pre-commit-fix
+
+# Run full battery of checks and builds before making a commit.
+pre-commit-check:
+    just {{ MAIN_JUSTFILE }} _pre-commit-check
+
+# Git commit: Commit staged changes with message, e.g. `./just-agents git-commit "fix(compiler): do the thing"`
+git-commit MESSAGE:
+    just _ensure-repo-clean
+    git commit -m {{ '"' + MESSAGE + '"' }}
+
+# Unstash all changes, even if there are uncommitted changes.
+abort-pre-commit:
+    just {{ MAIN_JUSTFILE }} _pre-commit-abort
+
+# Unstash changes after commit. Only works if repo is completely clean.
+post-commit-unstash:
+    just {{ MAIN_JUSTFILE }} post-commit-unstash
 
 # Private helpers
 #================

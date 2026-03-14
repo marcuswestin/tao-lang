@@ -1,134 +1,111 @@
 import "./packages/shared/just/all-imports.just"
 
-# set quiet := true
-# Dev commands
-##############
+# Dev Environment Setup
+#######################
 
 # Print available commands
-help:
-    just _print_help
+help: _print_help
 
 # Create "enter-tao" dev environment
-create-dev-env:
-    just _create-dev-env
+create-dev-env: _create-dev-env
 
 # Update the dev environment
-update-dev-env:
-    just _update-dev-env
+update-dev-env: _update-dev-env
 
-setup:
-    just _setup_git_repo
+# Setup repo for development
+setup: _setup_git_repo
 
-# Build and run all components
-dev:
-    just _dev
+# Development
+#############
 
-# Build and run Tao CLI with given arguments
-tao *ARGS:
-    just _tao {{ ARGS }}
+# Run all components in watch mode
+dev: _dev
+
+# Run full battery of checks and builds. Meant to be run before committing.
+pre-commit: _pre-commit-check
+
+# Testing
+#########
 
 # Run tests for whatever directory we're in
 [no-cd]
-test *PATTERNS:
-    just test-fast "{{ PATTERNS }}"
-
-# Run all tests
-test-fast *PATTERNS:
+test *PATTERNS: gen
     bun test --reporter=dot --test-name-pattern "{{ PATTERNS }}"
 
-# Run tests with watch and bail on failure
-test-bail *PATTERNS:
+# Watch tests, but bail on first failure
+bail-watch-tests *PATTERNS:
     bun test --watch --bail --test-name-pattern "{{ PATTERNS }}"
 
-# Run all tests
+# Run all tests, including slow ones
 test-all *PATTERNS:
     bun test --reporter=dot {{ PATTERNS }}
     cd packages/expo-runtime && just test {{ PATTERNS }}
-
-test-formatter *PATTERNS:
-    bun test --watch --reporter=dot --test-name-pattern "{{ PATTERNS }}" packages/compiler/formatter-tests
 
 # Watch all tests
 watch-tests *PATTERNS:
     # If run in any package without watch-tests already defined, watch all tests
     just _watch-all-tests {{ PATTERNS }}
 
+# Formatting, Linting, etc.
+###########################
+
+# Format all files
+fmt: _fmt
+
+# Run all autofixers: fmt, lint, typecheck, etc.
+fix: _fix
+
+# Check all code: lint, typecheck, etc.
+check: _check
+
+# Lint all code
+lint: _lint
+
+# List all lint rules
+lint-rules: _line_rules
+
+# Build commands
+################
+
 # Build everything
 [no-quiet]
 build:
-    just build-all
+    just _build-all
 
+# Generate parser from grammar
 gen:
     cd packages/compiler && just gen
 
-# Alias
-build-all:
-    just _build-all
-
-# Build and install the extension to cursor
+# Build and install the extension to cursor and vscode
 extension-build-package-and-install:
     cd packages/ide-extension && just build && just package-and-install
 
-# Run full battery of checks and builds. Meant to be run before committing.
-pre-commit:
-    just _pre-commit
+clean:
+    rm -rf .builds
 
-full-test:
-    echo "> Running code checks..." && just check
-    echo "> Building everything..." && just test
-
-# Format all files
-fmt:
-    just _fmt
-
-# Run all autofixers: lint, typecheck, etc.
-fix:
-    just _fix
-
-# Check all code: lint, typecheck, etc.
-check: build
-    just _check
-
-# Just lint
-lint:
-    just _lint
-
-# Run mise MCP server
-mcp-run:
-    screen -dmS mise-mcp mise mcp
-
-# Halt mise MCP server
-mcp-halt:
-    screen -X -S mise-mcp quit
-
-# Sub-project commands
-# #####################
+# Package command runners
+# #######################
 
 compiler *ARGS:
-    cd packages/compiler && just {{ ARGS }}
+    cd {{ justfile_dir() }}/packages/compiler && just {{ ARGS }}
 
 expo-runtime *ARGS:
-    cd packages/expo-runtime && just {{ ARGS }}
+    cd {{ justfile_dir() }}/packages/expo-runtime && just {{ ARGS }}
 
 ide-extension *ARGS:
-    cd packages/ide-extension && just {{ ARGS }}
+    cd {{ justfile_dir() }}/packages/ide-extension && just {{ ARGS }}
 
 shared *ARGS:
-    cd packages/shared && just {{ ARGS }}
+    cd {{ justfile_dir() }}/packages/shared && just {{ ARGS }}
 
 cli *ARGS:
-    cd packages/tao-cli && just {{ ARGS }}
+    cd {{ justfile_dir() }}/packages/tao-cli && just {{ ARGS }}
+
+# Build and run Tao CLI with given arguments
+[no-cd]
+tao *ARGS:
+    just _tao {{ ARGS }}
 
 [no-cd]
 q-dev *ARGS:
     bun {{ justfile_dir() }}/packages/shared/scripts/q-dev.ts {{ ARGS }}
-
-[no-cd]
-bun *ARGS:
-    bun {{ ARGS }}
-
-# Additional commands
-#####################
-
-install-mise-deps:
-    just _install-mise-deps

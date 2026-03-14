@@ -157,7 +157,7 @@ export class UseStatementValidator {
         continue
       }
       const node = desc.node
-      if (!node || !ast.isDeclaration(node)) {
+      if (!node || !ast.isImportableDeclaration(node)) {
         continue
       }
       results.push(desc)
@@ -175,7 +175,7 @@ export class UseStatementValidator {
       }
       const taoFile = doc.parseResult.value as ast.TaoFile
       for (const stmt of taoFile.topLevelStatements) {
-        if (ast.isVisibilityMarkedDeclaration(stmt) && stmt.visibility === 'file') {
+        if (ast.isTopLevelDeclaration(stmt) && stmt.visibility === 'file') {
           if (stmt.declaration.name === name) {
             return true
           }
@@ -196,12 +196,12 @@ export class UseStatementValidator {
       }
 
       const node = desc.node
-      if (!node || !ast.isDeclaration(node)) {
+      if (!node || !ast.isImportableDeclaration(node)) {
         continue
       }
 
       const container = node.$container
-      if (ast.isVisibilityMarkedDeclaration(container) && container.visibility === 'share') {
+      if (ast.isTopLevelDeclaration(container) && container.visibility === 'share') {
         results.push(desc)
       }
     }
@@ -223,12 +223,12 @@ export class UseStatementValidator {
       }
 
       const node = desc.node
-      if (!node || !ast.isDeclaration(node)) {
+      if (!node || !ast.isImportableDeclaration(node)) {
         continue
       }
 
       const container = node.$container
-      if (!ast.isVisibilityMarkedDeclaration(container) || container.visibility !== 'share') {
+      if (!ast.isTopLevelDeclaration(container) || container.visibility !== 'share') {
         return true
       }
     }

@@ -8,11 +8,11 @@ import {
 
 // TaoScopeProvider filters symbols for reference resolution based on module visibility rules.
 export class TaoScopeProvider extends langium.DefaultScopeProvider {
-  private readonly stdLibRoot?: string
-
-  constructor(services: langium.LangiumCoreServices, stdLibRoot?: string) {
+  constructor(
+    services: langium.LangiumCoreServices,
+    private readonly stdLibRoot: string | undefined,
+  ) {
     super(services)
-    this.stdLibRoot = stdLibRoot
   }
 
   // getScope returns the scope of available symbols for a reference context.
@@ -25,6 +25,11 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
       return this.getModuleScopedDeclarations(context)
     }
 
+    if (context.property === 'referenceName' && ast.isNamedReference(context.container)) {
+      const document = langium.AstUtils.getDocument(context.container)
+      return this.createScope(this.getLocalScope(context, document))
+    }
+
     return super.getScope(context)
   }
 
@@ -33,15 +38,15 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
     const document = langium.AstUtils.getDocument(context.container)
     const taoFileNode = document.parseResult.value as ast.TaoFile
 
-    const importedSymbols = this.getImportedSymbols(taoFileNode, document, context)
+    const useImportedSymbols = this.getUseImportedSymbols(taoFileNode, document, context)
     const localScope = this.getLocalScope(context, document)
 
-    const importedScope = this.createScope(importedSymbols)
+    const importedScope = this.createScope(useImportedSymbols)
     return this.createScope(localScope, importedScope)
   }
 
-  // getImportedSymbols collects symbols from `use` statements.
-  private getImportedSymbols(
+  // getUseImportedSymbols collects symbols from `use` statements.
+  private getUseImportedSymbols(
     taoFile: ast.TaoFile,
     document: langium.LangiumDocument,
     context: langium.ReferenceInfo,
@@ -50,23 +55,21 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
     const imported: langium.AstNodeDescription[] = []
 
     const useStatements = taoFile.topLevelStatements.filter((stmt) => ast.isUseStatement(stmt))
+
     for (const useStmt of useStatements) {
-      const imports = this.getImportedSymbolsForUseStatement(useStmt, referenceType, document)
-      imported.push(...imports)
+      const imports = this.getSymbolsForUseStatement(useStmt, referenceType, document)
+      imported.push(...imports.toArray())
     }
 
     return imported
   }
 
-  // getImportedSymbolsForUseStatement resolves symbols for a `use` statement.
-  // Same-module imports (`use Foo` or `use Foo from ./`) accept default + share visibility.
-  // Cross-module imports require `share` visibility.
-  private getImportedSymbolsForUseStatement(
+  // getSymbolsForUseStatement resolves symbols for a `use` statement.
+  private getSymbolsForUseStatement(
     useStmt: ast.UseStatement,
     referenceType: string,
     document: langium.LangiumDocument,
-  ): langium.AstNodeDescription[] {
-    const imported: langium.AstNodeDescription[] = []
+  ): langium.Stream<langium.AstNodeDescription> {
     const sameModule = isSameModuleImport(useStmt, document.uri.path)
     const indexUrisAndPaths = Array.from(this.indexManager.allElements(), (desc) => ({
       uri: desc.documentUri.toString(),
@@ -81,37 +84,40 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
         indexUrisAndPaths,
       )
 
-    for (const targetUri of targetUris) {
-      const allRelevantExports = this.indexManager
-        .allElements(referenceType, new Set([targetUri]))
+    return this.getAccessibleImportedSymbols(targetUris, referenceType, useStmt, sameModule)
+  }
 
-      for (const description of allRelevantExports) {
-        if (!useStmt.importedNames.includes(description.name)) {
-          continue
-        }
+  private getAccessibleImportedSymbols(
+    targetUris: string[],
+    referenceType: string,
+    useStmt: ast.UseStatement,
+    sameModule: boolean,
+  ): langium.Stream<langium.AstNodeDescription> {
+    return this.indexManager.allElements(referenceType, new Set(targetUris))
+      .filter((description) => this.isImportAccessible(description, useStmt, sameModule))
+  }
 
-        const node = description.node
-        if (!node) {
-          continue
-        }
-
-        if (sameModule) {
-          // Same-module: all exported declarations are accessible (file-private already excluded by ScopeComputation)
-          imported.push(description)
-        } else {
-          // Cross-module: only `share`-marked declarations
-          if (!ast.isDeclaration(node) || !ast.isVisibilityMarkedDeclaration(node.$container)) {
-            continue
-          }
-          if (node.$container.visibility !== 'share') {
-            continue
-          }
-          imported.push(description)
-        }
-      }
+  // isImportAccessible checks whether an exported symbol matches an imported name and has appropriate visibility.
+  private isImportAccessible(
+    description: langium.AstNodeDescription,
+    useStmt: ast.UseStatement,
+    sameModule: boolean,
+  ): boolean {
+    if (!useStmt.importedNames.includes(description.name)) {
+      return false
     }
-
-    return imported
+    const node = description.node
+    if (!node) {
+      return false
+    }
+    if (sameModule) {
+      return true
+    }
+    // Cross-module: only `share`-marked declarations
+    if (ast.isImportableDeclaration(node) && ast.isTopLevelDeclaration(node.$container)) {
+      return node.$container.visibility === 'share'
+    }
+    return false
   }
 
   // getLocalScope retrieves local symbols from the document's symbol table.

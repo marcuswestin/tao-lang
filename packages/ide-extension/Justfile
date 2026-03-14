@@ -1,6 +1,5 @@
 set unstable := true
 set fallback := true
-# set quiet := true
 
 dev:
     cursor --extensionDevelopmentPath .
@@ -11,7 +10,7 @@ run:
     just package
     echo "\tInstall extension..."
     just uninstall-extension > /dev/null 2>&1 || true
-    just install-extension > /dev/null 
+    just install-extension > /dev/null
     echo "\tCheck extension installation..."
     set -e && cursor --list-extensions | grep "tao.tao-lang-vscode-extension" || { echo "Installation failed -- extension not found" >&2; exit 1; }
     echo "\n\t* Extension installed - restart IDE *\n"
@@ -44,7 +43,7 @@ restart-cursor:
     sleep 0.25 && open -a Cursor && sleep 0.5 && open -a Cursor && sleep 0.5 && open -a Cursor
 
 build: _install_deps
-    cd ../compiler && just build
+    just compiler build
     node esbuild.config.ts
 
 check:

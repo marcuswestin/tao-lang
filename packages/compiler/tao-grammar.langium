@@ -3,73 +3,26 @@ grammar TaoLang
 entry TaoFile:
     topLevelStatements += TopLevelStatement*;
 
-// Imports
-//////////
 
-UseStatement:
-    'use' importedNames+=ID (',' importedNames+=ID)* ('from' modulePath=MODULE_PATH)?;
+// Top/File Level Statements
+////////////////////////////
 
-terminal MODULE_PATH: /[a-zA-Z.][a-zA-Z0-9._\-]*\/[a-zA-Z0-9._\-\/]*/;
 
 TopLevelStatement:
-    UseStatement | BaseStatement | VisibilityMarkedDeclaration;
+    UseStatement | TopLevelDeclaration | Injection;
+
+TopLevelDeclaration:
+    visibility=DeclarationVisibility? declaration=(AppDeclaration | Declaration);
 
 DeclarationVisibility returns string:
-    'file' | 'share'; // Defaults to module-visible
+    'file' | 'share'; // Optional; when absent, declaration is module-visible
 
-VisibilityMarkedDeclaration:
-    visibility=DeclarationVisibility declaration=Declaration;
-
-// Statements
-/////////////
-
-BaseStatement:
-    ( Declaration
-    | Injection
-    );
-
-Declaration:
-    ( AppDeclaration
-    | ViewDeclaration
-    );
-
-// Declarations
-///////////////
+terminal USE_MODULE_PATH: /[a-zA-Z.][a-zA-Z0-9._\-]*\/[a-zA-Z0-9._\-\/]*/;
+UseStatement:
+    'use' importedNames+=ID (',' importedNames+=ID)* ('from' modulePath=USE_MODULE_PATH)?;
 
 AppDeclaration:
     type='app' name=ID '{' appStatements += AppStatement* '}';
-
-ViewDeclaration:
-    type='view' name=ID parameterList=ParameterList? '{'
-        viewStatements += ViewStatement*
-    '}';
-
-
-fragment ValueType:
-    type='string' | type='number';
-
-terminal TS_CODE_BLOCK: '```ts' -> '```';
-Injection:
-    'inject' tsCodeBlock=TS_CODE_BLOCK;
-
-// Shared Grammer
-/////////////////
-
-ParameterList:
-    parameters += Parameter (',' parameter += Parameter)*;
-
-Parameter:
-    key=ID? ValueType;
-
-ArgsList:
-    args += Argument (',' args += Argument)*;
-
-Argument:
-    key=ID value=Expression;
-
-
-// App declaration
-//////////////////
 
 AppStatement:
     ( type='ui' ui=[Declaration:ID]
@@ -77,30 +30,85 @@ AppStatement:
     );
 
 
-// View declaration
-///////////////////
+// Statements
+/////////////
 
-ViewStatement:
-    ViewRenderStatement | Injection;
+BaseStatement:
+    Declaration | Injection;
 
-ViewRenderStatement:
-    view=[ViewDeclaration:ID] args=ArgsList? body=ViewBody?;
+Declaration:
+    ViewDeclaration | AliasDeclaration;
 
-ViewBody:
-    '{'
+
+terminal TS_CODE_BLOCK: '```ts' -> '```';
+Injection:
+    'inject' tsCodeBlock=TS_CODE_BLOCK;
+
+// Scopes and Blocks
+////////////////////
+
+type ScopeRelevantNode = TopLevelStatement | Declaration | AppDeclaration | ParameterDeclaration;
+
+type ImportableDeclaration = AppDeclaration | ViewDeclaration;
+
+
+// Parameters
+/////////////
+
+ParameterList:
+    parameters += ParameterDeclaration (',' parameters += ParameterDeclaration)*;
+
+ParameterDeclaration:
+    name=ID ParameterType;
+
+fragment ParameterType:
+    type='string' | type='number';
+
+ArgsList:
+    args += Argument (',' args += Argument)*;
+
+Argument:
+    name=ID value=Expression;
+
+
+// Views
+////////
+
+ViewDeclaration:
+    type='view' name=ID parameterList=ParameterList? '{'
         viewStatements += ViewStatement*
     '}';
 
-// Values and Expressions
+ViewStatement:
+    BaseStatement | ViewRenderStatement;
+
+AliasDeclaration:
+    'alias' name=ID '=' value=Expression;
+
+ViewRenderStatement:
+    view=[ViewDeclaration:ID] args=ArgsList? ('{' viewStatements += ViewStatement* '}')?;
+
+
+// Value Expressions
+////////////////////
 
 Expression:
-    StringLiteral | NumberLiteral;
+    StringLiteral | NumberLiteral | NamedReference;
 
 StringLiteral:
     string=STRING;
 
 NumberLiteral:
     number=NUMBER;
+
+NamedReference:
+    referenceName=[Referenceable:ID];
+
+type Referenceable = AliasDeclaration | ParameterDeclaration | ViewDeclaration | AppDeclaration;
+
+
+// Terminals. Order matters!
+////////////////////////////
 
 hidden terminal WS: /\s+/;
 terminal ID: /[_a-zA-Z][\w_]*/;

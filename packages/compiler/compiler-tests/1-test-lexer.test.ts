@@ -61,7 +61,7 @@ describe('Lexer', () => {
     })
 
     test('unclosed ts code block', async () => {
-      await lexTokensWithErrors('```ts\nconst x = 1', '`', '=')
+      await lexTokensWithErrors('```ts\nconst x = 1', '`', '`')
     })
   })
 })

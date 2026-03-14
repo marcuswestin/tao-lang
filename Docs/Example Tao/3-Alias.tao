@@ -1,0 +1,14 @@
+use Text from tao/ui
+
+app MyApp {
+    ui AppScreen
+}
+
+alias Greeting = "Hello"
+alias Name = "World"
+
+
+view AppScreen {
+    Text value Greeting
+    Text value Name
+}

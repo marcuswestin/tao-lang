@@ -38,6 +38,7 @@ Docs/Dev Log/<YYYY-MM-DD> - <Project Name>/<Project Name> Spec.md
 ### Step 3: Fill Out the Spec
 
 Fill out the spec to the best of your ability based on:
+
 - Context from the user's request
 - Knowledge of the codebase (explore as needed)
 - The project's `AGENTS.md`, design docs, and roadmap if relevant

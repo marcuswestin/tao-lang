@@ -1,7 +1,7 @@
 import * as langium from 'langium'
 import { throwUnexpectedBehaviorError } from './@shared/TaoErrors'
+import { switchItemType_Exhaustive, switchProperty_Exhaustive } from './@shared/TypeSafety'
 import * as ast from './_gen-tao-parser/ast'
-import { assertNever } from './compiler-utils'
 
 // TaoScopeComputation collects exported and local symbols for scoping.
 // It exports `share`-marked declarations for cross-file `use` imports,
@@ -32,17 +32,9 @@ export class TaoScopeComputation extends langium.DefaultScopeComputation {
     statement: ast.TopLevelStatement,
     document: langium.LangiumDocument,
   ): langium.AstNodeDescription | null {
-    if (ast.isVisibilityMarkedDeclaration(statement)) {
-      if (this.isExportableVisibilityDeclaration(statement)) {
-        const declaration = statement.declaration
-        return this.descriptions.createDescription(declaration, declaration.name, document)
-      }
-    } else if (ast.isTopLevelStatement(statement) && ast.isDeclaration(statement)) {
-      // Export declarations without visibility qualifiers for same-module references
-      const name = statement.name
-      if (name) {
-        return this.descriptions.createDescription(statement, name, document)
-      }
+    if (this.isExportableVisibilityDeclaration(statement)) {
+      const declaration = statement.declaration
+      return this.descriptions.createDescription(declaration, declaration.name, document)
     }
     return null
   }
@@ -57,12 +49,23 @@ export class TaoScopeComputation extends langium.DefaultScopeComputation {
     const localSymbols = new langium.MultiMap<langium.AstNode, langium.AstNodeDescription>()
 
     for await (const node of this.iterateAllNodesIn(rootNode, cancelToken)) {
-      // TODO: Collect other localSymbols, like function parameters, etc.
-      if (ast.isDeclaration(node)) {
-        this.collectSymbolForScope(node, document, localSymbols)
-      } else if (ast.isVisibilityMarkedDeclaration(node)) {
-        this.collectSymbolForScope(node.declaration, document, localSymbols, node.$container)
+      if (!ast.isScopeRelevantNode(node)) {
+        continue
       }
+      switchItemType_Exhaustive(node, {
+        UseStatement: (n) => this.collectSymbolForScope(n, document, localSymbols),
+        TopLevelDeclaration: (n) => this.collectSymbolForScope(n.declaration, document, localSymbols, n.$container),
+        Injection: () => void 0,
+        ViewDeclaration: (n) => this.collectSymbolForScope(n, document, localSymbols),
+        AliasDeclaration: (n) => this.collectSymbolForScope(n, document, localSymbols),
+        AppDeclaration: (n) => this.collectSymbolForScope(n, document, localSymbols),
+        ParameterDeclaration: (n) => {
+          const viewDecl = n.$container?.$container
+          if (viewDecl && ast.isViewDeclaration(viewDecl)) {
+            this.collectSymbolForScope(n, document, localSymbols, viewDecl)
+          }
+        },
+      })
     }
 
     return localSymbols
@@ -71,31 +74,25 @@ export class TaoScopeComputation extends langium.DefaultScopeComputation {
   // Internal helpers
   // ----------------
 
-  // isExportableVisibilityDeclaration checks if a visibility-marked declaration should be exported.
+  // isExportableVisibilityDeclaration checks if a top-level declaration should be exported.
   // Returns true for `share` and default (module-visible) declarations, false for `file` (private).
   private isExportableVisibilityDeclaration(
     statement: ast.TopLevelStatement,
-  ): statement is ast.VisibilityMarkedDeclaration {
-    if (!ast.isVisibilityMarkedDeclaration(statement)) {
-      return false
-    }
-    if (!statement.declaration.name) {
-      // Guard: statement.name may be undefined for malformed/partial parses
+  ): statement is ast.TopLevelDeclaration {
+    if (
+      // Only TopLevelDeclarations can be exported
+      !ast.isTopLevelDeclaration(statement)
+      // Guard: statement.declaration.name may be undefined for malformed/partial parses
+      || !statement.declaration.name
+    ) {
       return false
     }
 
-    switch (statement.visibility) {
-      case undefined:
-        // Default to module-visible -- these will be filtered to same-module references only by TaoScopeProvider
-        return true
-      case 'share':
-        return true
-      case 'file':
-        // Don't export file-private declarations
-        return false
-      default:
-        assertNever(statement.visibility)
-    }
+    return switchProperty_Exhaustive(statement, 'visibility', {
+      share: (): boolean => true,
+      file: (): boolean => false,
+      undefined: (): boolean => true,
+    })
   }
 
   // getTaoFile extracts the TaoFile AST from a document, throwing if not present.
@@ -116,7 +113,7 @@ export class TaoScopeComputation extends langium.DefaultScopeComputation {
     document: langium.LangiumDocument,
     localSymbols: langium.MultiMap<langium.AstNode, langium.AstNodeDescription>,
     scopeNode?: langium.AstNode,
-  ): void {
+  ) {
     scopeNode ??= node.$container
     if (!scopeNode) {
       return

@@ -82,13 +82,13 @@ export class TaoErrorReport extends Error {
   }
 
   get lexerErrors(): Chev_LexingError[] {
-    return this.documentErrors.map(e => e.lexerErrors).flat()
+    return this.documentErrors.flatMap(e => e.lexerErrors)
   }
   get parserErrors(): Chev_ParserError[] {
-    return this.documentErrors.map(e => e.parserErrors).flat()
+    return this.documentErrors.flatMap(e => e.parserErrors)
   }
   get diagnostics(): VSCode_Diagnostic[] {
-    return this.documentErrors.map(e => e.diagnostics).flat()
+    return this.documentErrors.flatMap(e => e.diagnostics)
   }
 
   errorCount() {

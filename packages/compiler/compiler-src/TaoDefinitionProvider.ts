@@ -13,13 +13,11 @@ import {
 export class TaoDefinitionProvider extends DefaultDefinitionProvider {
   private readonly indexManager: langium.IndexManager
   private readonly documents: langium.LangiumDocuments
-  private readonly stdLibRoot?: string
 
-  constructor(services: LangiumServices, stdLibRoot?: string) {
+  constructor(services: LangiumServices, private readonly stdLibRoot?: string) {
     super(services)
     this.indexManager = services.shared.workspace.IndexManager
     this.documents = services.shared.workspace.LangiumDocuments
-    this.stdLibRoot = stdLibRoot
   }
 
   protected override collectLocationLinks(
@@ -101,23 +99,45 @@ export class TaoDefinitionProvider extends DefaultDefinitionProvider {
   ): langium.AstNodeDescription | undefined {
     const sameModule = isSameModuleImport(useStmt, document.uri.path)
     const targetUriSet = new Set(targetUris)
-
-    for (const desc of this.indexManager.allElements(ast.Declaration.$type, targetUriSet)) {
-      if (desc.name !== name) {
+    for (const desc of this.indexManager.allElements()) {
+      if (!this.isMatchingDeclaration(desc, name, targetUriSet)) {
         continue
       }
-      const node = desc.node
-      if (!node || !ast.isDeclaration(node)) {
-        continue
-      }
-      if (sameModule) {
-        return desc
-      }
-      if (!ast.isVisibilityMarkedDeclaration(node.$container) || node.$container.visibility !== 'share') {
-        continue
-      }
-      return desc
+      return this.findDeclarationInDesc(desc, name, targetUriSet, sameModule)
     }
     return undefined
+  }
+
+  private findDeclarationInDesc(
+    desc: langium.AstNodeDescription,
+    name: string,
+    targetUriSet: Set<string>,
+    sameModule: boolean,
+  ): langium.AstNodeDescription | undefined {
+    const isMatchingDeclaration = this.isMatchingDeclaration(desc, name, targetUriSet)
+    if (!isMatchingDeclaration) {
+      return undefined
+    }
+
+    if (sameModule) {
+      return desc
+    }
+
+    const container = desc.node.$container
+    if (ast.isTopLevelDeclaration(container) && container.visibility === 'share') {
+      return desc
+    }
+
+    return undefined
+  }
+
+  private isMatchingDeclaration(
+    desc: langium.AstNodeDescription,
+    name: string,
+    targetUriSet: Set<string>,
+  ): desc is langium.AstNodeDescription & { node: ast.ImportableDeclaration } {
+    return targetUriSet.has(desc.documentUri.toString())
+      && desc.name === name
+      && ast.isImportableDeclaration(desc.node)
   }
 }

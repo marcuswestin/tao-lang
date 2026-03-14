@@ -37,40 +37,40 @@ describe('Formatter', () => {
   testFormatter('Whitespace prefix removal')
     .format(`
 
-    app MyApp {}
+    file app MyApp {}
     `)
     .equals(`
-    app MyApp { }
+    file app MyApp { }
     `)
 
   testFormatter('Postfix whitespace remove and newline insertion')
     .format(`
-    app MyApp {}
+    file app MyApp {}
     `)
     .equals(`
-    app MyApp { }
+    file app MyApp { }
     `)
   testFormatter('empty body')
-    .format(`app foo {}`)
+    .format(`file app foo {}`)
     .equals(`
-        app foo { }
+        file app foo { }
     `)
   testFormatter('empty app')
-    .format(`app MyApp {}`)
+    .format(`file app MyApp {}`)
     .equals(`
-        app MyApp { }
+        file app MyApp { }
     `)
   testFormatter('app with single ui')
-    .format(`app MyApp {ui MyView}`)
+    .format(`file app MyApp {ui MyView}`)
     .equals(`
-      app MyApp {
+      file app MyApp {
           ui MyView
       }
     `)
   testFormatter('app with multiple ui statements')
-    .format(`app MyApp {ui View1 ui View2}`)
+    .format(`file app MyApp {ui View1 ui View2}`)
     .equals(`
-      app MyApp {
+      file app MyApp {
           ui View1
           ui View2
       }
@@ -136,9 +136,9 @@ describe('Formatter', () => {
       }
     `)
   testFormatter('top level declarations separated')
-    .format(`app MyApp {}view MyView {}`)
+    .format(`file app MyApp {}view MyView {}`)
     .equals(`
-      app MyApp { }
+      file app MyApp { }
 
       view MyView { }
     `)
@@ -165,25 +165,25 @@ describe('Formatter', () => {
     `)
   testFormatter('comment preservation')
     .format(`
-      app MyApp {
+      file app MyApp {
       // comment
       ui MyView}
     `)
     .equals(`
-      app MyApp {
+      file app MyApp {
           // comment
           ui MyView
       }
     `)
   testFormatter('multiple comments')
     .format(`
-      app MyApp {
+      file app MyApp {
       // one
       // two
       ui MyView}
     `)
     .equals(`
-      app MyApp {
+      file app MyApp {
           // one
           // two
           ui MyView
@@ -194,12 +194,7 @@ describe('Formatter', () => {
     .equals(`
         view MyView { }
     `)
-  testFormatter('view with single parameter no key')
-    .format(`view MyView string {}`)
-    .equals(`
-        view MyView string { }
-    `)
-  testFormatter('view with parameter key')
+  testFormatter('view with named parameter')
     .format(`view MyView value string {}`)
     .equals(`
         view MyView value string { }
@@ -243,14 +238,14 @@ describe('Formatter', () => {
     `)
   testFormatter('Advanced formatting')
     .format(`
-      app MyApp {
+      file app MyApp {
       // comment
       ui MyView }
 
       view MyView { Child {} }
     `)
     .equals(`
-      app MyApp {
+      file app MyApp {
           // comment
           ui MyView
       }
@@ -375,11 +370,11 @@ describe('formatter edge cases', () => {
 
   testFormatter('app with view reference')
     .format(`
-      app MyApp{ui MainView}
+      file app MyApp{ui MainView}
       view MainView{}
     `)
     .equals(`
-      app MyApp {
+      file app MyApp {
           ui MainView
       }
 
@@ -388,17 +383,17 @@ describe('formatter edge cases', () => {
 
   testFormatter('multiple apps in file')
     .format(`
-        app App1{ui View1}
-        app App2{ui View2}
+        file app App1{ui View1}
+        file app App2{ui View2}
         view View1{}
         view View2{}
       `)
     .equals(`
-        app App1 {
+        file app App1 {
             ui View1
         }
 
-        app App2 {
+        file app App2 {
             ui View2
         }
 
@@ -414,4 +409,66 @@ describe('formatter edge cases', () => {
   testFormatter('use statement spacing')
     .format(`use     Col,Row,    Text      from  tao/ui`)
     .equals(`use Col, Row, Text from tao/ui`)
+})
+
+describe('alias statement formatting', () => {
+  testFormatter('alias number literal')
+    .format(`view MyView {alias age=1}`)
+    .equals(`
+      view MyView {
+          alias age = 1
+      }
+    `)
+
+  testFormatter('alias string literal')
+    .format(`view MyView {alias name="hello"}`)
+    .equals(`
+      view MyView {
+          alias name = "hello"
+      }
+    `)
+
+  testFormatter('alias spacing normalization')
+    .format(`view MyView {alias   name  =  "hello"}`)
+    .equals(`
+      view MyView {
+          alias name = "hello"
+      }
+    `)
+
+  testFormatter('alias with identifier reference value')
+    .format(`view MyView {alias x=1 alias y=x}`)
+    .equals(`
+      view MyView {
+          alias x = 1
+          alias y = x
+      }
+    `)
+
+  testFormatter('alias before render statement')
+    .format(`view MyView {alias msg="hi" Child {}}`)
+    .equals(`
+      view MyView {
+          alias msg = "hi"
+          Child { }
+      }
+    `)
+
+  testFormatter('alias in nested view body')
+    .format(`view MyView {Container {alias n=42}}`)
+    .equals(`
+      view MyView {
+          Container {
+              alias n = 42
+          }
+      }
+    `)
+
+  testFormatter('identifier reference in argument')
+    .format(`view MyView {Text value msg{}}`)
+    .equals(`
+      view MyView {
+          Text value msg { }
+      }
+    `)
 })
