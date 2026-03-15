@@ -5,15 +5,17 @@ _tao *ARGS:
     pushd packages/tao-cli && just build && popd
     ./.builds/tao-cli "$@"
 
-_pre-commit-stash:
+_stash-unstaged-changes:
     echo "> Stashing non-staged changes..." && git stash --keep-index --include-untracked
     echo "\n> Stashing complete.\n"
 
-_pre-commit-fix:
-    echo "\n> Run pre-commit fixes..." && just fix
-    echo "\n> Pre-commit fixes complete.\n"
+_unstage-changes:
+    echo "> Aborting pre-commit workflow. Attempting to unstage all changes..."
+    echo "> Attempting to unstage all changes..." && git stash apply stash@{0}
+    echo "> Unstage successful. Dropping stash..." && git stash drop
+    echo "> Abort successful."
 
-_pre-commit-check:
+_prep-commit:
     echo "\n> Clean build artifacts..." && just clean
     echo "> Build everything..." && just build
     echo "> Run pre-commit checks..." && just check
@@ -23,12 +25,6 @@ _pre-commit-check:
 _post-commit-unstash:
     echo "> Ensure no changes..." && just _ensure-repo-clean
     echo "> Pre-commit checks complete. Unstashing changes..." && git stash pop
-
-_pre-commit-abort:
-    echo "> Aborting pre-commit workflow. Attempting to unstage all changes..."
-    echo "> Attempting to unstage all changes..." && git stash apply stash@{0}
-    echo "> Unstage successful. Dropping stash..." && git stash drop
-    echo "> Abort successful."
 
 _ensure-repo-clean:
     if output=$(git status --porcelain) && [ -n "$output" ]; then exit 1; fi

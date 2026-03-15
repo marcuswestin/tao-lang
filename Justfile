@@ -21,8 +21,17 @@ setup: _setup_git_repo
 # Run all components in watch mode
 dev: _dev
 
-# Run full battery of checks and builds. Meant to be run before committing.
-pre-commit: _pre-commit-check
+# Run full battery of checks and builds to prepare for commit.
+prep-commit: _prep-commit
+
+# Stash unstaged changes. First make sure that all intended changes are staged.
+stash-unstaged-changes: _stash-unstaged-changes
+
+# Restore stashed changes (e.g. after aborting prep-commit workflow).
+unstage-changes: _unstage-changes
+
+# Ensures that the repo has no changes.
+ensure-repo-clean: _ensure-repo-clean
 
 # Testing
 #########

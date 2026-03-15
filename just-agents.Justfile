@@ -54,26 +54,13 @@ build:
 # Commits
 #========
 
-# Stage all unstaged changes. First make sure that all intended changes are staged.
-pre-commit-stash:
-    just {{ MAIN_JUSTFILE }} _pre-commit-stash
-
-# Run pre-commit fixes: format, autofixes, etc.
-pre-commit-fix:
-    just {{ MAIN_JUSTFILE }} _pre-commit-fix
-
-# Run full battery of checks and builds before making a commit.
-pre-commit-check:
-    just {{ MAIN_JUSTFILE }} _pre-commit-check
-
-# Git commit: Commit staged changes with message, e.g. `./just-agents git-commit "fix(compiler): do the thing"`
-git-commit MESSAGE:
-    just _ensure-repo-clean
-    git commit -m {{ '"' + MESSAGE + '"' }}
+# Run full battery of checks and builds to prepare for commit.
+prep-commit:
+    just {{ MAIN_JUSTFILE }} prep-commit
 
 # Unstash all changes, even if there are uncommitted changes.
 abort-pre-commit:
-    just {{ MAIN_JUSTFILE }} _pre-commit-abort
+    just {{ MAIN_JUSTFILE }} unstage-changes
 
 # Unstash changes after commit. Only works if repo is completely clean.
 post-commit-unstash:

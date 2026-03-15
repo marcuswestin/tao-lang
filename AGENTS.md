@@ -13,9 +13,11 @@
 
 ## Misc Instructions:
 
-- **ALWAYS** Go through Commit workflow, unless explicitly instructed not to.
 - **NEVER** delete files without asking
-- **ALWAYS** document exported TS functions with `// <function name> <description>` (**never** use `/** ... */`)
+- **ALWAYS** check changes with just-agent `test`; and `prep-commit` right before committing.
+- **ALWAYS** jsdoc all TS functions with name and description: `/** <fn name> <desc> */`.
+- **USUALLY** jsdoc on a single line, unless more is appropriate: `/** <fn name> <desc> */`.
+- **SOMETIMES** jsdoc additional details with list items when appropriate: `/** <fn name> <desc>\n * - ...\n * - ...\n */`.
 
 ---
 
