@@ -29,6 +29,7 @@ Next tasks, in order:
     - [x] Cleanup various ___Declaration references in ts code.
   - [x] Inline ViewBody in ViewRenderStatement
 - [ ] Start using https://github.com/callstack/react-native-testing-library!
+  - [x] Spread compiled code across multiple files
 - [ ] Simplify TaoWorkspace to receive the shared workspace instead of the shared services.
 - [ ] Change a bunch of function-oriented files to classes
 - [ ] Switch from // comments to /** ... */ comments for documentation
