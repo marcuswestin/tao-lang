@@ -5,18 +5,18 @@
       "type": "npm",
       "script": "vscode:prepublish",
       "path": "packages/ide-extension",
-      "label": "Tao-VSCode-task: Run 'just package-and-install' in packages/ide-extension",
+      "label": "Tao-VSCode-task: Run 'just build-package-and-install' in packages/ide-extension",
       "detail": "just build"
     },
     {
-      "label": "package-and-install-extension",
+      "label": "build-package-and-install-extension",
       "type": "shell",
-      "command": "just package-and-install",
+      "command": "just build-package-and-install",
       "options": {
         "cwd": "${workspaceFolder}/packages/ide-extension",
         "shell": {
           "executable": "zsh",
-          "args": ["-c", "eval \"$(~/.local/bin/mise activate zsh)\" && just package-and-install"]
+          "args": ["-c", "eval \"$(~/.local/bin/mise activate zsh)\" && just build-package-and-install"]
         }
       },
       "group": {

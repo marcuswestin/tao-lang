@@ -1,13 +1,13 @@
 import { Command } from '@commander-js/extra-typings'
-import { compileTao } from '@tao-compiler'
+import { compileTao } from '@compiler'
+import {
+  TaoError,
+  throwUserInputRejectionError,
+} from '@shared/TaoErrors'
 import chokidar from 'chokidar'
 import { mkdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import * as process from 'node:process'
-import {
-  TaoError,
-  throwUserInputRejectionError,
-} from '../../compiler/compiler-src/@shared/TaoErrors'
 import { hci } from './hci-human-computer-interaction'
 
 export function taoCliMain() {
@@ -102,7 +102,7 @@ async function checkUserInputs(opts: TaoSDK_compileOpts) {
     throwUserInputRejectionError(`Runtime path does not contain a package.json file: ${runtimeDir}`)
   }
   const packageJson = readJsonFile(packageJsonPath)
-  if (packageJson.name !== 'tao-expo-runtime') {
+  if (packageJson.name !== '@tao/expo-runtime') {
     throwUserInputRejectionError(`Runtime path is not a tao runtime: ${runtimeDir}`)
   }
   if (packageJson.version !== '0.1.0-dev') {

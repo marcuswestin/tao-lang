@@ -1,5 +1,5 @@
+import { Assert } from '@shared/TaoErrors'
 import * as LangiumGen from 'langium/generate'
-import { Assert } from './@shared/TaoErrors'
 import { getErrorAppString } from './app-typescript-gen/app-gen-error'
 import { generateTypescriptReactNativeApp } from './app-typescript-gen/app-gen-main'
 import { TaoErrorReport } from './parse-errors'

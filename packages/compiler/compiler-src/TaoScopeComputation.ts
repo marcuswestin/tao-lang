@@ -1,7 +1,7 @@
+import * as ast from '@parser/ast'
+import { throwUnexpectedBehaviorError } from '@shared/TaoErrors'
+import { switchItemType_Exhaustive, switchProperty_Exhaustive } from '@shared/TypeSafety'
 import * as langium from 'langium'
-import { throwUnexpectedBehaviorError } from './@shared/TaoErrors'
-import { switchItemType_Exhaustive, switchProperty_Exhaustive } from './@shared/TypeSafety'
-import * as ast from './_gen-tao-parser/ast'
 
 // TaoScopeComputation collects exported and local symbols for scoping.
 // It exports `share`-marked declarations for cross-file `use` imports,

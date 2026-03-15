@@ -1,5 +1,5 @@
+import * as ast from '@parser/ast'
 import * as langium from 'langium'
-import * as ast from './_gen-tao-parser/ast'
 import {
   getSameModuleUris,
   isSameModuleImport,

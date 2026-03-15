@@ -1,3 +1,3 @@
-export * as AST from './_gen-tao-parser/ast'
-export * as Grammar from './_gen-tao-parser/grammar'
-export * as Module from './_gen-tao-parser/module'
+export * as AST from '@parser/ast'
+export * as Grammar from '@parser/grammar'
+export * as Module from '@parser/module'

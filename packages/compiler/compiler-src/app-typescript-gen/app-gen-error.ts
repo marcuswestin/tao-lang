@@ -1,4 +1,4 @@
-import { TaoErrorReport } from '@tao-compiler/parse-errors'
+import { TaoErrorReport } from '@compiler/parse-errors'
 
 export function getErrorAppString(errorReport: TaoErrorReport) {
   const messages = errorReport.getHumanErrorMessage()

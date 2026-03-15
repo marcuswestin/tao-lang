@@ -1,5 +1,5 @@
 {
-  "name": "shared",
+  "name": "@tao/shared",
   "type": "module",
   "module": "shared.ts",
   "dependencies": {

@@ -58,14 +58,6 @@ build:
 prep-commit:
     just {{ MAIN_JUSTFILE }} prep-commit
 
-# Unstash all changes, even if there are uncommitted changes.
-abort-pre-commit:
-    just {{ MAIN_JUSTFILE }} unstage-changes
-
-# Unstash changes after commit. Only works if repo is completely clean.
-post-commit-unstash:
-    just {{ MAIN_JUSTFILE }} post-commit-unstash
-
 # Private helpers
 #================
 

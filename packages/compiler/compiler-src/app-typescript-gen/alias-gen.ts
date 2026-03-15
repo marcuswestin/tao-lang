@@ -1,5 +1,5 @@
-import { Compiled, compileNode } from '@tao-compiler/compiler-utils'
-import { AST } from '@tao-compiler/grammar'
+import { Compiled, compileNode } from '@compiler/compiler-utils'
+import { AST } from '@compiler/grammar'
 import { compileExpression } from './expression-gen'
 
 export function compileAliasDeclaration(node: AST.AliasDeclaration): Compiled {

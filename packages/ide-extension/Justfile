@@ -12,39 +12,37 @@ run:
     just uninstall-extension > /dev/null 2>&1 || true
     just install-extension > /dev/null
     echo "\tCheck extension installation..."
-    set -e && cursor --list-extensions | grep "tao.tao-lang-vscode-extension" || { echo "Installation failed -- extension not found" >&2; exit 1; }
+    set -e && cursor --list-extensions | grep "tao.tao-ide-extension" || { echo "Installation failed -- extension not found" >&2; exit 1; }
     echo "\n\t* Extension installed - restart IDE *\n"
     # just restart-cursor
     echo "\tCheck for type errors..."
     # just check
 
+build: build-package-and-install
+
+build-package-and-install: _install_deps
+    just compiler build
+    just package
+    just install-extension
+
 # Package the extension. This calls `just _npm-package-script_vscode-prepublish` via package.json script `vscode:prepublish`.
 package:
-    just compiler gen
     bunx @vscode/vsce package --allow-missing-repository --out ../../.builds 1> /dev/null
 
 _npm-package-script_vscode-prepublish:
     node esbuild.config.ts
 
-package-and-install:
-    just package
-    just install-extension
-
 uninstall-extension:
-    cursor --uninstall-extension tao.tao-lang-vscode-extension
-    code --uninstall-extension tao.tao-lang-vscode-extension
+    cursor --uninstall-extension tao.tao-ide-extension
+    code --uninstall-extension tao.tao-ide-extension
 
 install-extension:
-    cursor --install-extension ../../.builds/tao-lang-vscode-extension-0.0.1.vsix --verbose --force
-    code --install-extension ../../.builds/tao-lang-vscode-extension-0.0.1.vsix --verbose --force
+    cursor --install-extension ../../.builds/tao-ide-extension-0.0.1.vsix --verbose --force
+    code --install-extension ../../.builds/tao-ide-extension-0.0.1.vsix --verbose --force
 
 restart-cursor:
     osascript -e 'quit app "Cursor"'
     sleep 0.25 && open -a Cursor && sleep 0.5 && open -a Cursor && sleep 0.5 && open -a Cursor
-
-build: _install_deps
-    just compiler build
-    node esbuild.config.ts
 
 check:
     tsc -b tsconfig.json

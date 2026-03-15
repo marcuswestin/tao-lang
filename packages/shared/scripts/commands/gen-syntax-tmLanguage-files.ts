@@ -1,6 +1,6 @@
+import { Log } from '@shared/Log'
 import path from 'node:path'
 import { merge } from 'object-deep-merge'
-import { Log } from '../../shared-src/Log'
 
 // TODO: Rename to reflect new additional functionality (copy markdown embed json file to output directory)
 export async function genSyntaxTmLanguageFiles(

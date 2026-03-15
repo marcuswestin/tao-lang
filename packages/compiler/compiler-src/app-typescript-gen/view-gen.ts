@@ -1,13 +1,13 @@
-import { switchItemType_Exhaustive } from '@tao-compiler/@shared/TypeSafety'
-import * as ast from '@tao-compiler/_gen-tao-parser/ast'
 import {
   Compiled,
   compileList,
   compileNode,
   compileNodeListProperty,
   genNodePropertyRef,
-} from '@tao-compiler/compiler-utils'
-import { AST } from '@tao-compiler/grammar'
+} from '@compiler/compiler-utils'
+import { AST } from '@compiler/grammar'
+import * as ast from '@parser/ast'
+import { switchItemType_Exhaustive } from '@shared/TypeSafety'
 import { compileAliasDeclaration } from './alias-gen'
 import { compileExpression } from './expression-gen'
 import { compileInjection } from './injection-gen'

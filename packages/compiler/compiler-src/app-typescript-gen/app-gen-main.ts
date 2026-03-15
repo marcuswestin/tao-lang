@@ -1,5 +1,5 @@
-import { Compiled, compileNode, compileNodeListProperty } from '@tao-compiler/compiler-utils'
-import { AST } from '@tao-compiler/grammar'
+import { Compiled, compileNode, compileNodeListProperty } from '@compiler/compiler-utils'
+import { AST } from '@compiler/grammar'
 import * as LangiumGen from 'langium/generate'
 import { compileTopLevelStatement } from './file-toplevel-gen'
 

@@ -31,7 +31,7 @@
 
   // Code Formatting: Tao Lang's extension, for .tao files.
   "[tao]": {
-    "editor.defaultFormatter": "tao.tao-lang-vscode-extension"
+    "editor.defaultFormatter": "tao.tao-ide-extension"
   },
 
   // Langium and App Lang configs

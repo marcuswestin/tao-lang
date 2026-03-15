@@ -1,5 +1,5 @@
+import * as AST from '@parser/ast'
 import type * as langium from 'langium'
-import * as AST from '../_gen-tao-parser/ast'
 import { makeValidater } from './ValidationReporter'
 
 export const validator: langium.ValidationChecks<AST.TaoLangAstType> = {

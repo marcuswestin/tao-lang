@@ -1,10 +1,10 @@
-import { NodePropName } from '@tao-compiler/compiler-utils'
-import { AST } from '@tao-compiler/grammar'
+import { NodePropName } from '@compiler/compiler-utils'
+import { AST } from '@compiler/grammar'
+import * as ast from '@parser/ast'
+import { switchBindItemType_Exhaustive } from '@shared/TypeSafety'
 import { AstNode, LangiumDocument } from 'langium'
 import { AbstractFormatter, Formatting, FormattingRegion } from 'langium/lsp'
 import { DocumentFormattingParams, TextEdit } from 'vscode-languageserver'
-import { switchBindItemType_Exhaustive } from '../compiler-src/@shared/TypeSafety'
-import * as ast from '../compiler-src/_gen-tao-parser/ast'
 import extensivelyFormatInjectionBlocks from './injectionFormatter'
 
 const FORMAT_INJECTION_BLOCKS = true

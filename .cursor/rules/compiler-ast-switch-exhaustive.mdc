@@ -13,7 +13,7 @@ That pattern gives **exhaustive handlers** (compile-time) and a **single** `ast.
 ## Prefer (exhaustive switch + union guard)
 
 ```typescript
-import { switchItemType_Exhaustive } from './@shared/TypeSafety'
+import { switchItemType_Exhaustive } from '@shared/TypeSafety'
 import * as ast from './_gen-tao-parser/ast'
 
 if (ast.isTopLevelStatement(node)) {

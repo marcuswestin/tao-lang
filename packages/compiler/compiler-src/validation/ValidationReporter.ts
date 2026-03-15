@@ -1,5 +1,5 @@
-import { NodePropName } from '@tao-compiler/compiler-utils'
-import { AST } from '@tao-compiler/grammar'
+import { NodePropName } from '@compiler/compiler-utils'
+import { AST } from '@compiler/grammar'
 import {
   AstNode,
   AstUtils,

@@ -87,7 +87,7 @@ gen:
 
 # Build and install the extension to cursor and vscode
 extension-build-package-and-install:
-    cd packages/ide-extension && just build && just package-and-install
+    cd packages/ide-extension && just build-package-and-install
 
 clean:
     rm -rf .builds

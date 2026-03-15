@@ -35,7 +35,7 @@ _build-all:
     cd packages/compiler && just build
     cd packages/tao-cli && just build
     cd packages/expo-runtime && just build
-    cd packages/ide-extension && just build
+    cd packages/ide-extension && just build-package-and-install
 
 x-fix-file-associations:
     brew install duti --quiet

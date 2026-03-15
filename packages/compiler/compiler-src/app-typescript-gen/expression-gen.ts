@@ -1,6 +1,6 @@
-import { switchItemType_Exhaustive } from '@tao-compiler/@shared/TypeSafety'
-import { Compiled, compileNode } from '@tao-compiler/compiler-utils'
-import { AST } from '@tao-compiler/grammar'
+import { Compiled, compileNode } from '@compiler/compiler-utils'
+import { AST } from '@compiler/grammar'
+import { switchItemType_Exhaustive } from '@shared/TypeSafety'
 
 export function compileExpression(expression: AST.Expression): Compiled {
   return switchItemType_Exhaustive(expression, {

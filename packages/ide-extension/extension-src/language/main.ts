@@ -1,4 +1,4 @@
-import { createTaoWorkspace } from '@tao-compiler'
+import { createTaoWorkspace } from '@compiler'
 import { startLanguageServer } from 'langium/lsp'
 import { NodeFileSystem } from 'langium/node'
 import path from 'node:path'

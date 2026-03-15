@@ -1,8 +1,8 @@
+import * as ast from '@parser/ast'
 import * as langium from 'langium'
 import { DefaultDefinitionProvider, type LangiumServices } from 'langium/lsp'
 import type { DefinitionParams } from 'vscode-languageserver'
 import { LocationLink } from 'vscode-languageserver'
-import * as ast from './_gen-tao-parser/ast'
 import {
   getSameModuleUris,
   isSameModuleImport,

@@ -1,7 +1,7 @@
-import { expect, test } from '@tao-compiler/../compiler-tests/test-utils/test-harness'
-import { createTaoWorkspace } from '@tao-compiler/tao-services'
+import { createTaoWorkspace } from '@compiler/tao-services'
 import * as Langium from 'langium'
 import { NodeFileSystem } from 'langium/node'
+import { expect, test } from '../compiler-tests/test-utils/test-harness'
 
 export function shouldFormat(code: string, expected: string) {
   return async () => {

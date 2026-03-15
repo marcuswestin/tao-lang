@@ -22,11 +22,12 @@
     "rootDir": ".",
     "paths": {
       // Paths are relative to packages/ (config file directory)
-      "@tao-compiler": ["./compiler/tao-compiler.ts"],
-      "@tao-compiler/*": ["./compiler/compiler-src/*"],
-      "@tao-formatter/*": ["./compiler/formatter-src/*"],
+      "@compiler": ["./compiler/tao-compiler.ts"],
+      "@compiler/*": ["./compiler/compiler-src/*"],
+      "@formatter/*": ["./compiler/formatter-src/*"],
+      "@parser/*": ["./compiler/compiler-src/_gen-tao-parser/*"],
       "@shared/*": ["./shared/shared-src/*"],
-      "@tao-cli/*": ["./tao-cli/cli-src/*"]
+      "@cli/*": ["./tao-cli/cli-src/*"]
     }
   },
   "include": [

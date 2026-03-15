@@ -20,7 +20,7 @@ The formatter is automatically available from the IDE extension. Just enable "Fo
 {
   "editor.formatOnSave": true,
   "[tao]": {
-    "editor.defaultFormatter": "tao.tao-lang-vscode-extension"
+    "editor.defaultFormatter": "tao.tao-ide-extension"
   }
 }
 ```
