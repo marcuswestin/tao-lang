@@ -62,7 +62,7 @@
   "typescript.suggest.includeCompletionsForImportStatements": true,
 
   // General features
-  "typescript.referencesCodeLens.enabled": true,
+  // "typescript.referencesCodeLens.enabled": true,
   "typescript.implementationsCodeLens.enabled": true,
   "typescript.updateImportsOnFileMove.enabled": "always",
   "typescript.check.npmIsInstalled": true
