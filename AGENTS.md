@@ -11,24 +11,6 @@
 
 ---
 
-## Commit Workflow:
-
-```zsh
-./just-agents pre-commit-stash # Stash unstaged changes
-./just-agents pre-commit-fix # Run fixes
-./just-agents pre-commit-check # Run checks
-./just-agents git-commit '<commit message>' # Commit. Fails with unstaged changes.
-./just-agents post-commit-unstash # Unstash previous changes. Fails if unclean repo.
-```
-
-If you need to abort the commit workflow, and unstage all changes again, run:
-
-```zsh
-./just-agents abort-pre-commit # Abort pre-commit workflow. Unstages all changes.
-```
-
----
-
 ## Misc Instructions:
 
 - **ALWAYS** Go through Commit workflow, unless explicitly instructed not to.
