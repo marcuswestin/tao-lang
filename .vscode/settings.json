@@ -5,6 +5,8 @@
   // Code appearance
   "editor.fontSize": 12.5,
   "editor.lineHeight": 17,
+  "window.zoomLevel": 0.8, // Monitor
+  // "window.zoomLevel": 0, // Laptop
 
   "files.exclude": {
     ".config/MISE_DIR": true,
