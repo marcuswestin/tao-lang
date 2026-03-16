@@ -3,10 +3,10 @@
 
 import { getDocumentErrors, TaoErrorReport } from '@compiler/parse-errors'
 import { TaoParser } from '@compiler/parser'
-import { TaoFile } from '@compiler/parser/_gen-tao-parser/ast'
 import type { TaoWorkspace } from '@compiler/tao-services'
 import { createTaoWorkspace } from '@compiler/tao-services'
 import { AST } from '@parser'
+import { TaoFile } from '@parser/_gen-tao-parser/ast'
 import { Assert } from '@shared/TaoErrors'
 import * as Langium from 'langium'
 import { NodeFileSystem } from 'langium/node'
