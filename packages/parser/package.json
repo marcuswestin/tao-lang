@@ -1,0 +1,13 @@
+{
+  "name": "@tao/parser",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest",
+    "langium-cli": "^4.1.0",
+    "typescript": "^5"
+  },
+  "peerDependencies": {
+    "langium": "^4"
+  }
+}

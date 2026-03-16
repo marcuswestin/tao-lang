@@ -1,0 +1,7 @@
+set unstable := true
+set fallback := true
+
+build:
+    bun install
+    bunx langium generate --mode=development
+    just q-dev gen-syntax-tmLanguage-files
