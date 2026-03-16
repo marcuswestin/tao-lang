@@ -2,7 +2,9 @@
 
 This guide covers implementing scoping in Langium—the mechanism that determines which symbols are visible at any point in your language.
 
-> **Version note:** This guide targets **Langium v4.x** (API: `collectExportedSymbols` / `collectLocalSymbols`).
+> **Version note:** This guide targets **Langium v4.x** (API: `collectExportedSymbols` / `collectLocalSymbols`). This project uses Langium 4.1+.
+
+> **In this project (Tao Lang):** Scoping is implemented in `packages/compiler/compiler-src/` — `TaoScopeComputation`, `TaoScopeProvider`, and `ModuleResolution`. `TaoWorkspaceManager` loads the workspace (including stdlib); there is no custom `AstNodeDescriptionProvider`.
 
 ## Core Mental Model
 
@@ -13,47 +15,45 @@ Scoping in Langium is a **two-phase system**:
 | **1. Export**     | `ScopeComputation` | "What symbols does this file expose?" | After parsing, during **Indexing**.            |
 | **2. Resolution** | `ScopeProvider`    | "What symbols are visible here?"      | During **Linking**, when resolving references. |
 
-> **Critical Rule:** You cannot resolve references before indexing completes. **Never** access `.ref` properties inside `ScopeComputation`. This triggers linking too early and can lead to cyclic dependencies.
+> **Critical Rule:** You cannot resolve references before indexing completes. **Never** access `.ref` properties inside `ScopeComputation`. This triggers linking too early and can lead to cyclic dependencies. Build order: Indexing (exported symbols) → ComputedScopes (local symbols) → Linking (ScopeProvider).
 
 ---
 
 ## Architecture Overview
 
-Scope-related classes are registered in your language module (`my-lang-module.ts`).
+Scope-related classes are registered in your language module. Tao uses a split: **shared** module (workspace) and **language** module (references, LSP).
 
 ```typescript
-// my-lang-module.ts
-import { Module } from 'langium'
-
-export const MyLangModule: Module<MyLangServices, PartialLangiumServices> = {
+// Shared module: workspace (e.g. load stdlib)
+const sharedModule = inject(createDefaultSharedModule(context), {
   workspace: {
-    // Responsible for storing metadata (visibility, types) in descriptions
-    AstNodeDescriptionProvider: (services) => new MyLangDescriptionProvider(services),
-
-    // Responsible for loading initial files (stdlib)
-    WorkspaceManager: (services) => new MyLangWorkspaceManager(services),
+    WorkspaceManager: (services) => new MyLangWorkspaceManager(services, config.stdLibRoot),
   },
+})
+
+// Language module: references and LSP
+const LangModule = inject(createDefaultModule({ shared: sharedModule }), {
   references: {
-    // Responsible for creating exports + local scopes (indexing/scopes)
     ScopeComputation: (services) => new MyLangScopeComputation(services),
-
-    // Responsible for calculating the scope for a specific reference
-    ScopeProvider: (services) => new MyLangScopeProvider(services),
+    ScopeProvider: (services) => new MyLangScopeProvider(services, config.stdLibRoot),
   },
-}
+})
 ```
+
+Optional: override `AstNodeDescriptionProvider` in workspace to store metadata (e.g. visibility) on descriptions. Tao does not; it checks visibility on the AST node in `ScopeProvider` instead.
 
 ---
 
 ## Quick Reference
 
-| Task                               | Class                        | Method                      |
-| ---------------------------------- | ---------------------------- | --------------------------- |
-| **Export symbols to other files**  | `ScopeComputation`           | `collectExportedSymbols()`  |
-| **Define local variable scopes**   | `ScopeComputation`           | `collectLocalSymbols()`     |
-| **Resolve a reference**            | `ScopeProvider`              | `getScope()`                |
-| **Store metadata on symbols**      | `AstNodeDescriptionProvider` | `createDescription()`       |
-| **Load additional files (stdlib)** | `WorkspaceManager`           | `loadAdditionalDocuments()` |
+| Task                               | Class                        | Method                              |
+| ---------------------------------- | ---------------------------- | ----------------------------------- |
+| **Export symbols to other files**  | `ScopeComputation`           | `collectExportedSymbols()`          |
+| **Define local variable scopes**   | `ScopeComputation`           | `collectLocalSymbols()`             |
+| **Resolve a reference**            | `ScopeProvider`              | `getScope()`                        |
+| **Store metadata on symbols**      | `AstNodeDescriptionProvider` | `createDescription()` (optional)    |
+| **Load additional files (stdlib)** | `WorkspaceManager`           | `loadAdditionalDocuments()`         |
+| **Read precomputed local scopes**  | —                            | `document.localSymbols` (Langium 4) |
 
 ---
 
@@ -112,7 +112,7 @@ export class MyLangScopeComputation extends DefaultScopeComputation {
 
   /**
    * collectLocalSymbols: Symbols visible WITHIN this file (block scoping).
-   * These are stored in the document (precomputed scopes), not the global index.
+   * Stored on the document as localSymbols (precomputed scopes), not in the global index.
    */
   override async collectLocalSymbols(
     document: LangiumDocument,
@@ -191,7 +191,7 @@ export class MyLangDescriptionProvider extends DefaultAstNodeDescriptionProvider
 
 ## Phase 2: Resolving References (ScopeProvider)
 
-The **Scope Chain** is consulted during linking. Resolution walks from the current location upward through precomputed scopes and finally into the global scope.
+The **Scope Chain** is consulted during linking. Resolution walks from the current location upward through the document’s precomputed local scopes (`document.localSymbols`) and then the global index.
 
 ### Basic Pattern & Imports
 
@@ -274,6 +274,16 @@ export class MyLangScopeProvider extends DefaultScopeProvider {
 }
 ```
 
+### Tao Lang: use-statement and module scoping
+
+Tao resolves `use ModulePath Name1, Name2` and same-module references. See `TaoScopeProvider` and `ModuleResolution` in `packages/compiler/compiler-src/`:
+
+- **Same-module:** `isSameModuleImport()` + `getSameModuleUris()` — symbols from other files in the same directory.
+- **Cross-module:** `resolveModulePathToUris()` for relative or stdlib paths; only `share`-visible declarations are exposed (see `isImportAccessible`).
+- **Local scope:** `getLocalScope()` walks `context.container` upward and collects from `document.localSymbols` (views, aliases, parameters, etc.).
+
+Scope chain for view/ui/reference resolution: local scope first, then imported symbols from `use` statements.
+
 ### Visibility & Access Control Pattern
 
 **Pattern:** Folder-Based Visibility (Internal vs Public).
@@ -282,6 +292,7 @@ Symbols are visible only within the same directory, unless marked `public`.
 ```typescript
 import {
   AstNode,
+  AstNodeDescription,
   AstUtils,
   DefaultScopeProvider,
   ReferenceInfo,
@@ -294,7 +305,7 @@ export class MyLangScopeProvider extends DefaultScopeProvider {
   override getScope(context: ReferenceInfo): Scope {
     const referenceType = this.reflection.getReferenceType(context)
     const document = AstUtils.getDocument(context.container)
-    const precomputed = document.precomputedScopes
+    const localSymbols = document.localSymbols // Langium 4: precomputed scopes MultiMap
 
     // 1) Filter the global index by visibility rules
     const currentDir = dirname(document.uri.path)
@@ -313,12 +324,15 @@ export class MyLangScopeProvider extends DefaultScopeProvider {
     let result: Scope = this.createScope(visibleGlobals)
 
     // 2) Add local scopes on top (outer-to-inner so closer scopes shadow outer ones)
-    const localsChain = []
+    const localsChain: AstNodeDescription[][] = []
     let current: AstNode | undefined = context.container
     while (current) {
-      const locals = precomputed.get(current)
-      if (locals.length > 0) {
-        localsChain.push(locals.filter(d => this.reflection.isSubtype(d.type, referenceType)))
+      if (localSymbols.has(current)) {
+        const locals = Array.from(localSymbols.getStream(current))
+          .filter(d => this.reflection.isSubtype(d.type, referenceType))
+        if (locals.length > 0) {
+          localsChain.push(locals)
+        }
       }
       current = current.$container
     }
@@ -354,11 +368,14 @@ Accessing `.ref` triggers linking. If you do this inside `ScopeComputation` (whi
 const type = node.typeRef.ref // ❌ don't do this
 ```
 
-### ✅ DO: Use `DocumentBuilder.build()` in tests
+### ✅ DO: Build documents in tests so scoping/linking run
 
-In unit tests, parsing produces the AST, but it does **not** necessarily run indexing/linking unless you build the documents.
+Parsing alone does **not** run indexing or linking. Build documents so `ScopeComputation` and `ScopeProvider` run.
 
 ```typescript
-// In tests
+// With raw Langium services
 await services.shared.workspace.DocumentBuilder.build([document])
+
+// In Tao: use TaoWorkspace
+await workspace.buildDocument(doc, { validation: true, eagerLinking: true })
 ```
