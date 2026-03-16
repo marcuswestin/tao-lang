@@ -1,0 +1,7 @@
+set unstable := true
+set fallback := true
+
+build: _deps
+
+_deps:
+    bun install

@@ -15,6 +15,14 @@ _fmt:
     {{ OXLINT_CMD }} --fix 1> /dev/null 2>&1
     just _fmt_newlines
 
+_deps:
+    cd packages/shared && bun install
+    cd packages/compiler && bun install
+    cd packages/tao-cli && bun install
+    cd packages/ide-extension && bun install
+    cd packages/expo-runtime && bun install
+    cd packages/formatter && bun install
+
 _fmt_just:
     for f in $(git ls-files 'Justfile' '*.just' '*.Justfile'); do \
         just --fmt --unstable --justfile "$f"; \

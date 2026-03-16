@@ -1,0 +1,18 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "..",
+    "composite": true,
+    "noEmit": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true
+  },
+  "include": [
+    "formatter.ts",
+    "src/**/*",
+    "../parser/parser.ts",
+    "../parser/src/**/*",
+    "../shared/shared-src/**/*"
+  ]
+}

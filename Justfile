@@ -38,8 +38,8 @@ ensure-repo-clean: _ensure-repo-clean
 
 # Run tests for whatever directory we're in
 [no-cd]
-test *PATTERNS: gen
-    bun test --reporter=dot --test-name-pattern "{{ PATTERNS }}"
+test: gen
+    bun test --reporter=dot
 
 # Watch tests, but bail on first failure
 bail-watch-tests *PATTERNS:
@@ -57,6 +57,9 @@ watch-tests *PATTERNS:
 
 # Formatting, Linting, etc.
 ###########################
+
+# Install all dependencies
+deps: _deps
 
 # Format all files
 fmt: _fmt
@@ -80,6 +83,9 @@ lint-rules: _line_rules
 [no-quiet]
 build: gen
     just _build-all
+
+# Alias for build-all
+build-all: _build-all
 
 # Generate parser from grammar
 gen:

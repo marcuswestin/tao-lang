@@ -24,7 +24,7 @@
       // Paths are relative to packages/ (config file directory)
       "@compiler": ["./compiler/tao-compiler.ts"],
       "@compiler/*": ["./compiler/compiler-src/*"],
-      "@formatter/*": ["./compiler/formatter-src/*"],
+      "@formatter/*": ["./formatter/src/*"],
       "@parser": ["./parser/parser.ts"],
       "@parser/*": ["./parser/src/*"],
       "@shared/*": ["./shared/shared-src/*"],

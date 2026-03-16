@@ -20,7 +20,7 @@ run:
 
 build: build-package-and-install
 
-build-package-and-install: _install_deps
+build-package-and-install:
     just compiler build
     just package
     just install-extension
@@ -46,6 +46,3 @@ restart-cursor:
 
 check:
     tsc -b tsconfig.json
-
-_install_deps:
-    bun install

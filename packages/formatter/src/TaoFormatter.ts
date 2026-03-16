@@ -1,5 +1,4 @@
-import { NodePropName } from '@compiler/compiler-utils'
-import { AST } from '@parser'
+import { AST, NodePropName } from '@parser'
 import { switchBindItemType_Exhaustive } from '@shared/TypeSafety'
 import { AstNode, LangiumDocument } from 'langium'
 import { AbstractFormatter, Formatting, FormattingRegion } from 'langium/lsp'
@@ -55,8 +54,12 @@ export default class TaoFormatter extends AbstractFormatter {
     }
 
     for (let i = 1; i < stmts.length; i++) {
-      const consecutiveUse = AST.isUseStatement(stmts[i - 1]) && AST.isUseStatement(stmts[i])
-      f.node(stmts[i]).prepend(consecutiveUse ? Formatting.newLines(1) : Formatting.newLines(2))
+      const curr = stmts[i]
+      if (curr === undefined) {
+        continue
+      }
+      const consecutiveUse = AST.isUseStatement(stmts[i - 1]) && AST.isUseStatement(curr)
+      f.node(curr).prepend(consecutiveUse ? Formatting.newLines(1) : Formatting.newLines(2))
     }
   }
 
@@ -217,7 +220,10 @@ export default class TaoFormatter extends AbstractFormatter {
     const f = this.getNodeFormatter(node)
     const list = node[property] as AstNode[]
     for (let i = 1; i < list.length; i++) {
-      f.node(list[i]).prepend(Formatting.oneSpace())
+      const item = list[i]
+      if (item !== undefined) {
+        f.node(item).prepend(Formatting.oneSpace())
+      }
     }
   }
 }

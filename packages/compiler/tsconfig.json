@@ -11,10 +11,11 @@
     "tao-compiler.ts",
     "compiler-src/**/*",
     "compiler-tests/**/*",
-    "formatter-src/**/*",
     "formatter-tests/**/*",
     "../shared/shared-src/**/*",
     "../parser/parser.ts",
-    "../parser/src/**/*"
+    "../parser/src/**/*",
+    "../formatter/formatter.ts",
+    "../formatter/src/**/*"
   ]
 }

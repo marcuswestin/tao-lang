@@ -1,4 +1,7 @@
+import { NodePropName } from '@parser'
 import { AstNode, Properties, Reference } from 'langium'
+
+export type { NodePropName }
 
 // assertNever throws an error when called, used for exhaustive type checking
 // Example:
@@ -45,8 +48,6 @@ export function compileNodeListProperty<
   }
   return _compileNodeListProperty(node, propertyName, compileListItemFn, { appendNewLineIfNotEmpty: true })
 }
-
-export type NodePropName<N extends AstNode> = keyof Omit<N, keyof AstNode | number | symbol>
 
 import * as LangiumGen from 'langium/generate'
 export type Compiled = LangiumGen.CompositeGeneratorNode | undefined

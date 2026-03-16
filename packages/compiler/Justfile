@@ -1,20 +1,22 @@
 set unstable := true
 set fallback := true
 
-_pretest:
+_pretest: _deps
     just gen
 
 test *PATTERNS: _pretest
     bun test --reporter=dot --test-name-pattern "{{ PATTERNS }}"
 
-watch-test *PATTERNS:
+watch-test *PATTERNS: _deps
     bun test . --watch --reporter=dot --test-name-pattern "{{ PATTERNS }}"
 
-build:
-    bun install
+build: _deps
     just gen
     bunx tsc
 
 
-watch-compiler:
+watch-compiler: _deps
     bun -e "import 'compiler-src/compiler-main'; console.log('Reload...'); " --watch --no-clear-screen
+
+_deps:
+    bun install
