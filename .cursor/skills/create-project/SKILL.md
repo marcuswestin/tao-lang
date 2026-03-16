@@ -48,7 +48,7 @@ Fill out the spec to the best of your ability based on:
 ### Step 4: Commit the Spec
 
 1. Stage the new files: `./just-agents git add "Docs/Dev Log/"`
-2. Commit: `./just-agents git-commit "docs: add <Project Name> project spec"`
+2. Commit: `git commit -m "docs: create <Project Name> project spec"`
 
 ### Step 5: Create Feature Branch
 
