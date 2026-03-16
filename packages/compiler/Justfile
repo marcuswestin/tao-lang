@@ -15,12 +15,6 @@ build:
     just gen
     bunx tsc
 
-gen:
-    bunx langium generate --mode=development
-    just q-dev gen-syntax-tmLanguage-files
 
 watch-compiler:
     bun -e "import 'compiler-src/compiler-main'; console.log('Reload...'); " --watch --no-clear-screen
-
-watch-grammar:
-    watchexec --restart --watch=tao-grammar.langium -- just gen

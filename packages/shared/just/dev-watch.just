@@ -48,7 +48,9 @@ _r_reloead_q_quit:
     exit 0
 
 _watch-grammar:
-    cd packages/compiler && just watch-grammar
+    # Watch grammar file and regenerate compiler + IDE syntax on change
+    watchexec --restart --watch=packages/parser/tao-grammar.langium -- sh -c "just gen"
+
 
 _watch-kitchen-sink-build APP_PATH="./Apps/Kitchen Sink/Kitchen Sink.tao":
     cd packages/tao-cli && bun run  --watch --no-clear-screen \

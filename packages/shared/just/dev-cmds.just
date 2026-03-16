@@ -32,6 +32,7 @@ _ensure-repo-clean:
 _build-all:
     just _install-mise-deps
     cd packages/shared && just build
+    cd packages/parser && just build
     cd packages/compiler && just build
     cd packages/tao-cli && just build
     cd packages/expo-runtime && just build

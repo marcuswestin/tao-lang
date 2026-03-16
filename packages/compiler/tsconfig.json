@@ -13,6 +13,8 @@
     "compiler-tests/**/*",
     "formatter-src/**/*",
     "formatter-tests/**/*",
-    "../shared/shared-src/**/*"
+    "../shared/shared-src/**/*",
+    "../parser/parser.ts",
+    "../parser/src/**/*"
   ]
 }

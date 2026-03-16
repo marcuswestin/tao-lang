@@ -78,12 +78,12 @@ lint-rules: _line_rules
 
 # Build everything
 [no-quiet]
-build:
+build: gen
     just _build-all
 
 # Generate parser from grammar
 gen:
-    cd packages/compiler && just gen
+    cd packages/parser && just build
 
 # Build and install the extension to cursor and vscode
 extension-build-package-and-install:
