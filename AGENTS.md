@@ -61,7 +61,8 @@ Tao Lang Project Docs:
 
 ### Tao Lang implementation: packages/*
 
-- `packages/compiler/` - Parser, validator, compiler and formatter (using Langium)
+- `packages/parser/` - Langium grammar and generated AST for Tao Lang
+- `packages/compiler/` - Validator, compiler and formatter (using Langium)
 - `packages/tao-cli/` - Tao CLI: `tao <...>`
 - `packages/tao-std-lib/` - Standard library: e.g `use tao/ui Col, Row, Text`
 - `packages/ide-extension/` - Tao Lang VSCode/Cursor Extension

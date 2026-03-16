@@ -48,7 +48,7 @@
   },
 
   // Langium and App Lang configs
-  "langium.config": "packages/compiler/langium-config.json",
+  "langium.config": "packages/parser/langium-config.json",
 
   // "typescript.inlayHints.functionLikeReturnTypes.enabled": true,
   // "typescript.inlayHints.parameterNames.enabled": "all",

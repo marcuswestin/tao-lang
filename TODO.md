@@ -31,6 +31,10 @@ Next tasks, in order:
 - [ ] Start using https://github.com/callstack/react-native-testing-library!
   - [x] Spread compiled code across multiple files
 - [x] Use a MultiCommand in settings.json to install extension and then restartExtensionHost (see .vscode/settings.json multiCommand.buildExtensionThenRestartHost, .vscode/keybindings.json, README Extension Development)
+- [x] Move parser into its own package
+- [ ] Move formatter into its own package
+- [ ] Fix Justfile move
+- [ ] Remove just-agents, and use just instead with allowlist for all the just-specific commands.
 - [ ] Start using voice mode
 - [ ] Ask to update implementing-scoping-for-langium-language.mdc. It looks out of date
 - [ ] Remove grammar.ts
