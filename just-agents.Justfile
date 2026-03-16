@@ -40,6 +40,10 @@ test *TEST_PATTERNS:
 lint:
     just {{ MAIN_JUSTFILE }} lint
 
+# Check all code: lint, typecheck, etc.
+check:
+    just {{ MAIN_JUSTFILE }} check
+
 # Generate parser from grammar
 gen:
     just {{ MAIN_JUSTFILE }} gen
