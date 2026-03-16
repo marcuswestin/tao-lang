@@ -16,8 +16,8 @@
 ## Misc Instructions:
 
 - **NEVER** delete files without asking.
-- **ALWAYS** check changes with `test`.
-- **ALWAYS** run `prep-commit` right before committing.
+- **ALWAYS** check all changes with `test`.
+- **ALWAYS** run `fix` and check for changes before committing.
 
 ## Documentation:
 
