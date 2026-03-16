@@ -14,15 +14,8 @@ zsh .config/automated-setup.zsh
 
 ### Extension Development
 
-Watch for changes to the grammar:
+How to build and install the extension into your IDE:
 
-    `just watch-grammar`
-
-And then (re)install the extension:
-
-    cmd+shift+b (rebuilds the extension)
-
-And finally reload it in the command palette:
-(I have this bound to cmd+shift+h, right about b)
-
-    Developer: Restart Extension Host
+- Build the extension with "cmd+shift+b".
+- Then run vscode command "Developer: Restart Extension Host".
+  - If you added the custom keybinding during setup, and installed recommended extension **multi-command**, then you don't need to run the vscode command.

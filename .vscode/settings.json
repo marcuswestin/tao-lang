@@ -2,6 +2,19 @@
   // Use compiler typescript version, for langium generated code to typecheck properly
   "typescript.tsdk": "packages/compiler/node_modules/typescript/lib",
 
+  // Build extension and restart host (requires extension ryuta46.multi-command).
+  "tao.workspaceKeybinding.buildAndRestart": true, // Necessary for multiCommand.buildExtensionThenRestartHost
+  "multiCommand.commands": [
+    {
+      "command": "multiCommand.buildExtensionThenRestartHost",
+      "interval": 3000,
+      "sequence": [
+        "workbench.action.tasks.build",
+        "workbench.action.restartExtensionHost"
+      ]
+    }
+  ],
+
   // Code appearance
   "editor.fontSize": 12.5,
   "editor.lineHeight": 17,
