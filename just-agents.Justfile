@@ -1,3 +1,5 @@
+import "./packages/shared/just/all-imports.just"
+
 # Settings for the agent justfile
 # - `quiet` -> Don't print each command as it's executed.
 # - `shell` -> recipe step command: zsh, exit on error, error on unset variable, fail on pipefail
@@ -74,7 +76,7 @@ ALLOWED_SHELL_COMMANDS := "|grep|ls|echo|head|find|true|test|tail|tsc|mkdir|cat|
 
 [positional-arguments]
 _execute_whitelisted_subcommand SUB_CMD_WHITELIST EXEC RECIPE_NAME SUB_CMD *ARGS:
-    #!/usr/bin/env zsh
+    #!{{ SHELL_INIT }}
     # $1=whitelist, $2=exec (git or env), $3=recipe name (for errors), $4=subcommand, "${@:5}"=args
     if ! echo "$1" | grep -q "|$4|"; then
         echo "{{ RECIPE_NAME }} <command> not allowed: $4." >&2
