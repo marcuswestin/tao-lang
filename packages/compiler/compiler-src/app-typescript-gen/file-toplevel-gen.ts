@@ -1,5 +1,5 @@
 import { Compiled, compileNode, compileNodeListProperty } from '@compiler/compiler-utils'
-import { AST } from '@compiler/grammar'
+import { AST } from '@parser'
 import { switchItemType_Exhaustive, switchProperty_Exhaustive } from '@shared/TypeSafety'
 import { compileAliasDeclaration } from './alias-gen'
 import { compileInjection } from './injection-gen'

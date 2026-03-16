@@ -1,6 +1,6 @@
 {
   "projectName": "TaoLang",
-  "out": "./compiler-src/_gen-tao-parser",
+  "out": "./compiler-src/parser/_gen-tao-parser",
 
   "languages": [{
     "id": "tao-lang",

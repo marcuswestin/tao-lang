@@ -1,5 +1,5 @@
 import { Compiled, compileNode } from '@compiler/compiler-utils'
-import { AST } from '@compiler/grammar'
+import { AST } from '@parser'
 import { switchItemType_Exhaustive } from '@shared/TypeSafety'
 
 export function compileExpression(expression: AST.Expression): Compiled {

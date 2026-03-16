@@ -31,6 +31,8 @@ Next tasks, in order:
 - [ ] Start using https://github.com/callstack/react-native-testing-library!
   - [x] Spread compiled code across multiple files
 - [x] Use a MultiCommand in settings.json to install extension and then restartExtensionHost (see .vscode/settings.json multiCommand.buildExtensionThenRestartHost, .vscode/keybindings.json, README Extension Development)
+- [ ] Start using voice mode
+- [ ] Ask to update implementing-scoping-for-langium-language.mdc. It looks out of date
 - [ ] Remove grammar.ts
 - [ ] Simplify TaoWorkspace to receive the shared workspace instead of the shared services.
 - [ ] Change a bunch of function-oriented files to classes

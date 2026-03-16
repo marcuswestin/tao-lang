@@ -5,8 +5,7 @@ import {
   compileNodeListProperty,
   genNodePropertyRef,
 } from '@compiler/compiler-utils'
-import { AST } from '@compiler/grammar'
-import * as ast from '@parser/ast'
+import { AST } from '@parser'
 import { switchItemType_Exhaustive } from '@shared/TypeSafety'
 import { compileAliasDeclaration } from './alias-gen'
 import { compileExpression } from './expression-gen'
@@ -14,9 +13,9 @@ import { compileInjection } from './injection-gen'
 
 export function compileViewDeclaration(declaration: AST.ViewDeclaration): Compiled {
   const preambleStatements = declaration.viewStatements.filter(
-    n => ast.isAliasDeclaration(n) || ast.isInjection(n) || ast.isViewDeclaration(n),
+    n => AST.isAliasDeclaration(n) || AST.isInjection(n) || AST.isViewDeclaration(n),
   )
-  const renderStatements = declaration.viewStatements.filter(ast.isViewRenderStatement)
+  const renderStatements = declaration.viewStatements.filter(AST.isViewRenderStatement)
   return compileNode(declaration)`
     export function ${declaration.name}(${compileParameterList(declaration.parameterList)}) {
       ${compileList(declaration, preambleStatements, compileViewStatement)}

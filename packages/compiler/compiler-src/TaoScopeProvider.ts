@@ -1,4 +1,4 @@
-import * as ast from '@parser/ast'
+import { AST } from '@parser'
 import * as langium from 'langium'
 import {
   getSameModuleUris,
@@ -17,15 +17,15 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
 
   // getScope returns the scope of available symbols for a reference context.
   override getScope(context: langium.ReferenceInfo): langium.Scope {
-    if (context.property === 'view' && ast.isViewRenderStatement(context.container)) {
+    if (context.property === 'view' && AST.isViewRenderStatement(context.container)) {
       return this.getModuleScopedDeclarations(context)
     }
 
-    if (context.property === 'ui' && ast.isAppStatement(context.container)) {
+    if (context.property === 'ui' && AST.isAppStatement(context.container)) {
       return this.getModuleScopedDeclarations(context)
     }
 
-    if (context.property === 'referenceName' && ast.isNamedReference(context.container)) {
+    if (context.property === 'referenceName' && AST.isNamedReference(context.container)) {
       const document = langium.AstUtils.getDocument(context.container)
       return this.createScope(this.getLocalScope(context, document))
     }
@@ -36,7 +36,7 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
   // getModuleScopedDeclarations builds a scope chain: local -> imported.
   private getModuleScopedDeclarations(context: langium.ReferenceInfo): langium.Scope {
     const document = langium.AstUtils.getDocument(context.container)
-    const taoFileNode = document.parseResult.value as ast.TaoFile
+    const taoFileNode = document.parseResult.value as AST.TaoFile
 
     const useImportedSymbols = this.getUseImportedSymbols(taoFileNode, document, context)
     const localScope = this.getLocalScope(context, document)
@@ -47,14 +47,14 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
 
   // getUseImportedSymbols collects symbols from `use` statements.
   private getUseImportedSymbols(
-    taoFile: ast.TaoFile,
+    taoFile: AST.TaoFile,
     document: langium.LangiumDocument,
     context: langium.ReferenceInfo,
   ): langium.AstNodeDescription[] {
     const referenceType = this.reflection.getReferenceType(context)
     const imported: langium.AstNodeDescription[] = []
 
-    const useStatements = taoFile.topLevelStatements.filter((stmt) => ast.isUseStatement(stmt))
+    const useStatements = taoFile.topLevelStatements.filter((stmt) => AST.isUseStatement(stmt))
 
     for (const useStmt of useStatements) {
       const imports = this.getSymbolsForUseStatement(useStmt, referenceType, document)
@@ -66,7 +66,7 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
 
   // getSymbolsForUseStatement resolves symbols for a `use` statement.
   private getSymbolsForUseStatement(
-    useStmt: ast.UseStatement,
+    useStmt: AST.UseStatement,
     referenceType: string,
     document: langium.LangiumDocument,
   ): langium.Stream<langium.AstNodeDescription> {
@@ -90,7 +90,7 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
   private getAccessibleImportedSymbols(
     targetUris: string[],
     referenceType: string,
-    useStmt: ast.UseStatement,
+    useStmt: AST.UseStatement,
     sameModule: boolean,
   ): langium.Stream<langium.AstNodeDescription> {
     return this.indexManager.allElements(referenceType, new Set(targetUris))
@@ -100,7 +100,7 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
   // isImportAccessible checks whether an exported symbol matches an imported name and has appropriate visibility.
   private isImportAccessible(
     description: langium.AstNodeDescription,
-    useStmt: ast.UseStatement,
+    useStmt: AST.UseStatement,
     sameModule: boolean,
   ): boolean {
     if (!useStmt.importedNames.includes(description.name)) {
@@ -114,7 +114,7 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
       return true
     }
     // Cross-module: only `share`-marked declarations
-    if (ast.isImportableDeclaration(node) && ast.isTopLevelDeclaration(node.$container)) {
+    if (AST.isImportableDeclaration(node) && AST.isTopLevelDeclaration(node.$container)) {
       return node.$container.visibility === 'share'
     }
     return false

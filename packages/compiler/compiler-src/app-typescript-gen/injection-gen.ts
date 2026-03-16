@@ -1,5 +1,5 @@
 import { Compiled, compileNode, compileNodeProperty } from '@compiler/compiler-utils'
-import { AST } from '@compiler/grammar'
+import { AST } from '@parser'
 
 export function compileInjection(injection: AST.Injection): Compiled {
   const tsCodeBlock = compileNodeProperty(injection, 'tsCodeBlock', trimTsFence)

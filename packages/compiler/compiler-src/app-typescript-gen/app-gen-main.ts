@@ -1,5 +1,5 @@
 import { Compiled, compileNode, compileNodeListProperty } from '@compiler/compiler-utils'
-import { AST } from '@compiler/grammar'
+import { AST } from '@parser'
 import * as LangiumGen from 'langium/generate'
 import { compileTopLevelStatement } from './file-toplevel-gen'
 

@@ -1,4 +1,4 @@
-import * as ast from '@parser/ast'
+import { AST } from '@parser'
 import { throwUnexpectedBehaviorError } from '@shared/TaoErrors'
 import { switchItemType_Exhaustive, switchProperty_Exhaustive } from '@shared/TypeSafety'
 import * as langium from 'langium'
@@ -29,7 +29,7 @@ export class TaoScopeComputation extends langium.DefaultScopeComputation {
 
   // processStatementForExport creates a description for a statement if it should be exported.
   private processStatementForExport(
-    statement: ast.TopLevelStatement,
+    statement: AST.TopLevelStatement,
     document: langium.LangiumDocument,
   ): langium.AstNodeDescription | null {
     if (this.isExportableVisibilityDeclaration(statement)) {
@@ -49,7 +49,7 @@ export class TaoScopeComputation extends langium.DefaultScopeComputation {
     const localSymbols = new langium.MultiMap<langium.AstNode, langium.AstNodeDescription>()
 
     for await (const node of this.iterateAllNodesIn(rootNode, cancelToken)) {
-      if (!ast.isScopeRelevantNode(node)) {
+      if (!AST.isScopeRelevantNode(node)) {
         continue
       }
       switchItemType_Exhaustive(node, {
@@ -61,7 +61,7 @@ export class TaoScopeComputation extends langium.DefaultScopeComputation {
         AppDeclaration: (n) => this.collectSymbolForScope(n, document, localSymbols),
         ParameterDeclaration: (n) => {
           const viewDecl = n.$container?.$container
-          if (viewDecl && ast.isViewDeclaration(viewDecl)) {
+          if (AST.isViewDeclaration(viewDecl)) {
             this.collectSymbolForScope(n, document, localSymbols, viewDecl)
           }
         },
@@ -77,11 +77,11 @@ export class TaoScopeComputation extends langium.DefaultScopeComputation {
   // isExportableVisibilityDeclaration checks if a top-level declaration should be exported.
   // Returns true for `share` and default (module-visible) declarations, false for `file` (private).
   private isExportableVisibilityDeclaration(
-    statement: ast.TopLevelStatement,
-  ): statement is ast.TopLevelDeclaration {
+    statement: AST.TopLevelStatement,
+  ): statement is AST.TopLevelDeclaration {
     if (
       // Only TopLevelDeclarations can be exported
-      !ast.isTopLevelDeclaration(statement)
+      !AST.isTopLevelDeclaration(statement)
       // Guard: statement.declaration.name may be undefined for malformed/partial parses
       || !statement.declaration.name
     ) {
@@ -96,8 +96,8 @@ export class TaoScopeComputation extends langium.DefaultScopeComputation {
   }
 
   // getTaoFile extracts the TaoFile AST from a document, throwing if not present.
-  private getTaoFile(document: langium.LangiumDocument): ast.TaoFile {
-    const taoFile = document.parseResult.value as ast.TaoFile | undefined
+  private getTaoFile(document: langium.LangiumDocument): AST.TaoFile {
+    const taoFile = document.parseResult.value as AST.TaoFile | undefined
     if (!taoFile) {
       throwUnexpectedBehaviorError({
         cause: new Error('LangiumDocument.parseResult.value should always be defined after parsing'),

@@ -25,7 +25,8 @@
       "@compiler": ["./compiler/tao-compiler.ts"],
       "@compiler/*": ["./compiler/compiler-src/*"],
       "@formatter/*": ["./compiler/formatter-src/*"],
-      "@parser/*": ["./compiler/compiler-src/_gen-tao-parser/*"],
+      "@parser": ["./compiler/compiler-src/parser/tao-parser.ts"],
+      "@parser/*": ["./compiler/compiler-src/parser/_gen-tao-parser/*"],
       "@shared/*": ["./shared/shared-src/*"],
       "@cli/*": ["./tao-cli/cli-src/*"]
     }

@@ -3,9 +3,10 @@
 
 import { getDocumentErrors, TaoErrorReport } from '@compiler/parse-errors'
 import { TaoParser } from '@compiler/parser'
+import { TaoFile } from '@compiler/parser/_gen-tao-parser/ast'
 import type { TaoWorkspace } from '@compiler/tao-services'
 import { createTaoWorkspace } from '@compiler/tao-services'
-import { TaoFile } from '@parser/ast'
+import { AST } from '@parser'
 import { Assert } from '@shared/TaoErrors'
 import * as Langium from 'langium'
 import { NodeFileSystem } from 'langium/node'
@@ -47,7 +48,7 @@ export async function lexTokensWithErrors(code: string, ...unexpectedCharacters:
 }
 
 // parse the code, and check only for lex and parse errors - Skips link and validation errors
-export async function parseAST(code: string, stdLibRoot = ''): Promise<Wrapped<TaoFile>> {
+export async function parseAST(code: string, stdLibRoot = ''): Promise<Wrapped<AST.TaoFile>> {
   const { errorReport, taoFileAST } = await TaoParser.parseString(code, { stdLibRoot, validateUpToStage: 'parsing' })
   Assert(
     !errorReport.hasError(),
@@ -64,7 +65,7 @@ export async function parseASTWithErrors(code: string, stdLibRoot = ''): Promise
 }
 
 // parse the code and resolve reference links - skips validation errors
-export async function resolveReferences(code: string, stdLibRoot = ''): Promise<Wrapped<TaoFile>> {
+export async function resolveReferences(code: string, stdLibRoot = ''): Promise<Wrapped<AST.TaoFile>> {
   const { errorReport, taoFileAST } = await TaoParser.parseString(code, { stdLibRoot, validateUpToStage: 'linking' })
   Assert(!errorReport.hasError(), 'Expected no errors, but got: ' + errorReport.getHumanErrorMessage())
   return wrap(taoFileAST!)

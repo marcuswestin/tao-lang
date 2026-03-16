@@ -15,7 +15,7 @@ TopLevelDeclaration:
     visibility=DeclarationVisibility? declaration=(AppDeclaration | Declaration);
 
 DeclarationVisibility returns string:
-    'file' | 'share'; // Optional; when absent, declaration is module-visible
+    'file' | 'share' | 'module'; // Optional; when absent, declaration is module
 
 terminal USE_MODULE_PATH: /[a-zA-Z.][a-zA-Z0-9._\-]*\/[a-zA-Z0-9._\-\/]*/;
 UseStatement:

@@ -14,7 +14,7 @@ That pattern gives **exhaustive handlers** (compile-time) and a **single** `ast.
 
 ```typescript
 import { switchItemType_Exhaustive } from '@shared/TypeSafety'
-import * as ast from './_gen-tao-parser/ast'
+import { AST } from '@parser'
 
 if (ast.isTopLevelStatement(node)) {
   switchItemType_Exhaustive(node, {

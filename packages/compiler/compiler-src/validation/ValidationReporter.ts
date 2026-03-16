@@ -1,5 +1,5 @@
 import { NodePropName } from '@compiler/compiler-utils'
-import { AST } from '@compiler/grammar'
+import { AST } from '@parser'
 import {
   AstNode,
   AstUtils,

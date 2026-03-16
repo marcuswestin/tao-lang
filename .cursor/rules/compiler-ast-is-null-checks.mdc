@@ -1,0 +1,40 @@
+---
+description: Use AST.is* for type and null/undefined checks; avoid redundant non-null checks
+globs: packages/compiler/**/*.ts
+alwaysApply: false
+---
+
+# AST type guards: prefer `AST.is*` for non-null checks
+
+The Langium-generated type guards (`AST.isViewDeclaration`, `AST.isUseStatement`, etc.) **accept `null` and `undefined`** and return `false` for them. You do not need a separate non-null check before calling them.
+
+## Prefer
+
+```typescript
+import { AST } from '@parser'
+
+// One check is enough
+if (!AST.isImportableDeclaration(node)) {
+  continue
+}
+
+// Optional chain result: AST.is* handles undefined
+if (AST.isViewDeclaration(node.$container?.$container)) {
+  // ...
+}
+```
+
+## Avoid
+
+```typescript
+// Redundant: AST.is*(node) is false when node is null/undefined
+if (!node || !AST.isImportableDeclaration(node)) { ... }
+
+// Redundant: same as above
+if (viewDecl && AST.isViewDeclaration(viewDecl)) { ... }
+
+// Redundant: AST.isTaoFile(undefined) is false
+if (container.$container && AST.isTaoFile(container.$container)) { ... }
+```
+
+When you need both “is defined” and “is this AST type”, use **only** the corresponding `AST.is*` call.
