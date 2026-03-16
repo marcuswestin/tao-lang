@@ -91,20 +91,21 @@ export class TaoScopeComputation extends langium.DefaultScopeComputation {
     return switchProperty_Exhaustive(statement, 'visibility', {
       share: (): boolean => true,
       file: (): boolean => false,
+      module: (): boolean => true,
       undefined: (): boolean => true,
     })
   }
 
   // getTaoFile extracts the TaoFile AST from a document, throwing if not present.
   private getTaoFile(document: langium.LangiumDocument): AST.TaoFile {
-    const taoFile = document.parseResult.value as AST.TaoFile | undefined
-    if (!taoFile) {
+    const value = document.parseResult.value
+    if (!AST.isTaoFile(value)) {
       throwUnexpectedBehaviorError({
         cause: new Error('LangiumDocument.parseResult.value should always be defined after parsing'),
         logInfo: { documentUri: document.uri.toString() },
       })
     }
-    return taoFile
+    return value
   }
 
   // collectSymbolForScope adds a named node to the local symbols map for its containing scope.

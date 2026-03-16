@@ -1,4 +1,4 @@
-import { AST } from '@parser'
+import { AST, ASTUtils } from '@parser'
 import * as langium from 'langium'
 import {
   getSameModuleUris,
@@ -36,8 +36,11 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
   // getModuleScopedDeclarations builds a scope chain: local -> imported.
   private getModuleScopedDeclarations(context: langium.ReferenceInfo): langium.Scope {
     const document = langium.AstUtils.getDocument(context.container)
-    const taoFileNode = document.parseResult.value as AST.TaoFile
-
+    const value = document.parseResult.value
+    if (!AST.isTaoFile(value)) {
+      return this.createScope([])
+    }
+    const taoFileNode = value
     const useImportedSymbols = this.getUseImportedSymbols(taoFileNode, document, context)
     const localScope = this.getLocalScope(context, document)
 
@@ -114,8 +117,8 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
       return true
     }
     // Cross-module: only `share`-marked declarations
-    if (AST.isImportableDeclaration(node) && AST.isTopLevelDeclaration(node.$container)) {
-      return node.$container.visibility === 'share'
+    if (AST.isImportableDeclaration(node) && ASTUtils.isSharedModuleDeclaration(node.$container)) {
+      return true
     }
     return false
   }

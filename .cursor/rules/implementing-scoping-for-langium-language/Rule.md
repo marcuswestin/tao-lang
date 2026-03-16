@@ -64,6 +64,7 @@ This phase populates the Global Index and defines local block scoping.
 ### Basic Pattern
 
 ```typescript
+import { AST } from '@parser'
 import {
   AstNode,
   AstNodeDescription,
@@ -75,7 +76,6 @@ import {
   LocalSymbols,
   MultiMap,
 } from 'langium'
-import * as ast from './generated/ast'
 
 export class MyLangScopeComputation extends DefaultScopeComputation {
   /**
@@ -96,14 +96,14 @@ export class MyLangScopeComputation extends DefaultScopeComputation {
       await interruptAndCheck(cancelToken)
 
       // Example: Export Functions that aren't private
-      if (ast.isFunctionDecl(node) && node.name) {
+      if (AST.isFunctionDecl(node) && node.name) {
         if (node.visibility !== 'private') {
           exports.push(this.descriptions.createDescription(node, node.name, document))
         }
       }
 
       // Example: Export all Types
-      if (ast.isTypeDecl(node) && node.name) {
+      if (AST.isTypeDecl(node) && node.name) {
         exports.push(this.descriptions.createDescription(node, node.name, document))
       }
     }
@@ -128,7 +128,7 @@ export class MyLangScopeComputation extends DefaultScopeComputation {
       await interruptAndCheck(cancelToken)
 
       // 1. Function parameters are visible inside the function body
-      if (ast.isFunctionDecl(node)) {
+      if (AST.isFunctionDecl(node)) {
         for (const param of node.parameters) {
           if (param.name) {
             // Add parameters to the scope of the function node,
@@ -139,7 +139,7 @@ export class MyLangScopeComputation extends DefaultScopeComputation {
       }
 
       // 2. Let bindings are visible in their containing block
-      if (ast.isLetStatement(node) && node.name) {
+      if (AST.isLetStatement(node) && node.name) {
         const container = node.$container
         if (container) {
           scopes.add(container, this.descriptions.createDescription(node, node.name, document))
@@ -156,13 +156,13 @@ export class MyLangScopeComputation extends DefaultScopeComputation {
 To filter symbols efficiently (e.g., checking `"visibility"` without loading and walking full ASTs), store metadata in the `AstNodeDescription`.
 
 ```typescript
+import { AST } from '@parser'
 import {
   AstNode,
   AstNodeDescription,
   DefaultAstNodeDescriptionProvider,
   LangiumDocument,
 } from 'langium'
-import * as ast from './generated/ast'
 
 // 1. Define the custom interface
 export interface MyLangAstNodeDescription extends AstNodeDescription {
@@ -178,7 +178,7 @@ export class MyLangDescriptionProvider extends DefaultAstNodeDescriptionProvider
   ): AstNodeDescription {
     const desc = super.createDescription(node, name, document) as MyLangAstNodeDescription
 
-    if (ast.isFunctionDecl(node)) {
+    if (AST.isFunctionDecl(node)) {
       desc.visibility = node.visibility ?? 'default'
     }
 
@@ -196,6 +196,7 @@ The **Scope Chain** is consulted during linking. Resolution walks from the curre
 ### Basic Pattern & Imports
 
 ```typescript
+import { AST } from '@parser'
 import {
   AstUtils,
   DefaultScopeProvider,
@@ -205,13 +206,12 @@ import {
   Scope,
 } from 'langium'
 import { dirname, join } from 'node:path'
-import * as ast from './generated/ast'
 
 export class MyLangScopeProvider extends DefaultScopeProvider {
   override getScope(context: ReferenceInfo): Scope {
     // Example: Custom handling for a "member call" / dot navigation:
     // Restrict the second+ segments to the members of the previous segment's type.
-    if (context.property === 'element' && ast.isMemberCall(context.container)) {
+    if (context.property === 'element' && AST.isMemberCall(context.container)) {
       const memberCall = context.container
       const previous = memberCall.previous
       if (!previous) {
@@ -226,7 +226,7 @@ export class MyLangScopeProvider extends DefaultScopeProvider {
     }
 
     // Example: Import-based scoping for a specific reference property
-    if (context.property === 'symbol' && ast.isImportRef(context.container)) {
+    if (context.property === 'symbol' && AST.isImportRef(context.container)) {
       return this.getExportedSymbolsFromImports(context)
     }
 
@@ -236,7 +236,7 @@ export class MyLangScopeProvider extends DefaultScopeProvider {
   private getExportedSymbolsFromImports(context: ReferenceInfo): Scope {
     const referenceType = this.reflection.getReferenceType(context)
     const document = AstUtils.getDocument(context.container)
-    const root = document.parseResult.value as ast.Program
+    const root = document.parseResult.value as AST.Program
 
     const uris = new Set<string>()
     for (const importStmt of root.imports ?? []) {

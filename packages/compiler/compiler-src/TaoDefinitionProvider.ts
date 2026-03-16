@@ -1,4 +1,4 @@
-import { AST } from '@parser'
+import { AST, ASTUtils } from '@parser'
 import * as langium from 'langium'
 import { DefaultDefinitionProvider, type LangiumServices } from 'langium/lsp'
 import type { DefinitionParams } from 'vscode-languageserver'
@@ -124,7 +124,7 @@ export class TaoDefinitionProvider extends DefaultDefinitionProvider {
     }
 
     const container = desc.node.$container
-    if (AST.isTopLevelDeclaration(container) && container.visibility === 'share') {
+    if (ASTUtils.isSharedModuleDeclaration(container)) {
       return desc
     }
 

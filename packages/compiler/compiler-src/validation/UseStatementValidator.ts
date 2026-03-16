@@ -173,7 +173,11 @@ export class UseStatementValidator {
       if (!uriSet.has(doc.uri.toString())) {
         continue
       }
-      const taoFile = doc.parseResult.value as AST.TaoFile
+      const value = doc.parseResult.value
+      if (!AST.isTaoFile(value)) {
+        continue
+      }
+      const taoFile = value
       for (const stmt of taoFile.topLevelStatements) {
         if (AST.isTopLevelDeclaration(stmt) && stmt.visibility === 'file') {
           if (stmt.declaration.name === name) {
@@ -228,7 +232,7 @@ export class UseStatementValidator {
       }
 
       const container = node.$container
-      if (!AST.isTopLevelDeclaration(container) || container.visibility !== 'share') {
+      if (!ASTUtils.isSharedModuleDeclaration(container)) {
         return true
       }
     }
