@@ -2,20 +2,25 @@
 
 ---
 
-## CRITICAL: **Only** run commands with `./just-agents`:
-
 - **ALWAYS** use `./just-agents <cmd> <args>` for all commands
-- **NEVER** run commands any other way than `./just-agents`
-- **ALWAYS** consult `.cursor/rules/running-commands.mdc` for instructions on running commands
+- **CRITICAL:** You may ONLY run commands with `./just-agents <cmd> <args>`.
+- **CRITICAL**: **Never** modify just-agents.Justfile without asking first.
 - **ALWAYS** start your session with running `./just-agents help`
+
+- **Justfile Documentation:**
+  - **If** you need to lookup `just`, first check: https://cheatography.com/linux-china/cheat-sheets/justfile/
+  - **If** you need more details, see:: https://just.systems/man/en/
 
 ---
 
 ## Misc Instructions:
 
 - **NEVER** delete files without asking.
-- **ALWAYS** check changes with just-agent `test`.
+- **ALWAYS** check changes with `test`.
 - **ALWAYS** run `prep-commit` right before committing.
+
+## Documentation:
+
 - **ALWAYS** jsdoc all TS functions with name and description: `/** <fn name> <desc> */`.
 - **USUALLY** jsdoc on a single line, unless more is appropriate: `/** <fn name> <desc> */`.
 - **SOMETIMES** jsdoc additional details with list items when appropriate: `/** <fn name> <desc>\n * - ...\n * - ...\n */`.
@@ -70,5 +75,3 @@ For package-specific instructions, see their AGENTS.md file, e.g `packages/compi
 - Test files are named `<name>.test.ts`
 - Tests are executed with `bun test`
   - Except: `expo-runtime` tests can only be run using `node`/`jest`
-
----
