@@ -50,7 +50,7 @@ _fix: _fmt
 _check:
     just lint
     dprint check
-    cd packages/compiler && tsc --noEmit --noUnusedLocals
+    cd packages/compiler && tsc --noUnusedLocals
     cd packages/tao-cli && tsc --noEmit --noUnusedLocals
     cd packages/shared && tsc --noEmit --noUnusedLocals
     cd packages/ide-extension && tsc --noEmit --noUnusedLocals

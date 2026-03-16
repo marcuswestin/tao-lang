@@ -1,6 +1,4 @@
-import { createTaoWorkspace } from '@compiler'
-import { startLanguageServer } from 'langium/lsp'
-import { NodeFileSystem } from 'langium/node'
+import { createTaoWorkspace, NodeFileSystem, startLanguageServer } from '@compiler'
 import path from 'node:path'
 import { createConnection, ProposedFeatures } from 'vscode-languageserver/node.js'
 

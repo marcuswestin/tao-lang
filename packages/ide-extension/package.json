@@ -74,8 +74,7 @@
     "@types/vscode": "^1.105.0",
     "@vscode/vsce": "^3.7.1",
     "concurrently": "^9.2.1",
-    "esbuild": "~0.25.5",
-    "langium": "^4.1.2"
+    "esbuild": "~0.25.5"
   },
   "engines": {
     "vscode": "^1.105.0"
