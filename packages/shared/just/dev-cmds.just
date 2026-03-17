@@ -5,32 +5,32 @@ _tao *ARGS:
     pushd ../tao-cli && just build && popd
     ../../.builds/tao-cli "$@"
 
-_stash-unstaged-changes:
+_stash_unstaged_changes:
     echo "> Stashing non-staged changes..." && git stash --keep-index --include-untracked
     echo "\n> Stashing complete.\n"
 
-_unstage-changes:
+_unstage_changes:
     echo "> Aborting pre-commit workflow. Attempting to unstage all changes..."
     echo "> Attempting to unstage all changes..." && git stash apply stash@{0}
     echo "> Unstage successful. Dropping stash..." && git stash drop
     echo "> Abort successful."
 
-_prep-commit:
+_prep_commit:
     echo "\n> Clean build artifacts..." && just clean
     echo "> Build everything..." && just build
     echo "> Run pre-commit checks..." && just check
     echo "> Run code tests..." && just test-all
     echo "\n> Pre-commit checks complete. Ready to commit.\n"
 
-_post-commit-unstash:
-    echo "> Ensure no changes..." && just _ensure-repo-clean
+_post_commit_unstash:
+    echo "> Ensure no changes..." && just _ensure_repo_clean
     echo "> Pre-commit checks complete. Unstashing changes..." && git stash pop
 
-_ensure-repo-clean:
+_ensure_repo_clean:
     if output=$(git status --porcelain) && [ -n "$output" ]; then exit 1; fi
 
-_build-all:
-    just _install-mise-deps
+_build_all:
+    just _install_mise_deps
     cd packages/shared && just build
     cd packages/parser && just build
     cd packages/formatter && just build
@@ -40,7 +40,7 @@ _build-all:
     cd packages/expo-runtime && just build
     cd packages/ide-extension && just build-package-and-install
 
-_x-fix-file-associations:
+_x_fix_file_associations:
     brew install duti --quiet
     for ext in md txt json yaml yml xml css js ts tsx jsx zsh just; \
         do duti -s $(osascript -e 'id of app "Cursor"') .$ext all; \

@@ -8,7 +8,7 @@ CONCURRENTLY_RUN_AND_STOP_ALL_CMD := CONCURRENTLY_CMD + " " + CONCURRENTLY_COLOR
 
 # Run recipes in parallel. All die when any exits. Usage: `just run-parallel <recipe1> <recipe2> ...`
 run-parallel *RECIPES:
-    just _prefix-strip-parallel "" {{ RECIPES }}
+    just _prefix_strip_parallel "" {{ RECIPES }}
 
 # Run shell commands in parallel. All die when any exits. Usage: `just concurrently-exec "<cmd1> <args>" "<cmd2> <args>" ...`
 [positional-arguments]
@@ -30,7 +30,7 @@ concurrently-exec-named *NAMES_AND_CMDS:
 
 NUM_ARGS := "$#"
 
-_prefix-strip-parallel PREFIX *RECIPES:
+_prefix_strip_parallel PREFIX *RECIPES:
     #!{{ ZSH_INIT }}
     p="{{ PREFIX }}"; recipes=({{ RECIPES }})
     for r in "${recipes[@]}"; do cmds+=("just $r"); names+=("${r#$p}"); done

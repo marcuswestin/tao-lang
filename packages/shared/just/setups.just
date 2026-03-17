@@ -10,11 +10,11 @@ _print_help:
     just --list --unsorted --color=always
     echo
 
-_install-mise-deps:
+_install_mise_deps:
     {{ MISE_CMD }} install
 
 # Setup development environment
-_create-dev-env:
+_create_dev_env:
     echo "\tSetup Tao Lang dev environment:"
     just _install_mise
     curl https://cursor.com/install -fsS | bash > /dev/null 2>&1
@@ -24,10 +24,10 @@ _create-dev-env:
     just _print_keybinding_install
     just _print_setup_done
 
-_update-dev-env:
+_update_dev_env:
     just _install_mise # Update mise to latest version
     {{ MISE_CMD }} self-update --yes
-    just _install-mise-deps
+    just _install_mise_deps
     {{ MISE_CMD }} doctor
     just build-all
 

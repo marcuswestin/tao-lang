@@ -78,12 +78,12 @@ ALLOWED_SHELL_COMMANDS := "grep|ls|echo|head|find|true|test|tail|tsc|mkdir|cat|c
 shell EXEC_CMD *ARGS:
     #!{{ ZSH_INIT }}
     if [ "$1" = "git" ]; then
-        just {{ AGENT_JUSTFILE }} _check-allowed-git-subcommand "$2"
+        just {{ AGENT_JUSTFILE }} _check_allowed_git_subcommand "$2"
         if [ "$2" = "commit" ]; then just {{ AGENT_JUSTFILE }} prep-commit; fi
     fi
     just {{ AGENT_JUSTFILE }} _execute_whitelisted_subcommand "{{ ALLOWED_SHELL_COMMANDS }}" env "shell" "$1" "${@:2}"
 
-_check-allowed-git-subcommand SUB_CMD:
+_check_allowed_git_subcommand SUB_CMD:
     #!{{ ZSH_INIT }}
     if ! echo "{{ ALLOWED_GIT_COMMANDS }}" | grep -qw "{{ SUB_CMD }}"; then
         echo "git {{ SUB_CMD }} not allowed." >&2

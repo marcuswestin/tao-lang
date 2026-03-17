@@ -48,7 +48,7 @@ Next tasks, in order:
 - [ ] Rename switchItemType_Exhaustive to switchNode_Exhaustive
 - [ ] Enable "suspicious" lint category
 - [ ] Enable "nursery" lint category
-- [ ] Make all justfile recipies snake_case
+- [x] Use snake_case for private justfile recipes and kebab-case for public ones
 - [ ] Consider adding warn for lint categories: "pedantic", "restriction", "style"
 - [ ] Make lint type-aware
 - [ ] Move typescript compiler generator into its own file (maybe class)

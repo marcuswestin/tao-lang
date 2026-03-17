@@ -11,11 +11,11 @@ PS_FILTER_COMMON_MISC := '"/bin/node$" "aslmanager$" " assetsd$"'
 
 # Grep my relevant processes
 psgrep *PATTERN:
-    just _ps-filter | grep {{ PATTERN }}
+    just _ps_filter | grep {{ PATTERN }}
 
 # Print my most relevant processes, with a filter
 psrelevant *FILTERS:
-    just _ps-filter \
+    just _ps_filter \
         {{ PS_FILTER_COMMON_SYSTEM }} \
         {{ PS_FILTER_COMMON_USER }} \
         {{ PS_FILTER_COMMON_MISC }} \
@@ -23,11 +23,11 @@ psrelevant *FILTERS:
 
 # Print my relevant processes, with a filter
 ps *FILTERS:
-    just _ps-filter {{ FILTERS }}
+    just _ps_filter {{ FILTERS }}
 
 # Print my processes, with a filter
 [positional-arguments]
-_ps-filter *FILTERS:
+_ps_filter *FILTERS:
     #!/bin/bash
     max_pid=$(ps -axo pid | sort -rn | head -1)
     # Create arguments regex, or default to unmatchable regex

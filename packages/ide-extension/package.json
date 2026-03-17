@@ -20,7 +20,7 @@
     "LICENSE.txt"
   ],
   "scripts": {
-    "vscode:prepublish": "just _npm-package-script_vscode-prepublish"
+    "vscode:prepublish": "just _npm_package_script_vscode_prepublish"
   },
   "contributes": {
     "grammars": [

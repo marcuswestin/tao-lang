@@ -7,10 +7,10 @@ import "./packages/shared/just/all-imports.just"
 help: _print_help
 
 # Create "enter-tao" dev environment
-create-dev-env: _create-dev-env
+create-dev-env: _create_dev_env
 
 # Update the dev environment
-update-dev-env: _update-dev-env
+update-dev-env: _update_dev_env
 
 # Setup repo for development
 setup: _setup_git_repo
@@ -22,16 +22,16 @@ setup: _setup_git_repo
 dev: _dev
 
 # Run full battery of checks and builds to prepare for commit.
-prep-commit: _prep-commit
+prep-commit: _prep_commit
 
 # Stash unstaged changes. First make sure that all intended changes are staged.
-stash-unstaged-changes: _stash-unstaged-changes
+stash-unstaged-changes: _stash_unstaged_changes
 
 # Restore stashed changes (e.g. after aborting prep-commit workflow).
-unstage-changes: _unstage-changes
+unstage-changes: _unstage_changes
 
 # Ensures that the repo has no changes.
-ensure-repo-clean: _ensure-repo-clean
+ensure-repo-clean: _ensure_repo_clean
 
 # Testing
 #########
@@ -54,7 +54,7 @@ test-all *PATTERNS:
 # Watch all tests
 watch-tests *PATTERNS:
     # If run in any package without watch-tests already defined, watch all tests
-    just _watch-all-tests {{ PATTERNS }}
+    just _watch_all_tests {{ PATTERNS }}
 
 # Formatting, Linting, etc.
 ###########################
@@ -92,10 +92,10 @@ lint-rules: _line_rules
 # Build everything
 [no-quiet]
 build:
-    just _build-all
+    just _build_all
 
 # Alias for build-all
-build-all: _build-all
+build-all: _build_all
 
 # Generate parser from grammar
 gen:

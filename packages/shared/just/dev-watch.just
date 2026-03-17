@@ -3,17 +3,17 @@ import "./_shared-vars.just"
 _dev:
     #!{{ ZSH_INIT }}
     while true; do
-        just _prefix-strip-parallel "_watch-" \
+        just _prefix_strip_parallel "_watch_" \
             {{ _DEV_WATCH_RECIPES }} \
             _steal_focus \
             _r_reloead_q_quit || break;
     done
 
 [private]
-_DEV_WATCH_RECIPES := "_watch-grammar _watch-kitchen-sink-build _watch-runtime-reload \
-                       _watch-typecheck-extension _watch-esbuild-extension _watch-fmt-justfile"
+_DEV_WATCH_RECIPES := "_watch_grammar _watch_kitchen_sink_build _watch_runtime_reload \
+                       _watch_typecheck_extension _watch_esbuild_extension _watch_fmt_justfile"
 
-_watch-all-tests *PATTERNS:
+_watch_all_tests *PATTERNS:
     #!{{ ZSH_INIT }}
     while true; do
         just concurrently-exec-named \
@@ -49,27 +49,27 @@ _r_reloead_q_quit:
     [[ $REPLY == q ]] && exit 1
     exit 0
 
-_watch-grammar:
+_watch_grammar:
     # Watch grammar file and regenerate compiler + IDE syntax on change
     watchexec --restart --watch=packages/parser/tao-grammar.langium -- sh -c "just gen"
 
-_watch-kitchen-sink-build APP_PATH="./Apps/Kitchen Sink/Kitchen Sink.tao":
+_watch_kitchen_sink_build APP_PATH="./Apps/Kitchen Sink/Kitchen Sink.tao":
     cd packages/tao-cli && bun run  --watch --no-clear-screen \
         ./tao-cli.ts compile "`pwd`/../../{{ APP_PATH }}" \
             --runtime-dir "../expo-runtime" \
             --std-lib-root "../tao-std-lib" \
             --verbose --watch
 
-_watch-runtime-reload:
+_watch_runtime_reload:
     cd packages/expo-runtime \
         && EXPO_NO_CLEAR=true BROWSER="Google Chrome" npx expo start --web \
         # && EXPO_NO_CLEAR=true BROWSER="Google Chrome" npx expo start --ios --web \
 
-_watch-typecheck-extension:
+_watch_typecheck_extension:
     cd packages/ide-extension && tsc -b tsconfig.json --watch --preserveWatchOutput
 
-_watch-esbuild-extension:
+_watch_esbuild_extension:
     cd packages/ide-extension && node esbuild.config.ts --watch
 
-_watch-fmt-justfile:
+_watch_fmt_justfile:
     watchexec --filter '**/*.just' --filter '**/Justfile' -- 'just _fmt_just'
