@@ -5,9 +5,6 @@ import "./packages/shared/just/all-imports.just"
 # - `shell` -> recipe step command: zsh, exit on error, error on unset variable, fail on pipefail
 # - `dotenv-load` -> Load environment variables from .env
 
-set shell := ["zsh", "-e", "-u", "-o", "pipefail", "-c"]
-set dotenv-load := true
-
 MAIN_JUSTFILE := "--justfile Justfile"
 AGENT_JUSTFILE := "--justfile just-agents.Justfile"
 
@@ -17,10 +14,12 @@ AGENT_JUSTFILE := "--justfile just-agents.Justfile"
 # Help: List all available agent commands with descriptions
 help:
     echo
-    just {{ AGENT_JUSTFILE }} --list --unsorted
-    echo "Allowed for ./just-agents shell <commands>: {{ ALLOWED_SHELL_COMMANDS }}"
-    echo "Allowed for ./just-agents git <commands>: {{ ALLOWED_GIT_COMMANDS }}"
+    echo 'To run shell commands, use: \n\n    `./just-agents shell <cmd> <args>`'.
     echo
+    echo 'Available shell commands:'
+    echo '    {{ ALLOWED_SHELL_COMMANDS }}' | sed "s/\|/ /g"
+    echo
+    just {{ AGENT_JUSTFILE }} --list --unsorted
 
 # Formats all files
 fmt:
@@ -32,11 +31,17 @@ fix:
 
 # Run full battery of checks and builds to prepare for commit.
 prep-commit:
+    echo 'Running ./just-agents prep-commit...\n'
     just {{ MAIN_JUSTFILE }} prep-commit
+    echo '\nPrep-commit complete!\n'
 
-# Checks: Run tests - optionally specify which `TEST_PATTERNS` to filter test with (e.g. `test "formatter"`, test `"validation|parser"`)
-test *TEST_PATTERNS:
-    just {{ MAIN_JUSTFILE }} test {{ TEST_PATTERNS }}
+# Checks: Run tests - optionally specify which `TEST_NAMES_PATTERN` to filter test with (e.g. `test "formatter"`, test `"validation|parser"`)
+test *TEST_NAMES_PATTERN:
+    just {{ MAIN_JUSTFILE }} test "{{ TEST_NAMES_PATTERN }}"
+
+# Test all packages, including slow ones
+test-all:
+    just {{ MAIN_JUSTFILE }} test-all
 
 # Checks: Lint all code
 lint:
@@ -54,34 +59,43 @@ gen:
 build:
     just {{ MAIN_JUSTFILE }} build
 
+# Cleans: Clean all build artifacts in .builds/
+clean:
+    just {{ MAIN_JUSTFILE }} clean
+
 # Pass-through commands
-#========
+#======================
 
-# Shell commands
+ALLOWED_GIT_COMMANDS := "log|status|diff|add|commit"
+ALLOWED_SHELL_COMMANDS := "grep|ls|echo|head|find|true|test|tail|tsc|mkdir|cat|cp|mv|touch|git"
 
-ALLOWED_GIT_COMMANDS := "|log|status|diff|add|commit|"
-ALLOWED_SHELL_COMMANDS := "|grep|ls|echo|head|find|true|test|tail|tsc|mkdir|cat|cp|mv|touch|"
-
-# List this last, so that agent sees it right after the `just shell` mention in `./just-agents help`
-# Exec a shell command, e.g `./just-agents shell ls`. To see allowed commands, run `./just-agents help`
+# Execute a shell command, e.g `./just-agents shell ls`
 [positional-arguments]
-@ shell EXEC_CMD *ARGS:
+shell EXEC_CMD *ARGS:
+    #!{{ ZSH_INIT }}
+    if [ "$1" = "git" ]; then
+        just {{ AGENT_JUSTFILE }} _check-allowed-git-subcommand "$2"
+        if [ "$2" = "commit" ]; then just {{ AGENT_JUSTFILE }} prep-commit; fi
+    fi
     just {{ AGENT_JUSTFILE }} _execute_whitelisted_subcommand "{{ ALLOWED_SHELL_COMMANDS }}" env "shell" "$1" "${@:2}"
 
-# Exec git: Execute whitelisted git command, e.g `./just-agents git add ./Docs`, `./just-agents git commit -m "message"`. Whitelist: `log`, `status`, `diff`, `add`, `commit`.
-[positional-arguments]
-@ git SUB_CMD *ARGS:
-    if [ "$1" = "commit" ]; then just {{ AGENT_JUSTFILE }} prep-commit; fi
-    just {{ AGENT_JUSTFILE }} _execute_whitelisted_subcommand "{{ ALLOWED_GIT_COMMANDS }}" git "git" "$1" "${@:2}"
+_check-allowed-git-subcommand SUB_CMD:
+    #!{{ ZSH_INIT }}
+    if ! echo "{{ ALLOWED_GIT_COMMANDS }}" | grep -qw "{{ SUB_CMD }}"; then
+        echo "git {{ SUB_CMD }} not allowed." >&2
+        echo "Allowed git subcommands: {{ ALLOWED_GIT_COMMANDS }}" >&2
+        exit 1
+    fi
 
 [positional-arguments]
 _execute_whitelisted_subcommand SUB_CMD_WHITELIST EXEC RECIPE_NAME SUB_CMD *ARGS:
-    #!{{ SHELL_INIT }}
+    #!{{ ZSH_INIT }}
     # $1=whitelist, $2=exec (git or env), $3=recipe name (for errors), $4=subcommand, "${@:5}"=args
-    if ! echo "$1" | grep -q "|$4|"; then
+    if ! echo "|$1|" | grep -q "|$4|"; then
         echo "{{ RECIPE_NAME }} <command> not allowed: $4." >&2
         echo "Allowed commands: $1" >&2
         echo "If you need a new command, ask to have it added." >&2
         exit 1
     fi
-    "$2" "$4" "${@:5}"
+    # When piping commands, we can get exit code 141 = SIGPIPE, which is expected piped e.g. into `./just-agents shell git log | ./just-agents shell head`
+    "$2" "$4" "${@:5}" || { ret=$?; [ $ret -eq 141 ] && exit 0; exit $ret; }

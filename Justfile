@@ -38,8 +38,8 @@ ensure-repo-clean: _ensure-repo-clean
 
 # Run tests for whatever directory we're in
 [no-cd]
-test: gen
-    bun test --reporter=dot
+test *PATTERNS: gen
+    bun test --reporter=dot --test-name-pattern "{{ PATTERNS }}"
 
 # Watch tests, but bail on first failure
 bail-watch-tests *PATTERNS:
@@ -59,7 +59,17 @@ watch-tests *PATTERNS:
 ###########################
 
 # Install all dependencies
-deps: _deps
+deps:
+    #!{{ ZSH_INIT }}
+    # Loop through packages and install dependencies
+    for package in $(ls packages); do
+        # If package.json exists, install dependencies
+        if [ -f packages/$package/package.json ]; then
+            echo "Installing dependencies for $package..."
+            pushd packages/$package && bun install && popd
+        fi
+    done
+
 
 # Format all files
 fmt: _fmt

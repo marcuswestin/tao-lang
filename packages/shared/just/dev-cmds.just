@@ -2,8 +2,8 @@ import "./_shared-vars.just"
 
 [positional-arguments]
 _tao *ARGS:
-    pushd packages/tao-cli && just build && popd
-    ./.builds/tao-cli "$@"
+    pushd ../tao-cli && just build && popd
+    ../../.builds/tao-cli "$@"
 
 _stash-unstaged-changes:
     echo "> Stashing non-staged changes..." && git stash --keep-index --include-untracked
@@ -39,7 +39,7 @@ _build-all:
     cd packages/expo-runtime && just build
     cd packages/ide-extension && just build-package-and-install
 
-x-fix-file-associations:
+_x-fix-file-associations:
     brew install duti --quiet
     for ext in md txt json yaml yml xml css js ts tsx jsx zsh just; \
         do duti -s $(osascript -e 'id of app "Cursor"') .$ext all; \

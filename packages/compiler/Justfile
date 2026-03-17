@@ -1,10 +1,6 @@
-set unstable := true
-set fallback := true
+import "../shared/just/all-imports.just"
 
-_pretest: _deps
-    just gen
-
-test *PATTERNS: _pretest
+test *PATTERNS: _deps
     bun test --reporter=dot --test-name-pattern "{{ PATTERNS }}"
 
 watch-test *PATTERNS: _deps
@@ -20,3 +16,4 @@ watch-compiler: _deps
 
 _deps:
     bun install
+    just gen

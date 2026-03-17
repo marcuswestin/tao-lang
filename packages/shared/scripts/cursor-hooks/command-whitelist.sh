@@ -22,14 +22,8 @@ function halt_command() {
 }
 
 # Allow when ./just-agents is first, or when Cursor runs "cd <dir> && ./just-agents ..." (so $4 is ./just-agents).
-# Recipes are defined in just-agents.Justfile: help, list-commands, git, shell, fmt, fix, test, lint, gen, build, prep-commit
+# Recipes are defined in just-agents.Justfile.
 if_command_lacks "^(\./just-agents |cd[[:space:]]+.+&&[[:space:]]*\./just-agents )" \
   && halt_command "Only agent commands are allowed. Use ./just-agents <cmd>. See ./just-agents help"
-
-
-# Block direct git (git must be the first word). Allow when git is the second argument (recipe): ./just-agents git <subcmd> or just git <subcmd>
-if echo "$command" | grep -q -E "^(git |git$)"; then
-  halt_command "Git commands are not allowed; use \`./just-agents git <subcmd>\` (e.g. ./just-agents git add .)."
-fi
 
 echo '{"permission": "allow"}'

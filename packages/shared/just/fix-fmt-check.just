@@ -1,6 +1,3 @@
-import "./_shared-vars.just"
-import "./setups.just"
-
 # Formatting and linting
 ########################
 # OXLINT_CMD := "oxlint --type-aware"
@@ -14,14 +11,6 @@ _fmt:
     {{ MISE_CMD }} fmt 1> /dev/null 2>&1
     {{ OXLINT_CMD }} --fix 1> /dev/null 2>&1
     just _fmt_newlines
-
-_deps:
-    cd packages/shared && bun install
-    cd packages/compiler && bun install
-    cd packages/tao-cli && bun install
-    cd packages/ide-extension && bun install
-    cd packages/expo-runtime && bun install
-    cd packages/formatter && bun install
 
 _fmt_just:
     for f in $(git ls-files 'Justfile' '*.just' '*.Justfile'); do \
@@ -37,7 +26,7 @@ FMT_NEWLINE_SKIP_LINKS := "[[ -L $f ]]"
 FMT_NEWLINE_PERL := 'perl -0777 -i -pe "s/\n*\z/\n/" -- "$f"'
 
 _fmt_newlines:
-    #!{{ SHELL_INIT }}
+    #!{{ ZSH_INIT }}
     git ls-files -z {{ FMT_NEWLINE_FILTER }} -- {{ FMT_NEWLINE_FILES }} |
     while IFS= read -r -d '' f; do
         {{ FMT_NEWLINE_SKIP_MISSING }} || {{ FMT_NEWLINE_SKIP_LINKS }} || {{ FMT_NEWLINE_PERL }}

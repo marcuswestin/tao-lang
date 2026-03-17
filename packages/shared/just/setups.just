@@ -47,7 +47,7 @@ _trust_mise:
     {{ MISE_CMD }} trust --quiet --yes
 
 _configure_zsh:
-    #!{{ SHELL_INIT }}
+    #!{{ ZSH_INIT }}
     echo "\tConfigure zsh..."
     add_if_missing() { local line="$1" file="$2"; grep -qxF "$line" "$file" || echo "\n# Added by tao-lang dev env '_configure_zsh' justfile rule\n$line" >> "$file"; }
     add_if_missing "alias et=enter-tao && alias enter-tao='echo \" * Enter Tao Lang dev env * \" && cd $PWD && source .config/enter-tao-dev-env-source-configure.zsh'" ~/.zshrc

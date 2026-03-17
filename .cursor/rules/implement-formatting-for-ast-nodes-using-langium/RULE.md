@@ -7,9 +7,9 @@ alwaysApply: false
 
 This guide is for architects building production-grade language servers. It bypasses the basics to focus on the imperative **Node-Centric Model**, advanced **CST manipulation**, and the edge cases that break naive formatters.
 
-When making changes, always write tests in `1-test-formatter.test.ts` demonstrate the intended behavior.
+When making changes, always write tests in `packages/formatter/formatter-tests/1-test-formatter.test.ts` to demonstrate the intended behavior.
 
-Use `bun test packages/compiler/formatter-tests` to run all formatter tests; or `bun test packages/compiler/formatter-tests --test-name-pattern "Name of test"` to run a specific test.
+Use `./just-agents test formatter` to run all formatter tests; or `./just-agents test "formatter|compiler"` to run a specific test.
 
 ## 1. The Mental Model
 

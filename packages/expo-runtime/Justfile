@@ -1,6 +1,4 @@
-set unstable := true
-set fallback := true
-set quiet := true
+import "../shared/just/all-imports.just"
 
 build: _deps
     # Hermes (expo runner) requires import.meta.url to be defined.

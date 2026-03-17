@@ -2,10 +2,13 @@
 
 ---
 
-- **ALWAYS** use `./just-agents <cmd> <args>` for all commands
+- **CRITICAL:** `./just-agents` is your one way to interact with the codebase.
+- **ALWAYS** use `./just-agents <cmd> <args>` for all commands.
+- **ALWAYS** start your session by listing available commands: `./just-agents help`
 - **CRITICAL:** You may ONLY run commands with `./just-agents <cmd> <args>`.
+- **CRITICAL:** Execute shell commands with `./just-agents shell "<shell cmd>" "<args>"`.
 - **CRITICAL**: **Never** modify just-agents.Justfile without asking first.
-- **ALWAYS** start your session with running `./just-agents help`
+- Favor using `./just-agents shell mv <src> <dest>` over rewriting files and then deleting them.
 
 - **Justfile Documentation:**
   - **If** you need to lookup `just`, first check: https://cheatography.com/linux-china/cheat-sheets/justfile/
@@ -62,7 +65,7 @@ Tao Lang Project Docs:
 ### Tao Lang implementation: packages/*
 
 - `packages/parser/` - Langium grammar and generated AST for Tao Lang
-- `packages/compiler/` - Validator, compiler and formatter (using Langium)
+- `packages/compiler/` - Validator and compiler (using Langium)
 - `packages/tao-cli/` - Tao CLI: `tao <...>`
 - `packages/tao-std-lib/` - Standard library: e.g `use tao/ui Col, Row, Text`
 - `packages/ide-extension/` - Tao Lang VSCode/Cursor Extension
@@ -74,5 +77,5 @@ For package-specific instructions, see their AGENTS.md file, e.g `packages/compi
 ### Test files:
 
 - Test files are named `<name>.test.ts`
-- Tests are executed with `bun test`
-  - Except: `expo-runtime` tests can only be run using `node`/`jest`
+- Tests are executed with `./just-agents test <test name pattern>`
+  - Except: `expo-runtime` tests are slow, and are run with `./just-agents test-all`

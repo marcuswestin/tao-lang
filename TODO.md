@@ -12,6 +12,8 @@ Tao Lang TODOs.
 
 Next tasks, in order:
 
+### IMPLEMENTATION TASKS
+
 - [x] Fix just check
 - [x] Merge shared and shared-tools
 - [x] Formatter
@@ -32,12 +34,12 @@ Next tasks, in order:
   - [x] Spread compiled code across multiple files
 - [x] Use a MultiCommand in settings.json to install extension and then restartExtensionHost (see .vscode/settings.json multiCommand.buildExtensionThenRestartHost, .vscode/keybindings.json, README Extension Development)
 - [x] Move parser into its own package
-- [ ] Move formatter into its own package
-- [ ] Fix Justfile move
-- [ ] Remove just-agents, and use just instead with allowlist for all the just-specific commands.
-- [ ] Start using voice mode
+- [x] Move formatter into its own package
+
+### CLEANUP TASKS
+
 - [ ] Ask to update implementing-scoping-for-langium-language.mdc. It looks out of date
-- [ ] Remove grammar.ts
+- [ ] Start using voice mode
 - [ ] Simplify TaoWorkspace to receive the shared workspace instead of the shared services.
 - [ ] Change a bunch of function-oriented files to classes
 - [ ] Switch from // comments to /** ... */ comments for documentation

@@ -47,8 +47,8 @@ Fill out the spec to the best of your ability based on:
 
 ### Step 4: Commit the Spec
 
-1. Stage the new files: `./just-agents git add "Docs/Dev Log/"`
-2. Commit: `git commit -m "docs: create <Project Name> project spec"`
+1. Stage the new files: `./just-agents shell git add "Docs/Dev Log/"`
+2. Commit: `./just-agents shell git commit -m "docs: create <Project Name> project spec"`
 
 ### Step 5: Create Feature Branch
 
@@ -60,7 +60,7 @@ git checkout -b "ft/<project-name-kebab-case>"
 
 Examples: `ft/pattern-matching`, `ft/error-handling`.
 
-> Note: `checkout` is not in the `./just-agents git` whitelist. Run `git checkout` directly, or ask the user to switch branches.
+> Note: `checkout` is not in the `./just-agents shell git` whitelist. Run `./just-agents shell git checkout` directly, or ask the user to switch branches.
 
 ## Notes
 

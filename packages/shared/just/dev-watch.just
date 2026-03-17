@@ -1,7 +1,7 @@
 import "./_shared-vars.just"
 
 _dev:
-    #!{{ SHELL_INIT }}
+    #!{{ ZSH_INIT }}
     while true; do
         just _prefix-strip-parallel "_watch-" \
             {{ _DEV_WATCH_RECIPES }} \
@@ -14,11 +14,12 @@ _DEV_WATCH_RECIPES := "_watch-grammar _watch-kitchen-sink-build _watch-runtime-r
                        _watch-typecheck-extension _watch-esbuild-extension _watch-fmt-justfile"
 
 _watch-all-tests *PATTERNS:
-    #!{{ SHELL_INIT }}
+    #!{{ ZSH_INIT }}
     while true; do
-        just concurrently-named \
+        just concurrently-exec-named \
             "shared" "cd packages/shared && bun test --watch --silent --reporter=dot {{ PATTERNS }}" \
             "compiler" "cd packages/compiler && bun test --watch --silent --reporter=dot {{ PATTERNS }}" \
+            "formatter" "cd packages/formatter && bun test --watch --silent --reporter=dot {{ PATTERNS }}" \
             "tao-cli" "cd packages/tao-cli && bun test --watch --silent --reporter=dot {{ PATTERNS }}" \
             "extension" "cd packages/ide-extension && bun test --watch --silent --reporter=dot {{ PATTERNS }}" \
             "runtime" "cd packages/expo-runtime && just watch-tests {{ PATTERNS }}" \
@@ -40,7 +41,7 @@ _steal_focus:
     sleep 99999999
 
 _r_reloead_q_quit:
-    #!{{ SHELL_INIT }}
+    #!{{ ZSH_INIT }}
     REPLY=""
     echo "Press 'r' to restart or 'q' to exit..."
     while read -k 1; [[ $REPLY != r ]] && [[ $REPLY != q ]]; do :; done
@@ -50,7 +51,6 @@ _r_reloead_q_quit:
 _watch-grammar:
     # Watch grammar file and regenerate compiler + IDE syntax on change
     watchexec --restart --watch=packages/parser/tao-grammar.langium -- sh -c "just gen"
-
 
 _watch-kitchen-sink-build APP_PATH="./Apps/Kitchen Sink/Kitchen Sink.tao":
     cd packages/tao-cli && bun run  --watch --no-clear-screen \

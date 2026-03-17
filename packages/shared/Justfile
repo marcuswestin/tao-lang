@@ -1,5 +1,4 @@
-set unstable := true
-set fallback := true
+import "../shared/just/all-imports.just"
 
 build:
     bun install
