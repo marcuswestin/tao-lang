@@ -9,7 +9,6 @@
 - **CRITICAL:** Execute shell commands with `./just-agents shell "<shell cmd>" "<args>"`.
 - **CRITICAL**: **Never** modify just-agents.Justfile without asking first.
 - Favor using `./just-agents shell mv <src> <dest>` over rewriting files and then deleting them.
-
 - **Justfile Documentation:**
   - **If** you need to lookup `just`, first check: https://cheatography.com/linux-china/cheat-sheets/justfile/
   - **If** you need more details, see:: https://just.systems/man/en/
@@ -19,8 +18,7 @@
 ## Misc Instructions:
 
 - **NEVER** delete files without asking.
-- **ALWAYS** check all changes with `test`.
-- **ALWAYS** run `fix` and check for changes before committing.
+- **ALWAYS** run `fix` and `pre-commit-check` before committing, unless explicitly instructed not to.
 
 ## Documentation:
 

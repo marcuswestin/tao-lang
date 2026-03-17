@@ -2,13 +2,13 @@ import { Compiled, compileNode, compileNodeListProperty } from '@compiler/compil
 import { AST } from '@parser'
 import { switchItemType_Exhaustive, switchProperty_Exhaustive } from '@shared/TypeSafety'
 import { compileAliasDeclaration } from './alias-gen'
-import { compileInjection } from './injection-gen'
+import { compileTopLevelInjection } from './injection-gen'
 import { compileViewDeclaration } from './view-gen'
 
 export function compileTopLevelStatement(statement: AST.TopLevelStatement): Compiled {
   return switchItemType_Exhaustive(statement, {
     'UseStatement': compileUseStatement,
-    'Injection': compileInjection,
+    'Injection': compileTopLevelInjection,
     'TopLevelDeclaration': compileTopLevelDeclaration,
   })
 }

@@ -1,6 +1,8 @@
+import type { CompiledTaoScenario, CompiledTaoScenarioAdapter } from '@shared/CompiledTaoScenario'
 import { cleanup, render, type RenderResult } from '@testing-library/react-native'
 import { spawnSync } from 'node:child_process'
-import { resolve as resolvePath } from 'node:path'
+import { existsSync } from 'node:fs'
+import { basename, resolve as resolvePath } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import type { ComponentType } from 'react'
 
@@ -8,6 +10,7 @@ type CompileOpts = {
   code?: string
   path?: string
   stdLibRoot?: string
+  outputFileName?: string
 }
 
 type CompileResult = {
@@ -25,6 +28,7 @@ type RenderCompiledAppResult = RenderResult & {
 
 const runtimeDir = resolvePath(__dirname, '..')
 const repoRoot = resolvePath(runtimeDir, '../..')
+const stdLibRoot = resolvePath(repoRoot, 'packages/tao-std-lib')
 const compiledAppModulePath = resolvePath(runtimeDir, 'src/_gen-tao-compiler/app-output.tsx')
 const taoSdkModuleUrl = pathToFileURL(resolvePath(repoRoot, 'packages/tao-cli/cli-src/tao-cli-main.ts')).href
 
@@ -33,8 +37,37 @@ export function getHeadlessTestRuntimeDir() {
   return runtimeDir
 }
 
+// getCompiledTaoScenarioName Derive a scenario display name from its directory name.
+export function getCompiledTaoScenarioName(scenarioDir: string) {
+  return basename(scenarioDir)
+}
+
+// createHeadlessScenarioAdapter Create a shared-scenario adapter for the headless runtime.
+export function createHeadlessScenarioAdapter() {
+  const outputFileName = `src/_gen-runtime-tests/${getGeneratedOutputFileName('scenario')}`
+
+  const adapter: CompiledTaoScenarioAdapter = {
+    async compileScenario({ scenarioDir }: { scenarioDir: string; scenario: CompiledTaoScenario }) {
+      return compileTaoForHeadlessRuntime({
+        path: resolvePath(scenarioDir, 'app.tao'),
+        stdLibRoot,
+        outputFileName,
+      })
+    },
+    renderCompiledApp({ outputPath }: { outputPath: string }) {
+      return renderCompiledTaoApp(outputPath)
+    },
+    cleanup() {
+      cleanup()
+    },
+  }
+
+  return adapter
+}
+
 // compileTaoForHeadlessRuntime Compile Tao source into the headless runtime output module.
 export async function compileTaoForHeadlessRuntime(opts: CompileOpts): Promise<CompileResult> {
+  const outputPath = getCompiledOutputPath(opts.outputFileName)
   const command = spawnSync(
     'bun',
     [
@@ -56,20 +89,18 @@ export async function compileTaoForHeadlessRuntime(opts: CompileOpts): Promise<C
     },
   )
 
-  if (command.status === 0) {
-    return { outputPath: compiledAppModulePath }
+  const compileError = getCompileCommandError(command)
+  if (command.status === 0 || existsSync(outputPath)) {
+    return { outputPath, compileError }
   }
 
-  return {
-    outputPath: compiledAppModulePath,
-    compileError: command.stderr || command.stdout || `bun exited with status ${command.status}`,
-  }
+  throw new Error(`Failed to compile Tao for the headless runtime: ${compileError}`)
 }
 
 // renderCompiledTaoApp Render the most recently compiled Tao app from this runtime.
-export function renderCompiledTaoApp(): RenderCompiledAppResult {
+export function renderCompiledTaoApp(outputPath = compiledAppModulePath): RenderCompiledAppResult {
   cleanup()
-  const compiledModule = loadCompiledAppModule()
+  const compiledModule = loadCompiledAppModule(outputPath)
   const CompiledTaoApp = compiledModule.default
 
   return {
@@ -78,21 +109,30 @@ export function renderCompiledTaoApp(): RenderCompiledAppResult {
   }
 }
 
-// compileAndRenderTao Compile Tao into this runtime and render the generated app.
-export async function compileAndRenderTao(opts: CompileOpts): Promise<RenderCompiledAppResult & CompileResult> {
-  const compileResult = await compileTaoForHeadlessRuntime(opts)
-  const renderResult = renderCompiledTaoApp()
-
-  return {
-    ...compileResult,
-    ...renderResult,
-  }
-}
-
-function loadCompiledAppModule(): CompiledAppModule {
+function loadCompiledAppModule(outputPath: string): CompiledAppModule {
   jest.resetModules()
-  const resolvedModulePath = require.resolve(compiledAppModulePath)
+  const resolvedModulePath = require.resolve(outputPath)
   delete require.cache[resolvedModulePath]
 
   return require(resolvedModulePath) as CompiledAppModule
+}
+
+function getCompiledOutputPath(outputFileName?: string) {
+  if (!outputFileName) {
+    return compiledAppModulePath
+  }
+
+  return resolvePath(runtimeDir, outputFileName)
+}
+
+function getGeneratedOutputFileName(baseName: string) {
+  return `test-${sanitizePathSegment(baseName)}-${Math.random().toString(36).slice(2, 12)}-app-output.tsx`
+}
+
+function sanitizePathSegment(value: string) {
+  return value.replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-+|-+$/g, '').toLowerCase()
+}
+
+function getCompileCommandError(command: ReturnType<typeof spawnSync>) {
+  return command.stderr || command.stdout || `bun exited with status ${command.status}`
 }

@@ -1,0 +1,5 @@
+{
+  "assertions": [
+    { "type": "textVisible", "text": "Hello from std lib" }
+  ]
+}

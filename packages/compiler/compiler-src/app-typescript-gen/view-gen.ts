@@ -7,6 +7,7 @@ import {
 } from '@compiler/compiler-utils'
 import { AST } from '@parser'
 import { switchItemType_Exhaustive } from '@shared/TypeSafety'
+import * as LangiumGen from 'langium/generate'
 import { compileAliasDeclaration } from './alias-gen'
 import { compileExpression } from './expression-gen'
 import { compileInjection } from './injection-gen'
@@ -26,7 +27,7 @@ export function compileViewDeclaration(declaration: AST.ViewDeclaration): Compil
 
 function compileParameterList(parameterList?: AST.ParameterList): Compiled {
   if (!parameterList) {
-    return undefined
+    return new LangiumGen.CompositeGeneratorNode('props: any')
   }
   return compileNode(parameterList)`
     props: {${

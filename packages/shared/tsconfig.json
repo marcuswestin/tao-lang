@@ -9,6 +9,9 @@
     "scripts/**/*"
   ],
   "compilerOptions": {
+    "composite": false,
+    "declaration": false,
+    "incremental": false,
     "module": "ESNext",
     "moduleResolution": "bundler",
     "noEmit": true

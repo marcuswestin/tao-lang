@@ -1,0 +1,9 @@
+file app SimpleTextRenderApp { ui RootView }
+
+view RootView {
+  Text value "Hello from shared scenario" {}
+}
+
+view Text value string {
+  inject ```ts return <RN.Text>{props.value}</RN.Text> ```
+}

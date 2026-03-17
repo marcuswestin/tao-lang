@@ -110,9 +110,16 @@ async function checkUserInputs(opts: TaoSDK_compileOpts) {
   if (!runtimeManifest) {
     throwUserInputRejectionError(`Runtime path is not a tao runtime: ${runtimeDir}`)
   }
-  const outputPath = runtimeManifest.outputPath
+  return getRuntimeOutputPath(runtimeDir, runtimeManifest, opts.outputFileName)
+}
 
-  return path.resolve(runtimeDir, outputPath)
+function getRuntimeOutputPath(runtimeDir: string, runtimeManifest: TaoRuntimeManifest, outputFileName?: string) {
+  const defaultOutputPath = path.resolve(runtimeDir, runtimeManifest.outputPath)
+  if (!outputFileName) {
+    return defaultOutputPath
+  }
+
+  return path.resolve(runtimeDir, outputFileName)
 }
 
 function isDirectory(path: string): boolean {
