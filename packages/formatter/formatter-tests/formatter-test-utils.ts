@@ -1,7 +1,7 @@
 import { createTaoWorkspace } from '@compiler/tao-services'
+import { expect, test } from 'bun:test'
 import * as Langium from 'langium'
 import { NodeFileSystem } from 'langium/node'
-import { expect, test } from '../compiler-tests/test-utils/test-harness'
 
 export function shouldFormat(code: string, expected: string) {
   return async () => {
@@ -90,6 +90,7 @@ export function dedent(text: string): string {
 
 // Helper: Replaces invisible characters with visible symbols
 export const visualize = (str: string) =>
-  str.replace(/ /g, '·')
+  str
+    .replace(/ /g, '·')
     .replace(/\t/g, '→')
     .replace(/\n/g, '↵\n')

@@ -23,7 +23,7 @@ describe('cli:', () => {
 function getRandomUI() {
   const needle = Math.random().toString(36).substring(2, 15)
   const code = `
-    file app KitchenSink { ui RootView }
+    app KitchenSink { ui RootView }
 
     view RootView { Text value "${needle}" {} }
 
