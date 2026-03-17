@@ -27,22 +27,22 @@ export default class TaoFormatter extends AbstractFormatter {
 
   protected format(node: AST.TaoLangAstType[keyof AST.TaoLangAstType]): void {
     return switchBindItemType_Exhaustive(node, this, {
-      'TaoFile': this.formatTaoFile,
-      'UseStatement': this.formatUseStatement,
-      'AppDeclaration': this.formatAppDeclaration,
-      'TopLevelDeclaration': this.formatTopLevelDeclaration,
-      'AppStatement': this.formatAppStatement,
-      'ViewDeclaration': this.formatViewDeclaration,
-      'ViewRenderStatement': this.formatViewRenderStatement,
-      'ArgsList': this.formatArgsList,
-      'Argument': this.formatArgument,
-      'Injection': this.formatInjection,
-      'ParameterDeclaration': this.formatParameterDeclaration,
-      'ParameterList': this.formatParameterList,
-      'AliasDeclaration': this.formatAliasDeclaration,
-      'NamedReference': this.formatNamedReference,
-      'NumberLiteral': this.formatNumberLiteral,
-      'StringLiteral': this.formatStringLiteral,
+      'TaoFile': (n) => this.formatTaoFile(n),
+      'UseStatement': (n) => this.formatUseStatement(n),
+      'AppDeclaration': (n) => this.formatAppDeclaration(n),
+      'TopLevelDeclaration': (n) => this.formatTopLevelDeclaration(n),
+      'AppStatement': (n) => this.formatAppStatement(n),
+      'ViewDeclaration': (n) => this.formatViewDeclaration(n),
+      'ViewRenderStatement': (n) => this.formatViewRenderStatement(n),
+      'ArgsList': (n) => this.formatArgsList(n),
+      'Argument': (n) => this.formatArgument(n),
+      'Injection': (n) => this.formatInjection(n),
+      'ParameterDeclaration': (n) => this.formatParameterDeclaration(n),
+      'ParameterList': (n) => this.formatParameterList(n),
+      'AliasDeclaration': (n) => this.formatAliasDeclaration(n),
+      'NamedReference': (n) => this.formatNamedReference(n),
+      'NumberLiteral': (n) => this.formatNumberLiteral(n),
+      'StringLiteral': (n) => this.formatStringLiteral(n),
     })
   }
 

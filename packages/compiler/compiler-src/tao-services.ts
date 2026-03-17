@@ -170,7 +170,7 @@ export function createTaoWorkspace(
   if (!context.connection) {
     // We're not inside a language server, so
     // initialize the configuration provider instantly
-    TaoModule.shared.workspace.ConfigurationProvider.initialized({})
+    void TaoModule.shared.workspace.ConfigurationProvider.initialized({})
   }
 
   // TODO: Is there a difference between sharedTaoModule and TaoModule.shared?

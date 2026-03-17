@@ -12,20 +12,25 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   if (context.extensionMode === vscode.ExtensionMode.Development) {
     channel.show(true)
 
+    const dbg = channel.debug.bind(channel)
+    const info = channel.info.bind(channel)
+    const warn = channel.warn.bind(channel)
+    const trace = channel.trace.bind(channel)
+    const err = channel.error.bind(channel)
     setLogTransport({
-      log: channel.debug as (...args: unknown[]) => void,
-      wrap: channel.debug,
-      debug: channel.debug,
-      info: channel.info,
-      warn: channel.warn,
-      error: channel.trace,
+      log: dbg as (...args: unknown[]) => void,
+      wrap: dbg,
+      debug: dbg,
+      info,
+      warn,
+      error: trace,
       taoError(error, ...args) {
-        channel.error(error.getLogMessage(), ...args)
+        err(error.getLogMessage(), ...args)
       },
-      trace: channel.trace,
-      success: channel.info,
-      instruct: channel.info,
-      reject: channel.error,
+      trace,
+      success: info,
+      instruct: info,
+      reject: err,
     })
   }
 

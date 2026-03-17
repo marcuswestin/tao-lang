@@ -2,9 +2,8 @@ import "./_shared-vars.just"
 
 # Formatting and linting
 ########################
-# OXLINT_CMD := "oxlint --type-aware"
 
-OXLINT_CMD := "oxlint"
+OXLINT_CMD := "oxlint --type-aware"
 
 _fmt:
     just _fmt_just

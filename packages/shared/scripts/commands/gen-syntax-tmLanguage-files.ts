@@ -19,7 +19,7 @@ export async function genSyntaxTmLanguageFiles(
   Log(`Merge files`)
   const merged = merge(tmJson, mergeJson)
   Log(`Write ${outputJsonPath}`)
-  Bun.write(outputJsonPath, JSON.stringify(merged, null, 2))
+  await Bun.write(outputJsonPath, JSON.stringify(merged, null, 2))
   Log.success(`Merged tm files and wrote ${outputJsonPath}`)
 
   const markdownEmbedOutputJsonPath = path.resolve(outputDirPath, 'tao-lang.markdown-embed.tmLanguage.json')

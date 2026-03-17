@@ -22,7 +22,7 @@ export function taoCliMain() {
     .action(async (inputPath, { watch, verbose, code, runtimeDir, stdLibRoot }) => {
       verbose = true
       hci.setVerbose(verbose)
-      hci.wrapExecution(async () => {
+      await hci.wrapExecution(async () => {
         async function compileAndWrite() {
           hci.verboselyInform(`Compiling...`)
           const result = await TaoSDK_compile({ path: inputPath, code, runtimeDir, stdLibRoot })

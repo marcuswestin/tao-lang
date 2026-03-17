@@ -81,7 +81,7 @@ export function isTaoError(error: unknown): error is TaoError {
   return error instanceof BaseTaoError
 }
 
-export function getTaoError(error: TaoError | Error | unknown, logInfo?: Record<string, unknown>): TaoError {
+export function getTaoError(error: unknown, logInfo?: Record<string, unknown>): TaoError {
   if (isTaoError(error)) {
     return error
   }
@@ -146,7 +146,7 @@ class NotYetImplementedError extends BaseTaoError {
 }
 
 export type UnexpectedBehaviorContext = {
-  cause: Error | unknown
+  cause: unknown
   humanMessage?: string
   logInfo?: Record<string, unknown>
 }

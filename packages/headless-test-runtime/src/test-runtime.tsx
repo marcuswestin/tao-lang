@@ -94,7 +94,7 @@ export async function compileTaoForHeadlessRuntime(opts: CompileOpts): Promise<C
     return { outputPath, compileError }
   }
 
-  throw new Error(`Failed to compile Tao for the headless runtime: ${compileError}`)
+  throw new Error(`Failed to compile Tao for the headless runtime: ${String(compileError)}`)
 }
 
 // renderCompiledTaoApp Render the most recently compiled Tao app from this runtime.

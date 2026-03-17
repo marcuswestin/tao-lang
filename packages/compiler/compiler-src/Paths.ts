@@ -59,7 +59,7 @@ type StreamFilesOptions = {
 export async function* streamFilesIn(dirPath: string, opts: StreamFilesOptions = {}): AsyncGenerator<string> {
   const { includeDirectories = false, includeHidden = false, includeOnlyExtensions = [] } = opts
 
-  for await (const entry of readDir(dirPath)) {
+  for (const entry of readDir(dirPath)) {
     const fullPath = path.join(dirPath, entry)
 
     if (!includeHidden && entry.startsWith('.')) {
