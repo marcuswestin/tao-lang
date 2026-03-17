@@ -63,6 +63,10 @@ build:
 clean:
     just {{ MAIN_JUSTFILE }} clean
 
+# Package commands: Run commands in packages/expo-runtime
+expo-runtime *ARGS:
+    just {{ MAIN_JUSTFILE }} expo-runtime {{ ARGS }}
+
 # Pass-through commands
 #======================
 

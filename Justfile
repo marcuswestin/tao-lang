@@ -40,6 +40,7 @@ ensure-repo-clean: _ensure-repo-clean
 [no-cd]
 test *PATTERNS: gen
     bun test --reporter=dot --test-name-pattern "{{ PATTERNS }}"
+    cd packages/headless-test-runtime && just test {{ PATTERNS }}
 
 # Watch tests, but bail on first failure
 bail-watch-tests *PATTERNS:
@@ -47,7 +48,7 @@ bail-watch-tests *PATTERNS:
 
 # Run all tests, including slow ones
 test-all *PATTERNS:
-    bun test --reporter=dot {{ PATTERNS }}
+    just test {{ PATTERNS }}
     cd packages/expo-runtime && just test {{ PATTERNS }}
 
 # Watch all tests
@@ -70,7 +71,6 @@ deps:
         fi
     done
 
-
 # Format all files
 fmt: _fmt
 
@@ -91,7 +91,7 @@ lint-rules: _line_rules
 
 # Build everything
 [no-quiet]
-build: gen
+build:
     just _build-all
 
 # Alias for build-all
@@ -116,6 +116,9 @@ compiler *ARGS:
 
 expo-runtime *ARGS:
     cd {{ justfile_dir() }}/packages/expo-runtime && just {{ ARGS }}
+
+headless-test-runtime *ARGS:
+    cd {{ justfile_dir() }}/packages/headless-test-runtime && just {{ ARGS }}
 
 ide-extension *ARGS:
     cd {{ justfile_dir() }}/packages/ide-extension && just {{ ARGS }}

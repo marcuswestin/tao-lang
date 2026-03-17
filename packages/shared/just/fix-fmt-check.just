@@ -37,6 +37,7 @@ _fix: _fmt
     cd packages/compiler && ts-autofix fix --tsCliArgs --noUnusedLocals
     cd packages/tao-cli && ts-autofix fix --tsCliArgs --noUnusedLocals
     cd packages/shared && ts-autofix fix --tsCliArgs --noUnusedLocals
+    cd packages/headless-test-runtime && ts-autofix fix --tsCliArgs --noUnusedLocals
     cd packages/ide-extension && ts-autofix fix --tsCliArgs --noUnusedLocals
     cd packages/expo-runtime && ts-autofix fix --tsCliArgs --noUnusedLocals
     cd packages/expo-runtime && bunx expo lint --fix
@@ -50,6 +51,7 @@ _check:
     cd packages/compiler && tsc --noUnusedLocals
     cd packages/tao-cli && tsc --noEmit --noUnusedLocals
     cd packages/shared && tsc --noEmit --noUnusedLocals
+    cd packages/headless-test-runtime && tsc --noEmit --noUnusedLocals
     cd packages/ide-extension && tsc --noEmit --noUnusedLocals
     cd packages/expo-runtime && tsc --noEmit --noUnusedLocals
     cd packages/expo-runtime && bunx expo lint

@@ -14,7 +14,7 @@ release-prep: _deps build test
 run: _deps
     bunx expo start --web --ios
 
-JEST_ARGS := "--detectOpenHandles"
+JEST_ARGS := "--detectOpenHandles --watchman=false"
 JEST_WATCH_ARGS := JEST_ARGS + " --watch --silent --reporter=dot"
 
 [no-quiet]

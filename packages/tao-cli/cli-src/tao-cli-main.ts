@@ -1,15 +1,13 @@
 import { Command } from '@commander-js/extra-typings'
 import { compileTao } from '@compiler'
-import {
-  TaoError,
-  throwUserInputRejectionError,
-} from '@shared/TaoErrors'
+import { TaoError, throwUserInputRejectionError } from '@shared/TaoErrors'
 import chokidar from 'chokidar'
 import { mkdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import * as process from 'node:process'
 import { hci } from './hci-human-computer-interaction'
 
+// taoCliMain Run the Tao CLI entrypoint.
 export function taoCliMain() {
   const program = new Command()
 
@@ -21,21 +19,21 @@ export function taoCliMain() {
     .option('--watch', 'Watch the file and recompile when it changes')
     .option('--verbose', 'Verbose output', false)
     .option('--std-lib-root <path>', 'The root directory of the standard library', (value) => path.resolve(value))
-    .action(async (path, { watch, verbose, code, runtimeDir, stdLibRoot }) => {
+    .action(async (inputPath, { watch, verbose, code, runtimeDir, stdLibRoot }) => {
       verbose = true
       hci.setVerbose(verbose)
       hci.wrapExecution(async () => {
         async function compileAndWrite() {
           hci.verboselyInform(`Compiling...`)
-          const result = await TaoSDK_compile({ path, code, runtimeDir, stdLibRoot })
+          const result = await TaoSDK_compile({ path: inputPath, code, runtimeDir, stdLibRoot })
           hci.inform(`Compiled to ${result.outputPath}`)
         }
 
         if (watch) {
-          if (!path) {
+          if (!inputPath) {
             throwUserInputRejectionError('Watch mode requires a file to be provided')
           }
-          chokidar.watch(path).on('change', compileAndWrite)
+          chokidar.watch(inputPath).on('change', compileAndWrite)
           if (stdLibRoot) {
             chokidar.watch(stdLibRoot).on('change', compileAndWrite)
           }
@@ -56,6 +54,12 @@ type TaoSDK_compileOpts = {
   outputFileName?: string
 }
 type TaoSDK_compileResult = { outputPath: string; result?: { code: string }; error?: TaoError }
+
+type TaoRuntimeManifest = {
+  outputPath: string
+}
+
+// TaoSDK_compile Compile Tao source into the configured runtime output module.
 export async function TaoSDK_compile(opts: TaoSDK_compileOpts): Promise<TaoSDK_compileResult> {
   if (!opts.path && !opts.code) {
     throwUserInputRejectionError('Missing <path>')
@@ -102,14 +106,13 @@ async function checkUserInputs(opts: TaoSDK_compileOpts) {
     throwUserInputRejectionError(`Runtime path does not contain a package.json file: ${runtimeDir}`)
   }
   const packageJson = readJsonFile(packageJsonPath)
-  if (packageJson.name !== '@tao/expo-runtime') {
+  const runtimeManifest = getTaoRuntimeManifest(packageJson)
+  if (!runtimeManifest) {
     throwUserInputRejectionError(`Runtime path is not a tao runtime: ${runtimeDir}`)
   }
-  if (packageJson.version !== '0.1.0-dev') {
-    throwUserInputRejectionError(`Runtime path is not expected version 0.1.0-dev: ${packageJson.version}`)
-  }
+  const outputPath = runtimeManifest.outputPath
 
-  return path.resolve(runtimeDir, 'app/_gen-tao-compiler/app-output.tsx')
+  return path.resolve(runtimeDir, outputPath)
 }
 
 function isDirectory(path: string): boolean {
@@ -135,4 +138,18 @@ function fileExists(path: string): boolean {
 
 function readJsonFile(path: string): any {
   return JSON.parse(readFileSync(path, 'utf8'))
+}
+
+function getTaoRuntimeManifest(packageJson: any): TaoRuntimeManifest | undefined {
+  const manifest = packageJson.taoRuntime
+  if (!manifest || typeof manifest !== 'object') {
+    return undefined
+  }
+  if (typeof manifest.outputPath !== 'string' || manifest.outputPath.length === 0) {
+    return undefined
+  }
+
+  return {
+    outputPath: manifest.outputPath,
+  }
 }

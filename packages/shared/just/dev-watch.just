@@ -21,6 +21,7 @@ _watch-all-tests *PATTERNS:
             "compiler" "cd packages/compiler && bun test --watch --silent --reporter=dot {{ PATTERNS }}" \
             "formatter" "cd packages/formatter && bun test --watch --silent --reporter=dot {{ PATTERNS }}" \
             "tao-cli" "cd packages/tao-cli && bun test --watch --silent --reporter=dot {{ PATTERNS }}" \
+            "headless runtime" "cd packages/headless-test-runtime && just watch-tests {{ PATTERNS }}" \
             "extension" "cd packages/ide-extension && bun test --watch --silent --reporter=dot {{ PATTERNS }}" \
             "runtime" "cd packages/expo-runtime && just watch-tests {{ PATTERNS }}" \
             "q Exit" "just _r_reloead_q_quit" || break;

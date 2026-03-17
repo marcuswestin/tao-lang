@@ -1,6 +1,8 @@
 import "../shared/just/all-imports.just"
 
-build:
-    bun install
+build: _deps
     bunx langium generate --mode=development
     just q-dev gen-syntax-tmLanguage-files
+
+_deps:
+    bun install

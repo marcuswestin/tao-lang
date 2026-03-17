@@ -48,5 +48,8 @@
     "eslint-config-expo": "~10.0.0",
     "jest-silent-reporter": "^0.6.0",
     "typescript": "~5.9.2"
+  },
+  "taoRuntime": {
+    "outputPath": "app/_gen-tao-compiler/app-output.tsx"
   }
 }
