@@ -1,8 +1,6 @@
 import * as langium from 'langium'
 
-// TaoWorkspaceManager extends the default workspace manager to load std lib files
-// as additional documents, ensuring they're available for reference resolution
-// regardless of whether they're inside a VS Code workspace folder.
+/** TaoWorkspaceManager preloads std-lib .tao files as workspace documents. */
 export class TaoWorkspaceManager extends langium.DefaultWorkspaceManager {
   private readonly stdLibRoot?: string
 
@@ -11,6 +9,7 @@ export class TaoWorkspaceManager extends langium.DefaultWorkspaceManager {
     this.stdLibRoot = stdLibRoot
   }
 
+  /** loadAdditionalDocuments registers all std-lib Tao files when stdLibRoot is set. */
   protected override async loadAdditionalDocuments(
     _folders: langium.WorkspaceFolder[],
     collector: (document: langium.LangiumDocument) => void,

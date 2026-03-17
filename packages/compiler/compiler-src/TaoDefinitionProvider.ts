@@ -9,7 +9,7 @@ import {
   resolveModulePathToUris,
 } from './ModuleResolution'
 
-// TaoDefinitionProvider adds go-to-definition for imported names in use statements.
+/** TaoDefinitionProvider implements go-to-definition including use-statement imported names. */
 export class TaoDefinitionProvider extends DefaultDefinitionProvider {
   private readonly indexManager: langium.IndexManager
   private readonly documents: langium.LangiumDocuments
@@ -20,6 +20,7 @@ export class TaoDefinitionProvider extends DefaultDefinitionProvider {
     this.documents = services.shared.workspace.LangiumDocuments
   }
 
+  /** collectLocationLinks returns use-statement targets or delegates to default Langium behavior. */
   protected override collectLocationLinks(
     sourceCstNode: langium.CstNode,
     _params: DefinitionParams,
@@ -31,7 +32,7 @@ export class TaoDefinitionProvider extends DefaultDefinitionProvider {
     return super.collectLocationLinks(sourceCstNode, _params)
   }
 
-  // tryGetUseStatementDefinition returns a LocationLink if the source node is an imported name in a use statement.
+  /** tryGetUseStatementDefinition returns a LocationLink when the cursor is on a use import name. */
   private tryGetUseStatementDefinition(sourceCstNode: langium.CstNode): LocationLink | undefined {
     const astNode = sourceCstNode.astNode
     if (!AST.isUseStatement(astNode)) {
@@ -64,6 +65,7 @@ export class TaoDefinitionProvider extends DefaultDefinitionProvider {
     )
   }
 
+  /** getTargetUrisForUseStatement returns document URIs to search for the imported declaration. */
   private getTargetUrisForUseStatement(
     useStmt: AST.UseStatement,
     document: langium.LangiumDocument,
@@ -91,6 +93,7 @@ export class TaoDefinitionProvider extends DefaultDefinitionProvider {
     )
   }
 
+  /** findDeclarationInUris returns the first matching importable declaration in target URIs. */
   private findDeclarationInUris(
     name: string,
     targetUris: string[],
@@ -108,6 +111,7 @@ export class TaoDefinitionProvider extends DefaultDefinitionProvider {
     return undefined
   }
 
+  /** findDeclarationInDesc resolves desc if it is the named shared or same-module export. */
   private findDeclarationInDesc(
     desc: langium.AstNodeDescription,
     name: string,
@@ -131,6 +135,7 @@ export class TaoDefinitionProvider extends DefaultDefinitionProvider {
     return undefined
   }
 
+  /** isMatchingDeclaration returns true when name and URI match an importable AST node. */
   private isMatchingDeclaration(
     desc: langium.AstNodeDescription,
     name: string,

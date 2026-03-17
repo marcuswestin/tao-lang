@@ -28,7 +28,7 @@
   - [ ] Parameters, outside and inside block. Match by name, type
   - [ ] Function parameters; e.g rendering an Item in a List.
     - [ ] Optional parameters
-    - [ ] Multiple type signatures, to ensure no incorrect invotations
+    - [ ] Multiple type signatures, to ensure no incorrect invocations
   - [ ] Arguments of invocations - inline args; block args
   - [ ] Explicit vs implicit statement and expression types (e.g function return type)
 - [ ] Functions
@@ -178,7 +178,7 @@ Project: ` /create-project Lets create a project for "Basic Functions":
 
 - [ ] Implement named module imports and dependency declarations
 - [ ] Remote modules
-- [ ] Versioning, locking, deterministic builds, secutiry
+- [ ] Versioning, locking, deterministic builds, security
 
 ### Security
 

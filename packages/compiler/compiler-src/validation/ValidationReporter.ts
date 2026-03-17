@@ -11,6 +11,7 @@ import {
 } from 'langium'
 import type { DiagnosticRelatedInformation } from 'vscode-languageserver-types'
 
+/** makeValidater wraps a validation function with a Reporter for the Langium acceptor API. */
 export function makeValidater<NodeT extends AstNode>(
   fn: (node: NodeT, report: Reporter<NodeT>) => void,
 ): (node: NodeT, accept: ValidationAcceptor) => void {
@@ -19,6 +20,7 @@ export function makeValidater<NodeT extends AstNode>(
   }
 }
 
+/** nodeProperty returns a diagnostic location on a node property. */
 export function nodeProperty<NodeT extends AstNode>(
   node: NodeT,
   property: NodePropName<NodeT>,
@@ -26,6 +28,7 @@ export function nodeProperty<NodeT extends AstNode>(
   return { node, property }
 }
 
+/** nodeKeyword returns a diagnostic location on a Tao keyword within a node. */
 export function nodeKeyword<NodeT extends AstNode>(
   node: NodeT,
   keyword: AST.TaoLangKeywordNames,
@@ -33,6 +36,7 @@ export function nodeKeyword<NodeT extends AstNode>(
   return { node, keyword }
 }
 
+/** nodeRange returns a diagnostic location on an explicit range within a node. */
 export function nodeRange<NodeT extends AstNode>(
   node: NodeT,
   range: Report.Range,
@@ -51,6 +55,7 @@ export class Reporter<NodeT extends AstNode> {
     private readonly validationAcceptor: ValidationAcceptor,
   ) {}
 
+  /** error reports a validation error at an optional location. */
   error<ErrorNodeT extends AstNode = NodeT>(
     message: string,
     location?: Location<NodeT, ErrorNodeT> | ErrorNodeT,
@@ -59,6 +64,7 @@ export class Reporter<NodeT extends AstNode> {
     this.validationAcceptor('error', message, this.diagnosticsInfo(location, extraInfo))
   }
 
+  /** warning reports a validation warning. */
   warning<WarningNodeT extends AstNode = NodeT>(
     message: string,
     location: Location<NodeT, WarningNodeT>,
@@ -67,6 +73,7 @@ export class Reporter<NodeT extends AstNode> {
     this.validationAcceptor('warning', message, this.diagnosticsInfo(location, extraInfo))
   }
 
+  /** info reports an info-level diagnostic. */
   info<InfoNodeT extends AstNode>(
     message: string,
     location: Location<NodeT, InfoNodeT>,
@@ -75,6 +82,7 @@ export class Reporter<NodeT extends AstNode> {
     this.validationAcceptor('info', message, this.diagnosticsInfo(location, extraInfo))
   }
 
+  /** deprecated reports deprecation as an info diagnostic. */
   deprecated<DeprecatedNodeT extends AstNode>(
     message: string,
     location: Location<NodeT, DeprecatedNodeT>,
@@ -82,6 +90,7 @@ export class Reporter<NodeT extends AstNode> {
   ) {
     this.validationAcceptor('info', message, this.diagnosticsInfo(location, extraInfo))
   }
+  /** unnecessary reports unnecessary code as an info diagnostic. */
   unnecessary<UnnecessaryNodeT extends AstNode>(
     message: string,
     location: Location<NodeT, UnnecessaryNodeT>,
@@ -90,11 +99,7 @@ export class Reporter<NodeT extends AstNode> {
     this.validationAcceptor('info', message, this.diagnosticsInfo(location, extraInfo))
   }
 
-  // Private
-
-  // diagnosticsInfo receives information about a node location, and creates a DiagnosticInfo object.
-  // It can use the class node, or received a specified node; along with a property name or keyword
-  // to determine the location inside that node.
+  /** diagnosticsInfo builds DiagnosticInfo from location and optional extra metadata. */
   private diagnosticsInfo<ForNodeT extends AstNode>(
     location?: Location<NodeT, ForNodeT> | ForNodeT,
     extraInfo?: Report.ExtraInfo<ForNodeT>,
@@ -116,6 +121,7 @@ export class Reporter<NodeT extends AstNode> {
 
     return { relatedInformation, data, code, codeDescription, ...extraInfo, ...nodeLocation, node }
   }
+  /** getRelatedInformation maps alsoCheck callbacks to LSP related information. */
   private getRelatedInformation<ForNodeT extends AstNode>(
     extraInfo?: Report.ExtraInfo<ForNodeT>,
   ): DiagnosticRelatedInformation[] {

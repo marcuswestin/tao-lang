@@ -7,7 +7,8 @@ import path from 'node:path'
 import * as process from 'node:process'
 import { hci } from './hci-human-computer-interaction'
 
-// taoCliMain Run the Tao CLI entrypoint.
+/** taoCliMain runs the Tao CLI via Commander (`process.argv`).
+ * Today this registers only `compile`; see that command’s options for file vs `--code`, watch, and paths. */
 export function taoCliMain() {
   const program = new Command()
 
@@ -23,6 +24,8 @@ export function taoCliMain() {
       verbose = true
       hci.setVerbose(verbose)
       hci.wrapExecution(async () => {
+        /** compileAndWrite runs `TaoSDK_compile` for the action’s path/code/runtime/std-lib and prints the output path.
+         * On compiler diagnostics, `TaoSDK_compile` throws before this logs success. */
         async function compileAndWrite() {
           hci.verboselyInform(`Compiling...`)
           const result = await TaoSDK_compile({ path: inputPath, code, runtimeDir, stdLibRoot })
@@ -59,7 +62,11 @@ type TaoRuntimeManifest = {
   outputPath: string
 }
 
-// TaoSDK_compile Compile Tao source into the configured runtime output module.
+/** TaoSDK_compile compiles exactly one of `path` or `code` into the runtime package’s configured output file.
+ * - Inline `code` is written to a temp `.tao` under `/tmp`, compiled, then deleted.
+ * - `runtimeDir` must be a Tao runtime directory (`package.json` with `taoRuntime.outputPath`).
+ * - `outputFileName`, if set, is resolved under `runtimeDir` and overrides the manifest output path.
+ * - Compile or validation failures become `UserInputRejectionError` with the human-readable report message. */
 export async function TaoSDK_compile(opts: TaoSDK_compileOpts): Promise<TaoSDK_compileResult> {
   if (!opts.path && !opts.code) {
     throwUserInputRejectionError('Missing <path>')
@@ -92,6 +99,8 @@ export async function TaoSDK_compile(opts: TaoSDK_compileOpts): Promise<TaoSDK_c
   }
 }
 
+/** checkUserInputs ensures `runtimeDir` exists, contains `package.json` with a valid `taoRuntime` block,
+ * optionally checks `stdLibRoot`, and returns where the emitted file should be written. */
 async function checkUserInputs(opts: TaoSDK_compileOpts) {
   const runtimeDir = path.resolve(opts.runtimeDir)
   if (!isDirectory(runtimeDir)) {
@@ -113,6 +122,8 @@ async function checkUserInputs(opts: TaoSDK_compileOpts) {
   return getRuntimeOutputPath(runtimeDir, runtimeManifest, opts.outputFileName)
 }
 
+/** getRuntimeOutputPath joins `runtimeDir` with `taoRuntime.outputPath`, or with `outputFileName` when provided
+ * (still anchored under `runtimeDir`). */
 function getRuntimeOutputPath(runtimeDir: string, runtimeManifest: TaoRuntimeManifest, outputFileName?: string) {
   const defaultOutputPath = path.resolve(runtimeDir, runtimeManifest.outputPath)
   if (!outputFileName) {
@@ -122,6 +133,7 @@ function getRuntimeOutputPath(runtimeDir: string, runtimeManifest: TaoRuntimeMan
   return path.resolve(runtimeDir, outputFileName)
 }
 
+/** isDirectory returns true when the path exists and is a directory. */
 function isDirectory(path: string): boolean {
   try {
     return statSync(path).isDirectory()
@@ -130,11 +142,13 @@ function isDirectory(path: string): boolean {
   }
 }
 
+/** writeFile ensures parent dirs exist then writes UTF-8 content. */
 async function writeFile(targetPath: string, content: string) {
   mkdirSync(path.dirname(targetPath), { recursive: true })
   writeFileSync(targetPath, content)
 }
 
+/** fileExists returns true when the path is an existing regular file. */
 function fileExists(path: string): boolean {
   try {
     return statSync(path).isFile()
@@ -143,10 +157,13 @@ function fileExists(path: string): boolean {
   }
 }
 
+/** readJsonFile parses JSON from a path. */
 function readJsonFile(path: string): any {
   return JSON.parse(readFileSync(path, 'utf8'))
 }
 
+/** getTaoRuntimeManifest returns `{ outputPath }` when `packageJson.taoRuntime` is an object with a non-empty
+ * string `outputPath`; otherwise `undefined` (caller treats that as “not a Tao runtime”). */
 function getTaoRuntimeManifest(packageJson: any): TaoRuntimeManifest | undefined {
   const manifest = packageJson.taoRuntime
   if (!manifest || typeof manifest !== 'object') {

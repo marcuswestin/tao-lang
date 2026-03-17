@@ -24,7 +24,7 @@ Each one of these core responsibilities has its own syntax, which empowers effic
 
 ## References
 
-### Common Difficultues
+### Common difficulties
 
 - Data fetching and caching
 - UI Layout (across many different platforms and screen dimensions)

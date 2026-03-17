@@ -3,19 +3,13 @@ import { AstNode, Properties, Reference } from 'langium'
 
 export type { NodePropName }
 
-// assertNever throws an error when called, used for exhaustive type checking
-// Example:
-//   switch(expr.kind) {
-//     case 'a': ...; break;
-//     case 'b': ...; break;
-//     default: assertNever(expr); // type error if not exhaustive
-//   }
+/** assertNever throws at runtime when reached; use as exhaustive switch default so missing cases are a type error.
+ * - Example: `default: assertNever(expr)`. */
 export function assertNever<T extends never>(_arg: T): never {
   throw new Error(`assertNever called`)
 }
 
-// compileNodeProperty generates code for the given node property, using the generator function if
-// provided, otherwise using the property value directly
+/** compileNodeProperty emits traced code for one AST property with an optional per-value generator. */
 export function compileNodeProperty<NodeT extends AstNode, PropName extends NodePropName<NodeT>>(
   node: NodeT,
   propertyName: PropName,
@@ -29,7 +23,7 @@ export function compileNodeProperty<NodeT extends AstNode, PropName extends Node
   return compileNode(node, propertyName)`${content}`
 }
 
-// compileNodeListProperty generates code for a list property without special formatting
+/** compileNodeListProperty emits traced code for an array property with a per-item generator. */
 export function compileNodeListProperty<
   NodeT extends AstNode,
   PropName extends {
@@ -60,6 +54,7 @@ type CompileListItemFn<ItemT extends any> = (
 
 type ItemOfIterable<T> = T extends Iterable<infer U> ? U : never
 
+/** _compileNodeListProperty joins list items with tracing to the owning node. */
 function _compileNodeListProperty<
   NodeT extends AstNode,
   PropName extends NodePropName<NodeT>,
@@ -76,7 +71,7 @@ function _compileNodeListProperty<
   return LangiumGen.joinTracedToNode<NodeT>(node, propertyName)(property, compileListItemFn, options)
 }
 
-// genNode returns a template tag function that generates code traced to the given AST node
+/** compileNode returns a template tag that expands code traced to the given AST node. */
 export function compileNode<T extends AstNode>(
   astNode: T,
   property?: Properties<T>,
@@ -87,12 +82,14 @@ export function compileNode<T extends AstNode>(
   return LangiumGen.expandTracedToNode(astNode, property)
 }
 
+/** assert throws if condition is false (internal compiler-utils check). */
 function assert(condition: boolean, message: string): void {
   if (!condition) {
     throw new Error(message)
   }
 }
 
+/** compileList joins arbitrary iterable items with tracing to astNode. */
 export function compileList<NodeT extends AstNode, ItemT>(
   astNode: NodeT,
   items: Iterable<ItemT>,
@@ -107,8 +104,7 @@ type GenListItemFn<ItemT extends any> = (
   isLast: boolean,
 ) => LangiumGen.Generated
 
-// genNodePropertyRef resolves the reference property and
-// generates code using the resolved target node.
+/** genNodePropertyRef resolves a reference property and emits code from the target. */
 export function genNodePropertyRef<
   NodeT extends AstNode,
   PropName extends _NodeRefPropName<NodeT>,

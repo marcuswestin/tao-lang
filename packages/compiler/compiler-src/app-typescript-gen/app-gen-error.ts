@@ -1,5 +1,6 @@
 import { TaoErrorReport } from '@compiler/parse-errors'
 
+/** getErrorAppString returns TSX source for a minimal error screen from a TaoErrorReport. */
 export function getErrorAppString(errorReport: TaoErrorReport) {
   const messages = errorReport.getHumanErrorMessage()
   return `// @ts-nocheck

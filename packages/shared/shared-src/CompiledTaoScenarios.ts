@@ -39,12 +39,13 @@ export type CompiledTaoScenarioAdapter = {
 const repoRootDir = resolvePath(__dirname, '../../..')
 const compiledTaoScenariosRootDir = resolvePath(repoRootDir, 'Apps', 'Test Apps')
 
-// getCompiledTaoScenariosRootDir Return the shared compiled Tao scenario root directory.
+/** getCompiledTaoScenariosRootDir returns the repo’s `Apps/Test Apps` directory (each subfolder is one scenario). */
 export function getCompiledTaoScenariosRootDir() {
   return compiledTaoScenariosRootDir
 }
 
-// discoverCompiledTaoScenarios Load all shared compiled Tao scenarios in deterministic order.
+/** discoverCompiledTaoScenarios visits every immediate subdirectory of `rootDir` (sorted by path) and loads
+ * `scenario.json` from each. A directory without a valid `scenario.json` causes `loadCompiledTaoScenario` to throw. */
 export function discoverCompiledTaoScenarios(rootDir = compiledTaoScenariosRootDir): DiscoveredCompiledTaoScenario[] {
   return readdirSync(rootDir, { withFileTypes: true })
     .filter(entry => entry.isDirectory())
@@ -56,7 +57,9 @@ export function discoverCompiledTaoScenarios(rootDir = compiledTaoScenariosRootD
     }))
 }
 
-// loadCompiledTaoScenario Load and validate a single shared compiled Tao scenario.
+/** loadCompiledTaoScenario reads `${scenarioDir}/scenario.json`, parses it, and validates shape
+ * (`assertions` array; each entry `type: "textVisible"` with non-empty `text`). Throws `Error` with the path
+ * in the message when validation fails. */
 export function loadCompiledTaoScenario(scenarioDir: string): CompiledTaoScenario {
   const scenarioPath = resolvePath(scenarioDir, 'scenario.json')
   const rawScenario = JSON.parse(readFileSync(scenarioPath, 'utf8')) as unknown
@@ -64,7 +67,9 @@ export function loadCompiledTaoScenario(scenarioDir: string): CompiledTaoScenari
   return parseCompiledTaoScenario(rawScenario, scenarioPath)
 }
 
-// runScenario Compile, render, and assert a shared compiled Tao scenario.
+/** runScenario drives the adapter lifecycle: `cleanup()` before work, then compile → render → run each assertion,
+ * then `cleanup()` again in `finally`. Assertion behavior depends on `renderResult.getByText` (e.g. testing-library
+ * will throw if text is missing). Any adapter or compile error propagates to the caller. */
 export async function runScenario(opts: {
   scenarioDir: string
   scenario: CompiledTaoScenario
@@ -91,6 +96,7 @@ export async function runScenario(opts: {
   }
 }
 
+/** parseCompiledTaoScenario parses and validates scenario JSON; throws descriptive `Error`s referencing `scenarioPath`. */
 function parseCompiledTaoScenario(rawScenario: unknown, scenarioPath: string): CompiledTaoScenario {
   if (!isRecord(rawScenario)) {
     throw new Error(`Scenario must be an object: ${scenarioPath}`)
@@ -106,6 +112,7 @@ function parseCompiledTaoScenario(rawScenario: unknown, scenarioPath: string): C
   }
 }
 
+/** parseAssertion parses one assertion object; only `textVisible` is supported today. */
 function parseAssertion(
   rawAssertion: unknown,
   scenarioPath: string,
@@ -128,6 +135,8 @@ function parseAssertion(
   }
 }
 
+/** runAssertion delegates to `renderResult.getByText` for `textVisible` (callers usually rely on that to throw
+ * when the string is absent from the tree). */
 function runAssertion(assertion: CompiledTaoScenarioAssertion, renderResult: CompiledTaoScenarioRenderResult) {
   switch (assertion.type) {
     case 'textVisible':
@@ -136,6 +145,7 @@ function runAssertion(assertion: CompiledTaoScenarioAssertion, renderResult: Com
   }
 }
 
+/** isRecord returns true when value is a non-null object record. */
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }

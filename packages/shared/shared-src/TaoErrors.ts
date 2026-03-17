@@ -34,17 +34,20 @@ export interface UserInputRejection extends BaseTaoErrorInterface {
   readonly name: 'UserInputRejectionError'
 }
 
-// Halt execution because of user input. It could be missing, malformed, etc
+/** throwUserInputRejectionError throws `UserInputRejectionError` for bad CLI args, missing files, or other
+ * user-correctable problems (as opposed to internal bugs—use `throwUnexpectedBehaviorError` / `Assert` for those). */
 export function throwUserInputRejectionError(humanMessage: string): never {
   throw new UserInputRejectionError(humanMessage)
 }
 
-// Halt execution because of unintended and unexpected behavior - aka a bug.
+/** throwUnexpectedBehaviorError throws `UnexpectedBehaviorError` with a cause chain; `humanMessage` is shown to
+ * the user when set, otherwise a generic sorry message. Non-`Error` causes are wrapped and serialized into `logInfo`. */
 export function throwUnexpectedBehaviorError(context: UnexpectedBehaviorContext): never {
   throw new UnexpectedBehaviorError(context)
 }
 
-// Halt execution because we haven't implemented something yet.
+/** throwNotYetImplementedError throws `NotYetImplementedError` with a message built from `ability` and optional
+ * `because_X_Y_and_Z`; `info` is appended to the log line when present. */
 export function throwNotYetImplementedError(
   ability: string,
   info?: Map<string, unknown>,
@@ -53,7 +56,8 @@ export function throwNotYetImplementedError(
   throw new NotYetImplementedError(ability, info, because_X_Y_and_Z)
 }
 
-// Assert condition is true. If not, halt execution with an unexpected behavior error.
+/** Assert throws `UnexpectedBehaviorError` when `condition` is falsy, embedding `expectedConditionDescription`
+ * and merging optional `logInfo` objects into the error’s diagnostic payload. */
 export function Assert<T>(
   condition: T,
   expectedConditionDescription: string,
@@ -68,6 +72,7 @@ export function Assert<T>(
   }
 }
 
+/** Halt throws `UnexpectedBehaviorError` tagged as a deliberate halt (`HaltError` cause, optional message). */
 export function Halt(humanMessage?: string): never {
   throw new UnexpectedBehaviorError({
     humanMessage: humanMessage ?? 'Halt called',
@@ -76,11 +81,13 @@ export function Halt(humanMessage?: string): never {
   })
 }
 
-// Check if an error is a Tao error
+/** isTaoError returns true when error is a TaoError instance. */
 export function isTaoError(error: unknown): error is TaoError {
   return error instanceof BaseTaoError
 }
 
+/** getTaoError returns Tao errors unchanged; anything else becomes `UnexpectedBehaviorError` with a generic
+ * end-user message, the original value as `cause` (or wrapped), and merged `logInfo`. */
 export function getTaoError(error: TaoError | Error | unknown, logInfo?: Record<string, unknown>): TaoError {
   if (isTaoError(error)) {
     return error
@@ -92,12 +99,12 @@ export function getTaoError(error: TaoError | Error | unknown, logInfo?: Record<
   })
 }
 
-// Check if an error is a user input rejection error
+/** isUserInputRejectionError returns true when error is UserInputRejectionError. */
 export function isUserInputRejectionError(error: unknown): error is UserInputRejectionError {
   return error instanceof UserInputRejectionError
 }
 
-// Check if an error is an unexpected behavior error
+/** isUnexpectedBehaviorError returns true when error is UnexpectedBehaviorError. */
 export function isUnexpectedBehaviorError(error: unknown): error is UnexpectedBehaviorError {
   return error instanceof UnexpectedBehaviorError
 }
@@ -121,6 +128,7 @@ abstract class BaseTaoError extends Error {
 export class UserInputRejectionError extends BaseTaoError {
   override readonly name = 'UserInputRejectionError'
 
+  /** getLogMessage returns the log line for user input rejection. */
   getLogMessage(): string {
     return 'UserInputRejectionError: ' + this.messageForEndUser
   }
@@ -133,6 +141,7 @@ export class UserInputRejectionError extends BaseTaoError {
 class NotYetImplementedError extends BaseTaoError {
   override readonly name = 'NotYetImplementedError'
 
+  /** getLogMessage returns the log line for not-yet-implemented error. */
   getLogMessage(): string {
     const additionalInfo = safeJSONStringifyAdditionalInfo(this.info)
     return `NotYetImplementedError: ${this.messageForEndUser}${additionalInfo ? ` - info: ${additionalInfo}` : ''}`
@@ -154,6 +163,7 @@ export type UnexpectedBehaviorContext = {
 class UnexpectedBehaviorError extends BaseTaoError {
   override readonly name = 'UnexpectedBehaviorError'
 
+  /** getLogMessage returns the full diagnostic log line including cause stack hint. */
   getLogMessage(): string {
     return `${this.name}: ${this.messageForEndUser}. ${safeJSONStringifyAdditionalInfo(this.logInfo)}. ${this.stack}`
   }
@@ -174,6 +184,7 @@ class UnexpectedBehaviorError extends BaseTaoError {
     // Error.captureStackTrace.(this, UnexpectedBehaviorError)
   }
 
+  /** getCauseErrorAndLogInfo normalizes opts.cause to an Error and merges log info. */
   private static getCauseErrorAndLogInfo(
     opts: UnexpectedBehaviorContext,
   ): { cause: Error; logInfo?: Record<string, unknown> } {
@@ -199,15 +210,18 @@ class UnexpectedBehaviorError extends BaseTaoError {
     )
   }
 
+  /** _indentStack indents each line of a stack string for nested display. */
   private _indentStack(stack: string): string {
     return stack.replace(/^/gm, '    ')
   }
 }
 
+/** getStackMessage returns the stack or a placeholder when missing. */
 function getStackMessage(errorName: string, stack?: string): string {
   return stack || `<Stack missing for ${errorName}>`
 }
 
+/** safeJSONStringifyAdditionalInfo stringifies value or returns a fallback on failure. */
 function safeJSONStringifyAdditionalInfo(value: unknown): string {
   try {
     return JSON.stringify(value)

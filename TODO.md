@@ -83,7 +83,7 @@ First:
   - [ ] Read through other files
   - [ ] Create commit plan
   - [ ] Execute it
-  - [ ] pre-commit: check for unstaged changes and askto stash them before continuing
+  - [ ] pre-commit: check for unstaged changes and ask to stash them before continuing
 - [ ] Follow up on having a few lexer tests written
 - [ ] Start formatter
   - [ ] ASTNode.$cstNode.test/.range.start.line?

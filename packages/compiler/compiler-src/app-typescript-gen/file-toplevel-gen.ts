@@ -5,6 +5,7 @@ import { compileAliasDeclaration } from './alias-gen'
 import { compileTopLevelInjection } from './injection-gen'
 import { compileViewDeclaration } from './view-gen'
 
+/** compileTopLevelStatement dispatches to use, injection, or top-level declaration codegen. */
 export function compileTopLevelStatement(statement: AST.TopLevelStatement): Compiled {
   return switchItemType_Exhaustive(statement, {
     'UseStatement': compileUseStatement,
@@ -13,6 +14,7 @@ export function compileTopLevelStatement(statement: AST.TopLevelStatement): Comp
   })
 }
 
+/** compileTopLevelDeclaration emits app, view, or alias at file top level. */
 function compileTopLevelDeclaration(node: AST.TopLevelDeclaration): Compiled {
   return switchItemType_Exhaustive(node.declaration, {
     'AppDeclaration': compileAppDeclaration,
@@ -21,6 +23,7 @@ function compileTopLevelDeclaration(node: AST.TopLevelDeclaration): Compiled {
   })
 }
 
+/** compileUseStatement emits a comment placeholder for a Tao use line. */
 function compileUseStatement(useStatement: AST.UseStatement): Compiled {
   const fromClause = useStatement.modulePath ? ` from ${useStatement.modulePath}` : ''
   return compileNode(useStatement)`
@@ -28,10 +31,12 @@ function compileUseStatement(useStatement: AST.UseStatement): Compiled {
   `
 }
 
+/** compileAppDeclaration emits all app statements for one app declaration. */
 function compileAppDeclaration(declaration: AST.AppDeclaration): Compiled {
   return compileNodeListProperty(declaration, 'appStatements', compileAppStatement)
 }
 
+/** compileAppStatement emits codegen for app statements (currently only ui → AppUIView). */
 function compileAppStatement(statement: AST.AppStatement): Compiled {
   return switchProperty_Exhaustive(statement, 'type', {
     ui: () =>

@@ -8,6 +8,7 @@ export type GeneratedApp = {
   trace: LangiumGen.TraceRegion
 }
 
+/** generateTypescriptReactNativeApp emits RN TSX for the main and imported Tao files. */
 export function generateTypescriptReactNativeApp(
   mainTaoFile: AST.TaoFile,
   importedTaoFiles: AST.TaoFile[],
@@ -22,6 +23,7 @@ export function generateTypescriptReactNativeApp(
   return result
 }
 
+/** compilePreamble emits the ts-nocheck and react-native import preamble. */
 function compilePreamble(mainTaoFile: AST.TaoFile): Compiled {
   return compileNode(mainTaoFile)`
     // @ts-nocheck
@@ -29,6 +31,7 @@ function compilePreamble(mainTaoFile: AST.TaoFile): Compiled {
   `
 }
 
+/** compileTaoFile emits top-level statements for one Tao file as a traced TSX chunk. */
 function compileTaoFile(taoFile: AST.TaoFile): Compiled {
   return compileNode(taoFile)`
     // ${taoFile.$document!.uri}
@@ -36,6 +39,7 @@ function compileTaoFile(taoFile: AST.TaoFile): Compiled {
   `
 }
 
+/** compileMainView emits the default export app shell wrapping AppUIView. */
 function compileMainView(mainTaoFile: AST.TaoFile): Compiled {
   return compileNode(mainTaoFile)`
     export default function CompiledTaoApp() {

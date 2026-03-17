@@ -6,7 +6,7 @@ import {
   resolveModulePathToUris,
 } from './ModuleResolution'
 
-// TaoScopeProvider filters symbols for reference resolution based on module visibility rules.
+/** TaoScopeProvider resolves reference scopes using module and use-statement rules. */
 export class TaoScopeProvider extends langium.DefaultScopeProvider {
   constructor(
     services: langium.LangiumCoreServices,
@@ -15,7 +15,7 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
     super(services)
   }
 
-  // getScope returns the scope of available symbols for a reference context.
+  /** getScope returns available symbols for the given reference context. */
   override getScope(context: langium.ReferenceInfo): langium.Scope {
     if (context.property === 'view' && AST.isViewRenderStatement(context.container)) {
       return this.getModuleScopedDeclarations(context)
@@ -33,7 +33,7 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
     return super.getScope(context)
   }
 
-  // getModuleScopedDeclarations builds a scope chain: local -> imported.
+  /** getModuleScopedDeclarations merges local symbols with use-imported symbols. */
   private getModuleScopedDeclarations(context: langium.ReferenceInfo): langium.Scope {
     const document = langium.AstUtils.getDocument(context.container)
     const value = document.parseResult.value
@@ -48,7 +48,7 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
     return this.createScope(localScope, importedScope)
   }
 
-  // getUseImportedSymbols collects symbols from `use` statements.
+  /** getUseImportedSymbols returns descriptions for names imported via use statements. */
   private getUseImportedSymbols(
     taoFile: AST.TaoFile,
     document: langium.LangiumDocument,
@@ -67,7 +67,7 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
     return imported
   }
 
-  // getSymbolsForUseStatement resolves symbols for a `use` statement.
+  /** getSymbolsForUseStatement returns a stream of symbols visible from one use statement. */
   private getSymbolsForUseStatement(
     useStmt: AST.UseStatement,
     referenceType: string,
@@ -90,6 +90,7 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
     return this.getAccessibleImportedSymbols(targetUris, referenceType, useStmt, sameModule)
   }
 
+  /** getAccessibleImportedSymbols filters index elements by URI set and import rules. */
   private getAccessibleImportedSymbols(
     targetUris: string[],
     referenceType: string,
@@ -100,7 +101,7 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
       .filter((description) => this.isImportAccessible(description, useStmt, sameModule))
   }
 
-  // isImportAccessible checks whether an exported symbol matches an imported name and has appropriate visibility.
+  /** isImportAccessible returns whether the description matches the useStmt import list and share rules. */
   private isImportAccessible(
     description: langium.AstNodeDescription,
     useStmt: AST.UseStatement,
@@ -123,7 +124,7 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
     return false
   }
 
-  // getLocalScope retrieves local symbols from the document's symbol table.
+  /** getLocalScope collects local symbol descriptions walking up from context.container. */
   private getLocalScope(
     context: langium.ReferenceInfo,
     document: langium.LangiumDocument,
