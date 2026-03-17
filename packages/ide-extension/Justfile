@@ -19,13 +19,13 @@ run:
 
 build: build-package-and-install
 
-build-package-and-install:
+build-package-and-install: _deps
     just compiler build
     just package
     just install-extension
 
 # Package the extension. This calls `just _npm-package-script_vscode-prepublish` via package.json script `vscode:prepublish`.
-package:
+package: _deps
     bunx @vscode/vsce package --allow-missing-repository --out ../../.builds 1> /dev/null
 
 _npm-package-script_vscode-prepublish:
@@ -45,3 +45,6 @@ restart-cursor:
 
 check:
     tsc -b tsconfig.json
+
+_deps:
+    bun install
