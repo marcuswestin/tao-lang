@@ -22,17 +22,10 @@
 
 ## Documentation:
 
-- **ALWAYS** jsdoc all TS functions with name and description: `/** <fn name> <desc> */`.
-- **USUALLY** jsdoc on a single line, unless more is appropriate: `/** <fn name> <desc> */`.
-- **SOMETIMES** jsdoc additional details with list items when appropriate: `/** <fn name> <desc>\n * - ...\n * - ...\n */`.
-
----
-
-## Project structure:
-
-### Root Directory:
-
-Human instructions:
+- **ALWAYS** jsdoc all TS functions, in the form: `/** <fn name> <verb> <desc> */`, e.g `/** getUserById returns the user with the given id */`.
+- **USUALLY** jsdoc on a single line, unless more is appropriate: `/** <fn name> <verb> <desc> */`.
+- **ALWAYS** start multiline jsdoc lines right after `/**` without a newline; and end with `*/` right at the end of the last line, without a newline before it.
+- **SOMETIMES** jsdoc additional details with list items when appropriate: `/** <fn name> <verb> <desc>\n * - ...\n * - ...\n */`.
 
 - `README.md` - Human instructions
 - `Justfile` - Human command runner file (`just <command> <args>`)
@@ -69,8 +62,6 @@ Tao Lang Project Docs:
 - `packages/ide-extension/` - Tao Lang VSCode/Cursor Extension
 - `packages/expo-runtime/` - Tao App runtime: Expo react native harness for compiled Tao apps
 - `packages/shared/` - Code shared across all packages. TypeScript modules, internal scripts, etc
-
-For package-specific instructions, see their AGENTS.md file, e.g `packages/compiler/AGENTS.md`.
 
 ### Test files:
 

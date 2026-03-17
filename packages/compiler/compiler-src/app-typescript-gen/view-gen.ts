@@ -12,6 +12,7 @@ import { compileAliasDeclaration } from './alias-gen'
 import { compileExpression } from './expression-gen'
 import { compileInjection } from './injection-gen'
 
+/** compileViewDeclaration emits a React function component from the view AST. */
 export function compileViewDeclaration(declaration: AST.ViewDeclaration): Compiled {
   const preambleStatements = declaration.viewStatements.filter(
     n => AST.isAliasDeclaration(n) || AST.isInjection(n) || AST.isViewDeclaration(n),
@@ -25,6 +26,7 @@ export function compileViewDeclaration(declaration: AST.ViewDeclaration): Compil
   `
 }
 
+/** compileParameterList emits props destructuring types for view parameters. */
 function compileParameterList(parameterList?: AST.ParameterList): Compiled {
   if (!parameterList) {
     return new LangiumGen.CompositeGeneratorNode('props: any')
@@ -38,6 +40,7 @@ function compileParameterList(parameterList?: AST.ParameterList): Compiled {
   `
 }
 
+/** compileViewRenderStatement emits child view JSX with args and nested statements. */
 function compileViewRenderStatement(node: AST.ViewRenderStatement): Compiled {
   return genNodePropertyRef(node, 'view', view =>
     compileNode(view)`
@@ -47,6 +50,7 @@ function compileViewRenderStatement(node: AST.ViewRenderStatement): Compiled {
     `)
 }
 
+/** compileViewStatement dispatches render, alias, injection, or nested view codegen. */
 function compileViewStatement(statement: AST.ViewStatement): Compiled {
   return switchItemType_Exhaustive(statement, {
     ViewRenderStatement: (n) => compileViewRenderStatement(n),
@@ -56,6 +60,7 @@ function compileViewStatement(statement: AST.ViewStatement): Compiled {
   })
 }
 
+/** compileArgsListToProps emits JSX prop assignments from an args list. */
 function compileArgsListToProps(args?: AST.ArgsList): Compiled {
   if (!args) {
     return undefined

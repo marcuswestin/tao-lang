@@ -17,13 +17,15 @@ export { describe, expect, test } from 'bun:test'
 // Lexing
 /////////
 
-// lex the code, and check only for lexing errors - skip parse, link and validation errors
+/** lexTokens lexes `code` and returns lexer diagnostics only (`validateUpToStage: 'lexing'`); parse/link/validation
+ * errors are not produced for this call. */
 export async function lexTokens(code: string, stdLibRoot = '') {
   const result = await TaoParser.parseString(code, { stdLibRoot, validateUpToStage: 'lexing' })
   return result.errorReport.lexerErrors
 }
 
-// lex the code, and expect lexing errors. Optionally assert each unexpectedCharacter appears in some error (message or at offset in code).
+/** lexTokensWithErrors requires at least one lexer error, then optionally checks each `unexpectedCharacters` entry
+ * appears either at a reported offset in `code` or in an error message (quoted/highlighted forms) so tests stay precise. */
 export async function lexTokensWithErrors(code: string, ...unexpectedCharacters: string[]) {
   const lexErrors = await lexTokens(code)
   Assert(lexErrors.length > 0, 'lexTokensWithErrors expected lexing errors, but got none.')
@@ -47,7 +49,7 @@ export async function lexTokensWithErrors(code: string, ...unexpectedCharacters:
   return lexErrors
 }
 
-// parse the code, and check only for lex and parse errors - Skips link and validation errors
+/** parseAST parses through the parsing stage; fails the test via `Assert` if lexer or parser reported any error. */
 export async function parseAST(code: string, stdLibRoot = ''): Promise<Wrapped<AST.TaoFile>> {
   const { errorReport, taoFileAST } = await TaoParser.parseString(code, { stdLibRoot, validateUpToStage: 'parsing' })
   Assert(
@@ -57,20 +59,22 @@ export async function parseAST(code: string, stdLibRoot = ''): Promise<Wrapped<A
   return wrap(taoFileAST!)
 }
 
-// parse the code, and check for all errors - lex, parse, link and validation errors
+/** parseASTWithErrors runs the full pipeline and returns the aggregated `TaoErrorReport`; the test fails if the
+ * pipeline produced no errors (use this only when you expect failure). */
 export async function parseASTWithErrors(code: string, stdLibRoot = ''): Promise<TaoErrorReport> {
   const { errorReport } = await TaoParser.parseString(code, { stdLibRoot, validateUpToStage: 'all' })
   Assert(errorReport.hasError(), 'parseASTWithErrors expected at least one error report, but got none.')
   return errorReport
 }
 
-// parse the code and resolve reference links - skips validation errors
+/** resolveReferences parses through linking; fails the test if lexer, parser, or linker reported errors (validation not run). */
 export async function resolveReferences(code: string, stdLibRoot = ''): Promise<Wrapped<AST.TaoFile>> {
   const { errorReport, taoFileAST } = await TaoParser.parseString(code, { stdLibRoot, validateUpToStage: 'linking' })
   Assert(!errorReport.hasError(), 'Expected no errors, but got: ' + errorReport.getHumanErrorMessage())
   return wrap(taoFileAST!)
 }
 
+/** parseTaoFully runs lex → parse → link → validation; fails the test on any reported error. */
 export async function parseTaoFully(code: string, stdLibRoot = ''): Promise<Wrapped<TaoFile>> {
   const { errorReport, taoFileAST } = await TaoParser.parseString(code, { stdLibRoot, validateUpToStage: 'all' })
   Assert(!errorReport.hasError(), 'Expected no errors, but got: ' + errorReport.getHumanErrorMessage())
@@ -81,17 +85,17 @@ export async function parseTaoFully(code: string, stdLibRoot = ''): Promise<Wrap
 /////////////////////
 
 export type VirtualFile = {
-  /** Virtual path, e.g. '/project/ui/views.tao' */
+  /** path is the virtual file path used as the document URI (`file://${path}`); match keys across `getFile` and the map. */
   path: string
   code: string
 }
 
 export type MultiFileParseResult = {
-  /** Get the parsed AST for a specific file path */
+  /** getFile returns the AST for `path` and asserts the whole workspace built cleanly (any error in any file fails the test). */
   getFile(path: string): Wrapped<TaoFile>
-  /** Get errors for a specific file path, or undefined if no errors */
+  /** getErrors returns the combined error report for all documents (no assertion). */
   getErrors(): TaoErrorReport
-  /** All documents keyed by path */
+  /** documents maps each virtual path to its Langium document after `buildDocuments`. */
   documents: Map<string, Langium.LangiumDocument<TaoFile>>
 }
 
@@ -99,7 +103,7 @@ export type ParseMultipleFilesOpts = {
   stdLibRoot?: string
 }
 
-// buildWorkspaceAndDocuments creates a workspace, adds virtual files, and builds. Shared by parseMultipleFiles and buildWorkspaceWithFiles.
+/** buildWorkspaceAndDocuments registers each virtual file under `file://` URIs and runs `buildDocuments` with validation. */
 async function buildWorkspaceAndDocuments(
   files: VirtualFile[],
   stdLibRoot?: string,
@@ -117,8 +121,8 @@ async function buildWorkspaceAndDocuments(
   return { workspace, documents }
 }
 
-// parseMultipleFiles parses virtual files together, allowing cross-file references.
-// Pass stdLibRoot to resolve std-lib imports (tao/...) against virtual file paths.
+/** parseMultipleFiles builds one workspace from `files` so imports/refs resolve across them; pass `stdLibRoot` to resolve
+ * `tao/...` like the real compiler. `getFile` insists on zero errors workspace-wide. */
 export async function parseMultipleFiles(
   files: VirtualFile[],
   opts: ParseMultipleFilesOpts = { stdLibRoot: '' },
@@ -143,8 +147,8 @@ export async function parseMultipleFiles(
   }
 }
 
-// buildWorkspaceWithFiles parses virtual files and returns the workspace plus documents.
-// Use this when you need access to LSP services (e.g. definitionProvider) for testing.
+/** buildWorkspaceWithFiles is like `parseMultipleFiles` but exposes `workspace` for LSP services; `getFile` still requires
+ * a clean build for all documents. */
 export async function buildWorkspaceWithFiles(
   files: VirtualFile[],
   opts: ParseMultipleFilesOpts = {},

@@ -8,9 +8,9 @@ import {
 } from '../ModuleResolution'
 import { isStdLibImport } from '../StdLibPaths'
 
-// UseStatementValidator validates that imported names in use statements exist
-// and have appropriate visibility for the import context.
-// Same-module imports (`use Foo`) accept default + share; cross-module requires `share`.
+/** UseStatementValidator validates use imports and enforces share/file visibility rules.
+ * - Same-module: module-visible names; file-private blocked across files.
+ * - Cross-module: only share exports. */
 export class UseStatementValidator {
   constructor(
     private readonly indexManager: langium.IndexManager,
@@ -18,7 +18,7 @@ export class UseStatementValidator {
     private readonly stdLibRoot?: string,
   ) {}
 
-  // checkUseStatement validates a use statement's imported names against the target module.
+  /** checkUseStatement reports errors for invalid or unreachable imports. */
   checkUseStatement(
     useStatement: AST.UseStatement,
     accept: langium.ValidationAcceptor,
@@ -55,8 +55,7 @@ export class UseStatementValidator {
     }
   }
 
-  // validateSameModuleImports checks that imported names exist in the same module.
-  // Default and `share` are accessible; `file` is not.
+  /** validateSameModuleImports checks that each import exists in the module and is not file-only from elsewhere. */
   private validateSameModuleImports(
     useStatement: AST.UseStatement,
     targetUris: string[],
@@ -85,7 +84,7 @@ export class UseStatementValidator {
     }
   }
 
-  // validateCrossModuleImports checks that imported names are `share`-marked in the target module.
+  /** validateCrossModuleImports checks that each import is a share export in the target module. */
   private validateCrossModuleImports(
     useStatement: AST.UseStatement,
     targetUris: string[],
@@ -120,7 +119,7 @@ export class UseStatementValidator {
     }
   }
 
-  // getDocUrisAndPaths returns URI and path pairs for all documents in the workspace.
+  /** getDocUrisAndPaths returns all workspace document uri/path pairs. */
   private getDocUrisAndPaths(): UriAndPath[] {
     return Array.from(this.documents.all, (doc) => ({
       uri: doc.uri.toString(),
@@ -128,7 +127,7 @@ export class UseStatementValidator {
     }))
   }
 
-  // getTargetUrisForUseStatement resolves a use statement to the target document URIs and whether it is same-module.
+  /** getTargetUrisForUseStatement returns target URIs and the same-module flag for resolution. */
   private getTargetUrisForUseStatement(
     useStatement: AST.UseStatement,
     document: langium.LangiumDocument,
@@ -146,8 +145,7 @@ export class UseStatementValidator {
     return { targetUris, sameModule }
   }
 
-  // getAccessibleSameModuleDeclarations returns all indexed declarations from same-module URIs.
-  // File-private declarations are already excluded by ScopeComputation.
+  /** getAccessibleSameModuleDeclarations returns importable descriptions in same-module target URIs. */
   private getAccessibleSameModuleDeclarations(targetUris: string[]): langium.AstNodeDescription[] {
     const uriSet = new Set(targetUris)
     const results: langium.AstNodeDescription[] = []
@@ -166,7 +164,7 @@ export class UseStatementValidator {
     return results
   }
 
-  // isFilePrivateDeclaration checks AST directly for `file`-marked declarations (not in index).
+  /** isFilePrivateDeclaration returns true if the name is declared file-private in target docs. */
   private isFilePrivateDeclaration(name: string, targetUris: string[]): boolean {
     const uriSet = new Set(targetUris)
     for (const doc of this.documents.all) {
@@ -189,7 +187,7 @@ export class UseStatementValidator {
     return false
   }
 
-  // getShareDeclarations returns all declarations marked with 'share' from the given URIs.
+  /** getShareDeclarations returns share-marked importable descriptions in target URIs. */
   private getShareDeclarations(targetUris: string[]): langium.AstNodeDescription[] {
     const uriSet = new Set(targetUris)
     const results: langium.AstNodeDescription[] = []
@@ -213,7 +211,7 @@ export class UseStatementValidator {
     return results
   }
 
-  // declarationExistsButNotShared checks if a declaration exists but isn't marked with 'share'.
+  /** declarationExistsButNotShared returns true if the name exists in target URIs but is not share-exported. */
   private declarationExistsButNotShared(name: string, targetUris: string[]): boolean {
     const uriSet = new Set(targetUris)
 

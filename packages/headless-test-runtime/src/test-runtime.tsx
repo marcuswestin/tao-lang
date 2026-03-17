@@ -32,17 +32,18 @@ const stdLibRoot = resolvePath(repoRoot, 'packages/tao-std-lib')
 const compiledAppModulePath = resolvePath(runtimeDir, 'src/_gen-tao-compiler/app-output.tsx')
 const taoSdkModuleUrl = pathToFileURL(resolvePath(repoRoot, 'packages/tao-cli/cli-src/tao-cli-main.ts')).href
 
-// getHeadlessTestRuntimeDir Return the package root used as Tao runtimeDir.
+/** getHeadlessTestRuntimeDir returns this package’s root—the `runtimeDir` passed to `TaoSDK_compile` from headless tests. */
 export function getHeadlessTestRuntimeDir() {
   return runtimeDir
 }
 
-// getCompiledTaoScenarioName Derive a scenario display name from its directory name.
+/** getCompiledTaoScenarioName returns the last path segment of `scenarioDir` for display labels. */
 export function getCompiledTaoScenarioName(scenarioDir: string) {
   return basename(scenarioDir)
 }
 
-// createHeadlessScenarioAdapter Create a shared-scenario adapter for the headless runtime.
+/** createHeadlessScenarioAdapter builds a `CompiledTaoScenarioAdapter` that compiles `${scenarioDir}/app.tao` into a unique
+ * file under `src/_gen-runtime-tests/`, renders via Testing Library, and runs RTL `cleanup` on adapter cleanup. */
 export function createHeadlessScenarioAdapter() {
   const outputFileName = `src/_gen-runtime-tests/${getGeneratedOutputFileName('scenario')}`
 
@@ -65,7 +66,9 @@ export function createHeadlessScenarioAdapter() {
   return adapter
 }
 
-// compileTaoForHeadlessRuntime Compile Tao source into the headless runtime output module.
+/** compileTaoForHeadlessRuntime spawns `bun` from the repo root to run `TaoSDK_compile` with `runtimeDir` set to this package.
+ * On success or if the output file already exists, returns `{ outputPath, compileError }` (stderr/stdout may still be in
+ * `compileError`); otherwise throws with the subprocess diagnostics. */
 export async function compileTaoForHeadlessRuntime(opts: CompileOpts): Promise<CompileResult> {
   const outputPath = getCompiledOutputPath(opts.outputFileName)
   const command = spawnSync(
@@ -97,7 +100,8 @@ export async function compileTaoForHeadlessRuntime(opts: CompileOpts): Promise<C
   throw new Error(`Failed to compile Tao for the headless runtime: ${String(compileError)}`)
 }
 
-// renderCompiledTaoApp Render the most recently compiled Tao app from this runtime.
+/** renderCompiledTaoApp `require`s the module at `outputPath` (default: shared stub `app-output.tsx`), clears `require.cache`
+ * and resets Jest modules so a fresh compile is picked up, runs RTL `cleanup`, then `render(<default />)`. */
 export function renderCompiledTaoApp(outputPath = compiledAppModulePath): RenderCompiledAppResult {
   cleanup()
   const compiledModule = loadCompiledAppModule(outputPath)

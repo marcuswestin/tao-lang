@@ -1,23 +1,22 @@
 import { readdirSync, statSync } from 'node:fs'
 import * as path from 'node:path'
 
-// normalizeModulePath joins and normalizes path parts, removing trailing slashes.
-// Used for consistent path comparison in module resolution.
+/** normalizeModulePath joins and normalizes path parts and strips trailing slashes. */
 export function normalizeModulePath(...parts: string[]): string {
   return path.normalize(path.join(...parts)).replace(/\/+$/, '')
 }
 
-// normalizedDirOfPath returns the normalized directory path of the given file path.
+/** normalizedDirOfPath returns the normalized parent directory of a file path. */
 export function normalizedDirOfPath(filePath: string): string {
   return normalizeModulePath(path.dirname(filePath))
 }
 
-// resolveModulePathFromFile resolves a relative module path from the directory of the given file path.
+/** resolveModulePathFromFile resolves modulePath relative to the filePath directory. */
 export function resolveModulePathFromFile(filePath: string, modulePath: string): string {
   return normalizeModulePath(normalizedDirOfPath(filePath), modulePath)
 }
 
-// fileExists checks if a file exists at the given path.
+/** fileExists returns true when the path exists and is a regular file. */
 export function fileExists(filePath: string): boolean {
   try {
     return statSync(filePath).isFile()
@@ -26,7 +25,7 @@ export function fileExists(filePath: string): boolean {
   }
 }
 
-// isDirectory returns true if the path exists and is a directory.
+/** isDirectory returns true when the path exists and is a directory. */
 export function isDirectory(filePath: string): boolean {
   try {
     return statSync(filePath).isDirectory()
@@ -35,7 +34,7 @@ export function isDirectory(filePath: string): boolean {
   }
 }
 
-// readDir returns directory entries for the given path, or empty array on error.
+/** readDir returns directory entry names or an empty array on error. */
 export function readDir(filePath: string): string[] {
   try {
     return readdirSync(filePath)
@@ -44,7 +43,7 @@ export function readDir(filePath: string): string[] {
   }
 }
 
-// resolvePath resolves the given path to an absolute path.
+/** resolvePath returns the absolute path via path.resolve. */
 export function resolvePath(filePath: string): string {
   return path.resolve(filePath)
 }
@@ -55,7 +54,8 @@ type StreamFilesOptions = {
   includeOnlyExtensions?: readonly string[]
 }
 
-// streamFilesIn yields file paths under dirPath recursively, with optional filtering.
+/** streamFilesIn recursively yields file paths under dirPath with optional filters.
+ * @yields absolute file paths (and optionally directories). */
 export async function* streamFilesIn(dirPath: string, opts: StreamFilesOptions = {}): AsyncGenerator<string> {
   const { includeDirectories = false, includeHidden = false, includeOnlyExtensions = [] } = opts
 

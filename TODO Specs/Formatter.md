@@ -10,8 +10,8 @@ Don't trust any of the supplied information blindly. It may be out of date, or i
 
 Add a formatter
 
-- It should be possible to parse code and have it re-printed in one canoical way, regardless of original whitespace.
-- Comments must be preserved. See [Formatter Comments](Formatter Comments.md) for more information.
+- It should be possible to parse code and have it re-printed in one canonical way, regardless of original whitespace.
+- Comments must be preserved. See [Formatter feature doc](../Docs/Features/Formatter.md).
 - The body of inject `ts <BODY>` statements is left unformatted for now, and just re-printed as is.
 
 ### Process

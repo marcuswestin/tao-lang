@@ -38,7 +38,7 @@ use X, Y from ../path/to/module
 
 ### Name collisions
 
-If a name is declared and also imported, or if a name is imported in one file from mutliple different modules, then the developer can choose to import it with an alias; OR to use a qualified name:
+If a name is declared and also imported, or if a name is imported in one file from multiple different modules, then the developer can choose to import it with an alias; OR to use a qualified name:
 
 ```tao
 use Col, Row from ./example-ui

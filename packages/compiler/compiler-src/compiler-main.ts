@@ -15,6 +15,9 @@ export type CompileOpts = {
   stdLibRoot?: string
 }
 
+/** compileTao parses `opts.file` (optional `stdLibRoot` for imports) and emits RN TypeScript when clean; if the parser or
+ * validator reported errors, `code` is still a string but is the error-app source from `getErrorAppString`, and
+ * `errorReport.hasError()` is true. */
 export async function compileTao(opts: CompileOpts): Promise<CompileResult> {
   const parsed = await TaoParser.parseFile(opts.file, { stdLibRoot: opts.stdLibRoot })
   if (parsed.errorReport.hasError()) {

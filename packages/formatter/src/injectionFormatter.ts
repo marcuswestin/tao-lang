@@ -1,10 +1,8 @@
 import { LangiumDocument } from 'langium'
 import { DocumentFormattingParams, TextEdit } from 'vscode-languageserver'
 
-// extensivelyFormatInjectionBlocks re-indents injection blocks for formatting.
-// However, it does this expensively by retrieving the entire document,
-// applying the edits, and then re-indenting the injection blocks.
-// This needs to be replaced, or removed.
+/** extensivelyFormatInjectionBlocks materializes Langium’s edits into text, normalizes ```/''' injection block indent
+ * relative to `inject`, then either returns the original edits (no injection change) or one edit replacing the whole file. */
 export default function extensivelyFormatInjectionBlocks(
   document: LangiumDocument,
   edits: TextEdit[],
@@ -28,9 +26,7 @@ export default function extensivelyFormatInjectionBlocks(
   return [{ range, newText: reFormattedText }]
 }
 
-/**
- * Apply text edits to a string (simplified version for formatting)
- */
+/** applyEdits applies LSP text edits to a string in reverse position order. */
 function applyEdits(text: string, edits: TextEdit[]): string {
   // Sort edits in reverse order by position to apply from end to start
   const sortedEdits = [...edits].sort((a, b) => {
@@ -63,12 +59,8 @@ function applyEdits(text: string, edits: TextEdit[]): string {
   return lines.join('\n')
 }
 
-/**
- * Re-indent injection block content so that:
- * - The least-indented line inside the block is one indentation level deeper than `inject`
- * - All other lines maintain their relative indentation
- * - The closing marker is at the same indentation as `inject`
- */
+/** reindentInjectionBlocks normalizes inject fence indentation relative to the inject keyword.
+ * - Deepest content line sits one tab under inject; closing fence aligns with inject. */
 function reindentInjectionBlocks(code: string, tabSize: number): string {
   // Match inject blocks with either ``` or ''' markers
   // Capture: indent, opening marker (``` or '''), content, closing marker

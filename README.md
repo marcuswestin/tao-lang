@@ -1,8 +1,9 @@
 # Tao Lang
 
-Tao Lang is a programming language written for creating apps, native and web.
+Tao Lang is a programming language for building native and web apps.
 
-See `./Docs/*` for more information
+- **[Docs/README.md](Docs/README.md)** — index of design docs, roadmap, features, and dev log.
+- **Agents:** see [AGENTS.md](AGENTS.md) for `./just-agents` workflows and TypeScript documentation rules.
 
 ### Get started
 

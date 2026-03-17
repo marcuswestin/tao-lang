@@ -62,11 +62,9 @@ export async function formatCode(code: string) {
   return Langium.TextDocument.applyEdits(document.textDocument, edits)
 }
 
-/**
- * dedent takes a string, computes the shortest leading whitespace among non-empty lines,
+/** dedent takes a string, computes the shortest leading whitespace among non-empty lines,
  * and returns a new string where every non-empty line has that prefix removed.
- * Whitespace-only lines are replaced with no indentation (empty line).
- */
+ * Whitespace-only lines are replaced with no indentation (empty line). */
 export function dedent(text: string): string {
   const lines = text.split('\n')
 

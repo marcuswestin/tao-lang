@@ -27,7 +27,7 @@ export const TaoParser = {
   parseFile,
 }
 
-// parseString parses a Tao code string into a TaoFile AST.
+/** parseString parses Tao source string into a TaoFile AST and related documents. */
 async function parseString(code: string, opts: ParseOptions): Promise<ParseResult> {
   const codeHash = getCodeHash(code)
   const evalCodeUri = `tao-string://v0/hash/${codeHash}.tao`
@@ -35,7 +35,7 @@ async function parseString(code: string, opts: ParseOptions): Promise<ParseResul
   return await internalParseTaoCode(uri, opts, code)
 }
 
-// parseFile parses a Tao file into a TaoFile AST.
+/** parseFile parses a Tao file into a TaoFile AST and related documents. */
 async function parseFile(filePath: string, opts: ParseOptions): Promise<ParseResult> {
   const resolvedPath = path.resolve(filePath)
   const uri = toLangiumFileURI(resolvedPath)
@@ -52,12 +52,13 @@ async function parseFile(filePath: string, opts: ParseOptions): Promise<ParseRes
 /////////////////////
 const STRICT_URIs = true
 
+/** getCodeHash returns the SHA-256 hex digest of source for stable string URIs. */
 function getCodeHash(code: string) {
   // Bun.hash(code).toString(16)
   return createHash('sha256').update(code).digest('hex')
 }
 
-// internalParseTaoCode parses a Tao code string or file into a TaoFile AST.
+/** internalParseTaoCode parses from URI with optional in-memory string content. */
 async function internalParseTaoCode(
   uri: Langium.URI,
   opts: ParseOptions,
@@ -84,7 +85,7 @@ async function internalParseTaoCode(
   }
 }
 
-// loadEntryAndReachable loads the entry document (from string or file) and returns it plus the list of documents to build.
+/** loadEntryAndReachable loads the entry document and all docs to build (stdlib, imports, same dir). */
 async function loadEntryAndReachable(
   uri: Langium.URI,
   evalString: string | null,
@@ -108,7 +109,7 @@ async function loadEntryAndReachable(
   return { entryDocument, usedDocuments }
 }
 
-// addAllStdLibFiles loads all .tao files from stdLibRoot into the workspace.
+/** addAllStdLibFiles adds every .tao file under the std lib root to the workspace. */
 async function addAllStdLibFiles(workspace: TaoWorkspace) {
   if (!workspace.hasStdLib()) {
     return
@@ -121,8 +122,7 @@ async function addAllStdLibFiles(workspace: TaoWorkspace) {
   }
 }
 
-// getUseStatementModuleDirectory returns the directory of a use statement's module.
-// Returns undefined for same-module imports (no modulePath), which are handled by addSameDirectoryTaoFiles.
+/** getUseStatementModuleDirectory returns the resolved module directory for a use path, or undefined for same-module imports. */
 function getUseStatementModuleDirectory(
   ast: AST.UseStatement,
   currentDir: string,
@@ -137,7 +137,7 @@ function getUseStatementModuleDirectory(
   return path.resolve(currentDir, ast.modulePath)
 }
 
-// addSameDirectoryTaoFiles adds all .tao files in the entry's directory so same-module scope can resolve (e.g. FridgeView in Fridge.tao).
+/** addSameDirectoryTaoFiles adds sibling .tao files in the entry file directory. */
 async function addSameDirectoryTaoFiles(
   document: Langium.LangiumDocument<AST.TaoFile>,
   workspace: TaoWorkspace,
@@ -153,8 +153,7 @@ async function addSameDirectoryTaoFiles(
   }
 }
 
-// addReachableTaoFiles adds all .tao file paths reachable from the entry file via use statements.
-// Used by file-based parsing so that imports resolve (UseStatementValidator and TaoScopeProvider need those documents in the workspace).
+/** addReachableTaoFiles adds .tao files reachable from the entry via use statements. */
 async function addReachableTaoFiles(
   document: Langium.LangiumDocument<AST.TaoFile>,
   workspace: TaoWorkspace,
@@ -184,25 +183,26 @@ async function addReachableTaoFiles(
   }
 }
 
-// getModuleTaoFiles returns all .tao files paths in a directory.
+/** getModuleTaoFiles returns absolute paths to supported Tao files in a directory. */
 function getModuleTaoFiles(workspace: TaoWorkspace, directory: string): string[] {
   return readDir(directory)
     .filter((name) => workspace.supportsExtension(path.extname(name)))
     .map((name) => path.resolve(directory, name))
 }
 
-// addReachableTaoFileDocument adds a .tao file document to the parser's workspace if not already present.
+/** addReachableTaoFileDocument creates and adds a document for a .tao file path. */
 async function addReachableTaoFileDocument(workspace: TaoWorkspace, filePath: string): Promise<void> {
   const langiumUri = toLangiumFileURI(filePath)
   const doc = await workspace.createDocumentFromUri(langiumUri)
   workspace.addDocument(doc)
 }
 
-// toLangiumFileURI builds a Langium file URI from an absolute path. Use path.resolve first when needed.
+/** toLangiumFileURI builds a Langium file URI from an absolute filesystem path. */
 function toLangiumFileURI(absolutePath: string): Langium.URI {
   return Langium.URI.parse(`file://${absolutePath}`, STRICT_URIs)
 }
 
+/** getValidationOptions maps ParseOptions to Langium validation flags. */
 function getValidationOptions(opts: ParseOptions): Langium.ValidationOptions | boolean {
   const categories = opts.skipSlowValidation ? ['fast'] : undefined
   const validateUpToStage = opts.validateUpToStage ?? 'all'

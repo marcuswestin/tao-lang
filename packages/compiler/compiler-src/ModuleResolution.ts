@@ -5,8 +5,7 @@ import { isStdLibImport, resolveStdLibModuleDirectory } from './StdLibPaths'
 // UriAndPath pairs a document URI string with its filesystem path for module resolution.
 export type UriAndPath = { uri: string; path: string }
 
-// isSameModuleImport returns true when a use statement targets the same module (directory).
-// No modulePath or `from ./`-style path that resolves to the current directory counts as same-module.
+/** isSameModuleImport returns true when the use statement targets the current module directory. */
 export function isSameModuleImport(
   useStatement: { modulePath?: string | null },
   documentPath: string,
@@ -23,7 +22,7 @@ export function isSameModuleImport(
   return targetPath === currentDir
 }
 
-// getSameModuleUris returns document URIs for all files in the same directory as the given document, excluding the document itself.
+/** getSameModuleUris returns URIs of other .tao docs in the same directory as documentPath. */
 export function getSameModuleUris(
   documentPath: string,
   documentUri: string,
@@ -40,8 +39,7 @@ export function getSameModuleUris(
   return [...new Set(uris)]
 }
 
-// resolveModulePathToUris resolves a module path (relative or std-lib) to the list of document URIs in that module.
-// Returns empty array if modulePath is std-lib and stdLibRoot is undefined.
+/** resolveModulePathToUris returns document URIs for a module path, or empty if std lib has no root. */
 export function resolveModulePathToUris(
   modulePath: string,
   documentPath: string,

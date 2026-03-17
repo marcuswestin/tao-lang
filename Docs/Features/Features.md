@@ -22,7 +22,7 @@ Generate documentation for the codebase, along with LLM summaries of what the co
 
 - expected vs unexpected
 - logging/reporting of
-- capture app state for reproduction and debuggin
+- capture app state for reproduction and debugging
 
 ### Anonymous Usage stats
 

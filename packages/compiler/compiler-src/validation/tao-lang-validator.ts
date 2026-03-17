@@ -36,7 +36,7 @@ export const validator: langium.ValidationChecks<AST.TaoLangAstType> = {
   }),
 }
 
-// getDuplicateIdentifiers finds other declarations (aliases, parameters) with the same name in scope.
+/** getDuplicateIdentifiers returns parameters and sibling declarations that conflict with the binding name. */
 function getDuplicateIdentifiers(binding: AST.Referenceable): langium.AstNode[] {
   const siblingAliases = getDuplicateSiblingDeclarations(binding)
   const viewDecl = findContainingViewDecl(binding)
@@ -47,7 +47,7 @@ function getDuplicateIdentifiers(binding: AST.Referenceable): langium.AstNode[] 
   return [...matchingParams, ...siblingAliases]
 }
 
-// getSiblingStatements returns the sibling statement nodes in the same scope as the given binding.
+/** getSiblingStatements returns sibling nodes in the view, render, or top-level scope of the binding. */
 function getSiblingStatements(binding: AST.Referenceable): langium.AstNode[] {
   const container = binding.$container
   if (AST.isViewDeclaration(container) || AST.isViewRenderStatement(container)) {
@@ -61,7 +61,7 @@ function getSiblingStatements(binding: AST.Referenceable): langium.AstNode[] {
   return []
 }
 
-// getDuplicateSiblingDeclarations returns declarations in the same immediate scope with the same name.
+/** getDuplicateSiblingDeclarations returns same-scope declarations with the same name as the binding. */
 function getDuplicateSiblingDeclarations(binding: AST.Referenceable): AST.Declaration[] {
   return getSiblingStatements(binding).filter(
     (node): node is AST.Declaration => {
@@ -70,7 +70,7 @@ function getDuplicateSiblingDeclarations(binding: AST.Referenceable): AST.Declar
   )
 }
 
-// findContainingViewDecl returns the ViewDeclaration that a Declaration lives in, if any.
+/** findContainingViewDecl returns the nearest enclosing ViewDeclaration, if any. */
 function findContainingViewDecl(binding: AST.Referenceable): AST.ViewDeclaration | undefined {
   let current: langium.AstNode | undefined = binding.$container
   while (current) {
@@ -82,7 +82,7 @@ function findContainingViewDecl(binding: AST.Referenceable): AST.ViewDeclaration
   return undefined
 }
 
-// removeItemFrom returns a new array with the given item excluded.
+/** removeItemFrom returns a copy of the array without the first matching item reference. */
 function removeItemFrom<T>(item: T, array: T[]): T[] {
   return array.filter(itemB => itemB !== item)
 }

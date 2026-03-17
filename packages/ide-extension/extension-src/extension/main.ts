@@ -7,7 +7,8 @@ import { LanguageClient, TransportKind } from 'vscode-languageclient/node.js'
 let client: LanguageClient
 const channel = vscode.window.createOutputChannel('My Extension', { log: true })
 
-// This function is called when the extension is activated.
+/** activate starts the bundled Tao language server client. In Development extension mode it also routes `Log` through the
+ * output channel so LSP traffic is visible in the panel. */
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   if (context.extensionMode === vscode.ExtensionMode.Development) {
     channel.show(true)
@@ -41,7 +42,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   Log.info('Extension activated')
 }
 
-// This function is called when the extension is deactivated.
+/** deactivate stops the language client when the extension unloads; no-op if activation never ran. */
 export function deactivate(): Thenable<void> | undefined {
   if (client) {
     return client.stop()
@@ -49,6 +50,8 @@ export function deactivate(): Thenable<void> | undefined {
   return undefined
 }
 
+/** startLanguageClient starts `_gen-ide-extension/language/main.cjs` over IPC. When the host runs the extension in debug
+ * mode, Node `--inspect` is enabled; set `DEBUG_BREAK` to wait for a debugger (`DEBUG_SOCKET` overrides the port). */
 async function startLanguageClient(context: vscode.ExtensionContext): Promise<LanguageClient> {
   const serverModule = context.asAbsolutePath('_gen-ide-extension/language/main.cjs')
 
