@@ -4,13 +4,13 @@ describe('parse:', () => {
   test('stub test', () => expect(true).toBe(true))
 
   test('no newlines in code', async () => {
-    const document = await parseAST(`file app MyApp { ui MyView } view MyView { }`)
+    const document = await parseAST(`app MyApp { ui MyView } view MyView { }`)
     expect(document).toBeDefined()
   })
 
   test('basic app', async () => {
     const appFile = await parseAST(`
-        file app MyApp {
+        app MyApp {
             ui MyView
         }
         view MyView {}
@@ -29,7 +29,7 @@ describe('parse:', () => {
 
   test('reference validation errors', async () => {
     const errorReport = await parseASTWithErrors(`
-        file app MyApp {
+        app MyApp {
             ui MyApp
         }
         view MyView {

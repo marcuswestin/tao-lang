@@ -5,37 +5,25 @@
 input=$(cat)
 command=$(echo "$input" | jq -r '.command')
 
-# checks if the command contains something
-function if_command_contains() {
-  local string="$1"
-  if ! echo "$command" | grep --quiet "$string"; then
-    return true
+# returns 0 if command does not match pattern (command "lacks" the pattern)
+function if_command_lacks() {
+  local pattern="$1"
+  if ! echo "$command" | grep --quiet -E "$pattern"; then
+    return 0
   fi
+  return 1
 }
 
-# checks if the command does not contain something
-function if_without_command() {
-  local string="$1"
-  if echo "$command" | grep --quiet --invert-match "$string"; then
-    return true
-  fi
-}
-
-# halts a command instead of exectuing
+# halts a command instead of executing; Cursor expects permission + optional messages
 function halt_command() {
   local message="$1"
-  echo '{"allow": false, "message": "'$message'"}'
-  exit 1
+  echo "{\"permission\": \"deny\", \"user_message\": \"$message\", \"agent_message\": \"$message\"}"
+  exit 2
 }
 
-if_command_lacks "^just " \
-  && halt_command "Only 'just <command>' commands are allowed"
+# Allow when ./just-agents is first, or when Cursor runs "cd <dir> && ./just-agents ..." (so $4 is ./just-agents).
+# Recipes are defined in just-agents.Justfile.
+if_command_lacks "^(\./just-agents |cd[[:space:]]+.+&&[[:space:]]*\./just-agents )" \
+  && halt_command "Only agent commands are allowed. Use ./just-agents <cmd>. See ./just-agents help"
 
-if_command_contains "git commit" \
-  && if_command_lacks "git pre-commit" \
-  && halt_command "You must run `just pre-commit && git commit ...` to commit your changes"
-
-if_command_contains "git push" \
-  && halt_command "git push is not allowed"
-
-echo '{"allow": true}'
+echo '{"permission": "allow"}'

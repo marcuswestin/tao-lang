@@ -1,0 +1,21 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "..",
+    "composite": true,
+    "noEmit": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true
+  },
+  "include": [
+    "formatter.ts",
+    "src/**/*",
+    "formatter-tests/**/*",
+    "../parser/parser.ts",
+    "../parser/src/**/*",
+    "../shared/shared-src/**/*",
+    "../compiler/tao-compiler.ts",
+    "../compiler/compiler-src/**/*"
+  ]
+}

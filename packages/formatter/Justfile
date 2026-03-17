@@ -1,0 +1,9 @@
+import "../shared/just/all-imports.just"
+
+test *PATTERNS: _deps
+    bun test --reporter=dot --test-name-pattern "{{ PATTERNS }}"
+
+build: _deps
+
+_deps:
+    bun install

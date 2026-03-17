@@ -1,5 +1,5 @@
+import { AST } from '@parser'
 import type * as langium from 'langium'
-import * as AST from '../_gen-tao-parser/ast'
 import { makeValidater } from './ValidationReporter'
 
 export const validator: langium.ValidationChecks<AST.TaoLangAstType> = {
@@ -53,7 +53,7 @@ function getSiblingStatements(binding: AST.Referenceable): langium.AstNode[] {
   if (AST.isViewDeclaration(container) || AST.isViewRenderStatement(container)) {
     return container.viewStatements
   }
-  if (AST.isTopLevelDeclaration(container) && container.$container && AST.isTaoFile(container.$container)) {
+  if (AST.isTopLevelDeclaration(container) && AST.isTaoFile(container.$container)) {
     return container.$container.topLevelStatements
       .filter((s: AST.TopLevelStatement): s is AST.TopLevelDeclaration => AST.isTopLevelDeclaration(s))
       .map((s: AST.TopLevelDeclaration) => s.declaration)

@@ -1,6 +1,42 @@
+inject ```ts
+    type RenderTextViewParams = {
+      value?: string
+      RNStyle?: TextStyle
+    }
+
+    type RenderViewParams = {
+      children?: ReactNode
+      RNProps?: Record<string, unknown>
+      RNStyle?: ViewStyle
+      styles?: ViewStyle
+    }
+
+    export const ALRuntime = {
+      ui: {
+        renderTextView(renderViewParams: RenderTextViewParams) {
+          return <RN.Text style={renderViewParams.RNStyle}>{renderViewParams.value}</RN.Text>
+        },
+        renderView(
+          _viewName: string,
+          Component: ComponentType<any>,
+          renderViewParams: RenderViewParams,
+        ) {
+          return (
+            <Component
+              {...renderViewParams.RNProps}
+              style={renderViewParams.RNStyle ?? renderViewParams.styles}
+            >
+              {renderViewParams.children}
+            </Component>
+          )
+        },
+      },
+    }
+```
+
 share view Col {
     inject ```ts
-        const renderViewParams = { children, params: {}, styles: {}, layouts: {}, uiLabel: '', RNProps: {}, RNStyle:{} }
+        const renderViewParams = { children: props.children, params: {}, styles: {}, layouts: {}, uiLabel: '', RNProps: {}, RNStyle:{} }
         renderViewParams.styles = { flexDirection: 'column', backgroundColor: 'blue', padding: 10 }
         return ALRuntime.ui.renderView('Col', RN.View, renderViewParams)
     ```
@@ -8,9 +44,9 @@ share view Col {
 
 share view Row {
     inject ```ts
-        const renderViewParams = { children, params: {}, styles: {}, layouts: {}, uiLabel: '', RNProps: {}, RNStyle:{} }
+        const renderViewParams = { children: props.children, params: {}, styles: {}, layouts: {}, uiLabel: '', RNProps: {}, RNStyle:{} }
         renderViewParams.styles = { flexDirection: 'row', backgroundColor: 'yellow' }
-        return ALRuntime.ui.renderView('Col', RN.View, renderViewParams)
+        return ALRuntime.ui.renderView('Row', RN.View, renderViewParams)
     ```
 }
 
@@ -25,9 +61,9 @@ share view Text value string {
 share view Button title string {
     // TODO: does press
     inject ```ts
-        const renderViewParams = { children, params: {}, styles: {}, layouts: {}, uiLabel: '', RNProps: {}, RNStyle:{} }
+        const renderViewParams = { children: props.children, params: {}, styles: {}, layouts: {}, uiLabel: '', RNProps: {}, RNStyle:{} }
         renderViewParams.styles = { backgroundColor: 'green', padding: 10 }
-        renderViewParams.RNProps = { title, onPress: on_action_press }
+        renderViewParams.RNProps = { title: props.title, onPress: props.on_action_press }
         return ALRuntime.ui.renderView('Button', RN.Button, renderViewParams)
     ```
 }

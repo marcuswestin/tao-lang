@@ -21,13 +21,14 @@ _create-dev-env:
     just _setup_git_repo
     just _configure_zsh
     just _install_ide_extensions
+    just _print_keybinding_install
     just _print_setup_done
 
 _update-dev-env:
     just _install_mise # Update mise to latest version
     {{ MISE_CMD }} self-update --yes
-    {{ MISE_CMD }} doctor
     just _install-mise-deps
+    {{ MISE_CMD }} doctor
     just build-all
 
 _setup_git_repo:
@@ -46,7 +47,7 @@ _trust_mise:
     {{ MISE_CMD }} trust --quiet --yes
 
 _configure_zsh:
-    #!{{ SHELL_INIT }}
+    #!{{ ZSH_INIT }}
     echo "\tConfigure zsh..."
     add_if_missing() { local line="$1" file="$2"; grep -qxF "$line" "$file" || echo "\n# Added by tao-lang dev env '_configure_zsh' justfile rule\n$line" >> "$file"; }
     add_if_missing "alias et=enter-tao && alias enter-tao='echo \" * Enter Tao Lang dev env * \" && cd $PWD && source .config/enter-tao-dev-env-source-configure.zsh'" ~/.zshrc
@@ -54,6 +55,13 @@ _configure_zsh:
 _install_ide_extensions:
     @ echo "\tInstall IDE extensions..."
     @ jq -r '.recommendations[]' .vscode/extensions.json | xargs -L 1 cursor --force --install-extension 1> /dev/null
+
+_print_keybinding_install:
+    @ echo "\n\tInstall keybinding for build and reload the extension."
+    @ echo "\tAdd this to your ~/.vscode-keybindings.json file:"
+    @ echo "\n\t\t"'{ "key": "cmd+shift+b", "command": "multiCommand.buildExtensionThenRestartHost" },\n'
+    @ echo "\t" 'Then press enter to continue...'
+    @ read -p ""
 
 _print_setup_done:
     @ echo "\n\t*** Done ***"

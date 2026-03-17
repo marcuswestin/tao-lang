@@ -1,5 +1,4 @@
 import "./_shared-vars.just"
-import "./setups.just"
 
 # Formatting and linting
 ########################
@@ -29,7 +28,7 @@ FMT_NEWLINE_SKIP_LINKS := "[[ -L $f ]]"
 FMT_NEWLINE_PERL := 'perl -0777 -i -pe "s/\n*\z/\n/" -- "$f"'
 
 _fmt_newlines:
-    #!{{ SHELL_INIT }}
+    #!{{ ZSH_INIT }}
     git ls-files -z {{ FMT_NEWLINE_FILTER }} -- {{ FMT_NEWLINE_FILES }} |
     while IFS= read -r -d '' f; do
         {{ FMT_NEWLINE_SKIP_MISSING }} || {{ FMT_NEWLINE_SKIP_LINKS }} || {{ FMT_NEWLINE_PERL }}
@@ -40,6 +39,7 @@ _fix: _fmt
     cd packages/compiler && ts-autofix fix --tsCliArgs --noUnusedLocals
     cd packages/tao-cli && ts-autofix fix --tsCliArgs --noUnusedLocals
     cd packages/shared && ts-autofix fix --tsCliArgs --noUnusedLocals
+    cd packages/headless-test-runtime && ts-autofix fix --tsCliArgs --noUnusedLocals
     cd packages/ide-extension && ts-autofix fix --tsCliArgs --noUnusedLocals
     cd packages/expo-runtime && ts-autofix fix --tsCliArgs --noUnusedLocals
     cd packages/expo-runtime && bunx expo lint --fix
@@ -50,9 +50,10 @@ _fix: _fmt
 _check:
     just lint
     dprint check
-    cd packages/compiler && tsc --noEmit --noUnusedLocals
+    cd packages/compiler && tsc --noUnusedLocals
     cd packages/tao-cli && tsc --noEmit --noUnusedLocals
     cd packages/shared && tsc --noEmit --noUnusedLocals
+    cd packages/headless-test-runtime && tsc --noEmit --noUnusedLocals
     cd packages/ide-extension && tsc --noEmit --noUnusedLocals
     cd packages/expo-runtime && tsc --noEmit --noUnusedLocals
     cd packages/expo-runtime && bunx expo lint

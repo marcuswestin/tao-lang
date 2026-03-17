@@ -33,28 +33,28 @@ Here are Langium formatter examples and concrete code you can use as references 
 
 1) Official Langium formatter API Example (Domain Model)
 
-Langium has a built-in formatting API you can extend by subclassing AbstractFormatter, and the official docs include a formatted Domain Model example you can adapt. 
+Langium has a built-in formatting API you can extend by subclassing AbstractFormatter, and the official docs include a formatted Domain Model example you can adapt.
 Langium
 
 Here is a real code sample adapted from the DomainModelFormatter recipe:
 
 import { AstNode } from 'langium';
 import { AbstractFormatter, Formatting } from 'langium/lsp';
-import * as ast from './generated/ast;
+import { AST } from '@parser';
 
 export class DomainModelFormatter extends AbstractFormatter {
 
     protected format(node: AstNode): void {
 
         // Format model root if needed
-        if (ast.isDomainmodel(node)) {
+        if (AST.isDomainmodel(node)) {
             const formatter = this.getNodeFormatter(node);
             // de-indent top-level children
             formatter.nodes(...node.elements).prepend(Formatting.noIndent());
         }
 
         // Format entities and package declarations
-        if (ast.isEntity(node) || ast.isPackageDeclaration(node)) {
+        if (AST.isEntity(node) || AST.isPackageDeclaration(node)) {
             const formatter = this.getNodeFormatter(node);
 
             // Indent interior of braces
@@ -94,19 +94,19 @@ Formatting.noIndent() – remove indent
 
 Formatting.oneSpace() – add a space
 
-Bind the formatter via dependency injection in your language’s module.ts. 
+Bind the formatter via dependency injection in your language’s module.ts.
 Langium
 
 2) Community Formatter Implementation (Entities DSL)
 
-There’s a formatter implementation for a custom Entities DSL showing real formatter logic with rules for entity definitions, braces, and attribute formatting (extended from the official formatting API). 
+There’s a formatter implementation for a custom Entities DSL showing real formatter logic with rules for entity definitions, braces, and attribute formatting (extended from the official formatting API).
 GitHub
 
 export class EntitiesFormatter extends AbstractFormatter {
 
     protected format(node: AstNode): void {
 
-        if (ast.isModel(node)) {
+        if (AST.isModel(node)) {
             const lastEntity = node.entities[node.entities.length - 1];
             node.entities.forEach(entity => {
                 const fmt = this.getNodeFormatter(entity);
@@ -117,7 +117,7 @@ export class EntitiesFormatter extends AbstractFormatter {
                     n.append(Formatting.newLines(2));
                 }
             });
-        } else if (ast.isEntity(node)) {
+        } else if (AST.isEntity(node)) {
             const fmt = this.getNodeFormatter(node);
 
             // Put a space around keyword and type
@@ -152,7 +152,7 @@ Append/modify whitespace after elements
 
 Format child nodes specifically
 
-This gives you an actual formatter logic pattern you can adapt for your own grammar. 
+This gives you an actual formatter logic pattern you can adapt for your own grammar.
 GitHub
 
 3) How to Bind Your Formatter in a Langium Language
@@ -174,13 +174,13 @@ Then merge it into your language’s services in your-language-module.ts so VS C
 
 4) Tips When Implementing a Formatter
 
-The abstract format(node) is called for every AST node — inside it you check the type with ast.isXXX(node).
+The abstract format(node) is called for every AST node — inside it you check the type with AST.isXXX(node).
 
 Formatter helpers like formatter.keyword() and formatter.property() let you select exact text positions.
 
 The Formatting helpers (indent, newLine, noSpace, oneSpace, etc.) define edits applied to the document on Format Document.
 
-You may need to define tests for repeatable formatting to ensure idempotence. 
+You may need to define tests for repeatable formatting to ensure idempotence.
 GitHub
 ```
 
@@ -223,7 +223,7 @@ noSpace Removes all spaces.
 fit Tries to fit the existing text into one of the specified formattings.
 We first start off by formatting the Domainmodel element of our DSL. It is the root node of every document and just contains a list of other elements. These elements need to be realigned to the root of the document in case they are indented. We will use the Formatting.noIndent options for that:
 
-if (ast.isDomainmodel(node)) {
+if (AST.isDomainmodel(node)) {
     // Create a new node formatter
     const formatter = this.getNodeFormatter(node);
     // Select a formatting region which contains all children
@@ -233,7 +233,7 @@ if (ast.isDomainmodel(node)) {
 }
 Our other elements, namely Entity and PackageDeclaration, can be arbitrarily deeply nested, so using noIndent is out of the question for them. Instead we will use indent on everything between the { and } tokens. The formatter internally keeps track of the current indentation level:
 
-if (ast.isEntity(node) || isPackageDeclaration(node)) {
+if (AST.isEntity(node) || AST.isPackageDeclaration(node)) {
     const formatter = this.getNodeFormatter(node);
     const bracesOpen = formatter.keyword('{');
     const bracesClose = formatter.keyword('}');
@@ -252,19 +252,19 @@ Note that most predefined Formatting methods accept additional arguments which m
 Full Code Sample
 import { AstNode } from 'langium';
 import { AbstractFormatter, Formatting } from 'langium/lsp';
-import * as ast from './generated/ast';
+import { AST } from '@parser';
 
 export class DomainModelFormatter extends AbstractFormatter {
 
     protected format(node: AstNode): void {
-        if (ast.isEntity(node) || ast.isPackageDeclaration(node)) {
+        if (AST.isEntity(node) || AST.isPackageDeclaration(node)) {
             const formatter = this.getNodeFormatter(node);
             const bracesOpen = formatter.keyword('{');
             const bracesClose = formatter.keyword('}');
             formatter.interior(bracesOpen, bracesClose).prepend(Formatting.indent());
             bracesClose.prepend(Formatting.newLine());
             formatter.property('name').surround(Formatting.oneSpace());
-        } else if (ast.isDomainmodel(node)) {
+        } else if (AST.isDomainmodel(node)) {
             const formatter = this.getNodeFormatter(node);
             const nodes = formatter.nodes(...node.elements);
             nodes.prepend(Formatting.noIndent());
@@ -287,11 +287,7 @@ import {
   Formatting,
   LangiumServices,
 } from 'langium';
-import {
-  Model,
-  Entity,
-  Property,
-} from './generated/ast';
+import { AST } from '@parser';
 
 export class MyDslFormatter extends AbstractFormatter {
 
@@ -312,7 +308,7 @@ export class MyDslFormatter extends AbstractFormatter {
     }
   }
 
-  private formatModel(model: Model, f: Formatting): void {
+  private formatModel(model: AST.Model, f: Formatting): void {
     for (const entity of model.entities) {
       f.format(entity)
         .prepend(Formatting.newLine())
@@ -320,7 +316,7 @@ export class MyDslFormatter extends AbstractFormatter {
     }
   }
 
-  private formatEntity(entity: Entity, f: Formatting): void {
+  private formatEntity(entity: AST.Entity, f: Formatting): void {
     const keywords = this.keyword(entity, '{');
 
     f.surround(keywords, Formatting.space());
@@ -329,7 +325,7 @@ export class MyDslFormatter extends AbstractFormatter {
     f.append(entity, Formatting.newLine());
   }
 
-  private formatProperty(property: Property, f: Formatting): void {
+  private formatProperty(property: AST.Property, f: Formatting): void {
     if (property.type) {
       f.surround(this.keyword(property, ':'), Formatting.space());
     }
@@ -383,7 +379,7 @@ When you write a formatter by subclassing AbstractFormatter, you select regions 
 
 Example for a block with braces:
 
-if (ast.isSomeNode(node)) {
+if (AST.isSomeNode(node)) {
 const formatter = this.getNodeFormatter(node);
 const open = formatter.keyword('{');
 const close = formatter.keyword('}');
@@ -454,12 +450,12 @@ Formatting,
 type AstNode,
 type LangiumDocument
 } from 'langium';
-import { isMyBlock } from './ast';
+import { AST } from '@parser';
 
 export class MyFormatter extends AbstractFormatter {
 
 override format(node: AstNode, doc: LangiumDocument): void {
-if (!isMyBlock(node)) return;
+if (!AST.isBlock(node)) return;
 
     const f = this.getNodeFormatter(node);
 

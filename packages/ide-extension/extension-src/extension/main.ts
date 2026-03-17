@@ -1,4 +1,4 @@
-import { Log, setLogTransport } from '@tao-compiler/@shared/Log.js'
+import { Log, setLogTransport } from '@shared/Log.js'
 import * as process from 'node:process'
 import * as vscode from 'vscode'
 import type { LanguageClientOptions, ServerOptions } from 'vscode-languageclient/node.js'

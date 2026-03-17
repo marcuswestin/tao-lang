@@ -1,4 +1,4 @@
-import { TAO_EXT } from './@shared/TaoPaths'
+import { TAO_EXT } from '@shared/TaoPaths'
 import { normalizedDirOfPath, resolveModulePathFromFile } from './Paths'
 import { isStdLibImport, resolveStdLibModuleDirectory } from './StdLibPaths'
 

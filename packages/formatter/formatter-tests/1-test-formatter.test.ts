@@ -1,4 +1,4 @@
-import { describe, expect, test } from '../compiler-tests/test-utils/test-harness'
+import { describe, expect, test } from 'bun:test'
 import { dedent, testFormatter, visualize } from './formatter-test-utils'
 
 describe('Formatter', () => {

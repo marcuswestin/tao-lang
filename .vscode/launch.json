@@ -10,7 +10,7 @@
       "name": "Run Extension",
       "type": "extensionHost",
       "request": "launch",
-      "preLaunchTask": "Tao-VSCode-task: 'just package-and-install' in packages/ide-extension",
+      "preLaunchTask": "Tao-VSCode-task: 'just build-package-and-install' in packages/ide-extension",
       "args": [
         "--disable-extensions",
         "--extensionDevelopmentPath=${workspaceFolder}/packages/ide-extension",

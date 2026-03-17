@@ -1,14 +1,14 @@
-import { appendFileSync } from 'node:fs'
-import * as process from 'node:process'
-import { bgWhiteBright, blackBright, bold, cyan, gray, red, yellow } from 'picocolors'
-import { Log } from '../../compiler/compiler-src/@shared/Log'
+import { assertNever } from '@compiler/compiler-utils'
+import { Log } from '@shared/Log'
 import {
   getTaoError,
   NotYetImplemented,
   UnexpectedBehavior,
   UserInputRejection,
-} from '../../compiler/compiler-src/@shared/TaoErrors'
-import { assertNever } from '../../compiler/compiler-src/compiler-utils'
+} from '@shared/TaoErrors'
+import { appendFileSync } from 'node:fs'
+import * as process from 'node:process'
+import { bgWhiteBright, blackBright, bold, cyan, gray, red, yellow } from 'picocolors'
 
 function print(message: string) {
   Log(message)

@@ -21,8 +21,17 @@ setup: _setup_git_repo
 # Run all components in watch mode
 dev: _dev
 
-# Run full battery of checks and builds. Meant to be run before committing.
-pre-commit: _pre-commit-check
+# Run full battery of checks and builds to prepare for commit.
+prep-commit: _prep-commit
+
+# Stash unstaged changes. First make sure that all intended changes are staged.
+stash-unstaged-changes: _stash-unstaged-changes
+
+# Restore stashed changes (e.g. after aborting prep-commit workflow).
+unstage-changes: _unstage-changes
+
+# Ensures that the repo has no changes.
+ensure-repo-clean: _ensure-repo-clean
 
 # Testing
 #########
@@ -31,6 +40,7 @@ pre-commit: _pre-commit-check
 [no-cd]
 test *PATTERNS: gen
     bun test --reporter=dot --test-name-pattern "{{ PATTERNS }}"
+    cd packages/headless-test-runtime && just test {{ PATTERNS }}
 
 # Watch tests, but bail on first failure
 bail-watch-tests *PATTERNS:
@@ -38,7 +48,7 @@ bail-watch-tests *PATTERNS:
 
 # Run all tests, including slow ones
 test-all *PATTERNS:
-    bun test --reporter=dot {{ PATTERNS }}
+    just test {{ PATTERNS }}
     cd packages/expo-runtime && just test {{ PATTERNS }}
 
 # Watch all tests
@@ -48,6 +58,18 @@ watch-tests *PATTERNS:
 
 # Formatting, Linting, etc.
 ###########################
+
+# Install all dependencies
+deps:
+    #!{{ ZSH_INIT }}
+    # Loop through packages and install dependencies
+    for package in $(ls packages); do
+        # If package.json exists, install dependencies
+        if [ -f packages/$package/package.json ]; then
+            echo "Installing dependencies for $package..."
+            pushd packages/$package && bun install && popd
+        fi
+    done
 
 # Format all files
 fmt: _fmt
@@ -72,13 +94,16 @@ lint-rules: _line_rules
 build:
     just _build-all
 
+# Alias for build-all
+build-all: _build-all
+
 # Generate parser from grammar
 gen:
-    cd packages/compiler && just gen
+    cd packages/parser && just build
 
 # Build and install the extension to cursor and vscode
 extension-build-package-and-install:
-    cd packages/ide-extension && just build && just package-and-install
+    cd packages/ide-extension && just build-package-and-install
 
 clean:
     rm -rf .builds
@@ -91,6 +116,9 @@ compiler *ARGS:
 
 expo-runtime *ARGS:
     cd {{ justfile_dir() }}/packages/expo-runtime && just {{ ARGS }}
+
+headless-test-runtime *ARGS:
+    cd {{ justfile_dir() }}/packages/headless-test-runtime && just {{ ARGS }}
 
 ide-extension *ARGS:
     cd {{ justfile_dir() }}/packages/ide-extension && just {{ ARGS }}

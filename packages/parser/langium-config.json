@@ -1,11 +1,10 @@
 {
   "projectName": "TaoLang",
-  "out": "./compiler-src/_gen-tao-parser",
-
+  "out": "./src/_gen-tao-parser",
   "languages": [{
     "id": "tao-lang",
     "grammar": "./tao-grammar.langium",
     "fileExtensions": ["tao"],
-    "textMate": { "out": "./symlink-ide-syntaxes/_gen-syntaxes/tao-lang.tmLanguage.json" }
+    "textMate": { "out": "../ide-extension/ide-syntaxes/_gen-syntaxes/tao-lang.tmLanguage.json" }
   }]
 }

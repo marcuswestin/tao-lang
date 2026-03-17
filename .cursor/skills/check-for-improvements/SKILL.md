@@ -14,9 +14,9 @@ Analyze all uncommitted changes, propose concrete improvements, and execute appr
 Run these commands to understand the full scope of changes:
 
 ```
-./just-agents git status
-./just-agents git diff
-./just-agents git diff --cached
+./just-agents shell git status
+./just-agents shell git diff
+./just-agents shell git diff --cached
 ```
 
 Collect the list of all modified, staged, and untracked files.

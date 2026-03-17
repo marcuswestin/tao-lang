@@ -1,5 +1,5 @@
+import { AST, ASTUtils } from '@parser'
 import * as langium from 'langium'
-import * as ast from '../_gen-tao-parser/ast'
 import {
   getSameModuleUris,
   isSameModuleImport,
@@ -20,7 +20,7 @@ export class UseStatementValidator {
 
   // checkUseStatement validates a use statement's imported names against the target module.
   checkUseStatement(
-    useStatement: ast.UseStatement,
+    useStatement: AST.UseStatement,
     accept: langium.ValidationAcceptor,
   ): void {
     const document = langium.AstUtils.getDocument(useStatement)
@@ -58,7 +58,7 @@ export class UseStatementValidator {
   // validateSameModuleImports checks that imported names exist in the same module.
   // Default and `share` are accessible; `file` is not.
   private validateSameModuleImports(
-    useStatement: ast.UseStatement,
+    useStatement: AST.UseStatement,
     targetUris: string[],
     accept: langium.ValidationAcceptor,
   ): void {
@@ -87,7 +87,7 @@ export class UseStatementValidator {
 
   // validateCrossModuleImports checks that imported names are `share`-marked in the target module.
   private validateCrossModuleImports(
-    useStatement: ast.UseStatement,
+    useStatement: AST.UseStatement,
     targetUris: string[],
     accept: langium.ValidationAcceptor,
   ): void {
@@ -130,7 +130,7 @@ export class UseStatementValidator {
 
   // getTargetUrisForUseStatement resolves a use statement to the target document URIs and whether it is same-module.
   private getTargetUrisForUseStatement(
-    useStatement: ast.UseStatement,
+    useStatement: AST.UseStatement,
     document: langium.LangiumDocument,
   ): { targetUris: string[]; sameModule: boolean } {
     const docUrisAndPaths = this.getDocUrisAndPaths()
@@ -157,7 +157,7 @@ export class UseStatementValidator {
         continue
       }
       const node = desc.node
-      if (!node || !ast.isImportableDeclaration(node)) {
+      if (!AST.isImportableDeclaration(node)) {
         continue
       }
       results.push(desc)
@@ -173,9 +173,13 @@ export class UseStatementValidator {
       if (!uriSet.has(doc.uri.toString())) {
         continue
       }
-      const taoFile = doc.parseResult.value as ast.TaoFile
+      const value = doc.parseResult.value
+      if (!AST.isTaoFile(value)) {
+        continue
+      }
+      const taoFile = value
       for (const stmt of taoFile.topLevelStatements) {
-        if (ast.isTopLevelDeclaration(stmt) && stmt.visibility === 'file') {
+        if (AST.isTopLevelDeclaration(stmt) && stmt.visibility === 'file') {
           if (stmt.declaration.name === name) {
             return true
           }
@@ -196,12 +200,12 @@ export class UseStatementValidator {
       }
 
       const node = desc.node
-      if (!node || !ast.isImportableDeclaration(node)) {
+      if (!AST.isImportableDeclaration(node)) {
         continue
       }
 
       const container = node.$container
-      if (ast.isTopLevelDeclaration(container) && container.visibility === 'share') {
+      if (ASTUtils.isSharedModuleDeclaration(container)) {
         results.push(desc)
       }
     }
@@ -223,12 +227,12 @@ export class UseStatementValidator {
       }
 
       const node = desc.node
-      if (!node || !ast.isImportableDeclaration(node)) {
+      if (!AST.isImportableDeclaration(node)) {
         continue
       }
 
       const container = node.$container
-      if (!ast.isTopLevelDeclaration(container) || container.visibility !== 'share') {
+      if (!ASTUtils.isSharedModuleDeclaration(container)) {
         return true
       }
     }

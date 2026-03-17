@@ -1,10 +1,12 @@
+import "./packages/shared/just/all-imports.just"
+
 # Settings for the agent justfile
 # - `quiet` -> Don't print each command as it's executed.
 # - `shell` -> recipe step command: zsh, exit on error, error on unset variable, fail on pipefail
 # - `dotenv-load` -> Load environment variables from .env
 
-set shell := ["zsh", "-e", "-u", "-o", "pipefail", "-c"]
-set dotenv-load := true
+MAIN_JUSTFILE := "--justfile Justfile"
+AGENT_JUSTFILE := "--justfile just-agents.Justfile"
 
 # Command recipes
 #################
@@ -12,36 +14,42 @@ set dotenv-load := true
 # Help: List all available agent commands with descriptions
 help:
     echo
-    just {{ AGENT_JUSTFILE }} --list --unsorted
+    echo 'To run shell commands, use: \n\n    `./just-agents shell <cmd> <args>`'.
     echo
+    echo 'Available shell commands:'
+    echo '    {{ ALLOWED_SHELL_COMMANDS }}' | sed "s/\|/ /g"
+    echo
+    just {{ AGENT_JUSTFILE }} --list --unsorted
 
-# Help: List all available agent commands as a single list
-list-commands:
-    just {{ AGENT_JUSTFILE }} --summary --unsorted
-
-# Exec git: Execute whitelisted git command, e.g `./just-agents git add ./Docs`. Whitelist: `log`, `status`, `diff`, `add`, `commit`. For commits with a message use `git-commit "message"`.
-git SUB_CMD *ARGS:
-    just {{ AGENT_JUSTFILE }} _execute_whitelisted_subcommand "|log|status|diff|add|commit|" git {{ SUB_CMD }} {{ ARGS }}
-
-# Exec shell: Execute whitelisted shell command, e.g `./just-agent shell ls`. Whitelist: `cd`, `ls`, `pwd`, `echo`, `cat`
-shell EXEC_CMD *ARGS:
-    just {{ AGENT_JUSTFILE }} _execute_whitelisted_subcommand "|cd|ls|pwd|echo|cat|" "" {{ EXEC_CMD }} {{ ARGS }}
-
-# Fixes: Format all files
+# Formats all files
 fmt:
     just {{ MAIN_JUSTFILE }} fmt
 
-# Fixes: Run all autofixers: lint, typecheck, etc. Useful to run before 'check'
+# Runs all autofixers: lint, typecheck, etc.
 fix:
     just {{ MAIN_JUSTFILE }} fix
 
-# Checks: Run tests - optionally specify which `TEST_PATTERNS` to filter test with (e.g. `test "formatter"`, test `"validation|parser"`)
-test *TEST_PATTERNS:
-    just {{ MAIN_JUSTFILE }} test {{ TEST_PATTERNS }}
+# Run full battery of checks and builds to prepare for commit.
+prep-commit:
+    echo 'Running ./just-agents prep-commit...\n'
+    just {{ MAIN_JUSTFILE }} prep-commit
+    echo '\nPrep-commit complete!\n'
+
+# Checks: Run tests - optionally specify which `TEST_NAMES_PATTERN` to filter test with (e.g. `test "formatter"`, test `"validation|parser"`)
+test *TEST_NAMES_PATTERN:
+    just {{ MAIN_JUSTFILE }} test "{{ TEST_NAMES_PATTERN }}"
+
+# Test all packages, including slow ones
+test-all:
+    just {{ MAIN_JUSTFILE }} test-all
 
 # Checks: Lint all code
 lint:
     just {{ MAIN_JUSTFILE }} lint
+
+# Check all code: lint, typecheck, etc.
+check:
+    just {{ MAIN_JUSTFILE }} check
 
 # Generate parser from grammar
 gen:
@@ -51,47 +59,47 @@ gen:
 build:
     just {{ MAIN_JUSTFILE }} build
 
-# Commits
-#========
+# Cleans: Clean all build artifacts in .builds/
+clean:
+    just {{ MAIN_JUSTFILE }} clean
 
-# Stage all unstaged changes. First make sure that all intended changes are staged.
-pre-commit-stash:
-    just {{ MAIN_JUSTFILE }} _pre-commit-stash
+# Package commands: Run commands in packages/expo-runtime
+expo-runtime *ARGS:
+    just {{ MAIN_JUSTFILE }} expo-runtime {{ ARGS }}
 
-# Run pre-commit fixes: format, autofixes, etc.
-pre-commit-fix:
-    just {{ MAIN_JUSTFILE }} _pre-commit-fix
+# Pass-through commands
+#======================
 
-# Run full battery of checks and builds before making a commit.
-pre-commit-check:
-    just {{ MAIN_JUSTFILE }} _pre-commit-check
+ALLOWED_GIT_COMMANDS := "log|status|diff|add|commit"
+ALLOWED_SHELL_COMMANDS := "grep|ls|echo|head|find|true|test|tail|tsc|mkdir|cat|cp|mv|touch|git"
 
-# Git commit: Commit staged changes with message, e.g. `./just-agents git-commit "fix(compiler): do the thing"`
-git-commit MESSAGE:
-    just _ensure-repo-clean
-    git commit -m {{ '"' + MESSAGE + '"' }}
+# Execute a shell command, e.g `./just-agents shell ls`
+[positional-arguments]
+shell EXEC_CMD *ARGS:
+    #!{{ ZSH_INIT }}
+    if [ "$1" = "git" ]; then
+        just {{ AGENT_JUSTFILE }} _check-allowed-git-subcommand "$2"
+        if [ "$2" = "commit" ]; then just {{ AGENT_JUSTFILE }} prep-commit; fi
+    fi
+    just {{ AGENT_JUSTFILE }} _execute_whitelisted_subcommand "{{ ALLOWED_SHELL_COMMANDS }}" env "shell" "$1" "${@:2}"
 
-# Unstash all changes, even if there are uncommitted changes.
-abort-pre-commit:
-    just {{ MAIN_JUSTFILE }} _pre-commit-abort
-
-# Unstash changes after commit. Only works if repo is completely clean.
-post-commit-unstash:
-    just {{ MAIN_JUSTFILE }} post-commit-unstash
-
-# Private helpers
-#================
-
-_execute_whitelisted_subcommand SUB_CMD_WHITELIST EXEC SUB_CMD *ARGS:
-    #!/usr/bin/env zsh
-    if ! echo "{{ SUB_CMD_WHITELIST }}" | grep -q "|{{ SUB_CMD }}|"; then
-        echo "invalid subcommand: {{ SUB_CMD }}. Allowed: {{ SUB_CMD_WHITELIST }}" >&2
+_check-allowed-git-subcommand SUB_CMD:
+    #!{{ ZSH_INIT }}
+    if ! echo "{{ ALLOWED_GIT_COMMANDS }}" | grep -qw "{{ SUB_CMD }}"; then
+        echo "git {{ SUB_CMD }} not allowed." >&2
+        echo "Allowed git subcommands: {{ ALLOWED_GIT_COMMANDS }}" >&2
         exit 1
     fi
-    {{ EXEC }} {{ SUB_CMD }} {{ ARGS }}
 
-# Variables
-#==========
-
-MAIN_JUSTFILE := "--justfile Justfile"
-AGENT_JUSTFILE := "--justfile just-agents.Justfile"
+[positional-arguments]
+_execute_whitelisted_subcommand SUB_CMD_WHITELIST EXEC RECIPE_NAME SUB_CMD *ARGS:
+    #!{{ ZSH_INIT }}
+    # $1=whitelist, $2=exec (git or env), $3=recipe name (for errors), $4=subcommand, "${@:5}"=args
+    if ! echo "|$1|" | grep -q "|$4|"; then
+        echo "{{ RECIPE_NAME }} <command> not allowed: $4." >&2
+        echo "Allowed commands: $1" >&2
+        echo "If you need a new command, ask to have it added." >&2
+        exit 1
+    fi
+    # When piping commands, we can get exit code 141 = SIGPIPE, which is expected piped e.g. into `./just-agents shell git log | ./just-agents shell head`
+    "$2" "$4" "${@:5}" || { ret=$?; [ $ret -eq 141 ] && exit 0; exit $ret; }

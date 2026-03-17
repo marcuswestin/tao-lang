@@ -1,5 +1,5 @@
 {
-  "name": "tao-cli",
+  "name": "@tao/tao-cli",
   "private": true,
   "type": "module",
   "module": "tao-cli.ts",

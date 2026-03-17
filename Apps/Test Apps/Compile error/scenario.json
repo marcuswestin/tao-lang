@@ -1,0 +1,9 @@
+{
+  "assertions": [
+    { "type": "textVisible", "text": "Error compiling file" },
+    {
+      "type": "textVisible",
+      "text": "Diagnostics errors: Could not resolve reference to Declaration named 'MissingView'."
+    }
+  ]
+}

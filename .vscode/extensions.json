@@ -1,5 +1,6 @@
 {
   "recommendations": [
+    "ryuta46.multi-command",
     "dprint.dprint",
     "continue.continue",
     "langium.langium-vscode",

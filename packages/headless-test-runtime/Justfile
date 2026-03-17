@@ -1,0 +1,15 @@
+set unstable := true
+set fallback := true
+set quiet := true
+
+build: _install_deps
+
+[no-quiet]
+test *FLAGS_AND_PATTERNS: build
+    bunx jest --watchman=false -t {{ FLAGS_AND_PATTERNS }}
+
+watch-tests *FLAGS_AND_PATTERNS: build
+    bunx jest --watch --watchman=false --silent --reporter=dot -t {{ FLAGS_AND_PATTERNS }}
+
+_install_deps:
+    bun install

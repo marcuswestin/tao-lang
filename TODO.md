@@ -12,6 +12,8 @@ Tao Lang TODOs.
 
 Next tasks, in order:
 
+### IMPLEMENTATION TASKS
+
 - [x] Fix just check
 - [x] Merge shared and shared-tools
 - [x] Formatter
@@ -28,7 +30,16 @@ Next tasks, in order:
   - [x] Naming: AliasStatement -> AliasDeclaration; NameBinding -> Declaration; Declaration = AliasDeclaration | StateDeclaration | ParameterDeclaration | ...;
     - [x] Cleanup various ___Declaration references in ts code.
   - [x] Inline ViewBody in ViewRenderStatement
-- [ ] Start using https://github.com/callstack/react-native-testing-library!
+- [x] Start using https://github.com/callstack/react-native-testing-library!
+  - [x] Spread compiled code across multiple files
+- [x] Use a MultiCommand in settings.json to install extension and then restartExtensionHost (see .vscode/settings.json multiCommand.buildExtensionThenRestartHost, .vscode/keybindings.json, README Extension Development)
+- [x] Move parser into its own package
+- [x] Move formatter into its own package
+
+### CLEANUP TASKS
+
+- [ ] Ask to update implementing-scoping-for-langium-language.mdc. It looks out of date
+- [ ] Start using voice mode
 - [ ] Simplify TaoWorkspace to receive the shared workspace instead of the shared services.
 - [ ] Change a bunch of function-oriented files to classes
 - [ ] Switch from // comments to /** ... */ comments for documentation
@@ -41,6 +52,7 @@ Next tasks, in order:
 - [ ] Consider adding warn for lint categories: "pedantic", "restriction", "style"
 - [ ] Make lint type-aware
 - [ ] Move typescript compiler generator into its own file (maybe class)
+- [ ] Extract Tao runtime manifest parsing and compiled-app test helpers into a shared package/module so expo-runtime and headless-test-runtime do not drift.
 - [ ] Get kitchen sink build working and rendering
 - [ ] Implement tracing properly
 - [ ] Figure out how to test the ide extension in test-ide-extension.test.ts
@@ -76,6 +88,8 @@ First:
 - [ ] Start formatter
   - [ ] ASTNode.$cstNode.test/.range.start.line?
 - [ ] Use workspaces: { "private": true, "workspaces": [ "packages/_", "apps/_" ]}; bun install installs for ALL with one lockile
+- [ ] Fix the `./just-agents` commit wrappers so `git-commit` works with staged changes and `post-commit-unstash` points at a real root recipe.
+- [x] Auto-activate `mise` from `./just-agents` so commands do not need a separate shell prefix.
 
 - [ ] Combine shared: shared/shared-ts-libs, /shared-scripts, just/foo.just;bar.just
 - [ ] Consider exec before each just command

@@ -1,8 +1,7 @@
 {
   "extends": "../tsconfig.base.json",
   "references": [
-    { "path": "../compiler" },
-    { "path": "../shared" }
+    { "path": "../compiler" }
   ],
   "include": [
     "cli-src/**/*",

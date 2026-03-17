@@ -1,10 +1,9 @@
-set unstable := true
-set fallback := true
+import "../shared/just/all-imports.just"
 
 run:
     bun run tao-cli.ts help
 
-build: _install_deps
+build: _deps
     bun build tao-cli.ts --compile --outfile ../../.builds/tao-cli
 
 build-lib OUTPUT_DIR:
@@ -21,5 +20,5 @@ watch-lib OUTPUT_DIR:
 test *PATTERNS:
     bun test --reporter=dot {{ PATTERNS }}
 
-_install_deps:
+_deps:
     bun install

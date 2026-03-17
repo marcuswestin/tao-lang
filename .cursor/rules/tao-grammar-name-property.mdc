@@ -1,6 +1,6 @@
 ---
 description: Use the "name" property for referenceable elements in the Tao grammar
-globs: packages/compiler/tao-grammar.langium
+globs: packages/parser/tao-grammar.langium
 alwaysApply: false
 ---
 

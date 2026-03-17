@@ -1,26 +1,19 @@
-set unstable := true
-set fallback := true
+import "../shared/just/all-imports.just"
 
-_pretest:
-    just gen
-
-test *PATTERNS: _pretest
+test *PATTERNS: _deps
     bun test --reporter=dot --test-name-pattern "{{ PATTERNS }}"
 
-watch-test *PATTERNS:
+watch-test *PATTERNS: _deps
     bun test . --watch --reporter=dot --test-name-pattern "{{ PATTERNS }}"
 
-build:
-    bun install
+build: _deps
     just gen
     bunx tsc
 
-gen:
-    bunx langium generate --mode=development
-    just q-dev gen-syntax-tmLanguage-files
 
-watch-compiler:
+watch-compiler: _deps
     bun -e "import 'compiler-src/compiler-main'; console.log('Reload...'); " --watch --no-clear-screen
 
-watch-grammar:
-    watchexec --restart --watch=tao-grammar.langium -- just gen
+_deps:
+    bun install
+    just gen

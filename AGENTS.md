@@ -2,38 +2,29 @@
 
 ---
 
-## CRITICAL: **Only** run commands with `./just-agents`:
-
-- **ALWAYS** use `./just-agents <cmd> <args>` for all commands
-- **NEVER** run commands any other way than `./just-agents`
-- **ALWAYS** consult `.cursor/rules/running-commands.mdc` for instructions on running commands
-- **ALWAYS** start your session with running `./just-agents help`
-
----
-
-## Commit Workflow:
-
-```zsh
-./just-agents pre-commit-stash # Stash unstaged changes
-./just-agents pre-commit-fix # Run fixes
-./just-agents pre-commit-check # Run checks
-./just-agents git-commit '<commit message>' # Commit. Fails with unstaged changes.
-./just-agents post-commit-unstash # Unstash previous changes. Fails if unclean repo.
-```
-
-If you need to abort the commit workflow, and unstage all changes again, run:
-
-```zsh
-./just-agents abort-pre-commit # Abort pre-commit workflow. Unstages all changes.
-```
+- **CRITICAL:** `./just-agents` is your one way to interact with the codebase.
+- **ALWAYS** use `./just-agents <cmd> <args>` for all commands.
+- **ALWAYS** start your session by listing available commands: `./just-agents help`
+- **CRITICAL:** You may ONLY run commands with `./just-agents <cmd> <args>`.
+- **CRITICAL:** Execute shell commands with `./just-agents shell "<shell cmd>" "<args>"`.
+- **CRITICAL**: **Never** modify just-agents.Justfile without asking first.
+- Favor using `./just-agents shell mv <src> <dest>` over rewriting files and then deleting them.
+- **Justfile Documentation:**
+  - **If** you need to lookup `just`, first check: https://cheatography.com/linux-china/cheat-sheets/justfile/
+  - **If** you need more details, see:: https://just.systems/man/en/
 
 ---
 
 ## Misc Instructions:
 
-- **ALWAYS** Go through Commit workflow, unless explicitly instructed not to.
-- **NEVER** delete files without asking
-- **ALWAYS** document exported TS functions with `// <function name> <description>` (**never** use `/** ... */`)
+- **NEVER** delete files without asking.
+- **ALWAYS** run `fix` and `pre-commit-check` before committing, unless explicitly instructed not to.
+
+## Documentation:
+
+- **ALWAYS** jsdoc all TS functions with name and description: `/** <fn name> <desc> */`.
+- **USUALLY** jsdoc on a single line, unless more is appropriate: `/** <fn name> <desc> */`.
+- **SOMETIMES** jsdoc additional details with list items when appropriate: `/** <fn name> <desc>\n * - ...\n * - ...\n */`.
 
 ---
 
@@ -71,7 +62,8 @@ Tao Lang Project Docs:
 
 ### Tao Lang implementation: packages/*
 
-- `packages/compiler/` - Parser, validator, compiler and formatter (using Langium)
+- `packages/parser/` - Langium grammar and generated AST for Tao Lang
+- `packages/compiler/` - Validator and compiler (using Langium)
 - `packages/tao-cli/` - Tao CLI: `tao <...>`
 - `packages/tao-std-lib/` - Standard library: e.g `use tao/ui Col, Row, Text`
 - `packages/ide-extension/` - Tao Lang VSCode/Cursor Extension
@@ -83,7 +75,5 @@ For package-specific instructions, see their AGENTS.md file, e.g `packages/compi
 ### Test files:
 
 - Test files are named `<name>.test.ts`
-- Tests are executed with `bun test`
-  - Except: `expo-runtime` tests can only be run using `node`/`jest`
-
----
+- Tests are executed with `./just-agents test <test name pattern>`
+  - Except: `expo-runtime` tests are slow, and are run with `./just-agents test-all`

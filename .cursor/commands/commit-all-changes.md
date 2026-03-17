@@ -1,1 +1,2 @@
-Stage all changes, including new and removed files; then write a commit message for the staged files, and commit.
+Stage all changes, write a commit message for the staged files, and commit.
+No need to check with me before committing.

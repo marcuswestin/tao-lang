@@ -1,11 +1,13 @@
 {
-  "name": "@tao-compiler",
+  "name": "@tao/compiler",
   "private": true,
   "type": "module",
   "module": "tao-compiler.ts",
+  "dependencies": {
+    "langium": "^4.1.2"
+  },
   "devDependencies": {
     "@types/bun": "latest",
-    "langium-cli": "^4.1.0",
     "typescript": "^5"
   }
 }

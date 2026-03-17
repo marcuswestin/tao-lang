@@ -1,8 +1,8 @@
+import { AST, ASTUtils } from '@parser'
 import * as langium from 'langium'
 import { DefaultDefinitionProvider, type LangiumServices } from 'langium/lsp'
 import type { DefinitionParams } from 'vscode-languageserver'
 import { LocationLink } from 'vscode-languageserver'
-import * as ast from './_gen-tao-parser/ast'
 import {
   getSameModuleUris,
   isSameModuleImport,
@@ -34,7 +34,7 @@ export class TaoDefinitionProvider extends DefaultDefinitionProvider {
   // tryGetUseStatementDefinition returns a LocationLink if the source node is an imported name in a use statement.
   private tryGetUseStatementDefinition(sourceCstNode: langium.CstNode): LocationLink | undefined {
     const astNode = sourceCstNode.astNode
-    if (!ast.isUseStatement(astNode)) {
+    if (!AST.isUseStatement(astNode)) {
       return undefined
     }
 
@@ -65,7 +65,7 @@ export class TaoDefinitionProvider extends DefaultDefinitionProvider {
   }
 
   private getTargetUrisForUseStatement(
-    useStmt: ast.UseStatement,
+    useStmt: AST.UseStatement,
     document: langium.LangiumDocument,
   ): string[] {
     const sameModule = isSameModuleImport(useStmt, document.uri.path)
@@ -94,7 +94,7 @@ export class TaoDefinitionProvider extends DefaultDefinitionProvider {
   private findDeclarationInUris(
     name: string,
     targetUris: string[],
-    useStmt: ast.UseStatement,
+    useStmt: AST.UseStatement,
     document: langium.LangiumDocument,
   ): langium.AstNodeDescription | undefined {
     const sameModule = isSameModuleImport(useStmt, document.uri.path)
@@ -124,7 +124,7 @@ export class TaoDefinitionProvider extends DefaultDefinitionProvider {
     }
 
     const container = desc.node.$container
-    if (ast.isTopLevelDeclaration(container) && container.visibility === 'share') {
+    if (ASTUtils.isSharedModuleDeclaration(container)) {
       return desc
     }
 
@@ -135,9 +135,9 @@ export class TaoDefinitionProvider extends DefaultDefinitionProvider {
     desc: langium.AstNodeDescription,
     name: string,
     targetUriSet: Set<string>,
-  ): desc is langium.AstNodeDescription & { node: ast.ImportableDeclaration } {
+  ): desc is langium.AstNodeDescription & { node: AST.ImportableDeclaration } {
     return targetUriSet.has(desc.documentUri.toString())
       && desc.name === name
-      && ast.isImportableDeclaration(desc.node)
+      && AST.isImportableDeclaration(desc.node)
   }
 }

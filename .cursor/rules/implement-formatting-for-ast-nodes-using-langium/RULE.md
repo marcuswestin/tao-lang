@@ -7,9 +7,9 @@ alwaysApply: false
 
 This guide is for architects building production-grade language servers. It bypasses the basics to focus on the imperative **Node-Centric Model**, advanced **CST manipulation**, and the edge cases that break naive formatters.
 
-When making changes, always write tests in `1-test-formatter.test.ts` demonstrate the intended behavior.
+When making changes, always write tests in `packages/formatter/formatter-tests/1-test-formatter.test.ts` to demonstrate the intended behavior.
 
-Use `bun test packages/compiler/formatter-tests` to run all formatter tests; or `bun test packages/compiler/formatter-tests --test-name-pattern "Name of test"` to run a specific test.
+Use `./just-agents test formatter` to run all formatter tests; or `./just-agents test "formatter|compiler"` to run a specific test.
 
 ## 1. The Mental Model
 
@@ -29,9 +29,9 @@ To access user preferences (e.g., Tab Size) or handle file-wide settings, you mu
 **`src/language/tao-lang-formatter.ts`**
 
 ```typescript
+import { AST } from '@parser'
 import { AbstractFormatter, AstNode, Formatting, FormattingOptions, LangiumDocument } from 'langium'
 import { TextEdit } from 'vscode-languageserver'
-import * as ast from './generated/ast'
 
 export class TaoLangFormatter extends AbstractFormatter {
   // Store user settings (default to 4 spaces)
@@ -52,7 +52,7 @@ export class TaoLangFormatter extends AbstractFormatter {
 
     const f = this.getNodeFormatter(node)
 
-    if (ast.isApp(node)) {
+    if (AST.isApp(node)) {
       // ... formatting logic
     }
   }
@@ -89,7 +89,7 @@ All operations start with `const f = this.getNodeFormatter(node)`.
 **The Golden Rule:** Never indent children manually. Indent the _interior_ of the container. This ensures that comments "riding along" with children are indented correctly.
 
 ```typescript
-if (ast.isBlock(node)) {
+if (AST.isBlock(node)) {
   const open = f.keyword('{')
   const close = f.keyword('}')
 
@@ -108,7 +108,7 @@ if (ast.isBlock(node)) {
 Standard logic collapses empty blocks to `{}`. If that block contains a comment `{ // comment }`, `noSpace()` will crush the comment or detach it.
 
 ```typescript
-if (ast.isBlock(node)) {
+if (AST.isBlock(node)) {
   const open = f.keyword('{')
   const close = f.keyword('}')
 
@@ -136,7 +136,7 @@ if (ast.isBlock(node)) {
 Handle separators (commas) in bulk.
 
 ```typescript
-if (ast.isArgList(node)) {
+if (AST.isArgList(node)) {
   // "arg1, arg2" -> Tight left, Space right
   f.keywords(',').prepend(Formatting.noSpace())
     .append(Formatting.oneSpace())
@@ -168,7 +168,7 @@ Langium has no built-in suppression. You must implement a "Gatekeeper".
 private isFormattingSuppressed(node: AstNode): boolean {
     const cst = node.$cstNode;
     if (!cst) return false;
-    
+
     // Inspect the text immediately preceding the node
     // (A rough heuristic, but efficient)
     const start = Math.max(0, cst.offset - 50);
@@ -196,7 +196,7 @@ if (node.type) {
 If your language embeds raw code (SQL, Markdown), you must ensure `indent()` does not touch the inner content.
 
 ```typescript
-if (ast.isSqlBlock(node)) {
+if (AST.isSqlBlock(node)) {
   const open = f.keyword('sql')
   const close = f.keyword('end')
 

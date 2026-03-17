@@ -3,10 +3,10 @@
 ## Likely order
 
 - [x] Alias Statements
+- [ ] Actions - events (ui interaction, time, network), state mutation, datasource updates, network requests
 - [ ] Composite expressions
 - [ ] Minimal basic Type System
 - [ ] Functions
-- [ ] Actions - events (ui interaction, time, network), state mutation, datasource updates, network requests
 - [ ] Control statements - if/else,
 
 ## Relationship to LLMs

@@ -2,9 +2,24 @@
   // Use compiler typescript version, for langium generated code to typecheck properly
   "typescript.tsdk": "packages/compiler/node_modules/typescript/lib",
 
+  // Build extension and restart host (requires extension ryuta46.multi-command).
+  "tao.workspaceKeybinding.buildAndRestart": true, // Necessary for multiCommand.buildExtensionThenRestartHost
+  "multiCommand.commands": [
+    {
+      "command": "multiCommand.buildExtensionThenRestartHost",
+      "interval": 3000,
+      "sequence": [
+        "workbench.action.tasks.build",
+        "workbench.action.restartExtensionHost"
+      ]
+    }
+  ],
+
   // Code appearance
   "editor.fontSize": 12.5,
   "editor.lineHeight": 17,
+  "window.zoomLevel": 0.8, // Monitor
+  // "window.zoomLevel": 0, // Laptop
 
   "files.exclude": {
     ".config/MISE_DIR": true,
@@ -29,11 +44,11 @@
 
   // Code Formatting: Tao Lang's extension, for .tao files.
   "[tao]": {
-    "editor.defaultFormatter": "tao.tao-lang-vscode-extension"
+    "editor.defaultFormatter": "tao.tao-ide-extension"
   },
 
   // Langium and App Lang configs
-  "langium.config": "packages/compiler/langium-config.json",
+  "langium.config": "packages/parser/langium-config.json",
 
   // "typescript.inlayHints.functionLikeReturnTypes.enabled": true,
   // "typescript.inlayHints.parameterNames.enabled": "all",
@@ -62,7 +77,7 @@
   "typescript.suggest.includeCompletionsForImportStatements": true,
 
   // General features
-  "typescript.referencesCodeLens.enabled": true,
+  // "typescript.referencesCodeLens.enabled": true,
   "typescript.implementationsCodeLens.enabled": true,
   "typescript.updateImportsOnFileMove.enabled": "always",
   "typescript.check.npmIsInstalled": true
