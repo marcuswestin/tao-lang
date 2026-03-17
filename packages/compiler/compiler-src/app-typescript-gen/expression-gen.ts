@@ -1,10 +1,10 @@
 import { Compiled, compileNode } from '@compiler/compiler-utils'
 import { AST } from '@parser'
-import { switchItemType_Exhaustive } from '@shared/TypeSafety'
+import { switchType_Exhaustive } from '@shared/TypeSafety'
 
 /** compileExpression emits a string, number, or named reference as a TS expression. */
 export function compileExpression(expression: AST.Expression): Compiled {
-  return switchItemType_Exhaustive(expression, {
+  return switchType_Exhaustive(expression, {
     'StringLiteral': compileStringLiteral,
     'NumberLiteral': compileNumberLiteral,
     'NamedReference': compileNamedReference,

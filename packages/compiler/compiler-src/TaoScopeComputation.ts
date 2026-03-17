@@ -1,6 +1,6 @@
 import { AST } from '@parser'
 import { throwUnexpectedBehaviorError } from '@shared/TaoErrors'
-import { switchItemType_Exhaustive, switchProperty_Exhaustive } from '@shared/TypeSafety'
+import { switchProperty_Exhaustive, switchType_Exhaustive } from '@shared/TypeSafety'
 import * as langium from 'langium'
 
 /** TaoScopeComputation builds exported and local symbol tables for Tao files.
@@ -49,7 +49,7 @@ export class TaoScopeComputation extends langium.DefaultScopeComputation {
       if (!AST.isScopeRelevantNode(node)) {
         continue
       }
-      switchItemType_Exhaustive(node, {
+      switchType_Exhaustive(node, {
         UseStatement: (n) => this.collectSymbolForScope(n, document, localSymbols),
         TopLevelDeclaration: (n) => this.collectSymbolForScope(n.declaration, document, localSymbols, n.$container),
         Injection: () => void 0,

@@ -38,19 +38,18 @@ Next tasks, in order:
 
 ### CLEANUP TASKS
 
-- [ ] Ask to update implementing-scoping-for-langium-language.mdc. It looks out of date
 - [ ] Start using voice mode
 - [ ] Simplify TaoWorkspace to receive the shared workspace instead of the shared services.
 - [ ] Change a bunch of function-oriented files to classes
-- [ ] Switch from // comments to /** ... */ comments for documentation
-- [ ] Don't duplicate all the shared packages from symlinks in vscode - ignore them.
+- [x] Switch from // comments to /** ... */ comments for documentation
+- [x] Don't duplicate all the shared packages from symlinks in vscode - ignore them.
 - [ ] Replace with compiler-ast-switch-exhaustive.mdc rule for AST dispatching.
-- [ ] Rename switchItemType_Exhaustive to switchNode_Exhaustive
+- [ ] Rename switchType_Exhaustive to switchNode_Exhaustive
 - [ ] Enable "suspicious" lint category
 - [ ] Enable "nursery" lint category
 - [x] Use snake_case for private justfile recipes and kebab-case for public ones
 - [ ] Consider adding warn for lint categories: "pedantic", "restriction", "style"
-- [ ] Make lint type-aware
+- [x] Make lint type-aware
 - [ ] Move typescript compiler generator into its own file (maybe class)
 - [ ] Extract Tao runtime manifest parsing and compiled-app test helpers into a shared package/module so expo-runtime and headless-test-runtime do not drift.
 - [ ] Get kitchen sink build working and rendering

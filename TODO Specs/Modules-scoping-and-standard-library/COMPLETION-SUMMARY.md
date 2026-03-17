@@ -38,7 +38,7 @@ Roughly 70+ commits covering:
 - **CLI & IDE**: stdLibRoot and multi-file compilation; tao-cli compiles used files into output; IDE uses createTaoWorkspace and parser.getShared()
 - **Formatter**: TaoFormatter (AST-driven), injection block re-indent, use-statement symbol list formatting
 - **Std lib**: tao-std-lib views (share visibility), Text with props.value; Apps use `use Col, Row, Text from tao/ui`
-- **Shared**: TypeSafety (switchItemType_Exhaustive, switch_Exhaustive, switchBindItemType_Exhaustive); TaoPaths, Log, TaoErrors; q-dev; shared-tools removed and folded into shared
+- **Shared**: TypeSafety (switchType_Exhaustive, switch_Exhaustive, switchBindItemType_Exhaustive); TaoPaths, Log, TaoErrors; q-dev; shared-tools removed and folded into shared
 - **Infra**: just-agents + Just-Agents.Justfile; git-commit recipe for multi-word commit messages; fix/check/fmt/test/build; expo-runtime tsconfig excludes (app/_gen-tao-compiler when not imported)
 
 ---
@@ -82,7 +82,7 @@ _(TaoWorkspace class was completed on this branch.)_
 ### 5.2 Documentation
 
 - [x] Paths.ts: readDir, resolvePath, streamFilesIn (and other exports) documented with `// <name> <description>`.
-- [x] TypeSafety.ts: switchItemType_Exhaustive, switch_Exhaustive, switchBindItemType_Exhaustive documented.
+- [x] TypeSafety.ts: switchType_Exhaustive, switch_Exhaustive, switchBindItemType_Exhaustive documented.
 - [ ] **tao-services.ts**: Add `// <Name> <description>` for:
   - Types: TaoWorkspaceConfig, TaoWorkspaceBuildOptions, TaoDocument
   - Class: TaoWorkspace

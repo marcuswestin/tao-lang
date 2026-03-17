@@ -6,7 +6,7 @@ import {
   genNodePropertyRef,
 } from '@compiler/compiler-utils'
 import { AST } from '@parser'
-import { switchItemType_Exhaustive } from '@shared/TypeSafety'
+import { switchType_Exhaustive } from '@shared/TypeSafety'
 import * as LangiumGen from 'langium/generate'
 import { compileAliasDeclaration } from './alias-gen'
 import { compileExpression } from './expression-gen'
@@ -52,7 +52,7 @@ function compileViewRenderStatement(node: AST.ViewRenderStatement): Compiled {
 
 /** compileViewStatement dispatches render, alias, injection, or nested view codegen. */
 function compileViewStatement(statement: AST.ViewStatement): Compiled {
-  return switchItemType_Exhaustive(statement, {
+  return switchType_Exhaustive(statement, {
     ViewRenderStatement: (n) => compileViewRenderStatement(n),
     AliasDeclaration: (n) => compileAliasDeclaration(n),
     Injection: (n) => compileInjection(n),

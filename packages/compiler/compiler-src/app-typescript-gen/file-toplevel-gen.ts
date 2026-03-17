@@ -1,13 +1,13 @@
 import { Compiled, compileNode, compileNodeListProperty } from '@compiler/compiler-utils'
 import { AST } from '@parser'
-import { switchItemType_Exhaustive, switchProperty_Exhaustive } from '@shared/TypeSafety'
+import { switchProperty_Exhaustive, switchType_Exhaustive } from '@shared/TypeSafety'
 import { compileAliasDeclaration } from './alias-gen'
 import { compileTopLevelInjection } from './injection-gen'
 import { compileViewDeclaration } from './view-gen'
 
 /** compileTopLevelStatement dispatches to use, injection, or top-level declaration codegen. */
 export function compileTopLevelStatement(statement: AST.TopLevelStatement): Compiled {
-  return switchItemType_Exhaustive(statement, {
+  return switchType_Exhaustive(statement, {
     'UseStatement': compileUseStatement,
     'Injection': compileTopLevelInjection,
     'TopLevelDeclaration': compileTopLevelDeclaration,
@@ -16,7 +16,7 @@ export function compileTopLevelStatement(statement: AST.TopLevelStatement): Comp
 
 /** compileTopLevelDeclaration emits app, view, or alias at file top level. */
 function compileTopLevelDeclaration(node: AST.TopLevelDeclaration): Compiled {
-  return switchItemType_Exhaustive(node.declaration, {
+  return switchType_Exhaustive(node.declaration, {
     'AppDeclaration': compileAppDeclaration,
     'ViewDeclaration': compileViewDeclaration,
     'AliasDeclaration': compileAliasDeclaration,
