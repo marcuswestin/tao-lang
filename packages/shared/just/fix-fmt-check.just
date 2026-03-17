@@ -1,3 +1,5 @@
+import "./_shared-vars.just"
+
 # Formatting and linting
 ########################
 # OXLINT_CMD := "oxlint --type-aware"
