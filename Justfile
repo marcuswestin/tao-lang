@@ -40,7 +40,10 @@ ensure-repo-clean: _ensure_repo_clean
 [no-cd]
 test *PATTERNS: gen
     bun test --reporter=dot --test-name-pattern "{{ PATTERNS }}"
-    cd packages/headless-test-runtime && just test {{ PATTERNS }}
+    just headless-test-runtime test {{ PATTERNS }}
+
+theadless *PATTERNS: gen
+    just headless-test-runtime test {{ PATTERNS }}
 
 # Watch tests, but bail on first failure
 bail-watch-tests *PATTERNS:
