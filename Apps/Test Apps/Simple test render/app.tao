@@ -1,7 +1,9 @@
-file app SimpleTextRenderApp { ui RootView }
+file app SimpleTextRenderApp {
+  ui RootView
+}
 
 view RootView {
-  Text value "Hello from shared scenario" {}
+  Text value "Hello from shared scenario" { }
 }
 
 view Text value string {
