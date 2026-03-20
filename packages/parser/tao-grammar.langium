@@ -112,7 +112,9 @@ type Referenceable = AliasDeclaration | ParameterDeclaration | ViewDeclaration |
 
 hidden terminal WS: /\s+/;
 terminal ID: /[_a-zA-Z][\w_]*/;
-terminal STRING: /"(\\.|[^"\\])*"|'(\\.|[^'\\])*'/;
+terminal STRING: /"(\\.|[^"\\])*"/; // <- Only double quotes.
+// If we want to allow single quotes -> /"(\\.|[^"\\])*"|'(\\.|[^'\\])*'/;
+
 terminal NUMBER returns number: /[0-9]+/;
 
 hidden terminal ML_COMMENT: /\/\*[\s\S]*?\*\//;
