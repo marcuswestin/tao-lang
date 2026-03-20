@@ -5,7 +5,7 @@ import type { LanguageClientOptions, ServerOptions } from 'vscode-languageclient
 import { LanguageClient, TransportKind } from 'vscode-languageclient/node.js'
 
 let client: LanguageClient
-const channel = vscode.window.createOutputChannel('My Extension', { log: true })
+const channel = vscode.window.createOutputChannel('Tao Extension', { log: true })
 
 /** activate starts the bundled Tao language server client. In Development extension mode it also routes `Log` through the
  * output channel so LSP traffic is visible in the panel. */
