@@ -1,1 +1,3 @@
-file app CompileErrorApp { ui MissingView }
+file app CompileErrorApp {
+    ui MissingView
+}

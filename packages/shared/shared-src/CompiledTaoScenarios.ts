@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { resolve as resolvePath } from 'node:path'
 
 export type CompiledTaoScenarioAssertion = {
@@ -12,7 +12,8 @@ export type CompiledTaoScenario = {
 
 export type DiscoveredCompiledTaoScenario = {
   scenarioDir: string
-  scenario: CompiledTaoScenario
+  scenario: CompiledTaoScenario | undefined
+  isReady: boolean
 }
 
 export type CompiledTaoScenarioCompileResult = {
@@ -51,10 +52,14 @@ export function discoverCompiledTaoScenarios(rootDir = compiledTaoScenariosRootD
     .filter(entry => entry.isDirectory())
     .map(entry => resolvePath(rootDir, entry.name))
     .sort((left, right) => left.localeCompare(right))
-    .map(scenarioDir => ({
-      scenarioDir,
-      scenario: loadCompiledTaoScenario(scenarioDir),
-    }))
+    .map(scenarioDir => {
+      const isReady = existsSync(resolvePath(scenarioDir, 'scenario.json'))
+      return {
+        scenarioDir,
+        scenario: isReady ? loadCompiledTaoScenario(scenarioDir) : undefined,
+        isReady,
+      }
+    })
 }
 
 /** loadCompiledTaoScenario reads `${scenarioDir}/scenario.json`, parses it, and validates shape

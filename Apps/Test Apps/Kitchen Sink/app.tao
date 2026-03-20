@@ -7,8 +7,9 @@ app KitchenSink {
 }
 
 view RootView {
-// MyView { }
-// MyView { }
+    Text value "Hello Kitchen Sink" { }
+    // MyView { }
+    // MyView { }
 }
 
 // view MyView {

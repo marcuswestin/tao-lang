@@ -13,7 +13,7 @@ describe('cli:', () => {
   })
 
   test('compile file with use statement', async () => {
-    const path = resolvePath(__dirname, '../../../Apps/Kitchen Sink/Kitchen Sink.tao')
+    const path = resolvePath(__dirname, '../../../Apps/Test Apps/Kitchen Sink/app.tao')
     const stdLibRoot = resolvePath(__dirname, '../../../packages/tao-std-lib')
     const res = await TaoSDK_compile({ path, runtimeDir: resolvePath(__dirname, '../../expo-runtime/'), stdLibRoot })
     expect(res.result).toBeDefined()

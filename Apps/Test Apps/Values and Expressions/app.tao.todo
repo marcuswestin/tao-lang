@@ -1,0 +1,23 @@
+app ValuesAndExpressionsApp {
+    ui RootView
+}
+
+view RootView {
+    alias AdaName = "Ada Lovelace Jr"
+    alias AdaAge = 24
+    alias AdaBornIn = 1815
+
+    alias Ada = item { name AdaName, age AdaAge, bornIn AdaBornIn }
+    alias Turing = item name "Alan Turing Jr", age 19, bornIn 1912
+    alias Heroes = list Ada, Turing
+
+    Col {
+        PersonView person Ada {}
+        PersonView person Turing {}
+    }
+}
+
+view PersonView person thing {
+    Text person.name " is " person.age " years old, and was born {person.bornIn}."
+    Text "So, it's now year "person.bornIn + person.age "??"
+}

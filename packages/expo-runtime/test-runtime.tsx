@@ -5,7 +5,7 @@ import { existsSync } from 'node:fs'
 import { basename, resolve as resolvePath } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import type { ComponentType } from 'react'
-import type { CompiledTaoScenario, CompiledTaoScenarioAdapter } from '../shared/shared-src/CompiledTaoScenario'
+import type { CompiledTaoScenario, CompiledTaoScenarioAdapter } from '../shared/shared-src/CompiledTaoScenarios'
 
 type CompileOpts = {
   path: string

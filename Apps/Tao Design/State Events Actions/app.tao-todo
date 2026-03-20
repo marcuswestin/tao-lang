@@ -1,0 +1,33 @@
+app SimpleTextRenderApp {
+    ui RootView
+}
+
+state GlobalCount = 0
+
+view RootView {
+    does render event RenderEvent
+    Text value "Hello from shared scenario" { }
+    state LocalCount = 0
+    Button title "Increment" {
+        on press -> {
+            GlobalCount += 1
+            LocalCount += 1
+        }
+    }
+}
+
+view SubView {
+    Text value "Hello from subview" { }
+    state LocalCount = 0
+    Text value LocalCount
+    Button title "Increment" {
+        on press -> {
+            GlobalCount += 1
+            LocalCount += 1
+        }
+    }
+}
+
+view Text value string {
+    inject ```ts return <RN.Text>{props.value}</RN.Text> ```
+}

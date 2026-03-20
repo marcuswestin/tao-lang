@@ -1,0 +1,6 @@
+{
+  "assertions": [
+    { "type": "textVisible", "text": "Ada Lovelace Jr, age 24 years old" },
+    { "type": "textVisible", "text": "Alan Turing Jr, age 19 years old" }
+  ]
+}

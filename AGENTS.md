@@ -19,6 +19,7 @@
 
 - **NEVER** delete files without asking.
 - **ALWAYS** run `fix` and `prep-commit` before committing, unless explicitly instructed not to.
+- **ALWAYS** use the return type of an invoced function (either implicitly or explicitly) rather than redeclaring an identical type. Don't: `type AType = { ... }; let foo: AType = fn();`, Do: `let foo = fn();`
 
 ## Documentation:
 
@@ -43,11 +44,6 @@ Misc configs and artifacts:
 - `.config/` - configs for tools
 - `.cursor/` + `.vscode/` - IDE configs
 - `.*` - config files required in project root. Symlinked to `.config/*`
-
-Apps built with Tao Lang:
-
-- `Apps/Kitchen Sink` - Collection of Tao demonstrations
-- `Apps/Tao Studio` - Intended development environment for Tao Lang
 
 Tao Lang Project Docs:
 

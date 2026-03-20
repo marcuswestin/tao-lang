@@ -1,9 +1,8 @@
 import {
-  type CompiledTaoScenario,
   discoverCompiledTaoScenarios,
   getCompiledTaoScenariosRootDir,
   runScenario,
-} from '@shared/CompiledTaoScenario'
+} from '@shared/CompiledTaoScenarios'
 import { fireEvent, render } from '@testing-library/react-native'
 import { spawnSync } from 'node:child_process'
 import { resolve as resolvePath } from 'node:path'
@@ -15,12 +14,7 @@ import {
   renderCompiledTaoApp,
 } from '../src/test-runtime'
 
-type SharedScenarioTestCase = {
-  scenarioDir: string
-  scenario: CompiledTaoScenario
-}
-
-const sharedScenarios: SharedScenarioTestCase[] = discoverCompiledTaoScenarios()
+const sharedScenarios = discoverCompiledTaoScenarios()
 
 describe('headless runtime', () => {
   test('renders a local react native component', () => {
@@ -63,11 +57,15 @@ describe('headless runtime', () => {
 })
 
 describe('headless runtime shared scenarios', () => {
-  for (const { scenarioDir, scenario } of sharedScenarios) {
+  for (const { scenarioDir, scenario, isReady } of sharedScenarios) {
+    if (!isReady) {
+      test.todo(getCompiledTaoScenarioName(scenarioDir))
+      continue
+    }
     test(getCompiledTaoScenarioName(scenarioDir), async () => {
       await runScenario({
         scenarioDir,
-        scenario,
+        scenario: scenario!,
         adapter: createHeadlessScenarioAdapter(),
       })
     })

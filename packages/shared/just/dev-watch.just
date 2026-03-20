@@ -53,7 +53,7 @@ _watch_grammar:
     # Watch grammar file and regenerate compiler + IDE syntax on change
     watchexec --restart --watch=packages/parser/tao-grammar.langium -- sh -c "just gen"
 
-_watch_kitchen_sink_build APP_PATH="./Apps/Kitchen Sink/Kitchen Sink.tao":
+_watch_kitchen_sink_build APP_PATH="./Apps/Test Apps/Kitchen Sink/app.tao":
     cd packages/tao-cli && bun run  --watch --no-clear-screen \
         ./tao-cli.ts compile "`pwd`/../../{{ APP_PATH }}" \
             --runtime-dir "../expo-runtime" \
