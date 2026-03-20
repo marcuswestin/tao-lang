@@ -7,7 +7,7 @@ share view KnifeBlock {
     Text value "Knife Block"
 }
 
-view RootView {
+share view RootView {
     KnifeBlock { }
     FridgeView { }
 }

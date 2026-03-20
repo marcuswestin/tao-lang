@@ -1,26 +1,12 @@
-use KnifeBlock from ./counter
+use KnifeBlock, RootView from ./counter
 use FridgeView
 use Col, Row, Text from tao/ui
 
 app KitchenSink {
-    ui RootView
+    ui AppView
 }
 
-view RootView {
+view AppView {
     Text value "Hello Kitchen Sink" { }
-    // MyView { }
-    // MyView { }
+    RootView { }
 }
-
-// view MyView {
-//     Col {
-//         Row {
-//             Text { }
-//         }
-//     }
-// }
-
-// view Text {
-//     FridgeView { }
-//     KnifeBlock { }
-// }
