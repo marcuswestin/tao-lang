@@ -1,10 +1,10 @@
 import { jest } from '@jest/globals'
-import { cleanup, render, type RenderResult } from '@testing-library/react-native'
+import * as RNTesting from '@testing-library/react-native'
 import { spawnSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
-import { basename, resolve as resolvePath } from 'node:path'
+import { resolve as resolvePath } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import type { ComponentType } from 'react'
+import type { ComponentType as CompiledAppComponent } from 'react'
 import type { CompiledTaoScenario, CompiledTaoScenarioAdapter } from '../shared/shared-src/CompiledTaoScenarios'
 
 type CompileOpts = {
@@ -18,12 +18,8 @@ type CompileResult = {
   compileError?: unknown
 }
 
-type CompiledAppModule = {
-  default: ComponentType
-}
-
-type RenderCompiledAppResult = RenderResult & {
-  compiledModule: CompiledAppModule
+type RenderCompiledAppResult = RNTesting.RenderResult & {
+  CompiledComponent: CompiledAppComponent
 }
 
 const runtimeDir = resolvePath(__dirname)
@@ -47,67 +43,52 @@ export function createExpoScenarioAdapter() {
       return renderCompiledTaoApp(outputPath)
     },
     cleanup() {
-      cleanup()
+      RNTesting.cleanup()
     },
   }
 
   return adapter
 }
 
-// getCompiledTaoScenarioName Derive a scenario display name from its directory name.
-export function getCompiledTaoScenarioName(scenarioDir: string) {
-  return basename(scenarioDir)
-}
-
 // compileTaoForExpoRuntime Compile a scenario's app.tao into a unique generated Expo module for this test run.
 function compileTaoForExpoRuntime(opts: CompileOpts): CompileResult {
   const outputPath = resolvePath(runtimeDir, opts.outputFileName)
-  const command = spawnSync(
-    'bun',
-    [
-      '-e',
-      `
-        import { TaoSDK_compile } from '${taoSdkModuleUrl}'
-
-        const opts = JSON.parse(process.env.TAO_EXPO_COMPILE_OPTS ?? '{}')
-        await TaoSDK_compile(opts)
-      `,
-    ],
-    {
-      cwd: repoRoot,
-      encoding: 'utf8',
-      env: {
-        ...process.env,
-        TAO_EXPO_COMPILE_OPTS: JSON.stringify({ ...opts, runtimeDir }),
-      },
-    },
-  )
+  const code = `
+    import { TaoSDK_compile } from '${taoSdkModuleUrl}'
+    const opts = JSON.parse(process.env.TAO_EXPO_COMPILE_OPTS ?? '{}')
+    await TaoSDK_compile(opts)
+  `
+  const env = {
+    ...process.env,
+    TAO_EXPO_COMPILE_OPTS: JSON.stringify({ ...opts, runtimeDir }),
+  }
+  const command = spawnSync('bun', ['-e', code], { cwd: repoRoot, encoding: 'utf8', env })
 
   const compileError = command.stderr || command.stdout || `bun exited with status ${command.status}`
-  if (command.status === 0 || existsSync(outputPath)) {
-    return { outputPath, compileError }
+  if (command.status !== 0 || !existsSync(outputPath)) {
+    throw new Error(`Failed to compile Tao for the Expo runtime: ${compileError}`)
   }
 
-  throw new Error(`Failed to compile Tao for the Expo runtime: ${compileError}`)
+  return { outputPath, compileError }
 }
 
 // renderCompiledTaoApp Render the freshly compiled Expo module instead of a statically imported app entrypoint.
 function renderCompiledTaoApp(outputPath: string): RenderCompiledAppResult {
-  cleanup()
-  const compiledModule = loadCompiledAppModule(outputPath)
-  const CompiledTaoApp = compiledModule.default
+  RNTesting.cleanup()
+  const CompiledTaoApp = loadCompiledAppModule(outputPath)
 
   return {
-    ...render(<CompiledTaoApp />),
-    compiledModule,
+    ...RNTesting.render(<CompiledTaoApp />),
+    CompiledComponent: CompiledTaoApp,
   }
 }
 
 // loadCompiledAppModule Reset Jest's module cache and load the generated app module for this specific scenario run.
 // The compiled module path is only known after compilation, so the runtime test harness cannot use a static import here.
-function loadCompiledAppModule(outputPath: string): CompiledAppModule {
+function loadCompiledAppModule(outputPath: string): CompiledAppComponent {
   jest.resetModules()
-  return jest.requireActual(outputPath) as CompiledAppModule
+  const result = jest.requireActual(outputPath) as { default: CompiledAppComponent }
+  return result.default
 }
 
 // getGeneratedOutputFileName Create per-test output files so shared scenarios do not collide in parallel or cached runs.

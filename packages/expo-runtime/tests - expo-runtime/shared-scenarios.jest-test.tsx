@@ -3,21 +3,23 @@ import {
   discoverCompiledTaoScenarios,
   runScenario,
 } from '../../shared/shared-src/CompiledTaoScenarios'
-import { createExpoScenarioAdapter, getCompiledTaoScenarioName } from '../test-runtime'
+import { createExpoScenarioAdapter } from '../test-runtime'
 
-const expoScenarioAllowList = new Set(['Compile error', 'Simple test render'])
+const expoScenarioAllowList = new Set(['Simple test render'])
 
 const expoSharedScenarios = discoverCompiledTaoScenarios()
   .filter(({ scenarioDir }) => expoScenarioAllowList.has(basename(scenarioDir)))
 
 describe('expo runtime shared scenarios', () => {
   for (const { scenarioDir, scenario, isReady } of expoSharedScenarios) {
+    const scenarioName = basename(scenarioDir)
     if (!isReady) {
-      test.todo(getCompiledTaoScenarioName(scenarioDir))
+      test.todo(scenarioName)
       continue
     }
-    test(getCompiledTaoScenarioName(scenarioDir), async () => {
+    test(scenarioName, async () => {
       await runScenario({
+        scenarioName,
         scenarioDir,
         scenario: scenario!,
         adapter: createExpoScenarioAdapter(),
