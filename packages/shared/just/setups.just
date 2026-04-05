@@ -61,7 +61,7 @@ _print_keybinding_install:
     @ echo "\tAdd this to your ~/.vscode-keybindings.json file:"
     @ echo "\n\t\t"'{ "key": "cmd+shift+b", "command": "multiCommand.buildExtensionThenRestartHost" },\n'
     @ echo "\t" 'Then press enter to continue...'
-    @ read -p ""
+    @ read -r
 
 _print_setup_done:
     @ echo "\n\t*** Done ***"
