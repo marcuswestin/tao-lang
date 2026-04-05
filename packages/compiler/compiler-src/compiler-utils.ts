@@ -89,20 +89,18 @@ function assert(condition: boolean, message: string): void {
   }
 }
 
-/** compileList joins arbitrary iterable items with tracing to astNode. */
-export function compileList<NodeT extends AstNode, ItemT>(
-  astNode: NodeT,
-  items: Iterable<ItemT>,
-  genListItemFn: GenListItemFn<ItemT>,
-  options?: LangiumGen.JoinOptions<ItemT>,
+/** compileNodeList joins arbitrary iterable nodes with tracing to a composite generator node. */
+export function compileNodeList<NodeT extends AstNode>(
+  nodes: Iterable<NodeT>,
+  genListItemFn: (node: NodeT) => LangiumGen.Generated,
 ): Compiled {
-  return LangiumGen.joinTracedToNode(astNode)<ItemT>(items, genListItemFn, options)
+  const compiledList = new LangiumGen.CompositeGeneratorNode()
+  for (const node of nodes) {
+    const compiledNode = LangiumGen.expandTracedToNode(node)`${genListItemFn(node)}`
+    compiledList.append(compiledNode)
+  }
+  return compiledList
 }
-type GenListItemFn<ItemT extends any> = (
-  element: ItemT,
-  index: number,
-  isLast: boolean,
-) => LangiumGen.Generated
 
 /** genNodePropertyRef resolves a reference property and emits code from the target. */
 export function genNodePropertyRef<

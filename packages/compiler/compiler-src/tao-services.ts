@@ -164,6 +164,7 @@ export function createTaoWorkspace(
     UseStatement: useStatementValidator.checkUseStatement.bind(useStatementValidator),
     AppDeclaration: validator.AppDeclaration,
     AliasDeclaration: validator.AliasDeclaration,
+    ParameterDeclaration: validator.ParameterDeclaration,
   })
 
   if (!context.connection) {

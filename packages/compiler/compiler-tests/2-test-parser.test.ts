@@ -38,7 +38,22 @@ describe('parse:', () => {
     `)
     const messages = errorReport.getHumanErrorMessages().join('\n')
     expect(messages).toContain('Could not resolve reference')
-    // When ui references an app name, resolution fails (Declaration = ViewDeclaration | AliasDeclaration). If it resolved, validator would report "App ui must be a view declaration".
+    // When ui references an app name, resolution fails (Declaration includes views/aliases/actions). If it resolved, validator would report "App ui must be a view declaration".
+  })
+
+  test('parses action with parameters and inject body', async () => {
+    const doc = await parseAST(`
+      action TestAction message string {
+        inject \`\`\`ts {
+          alert("Test Action")
+        }
+        \`\`\`
+      }
+    `)
+    const action = doc.topLevelStatements.first.as_TopLevelDeclaration.declaration.as_ActionDeclaration
+    action.expect('name').toBe('TestAction')
+    expect(action.unwrap().parameterList?.parameters.length).toBe(1)
+    expect(action.unwrap().actionStatements.length).toBe(1)
   })
 })
 

@@ -1,29 +1,31 @@
 import { Compiled, compileNode, compileNodeListProperty } from '@compiler/compiler-utils'
 import { AST } from '@parser'
 import { switchProperty_Exhaustive, switchType_Exhaustive } from '@shared/TypeSafety'
+import { compileActionDeclaration } from './action-gen'
 import { compileAliasDeclaration } from './alias-gen'
-import { compileTopLevelInjection } from './injection-gen'
+import { compileInjection } from './injection-gen'
 import { compileViewDeclaration } from './view-gen'
 
-/** compileTopLevelStatement dispatches to use, injection, or top-level declaration codegen. */
+/** compileTopLevelStatement compiles all top level statements. */
 export function compileTopLevelStatement(statement: AST.TopLevelStatement): Compiled {
   return switchType_Exhaustive(statement, {
     'UseStatement': compileUseStatement,
-    'Injection': compileTopLevelInjection,
+    'Injection': compileInjection,
     'TopLevelDeclaration': compileTopLevelDeclaration,
   })
 }
 
-/** compileTopLevelDeclaration emits app, view, or alias at file top level. */
+/** compileTopLevelDeclaration emits top level declaration statements. */
 function compileTopLevelDeclaration(node: AST.TopLevelDeclaration): Compiled {
   return switchType_Exhaustive(node.declaration, {
     'AppDeclaration': compileAppDeclaration,
     'ViewDeclaration': compileViewDeclaration,
     'AliasDeclaration': compileAliasDeclaration,
+    'ActionDeclaration': compileActionDeclaration,
   })
 }
 
-/** compileUseStatement emits a comment placeholder for a Tao use line. */
+/** compileUseStatement emits a comment placeholder for a Tao use line. Multi-file compilation will be implemented later. */
 function compileUseStatement(useStatement: AST.UseStatement): Compiled {
   const fromClause = useStatement.modulePath ? ` from ${useStatement.modulePath}` : ''
   return compileNode(useStatement)`

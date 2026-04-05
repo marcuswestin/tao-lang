@@ -1,16 +1,14 @@
-import { AST } from '@parser'
+import { AST, type NodePropName } from '@parser'
 import type * as langium from 'langium'
-import { makeValidater } from './ValidationReporter'
+import { makeValidater, type Reporter } from './ValidationReporter'
 
 export const validator: langium.ValidationChecks<AST.TaoLangAstType> = {
   AliasDeclaration: makeValidater((alias, report) => {
-    const duplicates = getDuplicateIdentifiers(alias)
-    if (duplicates.length > 0) {
-      const message = `Duplicate identifier '${alias.name}'.`
-      report.error(message, { node: alias, property: 'name' }, {
-        alsoCheck: () => duplicates.map(node => ({ node, message })),
-      })
-    }
+    validateDuplicateIdentifier(alias, report)
+  }),
+
+  ParameterDeclaration: makeValidater((param, report) => {
+    validateDuplicateIdentifier(param, report)
   }),
 
   AppDeclaration: makeValidater((declaration, report) => {
@@ -36,20 +34,45 @@ export const validator: langium.ValidationChecks<AST.TaoLangAstType> = {
   }),
 }
 
+/** validateDuplicateIdentifier reports when another binding in scope shares the same name. */
+function validateDuplicateIdentifier<NodeT extends AST.Referenceable>(
+  binding: NodeT,
+  report: Reporter<NodeT>,
+): void {
+  const duplicates = getDuplicateIdentifiers(binding)
+  if (duplicates.length > 0) {
+    const message = `Duplicate identifier '${binding.name}'.`
+    const property = 'name' as NodePropName<NodeT>
+    report.error(message, { node: binding, property }, {
+      alsoCheck: () => duplicates.map(node => ({ node, message })),
+    })
+  }
+}
+
 /** getDuplicateIdentifiers returns parameters and sibling declarations that conflict with the binding name. */
 function getDuplicateIdentifiers(binding: AST.Referenceable): langium.AstNode[] {
   const siblingAliases = getDuplicateSiblingDeclarations(binding)
-  const viewDecl = findContainingViewDecl(binding)
-  const matchingParams = viewDecl?.parameterList?.parameters.filter(
+  const paramOwner = findParameterizedDeclaration(binding)
+  const matchingParams = paramOwner?.parameterList?.parameters.filter(
     p => p !== binding && p.name === binding.name,
   ) ?? []
 
   return [...matchingParams, ...siblingAliases]
 }
 
-/** getSiblingStatements returns sibling nodes in the view, render, or top-level scope of the binding. */
+/** getSiblingStatements returns sibling nodes in the appropriate scope of the binding. */
 function getSiblingStatements(binding: AST.Referenceable): langium.AstNode[] {
   const container = binding.$container
+  if (AST.isParameterList(container)) {
+    const parent = container.$container
+    if (AST.isViewDeclaration(parent)) {
+      return parent.viewStatements
+    }
+    if (AST.isActionDeclaration(parent)) {
+      return parent.actionStatements
+    }
+    return []
+  }
   if (AST.isViewDeclaration(container) || AST.isViewRenderStatement(container)) {
     return container.viewStatements
   }
@@ -70,11 +93,13 @@ function getDuplicateSiblingDeclarations(binding: AST.Referenceable): AST.Declar
   )
 }
 
-/** findContainingViewDecl returns the nearest enclosing ViewDeclaration, if any. */
-function findContainingViewDecl(binding: AST.Referenceable): AST.ViewDeclaration | undefined {
+/** findParameterizedDeclaration returns the nearest enclosing view or action that may own parameters. */
+function findParameterizedDeclaration(
+  binding: AST.Referenceable,
+): AST.ViewDeclaration | AST.ActionDeclaration | undefined {
   let current: langium.AstNode | undefined = binding.$container
   while (current) {
-    if (AST.isViewDeclaration(current)) {
+    if (AST.isNodeWithParameters(current)) {
       return current
     }
     current = current.$container

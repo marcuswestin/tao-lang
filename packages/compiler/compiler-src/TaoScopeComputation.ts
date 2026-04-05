@@ -55,17 +55,27 @@ export class TaoScopeComputation extends langium.DefaultScopeComputation {
         Injection: () => void 0,
         ViewDeclaration: (n) => this.collectSymbolForScope(n, document, localSymbols),
         AliasDeclaration: (n) => this.collectSymbolForScope(n, document, localSymbols),
+        ActionDeclaration: (n) => this.collectSymbolForScope(n, document, localSymbols),
         AppDeclaration: (n) => this.collectSymbolForScope(n, document, localSymbols),
-        ParameterDeclaration: (n) => {
-          const viewDecl = n.$container?.$container
-          if (AST.isViewDeclaration(viewDecl)) {
-            this.collectSymbolForScope(n, document, localSymbols, viewDecl)
-          }
-        },
+        ParameterDeclaration: (n) => this.collectParameterSymbolForScope(n, document, localSymbols),
       })
     }
 
     return localSymbols
+  }
+
+  /** collectParameterSymbolForScope registers the parameter name under scopeNode in localSymbols. */
+  private collectParameterSymbolForScope(
+    node: langium.AstNode,
+    document: langium.LangiumDocument,
+    localSymbols: langium.MultiMap<langium.AstNode, langium.AstNodeDescription>,
+  ) {
+    const paramList = node.$container
+    const parentDecl = paramList?.$container
+    if (!AST.isParameterList(paramList) || !AST.isInvocableDeclaration(parentDecl)) {
+      return
+    }
+    this.collectSymbolForScope(node, document, localSymbols, parentDecl)
   }
 
   /** isExportableVisibilityDeclaration returns true for share/module/default visibility exportable statements. */

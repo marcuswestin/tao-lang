@@ -1,42 +1,27 @@
 import {
   Compiled,
-  compileList,
   compileNode,
+  compileNodeList,
   compileNodeListProperty,
   genNodePropertyRef,
 } from '@compiler/compiler-utils'
 import { AST } from '@parser'
 import { switchType_Exhaustive } from '@shared/TypeSafety'
-import * as LangiumGen from 'langium/generate'
+import { compileActionDeclaration } from './action-gen'
 import { compileAliasDeclaration } from './alias-gen'
 import { compileExpression } from './expression-gen'
 import { compileInjection } from './injection-gen'
+import { compileParameterList } from './shared-gen'
 
 /** compileViewDeclaration emits a React function component from the view AST. */
 export function compileViewDeclaration(declaration: AST.ViewDeclaration): Compiled {
-  const preambleStatements = declaration.viewStatements.filter(
-    n => AST.isAliasDeclaration(n) || AST.isInjection(n) || AST.isViewDeclaration(n),
-  )
+  const viewBlockStatements = declaration.viewStatements.filter(AST.isViewBlockStatement)
   const renderStatements = declaration.viewStatements.filter(AST.isViewRenderStatement)
   return compileNode(declaration)`
     export function ${declaration.name}(${compileParameterList(declaration.parameterList)}) {
-      ${compileList(declaration, preambleStatements, compileViewStatement)}
-      return <>${compileList(declaration, renderStatements, compileViewRenderStatement)}</>
+      ${compileNodeList(viewBlockStatements, compileViewStatement)}
+      return <>${compileNodeList(renderStatements, compileViewRenderStatement)}</>
     }
-  `
-}
-
-/** compileParameterList emits props destructuring types for view parameters. */
-function compileParameterList(parameterList?: AST.ParameterList): Compiled {
-  if (!parameterList) {
-    return new LangiumGen.CompositeGeneratorNode('props: any')
-  }
-  return compileNode(parameterList)`
-    props: {${
-    compileNodeListProperty(parameterList, 'parameters', param => {
-      return compileNode(param)`${param.name}: ${param.type}`
-    })
-  }}
   `
 }
 
@@ -57,6 +42,7 @@ function compileViewStatement(statement: AST.ViewStatement): Compiled {
     AliasDeclaration: (n) => compileAliasDeclaration(n),
     Injection: (n) => compileInjection(n),
     ViewDeclaration: (n) => compileViewDeclaration(n),
+    ActionDeclaration: (n) => compileActionDeclaration(n),
   })
 }
 
