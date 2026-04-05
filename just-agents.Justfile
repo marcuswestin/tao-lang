@@ -67,6 +67,10 @@ clean:
 expo-runtime *ARGS:
     just {{ MAIN_JUSTFILE }} expo-runtime {{ ARGS }}
 
+# Only use this if you have already ran `./just-agents prep-commit` and are sure you want to commit without running checks.
+git-dangerously-commit-without-checks MESSAGE:
+    git commit -m "{{ MESSAGE }}"
+
 # Pass-through commands
 #======================
 

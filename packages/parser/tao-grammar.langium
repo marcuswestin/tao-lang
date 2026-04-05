@@ -3,6 +3,34 @@ grammar TaoLang
 entry TaoFile:
     topLevelStatements += TopLevelStatement*;
 
+// Shared Types
+///////////////
+
+type Referenceable = TopLevelDeclarationTypes | Declaration | ParameterDeclaration;
+
+type ScopeRelevantNode = TopLevelStatement | Declaration | AppDeclaration | ParameterDeclaration;
+
+type ImportableDeclaration = TopLevelDeclarationTypes;
+
+type InvocableDeclaration = ViewDeclaration | ActionDeclaration;
+
+
+// Shared Statements
+////////////////////
+
+BaseStatement:
+    Declaration | Injection;
+
+Declaration:
+    AliasDeclaration | ViewDeclaration | ActionDeclaration;
+
+AliasDeclaration:
+    'alias' name=ID '=' value=Expression;
+
+terminal TS_CODE_BLOCK: '```ts' -> '```';
+Injection:
+    'inject' isRaw='raw'? tsCodeBlock=TS_CODE_BLOCK;
+
 
 // Top/File Level Statements
 ////////////////////////////
@@ -11,10 +39,12 @@ entry TaoFile:
 TopLevelStatement:
     UseStatement | TopLevelDeclaration | Injection;
 
-TopLevelDeclaration:
-    visibility=DeclarationVisibility? declaration=(AppDeclaration | Declaration);
+TopLevelDeclarationTypes:
+    Declaration | AppDeclaration;
 
-DeclarationVisibility returns string:
+TopLevelDeclaration:
+    visibility=TopLevelDeclarationVisibility? declaration=TopLevelDeclarationTypes;
+TopLevelDeclarationVisibility returns string:
     'file' | 'share' | 'module'; // Optional; when absent, declaration is module
 
 terminal USE_MODULE_PATH: /[a-zA-Z.][a-zA-Z0-9._\-]*\/[a-zA-Z0-9._\-\/]*/;
@@ -30,37 +60,17 @@ AppStatement:
     );
 
 
-// Statements
-/////////////
+// Parameters and Arguments
+///////////////////////////
 
-BaseStatement:
-    Declaration | Injection;
-
-Declaration:
-    ViewDeclaration | AliasDeclaration;
-
-
-terminal TS_CODE_BLOCK: '```ts' -> '```';
-Injection:
-    'inject' tsCodeBlock=TS_CODE_BLOCK;
-
-// Scopes and Blocks
-////////////////////
-
-type ScopeRelevantNode = TopLevelStatement | Declaration | AppDeclaration | ParameterDeclaration;
-
-type ImportableDeclaration = AppDeclaration | ViewDeclaration;
-
-
-// Parameters
-/////////////
+type NodeWithParameters =
+    ViewDeclaration | ActionDeclaration;
 
 ParameterList:
     parameters += ParameterDeclaration (',' parameters += ParameterDeclaration)*;
 
 ParameterDeclaration:
     name=ID ParameterType;
-
 fragment ParameterType:
     type='string' | type='number';
 
@@ -80,13 +90,25 @@ ViewDeclaration:
     '}';
 
 ViewStatement:
-    BaseStatement | ViewRenderStatement;
+    ViewBlockStatement | ViewRenderStatement;
 
-AliasDeclaration:
-    'alias' name=ID '=' value=Expression;
+ViewBlockStatement:
+    BaseStatement;
 
 ViewRenderStatement:
     view=[ViewDeclaration:ID] args=ArgsList? ('{' viewStatements += ViewStatement* '}')?;
+
+
+// Actions
+//////////
+
+ActionDeclaration:
+    type='action' name=ID parameterList=ParameterList? '{'
+        actionStatements += ActionStatement*
+    '}';
+
+ActionStatement:
+    Injection;
 
 
 // Value Expressions
@@ -103,8 +125,6 @@ NumberLiteral:
 
 NamedReference:
     referenceName=[Referenceable:ID];
-
-type Referenceable = AliasDeclaration | ParameterDeclaration | ViewDeclaration | AppDeclaration;
 
 
 // Terminals. Order matters!
