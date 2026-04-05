@@ -27,6 +27,7 @@ export type CompiledTaoScenarioRenderResult = {
 export type CompiledTaoScenarioAdapter = {
   compileScenario(args: {
     scenarioDir: string
+    scenarioName: string
     scenario: CompiledTaoScenario
   }): Promise<CompiledTaoScenarioCompileResult> | CompiledTaoScenarioCompileResult
   renderCompiledApp(args: {
@@ -45,8 +46,9 @@ export function getCompiledTaoScenariosRootDir() {
   return compiledTaoScenariosRootDir
 }
 
-/** discoverCompiledTaoScenarios visits every immediate subdirectory of `rootDir` (sorted by path) and loads
- * `scenario.json` from each. A directory without a valid `scenario.json` causes `loadCompiledTaoScenario` to throw. */
+/** discoverCompiledTaoScenarios visits every immediate subdirectory of `rootDir` (sorted by path). When
+ * `scenario.json` exists it loads and validates via `loadCompiledTaoScenario` (throws on invalid shape). When
+ * the file is missing it returns `isReady: false` and `scenario: undefined` without loading. */
 export function discoverCompiledTaoScenarios(rootDir = compiledTaoScenariosRootDir): DiscoveredCompiledTaoScenario[] {
   return readdirSync(rootDir, { withFileTypes: true })
     .filter(entry => entry.isDirectory())
@@ -77,6 +79,7 @@ export function loadCompiledTaoScenario(scenarioDir: string): CompiledTaoScenari
  * will throw if text is missing). Any adapter or compile error propagates to the caller. */
 export async function runScenario(opts: {
   scenarioDir: string
+  scenarioName: string
   scenario: CompiledTaoScenario
   adapter: CompiledTaoScenarioAdapter
 }) {
@@ -85,6 +88,7 @@ export async function runScenario(opts: {
   try {
     const compileResult = await opts.adapter.compileScenario({
       scenarioDir: opts.scenarioDir,
+      scenarioName: opts.scenarioName,
       scenario: opts.scenario,
     })
     const renderResult = await opts.adapter.renderCompiledApp({
