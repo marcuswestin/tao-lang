@@ -2,6 +2,7 @@ import "./_shared-vars.just"
 
 _dev:
     #!{{ ZSH_INIT }}
+    open -a "Google Chrome" http://localhost:8081/ # expo url
     while true; do
         just _prefix_strip_parallel "_watch_" \
             {{ _DEV_WATCH_RECIPES }} \
@@ -51,7 +52,7 @@ _r_reloead_q_quit:
 
 _watch_grammar:
     # Watch grammar file and regenerate compiler + IDE syntax on change
-    watchexec --restart --watch=packages/parser/tao-grammar.langium -- sh -c "just gen"
+    watchexec --restart --watch=packages/parser/tao-grammar.langium -- 'just gen'
 
 _watch_kitchen_sink_build APP_PATH="./Apps/Test Apps/Kitchen Sink/app.tao":
     cd packages/tao-cli && bun run  --watch --no-clear-screen \
@@ -62,8 +63,7 @@ _watch_kitchen_sink_build APP_PATH="./Apps/Test Apps/Kitchen Sink/app.tao":
 
 _watch_runtime_reload:
     cd packages/expo-runtime \
-        && EXPO_NO_CLEAR=true BROWSER="Google Chrome" npx expo start --web \
-        # && EXPO_NO_CLEAR=true BROWSER="Google Chrome" npx expo start --ios --web \
+        && EXPO_NO_CLEAR=true BROWSER="none" npx expo start -c --web --ios
 
 _watch_typecheck_extension:
     cd packages/ide-extension && tsc -b tsconfig.json --watch --preserveWatchOutput
