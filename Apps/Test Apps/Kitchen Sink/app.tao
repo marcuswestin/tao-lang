@@ -1,6 +1,6 @@
 use KnifeBlock, RootView from ./counter
 use FridgeView
-use Col, Row, Text from tao/ui
+use Col, Row, Text, Box from tao/ui
 
 app KitchenSink {
     ui AppView
@@ -9,4 +9,25 @@ app KitchenSink {
 view AppView {
     Text value "Hello Kitchen Sink" { }
     RootView { }
+    HandlerTestView { }
+}
+
+view HandlerTestView {
+    TestButton Action TestAction { }
+}
+
+view TestButton Action string {
+    Box {
+        inject raw ```ts <RN.Pressable onPress={props.Action}> ```
+        Box {
+            Text value "Test Button" { }
+        }
+        inject raw ```ts </RN.Pressable> ```
+    }
+}
+
+action TestAction message string {
+    inject ```ts
+        alert("Test Action")
+    ```
 }
