@@ -1,6 +1,7 @@
 import { Command } from '@commander-js/extra-typings'
 import { compileTao } from '@compiler'
-import { TaoError, throwUserInputRejectionError } from '@shared/TaoErrors'
+import { Log } from '@shared/Log'
+import { getTaoError, TaoError, throwUserInputRejectionError } from '@shared/TaoErrors'
 import chokidar from 'chokidar'
 import { mkdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
@@ -21,28 +22,39 @@ export function taoCliMain() {
     .option('--verbose', 'Verbose output', false)
     .option('--std-lib-root <path>', 'The root directory of the standard library', (value) => path.resolve(value))
     .action(async (inputPath, { watch, verbose, code, runtimeDir, stdLibRoot }) => {
-      verbose = true
       hci.setVerbose(verbose)
       await hci.wrapExecution(async () => {
         /** compileAndWrite runs `TaoSDK_compile` for the action’s path/code/runtime/std-lib and prints the output path.
-         * On compiler diagnostics, `TaoSDK_compile` throws before this logs success. */
+         * In watch mode, parse/compiler errors are logged and the process keeps running so `just dev` is not torn down. */
         async function compileAndWrite() {
           hci.verboselyInform(`Compiling...`)
           const result = await TaoSDK_compile({ path: inputPath, code, runtimeDir, stdLibRoot })
           hci.inform(`Compiled to ${result.outputPath}`)
         }
 
+        async function checkCompileAndWrite() {
+          try {
+            await compileAndWrite()
+          } catch (error) {
+            if (watch) {
+              Log.taoError(getTaoError(error, { context: 'tao-cli compile --watch' }))
+            } else {
+              throw error
+            }
+          }
+        }
+
         if (watch) {
           if (!inputPath) {
             throwUserInputRejectionError('Watch mode requires a file to be provided')
           }
-          chokidar.watch(inputPath).on('change', compileAndWrite)
+          chokidar.watch(inputPath).on('change', checkCompileAndWrite)
           if (stdLibRoot) {
-            chokidar.watch(stdLibRoot).on('change', compileAndWrite)
+            chokidar.watch(stdLibRoot).on('change', checkCompileAndWrite)
           }
         }
 
-        await compileAndWrite()
+        await checkCompileAndWrite()
       })
     })
 
