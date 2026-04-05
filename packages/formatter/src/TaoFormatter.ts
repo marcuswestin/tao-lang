@@ -33,6 +33,7 @@ export default class TaoFormatter extends AbstractFormatter {
       'TopLevelDeclaration': (n) => this.formatTopLevelDeclaration(n),
       'AppStatement': (n) => this.formatAppStatement(n),
       'ViewDeclaration': (n) => this.formatViewDeclaration(n),
+      'ActionDeclaration': (n) => this.formatActionDeclaration(n),
       'ViewRenderStatement': (n) => this.formatViewRenderStatement(n),
       'ArgsList': (n) => this.formatArgsList(n),
       'Argument': (n) => this.formatArgument(n),
@@ -92,6 +93,13 @@ export default class TaoFormatter extends AbstractFormatter {
     this._spaceAroundName(node)
     this._spaceAfterProperty(node, 'parameterList')
     this._indentBlock(node, 'viewStatements')
+  }
+
+  /** formatActionDeclaration formats name, parameters, and indented action body. */
+  private formatActionDeclaration(node: AST.ActionDeclaration): void {
+    this._spaceAroundName(node)
+    this._spaceAfterProperty(node, 'parameterList')
+    this._indentBlock(node, 'actionStatements')
   }
 
   /** formatTopLevelDeclaration formats visibility then declaration spacing. */
@@ -156,7 +164,11 @@ export default class TaoFormatter extends AbstractFormatter {
 
   /** formatInjection adds space after the inject keyword. */
   private formatInjection(node: AST.Injection): void {
-    this._spaceAfterKeyword(node, 'inject')
+    const f = this.getNodeFormatter(node)
+    f.keyword('inject').append(Formatting.oneSpace())
+    if (node.isRaw) {
+      f.keyword('raw').append(Formatting.oneSpace())
+    }
   }
 
   // Private helpers
@@ -220,12 +232,6 @@ export default class TaoFormatter extends AbstractFormatter {
     if (prop !== undefined && prop !== null) {
       f.node(prop).prepend(Formatting.oneSpace())
     }
-  }
-
-  /** _spaceAfterKeyword adds one space after the keyword. */
-  private _spaceAfterKeyword(node: AstNode, keyword: AST.TaoLangKeywordNames): void {
-    const f = this.getNodeFormatter(node)
-    f.keyword(keyword).append(Formatting.oneSpace())
   }
 
   /** _spaceBetweenCommaSeperatedItems ensures comma has no space before and one space after. */

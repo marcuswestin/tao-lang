@@ -236,6 +236,22 @@ describe('Formatter', () => {
           \`\`\`
       }
     `)
+  testFormatter('inject raw spacing')
+    .format(`view MyView {inject raw \`\`\`ts\nx\n\`\`\`}`)
+    .equals(`
+      view MyView {
+          inject raw \`\`\`ts
+      x
+      \`\`\`
+      }
+    `)
+  testFormatter('action with parameter and inject body')
+    .format(`action A msg string {inject \`\`\`ts void 0\`\`\`}`)
+    .equals(`
+      action A msg string {
+          inject \`\`\`ts void 0\`\`\`
+      }
+    `)
   testFormatter('Advanced formatting')
     .format(`
       file app MyApp {
