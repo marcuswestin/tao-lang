@@ -5,13 +5,12 @@ import {
 } from '@shared/CompiledTaoScenarios'
 import { fireEvent, render } from '@testing-library/react-native'
 import { spawnSync } from 'node:child_process'
-import { resolve as resolvePath } from 'node:path'
+import { basename, resolve as resolvePath } from 'node:path'
 import * as RN from 'react-native'
 import {
   createHeadlessScenarioAdapter,
-  getCompiledTaoScenarioName,
   getHeadlessTestRuntimeDir,
-  renderCompiledTaoApp,
+  renderCompiledHeadlessTaoApp,
 } from '../src/test-runtime'
 
 const sharedScenarios = discoverCompiledTaoScenarios()
@@ -30,41 +29,35 @@ describe('headless runtime', () => {
     expect(onPress).toHaveBeenCalledTimes(1)
   })
 
-  test('compiles and renders Tao code through the CLI entrypoint', () => {
+  test('compiles and renders Tao code through the CLI entrypoint', async () => {
     const repoRoot = resolvePath(__dirname, '../../..')
     const cliEntryPath = resolvePath(repoRoot, 'packages/tao-cli/tao-cli.ts')
     const runtimeDir = getHeadlessTestRuntimeDir()
     const taoPath = resolvePath(getCompiledTaoScenariosRootDir(), 'Simple test render', 'app.tao')
+    const args = [cliEntryPath, 'compile', taoPath, '--runtime-dir', runtimeDir]
     const command = spawnSync(
       'bun',
-      [
-        cliEntryPath,
-        'compile',
-        taoPath,
-        '--runtime-dir',
-        runtimeDir,
-      ],
-      {
-        cwd: repoRoot,
-        encoding: 'utf8',
-      },
+      args,
+      { cwd: repoRoot, encoding: 'utf8' },
     )
 
     expect(command.status).toBe(0)
-    const screen = renderCompiledTaoApp()
+    const screen = await renderCompiledHeadlessTaoApp()
     expect(screen.getByText('Hello from shared scenario')).toBeTruthy()
   })
 })
 
 describe('headless runtime shared scenarios', () => {
   for (const { scenarioDir, scenario, isReady } of sharedScenarios) {
+    const scenarioName = basename(scenarioDir)
     if (!isReady) {
-      test.todo(getCompiledTaoScenarioName(scenarioDir))
+      test.todo(scenarioName)
       continue
     }
-    test(getCompiledTaoScenarioName(scenarioDir), async () => {
+    test(scenarioName, async () => {
       await runScenario({
         scenarioDir,
+        scenarioName,
         scenario: scenario!,
         adapter: createHeadlessScenarioAdapter(),
       })

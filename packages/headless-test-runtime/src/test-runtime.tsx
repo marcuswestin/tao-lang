@@ -1,8 +1,8 @@
-import type { CompiledTaoScenario, CompiledTaoScenarioAdapter } from '@shared/CompiledTaoScenario'
-import { cleanup, render, type RenderResult } from '@testing-library/react-native'
+import type { CompiledTaoScenario, CompiledTaoScenarioAdapter } from '@shared/CompiledTaoScenarios'
+import * as RNTesting from '@testing-library/react-native'
 import { spawnSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
-import { basename, resolve as resolvePath } from 'node:path'
+import { resolve as resolvePath } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import type { ComponentType } from 'react'
 
@@ -22,7 +22,7 @@ type CompiledAppModule = {
   default: ComponentType
 }
 
-type RenderCompiledAppResult = RenderResult & {
+type RenderCompiledAppResult = RNTesting.RenderResult & {
   compiledModule: CompiledAppModule
 }
 
@@ -37,18 +37,14 @@ export function getHeadlessTestRuntimeDir() {
   return runtimeDir
 }
 
-/** getCompiledTaoScenarioName returns the last path segment of `scenarioDir` for display labels. */
-export function getCompiledTaoScenarioName(scenarioDir: string) {
-  return basename(scenarioDir)
-}
-
 /** createHeadlessScenarioAdapter builds a `CompiledTaoScenarioAdapter` that compiles `${scenarioDir}/app.tao` into a unique
  * file under `src/_gen-runtime-tests/`, renders via Testing Library, and runs RTL `cleanup` on adapter cleanup. */
 export function createHeadlessScenarioAdapter() {
-  const outputFileName = `src/_gen-runtime-tests/${getGeneratedOutputFileName('scenario')}`
-
   const adapter: CompiledTaoScenarioAdapter = {
-    async compileScenario({ scenarioDir }: { scenarioDir: string; scenario: CompiledTaoScenario }) {
+    async compileScenario(
+      { scenarioDir, scenarioName }: { scenarioDir: string; scenarioName: string; scenario: CompiledTaoScenario },
+    ) {
+      const outputFileName = `src/_gen-runtime-tests/${getGeneratedOutputFileName(scenarioName)}`
       return compileTaoForHeadlessRuntime({
         path: resolvePath(scenarioDir, 'app.tao'),
         stdLibRoot,
@@ -56,10 +52,10 @@ export function createHeadlessScenarioAdapter() {
       })
     },
     renderCompiledApp({ outputPath }: { outputPath: string }) {
-      return renderCompiledTaoApp(outputPath)
+      return renderCompiledHeadlessTaoApp(outputPath)
     },
     cleanup() {
-      cleanup()
+      RNTesting.cleanup()
     },
   }
 
@@ -71,26 +67,19 @@ export function createHeadlessScenarioAdapter() {
  * `compileError`); otherwise throws with the subprocess diagnostics. */
 export async function compileTaoForHeadlessRuntime(opts: CompileOpts): Promise<CompileResult> {
   const outputPath = getCompiledOutputPath(opts.outputFileName)
-  const command = spawnSync(
-    'bun',
-    [
-      '-e',
-      `
-        import { TaoSDK_compile } from '${taoSdkModuleUrl}'
-
-        const opts = JSON.parse(process.env.TAO_HEADLESS_COMPILE_OPTS ?? '{}')
-        await TaoSDK_compile(opts)
-      `,
-    ],
-    {
-      cwd: repoRoot,
-      encoding: 'utf8',
-      env: {
-        ...process.env,
-        TAO_HEADLESS_COMPILE_OPTS: JSON.stringify({ ...opts, runtimeDir }),
-      },
+  const code = `
+    import { TaoSDK_compile } from '${taoSdkModuleUrl}'
+    const opts = JSON.parse(process.env.TAO_HEADLESS_COMPILE_OPTS ?? '{}')
+    await TaoSDK_compile(opts)
+  `
+  const command = spawnSync('bun', ['-e', code], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    env: {
+      ...process.env,
+      TAO_HEADLESS_COMPILE_OPTS: JSON.stringify({ ...opts, runtimeDir }),
     },
-  )
+  })
 
   const compileError = getCompileCommandError(command)
   if (command.status === 0 || existsSync(outputPath)) {
@@ -100,21 +89,22 @@ export async function compileTaoForHeadlessRuntime(opts: CompileOpts): Promise<C
   throw new Error(`Failed to compile Tao for the headless runtime: ${String(compileError)}`)
 }
 
-/** renderCompiledTaoApp `require`s the module at `outputPath` (default: shared stub `app-output.tsx`), clears `require.cache`
- * and resets Jest modules so a fresh compile is picked up, runs RTL `cleanup`, then `render(<default />)`. */
-export function renderCompiledTaoApp(outputPath = compiledAppModulePath): RenderCompiledAppResult {
-  cleanup()
+/** renderCompiledHeadlessTaoApp `require`s the module at `outputPath` (default: shared stub `app-output.tsx`), evicts that path
+ * from `require.cache` so a recompiled file is picked up, runs RTL `cleanup`, then `render(<default />)`.
+ * Does not call `jest.resetModules()` — that would load a second `react` instance and break hooks in `react-native` (e.g. Pressable)
+ * while Testing Library still uses the original React. */
+export function renderCompiledHeadlessTaoApp(outputPath = compiledAppModulePath): RenderCompiledAppResult {
+  RNTesting.cleanup()
   const compiledModule = loadCompiledAppModule(outputPath)
-  const CompiledTaoApp = compiledModule.default
+  const CompiledHeadlessTaoApp = compiledModule.default
 
   return {
-    ...render(<CompiledTaoApp />),
+    ...RNTesting.render(<CompiledHeadlessTaoApp />),
     compiledModule,
   }
 }
 
 function loadCompiledAppModule(outputPath: string): CompiledAppModule {
-  jest.resetModules()
   const resolvedModulePath = require.resolve(outputPath)
   delete require.cache[resolvedModulePath]
 
@@ -129,12 +119,9 @@ function getCompiledOutputPath(outputFileName?: string) {
   return resolvePath(runtimeDir, outputFileName)
 }
 
-function getGeneratedOutputFileName(baseName: string) {
-  return `test-${sanitizePathSegment(baseName)}-${Math.random().toString(36).slice(2, 12)}-app-output.tsx`
-}
-
-function sanitizePathSegment(value: string) {
-  return value.replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-+|-+$/g, '').toLowerCase()
+function getGeneratedOutputFileName(scenarioName: string) {
+  const sanitized = scenarioName.replace(/[^a-zA-Z0-9]+/g, '-')
+  return `${sanitized}-${new Date().getTime()}-app-output.tsx`
 }
 
 function getCompileCommandError(command: ReturnType<typeof spawnSync>) {
