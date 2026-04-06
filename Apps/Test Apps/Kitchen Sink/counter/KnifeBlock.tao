@@ -1,5 +1,5 @@
 use FridgeView from ../
-use Text from tao/ui
+use Text from @tao/ui
 
 view Test { }
 

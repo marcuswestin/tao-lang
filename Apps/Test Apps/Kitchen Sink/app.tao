@@ -1,6 +1,6 @@
 use KnifeBlock, RootView from ./counter
 use FridgeView
-use Col, Row, Text, Box from tao/ui
+use Col, Row, Text, Box from @tao/ui
 
 app KitchenSink {
     ui AppView
