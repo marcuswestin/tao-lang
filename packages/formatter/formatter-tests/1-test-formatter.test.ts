@@ -321,9 +321,9 @@ describe('Formatter', () => {
     `)
 
   testFormatter('use with multiple imports and from path')
-    .format(`use Row ,   Col from tao/ui`)
+    .format(`use Row ,   Col from @tao/ui`)
     .equals(`
-      use Row, Col from tao/ui
+      use Row, Col from @tao/ui
     `)
 })
 
@@ -419,12 +419,12 @@ describe('formatter edge cases', () => {
       `)
 
   testFormatter('use statement stability')
-    .format(`use Col, Row, Text from tao/ui`)
-    .equals(`use Col, Row, Text from tao/ui`)
+    .format(`use Col, Row, Text from @tao/ui`)
+    .equals(`use Col, Row, Text from @tao/ui`)
 
   testFormatter('use statement spacing')
-    .format(`use     Col,Row,    Text      from  tao/ui`)
-    .equals(`use Col, Row, Text from tao/ui`)
+    .format(`use     Col,Row,    Text      from  @tao/ui`)
+    .equals(`use Col, Row, Text from @tao/ui`)
 })
 
 describe('alias statement formatting', () => {

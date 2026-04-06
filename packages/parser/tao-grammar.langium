@@ -47,7 +47,7 @@ TopLevelDeclaration:
 TopLevelDeclarationVisibility returns string:
     'file' | 'share' | 'module'; // Optional; when absent, declaration is module
 
-terminal USE_MODULE_PATH: /[a-zA-Z.][a-zA-Z0-9._\-]*\/[a-zA-Z0-9._\-\/]*/;
+terminal USE_MODULE_PATH: /(@[a-zA-Z0-9._\-]+\/[a-zA-Z0-9._\-\/]+)|([a-zA-Z.][a-zA-Z0-9._\-]*\/[a-zA-Z0-9._\-\/]*)/;
 UseStatement:
     'use' importedNames+=ID (',' importedNames+=ID)* ('from' modulePath=USE_MODULE_PATH)?;
 
