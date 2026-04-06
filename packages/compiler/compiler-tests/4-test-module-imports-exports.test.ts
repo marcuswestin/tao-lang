@@ -559,35 +559,35 @@ describe('module system edge cases', () => {
   })
 })
 
-describe('standard library imports (use tao/...)', () => {
+describe('standard library imports (use @tao/...)', () => {
   const STD_LIB_ROOT = '/tao-std-lib'
 
-  test('parses use statement with tao/ module path', async () => {
+  test('parses use statement with @tao/ module path', async () => {
     const doc = await parseAST(`
-      use Col from tao/ui
+      use Col from @tao/ui
       view MyView { }
     `)
     const useStmt = doc.topLevelStatements.first.as_UseStatement
-    expect(useStmt.modulePath).toBe('tao/ui')
+    expect(useStmt.modulePath).toBe('@tao/ui')
     expect(useStmt.importedNames).toEqual(['Col'])
   })
 
   test('parses use statement with multiple std-lib imports', async () => {
     const doc = await parseAST(`
-      use Col, Row, Text from tao/ui
+      use Col, Row, Text from @tao/ui
       view MyView { }
     `)
     const useStmt = doc.topLevelStatements.first.as_UseStatement
-    expect(useStmt.modulePath).toBe('tao/ui')
+    expect(useStmt.modulePath).toBe('@tao/ui')
     expect(useStmt.importedNames).toEqual(['Col', 'Row', 'Text'])
   })
 
-  test('error when using tao/ import without std lib root configured', async () => {
+  test('error when using @tao/ import without std lib root configured', async () => {
     const result = await parseMultipleFiles([
       {
         path: '/project/app.tao',
         code: `
-          use Col from tao/ui
+          use Col from @tao/ui
           view MainView { }
         `,
       },
@@ -606,7 +606,7 @@ describe('standard library imports (use tao/...)', () => {
       {
         path: '/project/app.tao',
         code: `
-          use Col from tao/ui
+          use Col from @tao/ui
           view MainView {
             Col
           }
@@ -630,7 +630,7 @@ describe('standard library imports (use tao/...)', () => {
       {
         path: '/project/app.tao',
         code: `
-          use Col, Row, Text from tao/ui
+          use Col, Row, Text from @tao/ui
           view MainView {
             Col {
               Row {
@@ -654,7 +654,7 @@ describe('standard library imports (use tao/...)', () => {
       {
         path: '/project/app.tao',
         code: `
-          use NonExistent from tao/ui
+          use NonExistent from @tao/ui
           view MainView { }
         `,
       },
@@ -673,7 +673,7 @@ describe('standard library imports (use tao/...)', () => {
       {
         path: '/project/app.tao',
         code: `
-          use InternalHelper from tao/ui
+          use InternalHelper from @tao/ui
           view MainView { }
         `,
       },
@@ -696,7 +696,7 @@ describe('standard library imports (use tao/...)', () => {
       {
         path: '/project/app.tao',
         code: `
-          use Col from tao/ui
+          use Col from @tao/ui
           use Button from ./components
           view MainView {
             Col {
@@ -710,7 +710,7 @@ describe('standard library imports (use tao/...)', () => {
     expect(errors.errorCount()).toBe(0)
   })
 
-  test('std-lib imports from multiple tao/ submodules', async () => {
+  test('std-lib imports from multiple @tao/ submodules', async () => {
     const result = await parseMultipleFiles([
       {
         path: '/tao-std-lib/tao/ui/Views.tao',
@@ -723,8 +723,8 @@ describe('standard library imports (use tao/...)', () => {
       {
         path: '/project/app.tao',
         code: `
-          use Col from tao/ui
-          use TabBar from tao/nav
+          use Col from @tao/ui
+          use TabBar from @tao/nav
           view MainView {
             Col {
               TabBar

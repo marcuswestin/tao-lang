@@ -16,7 +16,7 @@ describe('TaoDefinitionProvider', () => {
   test('getDefinition on imported name in use statement returns link to declaration', async () => {
     const result = await parseMultipleFiles(
       [
-        { path: '/project/app.tao', code: 'use Text from tao/ui\nview MyView { }' },
+        { path: '/project/app.tao', code: 'use Text from @tao/ui\nview MyView { }' },
         {
           path: '/tao-std-lib/tao/ui/Views.tao',
           code: 'share view Text value string { inject ```ts return null ``` }',

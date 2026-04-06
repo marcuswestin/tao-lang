@@ -31,7 +31,7 @@ export class UseStatementValidator {
     }
 
     if (useStatement.modulePath && isStdLibImport(useStatement.modulePath) && !this.stdLibRoot) {
-      accept('error', 'Standard library root is not configured; cannot resolve tao/... imports.', {
+      accept('error', 'Standard library root is not configured; cannot resolve @tao/... imports.', {
         node: useStatement,
         property: 'modulePath',
       })

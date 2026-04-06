@@ -1,6 +1,6 @@
 import { TAO_EXT } from '@shared/TaoPaths'
+import { isModuleImport, isTaoModuleImport, resolveModuleImportDirectory } from './ModulePaths'
 import { normalizedDirOfPath, resolveModulePathFromFile } from './Paths'
-import { isStdLibImport, resolveStdLibModuleDirectory } from './StdLibPaths'
 
 // UriAndPath pairs a document URI string with its filesystem path for module resolution.
 export type UriAndPath = { uri: string; path: string }
@@ -14,7 +14,7 @@ export function isSameModuleImport(
   if (!modulePath) {
     return true
   }
-  if (isStdLibImport(modulePath)) {
+  if (isModuleImport(modulePath)) {
     return false
   }
   const currentDir = normalizedDirOfPath(documentPath)
@@ -49,12 +49,12 @@ export function resolveModulePathToUris(
   if (!modulePath) {
     return []
   }
-  if (isStdLibImport(modulePath) && !stdLibRoot) {
+  if (isTaoModuleImport(modulePath) && !stdLibRoot) {
     return []
   }
   try {
-    const targetPath = isStdLibImport(modulePath)
-      ? resolveStdLibModuleDirectory(modulePath, stdLibRoot!)
+    const targetPath = isModuleImport(modulePath)
+      ? resolveModuleImportDirectory(modulePath, { stdLibRoot })
       : resolveModulePathFromFile(documentPath, modulePath)
     const targetFileWithExt = targetPath + TAO_EXT
     const uris: string[] = []
