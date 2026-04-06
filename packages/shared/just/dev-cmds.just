@@ -1,8 +1,9 @@
 import "./_shared-vars.just"
 
+[no-cd]
 [positional-arguments]
 _tao *ARGS:
-    pushd ../tao-cli && just build && popd
+    cd "../../packages/tao-cli" && just build
     ../../.builds/tao-cli "$@"
 
 _stash_unstaged_changes:

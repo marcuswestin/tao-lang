@@ -1,3 +1,3 @@
-import CompiledTaoApp from './_gen-tao-compiler/app-output'
+import CompiledTaoApp from './_gen-tao-compiler/tao-app/app-bootstrap'
 
 export default CompiledTaoApp

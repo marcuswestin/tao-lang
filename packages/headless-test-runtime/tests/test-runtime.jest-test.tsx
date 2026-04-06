@@ -29,7 +29,7 @@ describe('headless runtime', () => {
     expect(onPress).toHaveBeenCalledTimes(1)
   })
 
-  test('compiles and renders Tao code through the CLI entrypoint', async () => {
+  test('compiles and renders Tao code through the CLI entrypoint', () => {
     const repoRoot = resolvePath(__dirname, '../../..')
     const cliEntryPath = resolvePath(repoRoot, 'packages/tao-cli/tao-cli.ts')
     const runtimeDir = getHeadlessTestRuntimeDir()
@@ -42,7 +42,7 @@ describe('headless runtime', () => {
     )
 
     expect(command.status).toBe(0)
-    const screen = await renderCompiledHeadlessTaoApp()
+    const screen = renderCompiledHeadlessTaoApp()
     expect(screen.getByText('Hello from shared scenario')).toBeTruthy()
   })
 })

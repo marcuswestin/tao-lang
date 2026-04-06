@@ -4,5 +4,5 @@ Make NO FURTHER CHANGES to the codebase -- only make commits.
 
 Favor committing the smallest, self-contained changes first.
 
-First run `./just-agents prep-commit` to ensure the codebase is in a clean state.
-Then run `./just-agents git-dangerously-commit-without-checks` for each commit, to avoid running `prep-commit` check each time.
+**CRITICAL**: First run `./just-agents prep-commit` to ensure the codebase is in a clean state.
+**CRITICAL**: Then run `./just-agents git-dangerously-commit-without-checks` for each commit, to avoid running `prep-commit` check each time.

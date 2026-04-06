@@ -29,10 +29,12 @@ const taoSdkModuleUrl = pathToFileURL(resolvePath(runtimeDir, '_gen-tao-lib/tao-
 
 // createExpoScenarioAdapter Create a shared-scenario adapter for the Expo runtime.
 export function createExpoScenarioAdapter() {
-  const outputFileName = `app/_gen-runtime-tests/${getGeneratedOutputFileName('scenario')}`
-
   const adapter: CompiledTaoScenarioAdapter = {
-    async compileScenario({ scenarioDir }: { scenarioDir: string; scenario: CompiledTaoScenario }) {
+    async compileScenario({
+      scenarioDir,
+      scenarioName,
+    }: { scenarioDir: string; scenarioName: string; scenario: CompiledTaoScenario }) {
+      const outputFileName = `app/_gen-runtime-tests/${getGeneratedOutputFileName(scenarioName)}`
       return compileTaoForExpoRuntime({
         path: resolvePath(scenarioDir, 'app.tao'),
         stdLibRoot,
@@ -93,7 +95,7 @@ function loadCompiledAppModule(outputPath: string): CompiledAppComponent {
 
 // getGeneratedOutputFileName Create per-test output files so shared scenarios do not collide in parallel or cached runs.
 function getGeneratedOutputFileName(baseName: string) {
-  return `test-${sanitizePathSegment(baseName)}-${Math.random().toString(36).slice(2, 12)}-app-output.tsx`
+  return `test-${sanitizePathSegment(baseName)}-${Math.random().toString(36).slice(2, 12)}/tao-app/app-bootstrap.tsx`
 }
 
 function sanitizePathSegment(value: string) {

@@ -18,12 +18,12 @@ JEST_ARGS := "--detectOpenHandles --watchman=false"
 JEST_WATCH_ARGS := JEST_ARGS + " --watch --silent --reporter=dot"
 
 [no-quiet]
-test *FLAGS_AND_PATTERNS: _deps build
-    bunx jest {{ JEST_ARGS }} -t {{ FLAGS_AND_PATTERNS }}
+test *FILTER: _deps build
+    bunx jest {{ JEST_ARGS }} -t {{ FILTER }}
 
 
-watch-tests *FLAGS_AND_PATTERNS:
-    bunx jest {{ JEST_WATCH_ARGS }} -t {{ FLAGS_AND_PATTERNS }}
+watch-tests *FILTER:
+    bunx jest {{ JEST_WATCH_ARGS }} -t {{ FILTER }}
 
 _deps:
     bun install

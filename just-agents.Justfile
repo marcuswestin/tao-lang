@@ -1,9 +1,4 @@
-import "./packages/shared/just/all-imports.just"
-
-# Settings for the agent justfile
-# - `quiet` -> Don't print each command as it's executed.
-# - `shell` -> recipe step command: zsh, exit on error, error on unset variable, fail on pipefail
-# - `dotenv-load` -> Load environment variables from .env
+import "./packages/shared/just/_shared-vars.just"
 
 MAIN_JUSTFILE := "--justfile Justfile"
 AGENT_JUSTFILE := "--justfile just-agents.Justfile"
@@ -31,17 +26,15 @@ fix:
 
 # Run full battery of checks and builds to prepare for commit.
 prep-commit:
-    echo 'Running ./just-agents prep-commit...\n'
     just {{ MAIN_JUSTFILE }} prep-commit
-    echo '\nPrep-commit complete!\n'
 
-# Checks: Run tests - optionally specify which `TEST_NAMES_PATTERN` to filter test with (e.g. `test "formatter"`, test `"validation|parser"`)
-test *TEST_NAMES_PATTERN:
-    just {{ MAIN_JUSTFILE }} test "{{ TEST_NAMES_PATTERN }}"
+# Checks: Run tests. Optionally specify which tests to run by a filter: `test "compile"`, test `"validation"`
+test *NAME:
+    just {{ MAIN_JUSTFILE }} test '{{ NAME }}'
 
 # Test all packages, including slow ones
-test-all:
-    just {{ MAIN_JUSTFILE }} test-all
+test-all *NAME:
+    just {{ MAIN_JUSTFILE }} test-all '{{ NAME }}'
 
 # Checks: Lint all code
 lint:
@@ -66,6 +59,24 @@ clean:
 # Package commands: Run commands in packages/expo-runtime
 expo-runtime *ARGS:
     just {{ MAIN_JUSTFILE }} expo-runtime {{ ARGS }}
+
+compiler *ARGS:
+    just {{ MAIN_JUSTFILE }} compiler {{ ARGS }}
+
+headless-test-runtime *ARGS:
+    just {{ MAIN_JUSTFILE }} headless-test-runtime {{ ARGS }}
+
+ide-extension *ARGS:
+    just {{ MAIN_JUSTFILE }} ide-extension {{ ARGS }}
+
+shared *ARGS:
+    just {{ MAIN_JUSTFILE }} shared {{ ARGS }}
+
+cli *ARGS:
+    just {{ MAIN_JUSTFILE }} cli {{ ARGS }}
+
+tao *ARGS:
+    just {{ MAIN_JUSTFILE }} tao {{ ARGS }}
 
 # Only use this if you have already ran `./just-agents prep-commit` and are sure you want to commit without running checks.
 git-dangerously-commit-without-checks MESSAGE:

@@ -3,6 +3,7 @@ import {
   compileNode,
   compileNodeList,
   compileNodeListProperty,
+  compileNoop,
   genNodePropertyRef,
 } from '@compiler/compiler-utils'
 import { AST } from '@parser'
@@ -49,7 +50,7 @@ function compileViewStatement(statement: AST.ViewStatement): Compiled {
 /** compileArgsListToProps emits JSX prop assignments from an args list. */
 function compileArgsListToProps(args?: AST.ArgsList): Compiled {
   if (!args) {
-    return undefined
+    return compileNoop()
   }
   return compileNodeListProperty(args, 'args', argument => {
     return compileNode(argument)`

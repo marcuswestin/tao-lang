@@ -21,6 +21,6 @@
     "typescript": "~5.9.2"
   },
   "taoRuntime": {
-    "outputPath": "src/_gen-tao-compiler/app-output.tsx"
+    "outputPath": "src/_gen-tao-compiler/tao-app/app-bootstrap.tsx"
   }
 }

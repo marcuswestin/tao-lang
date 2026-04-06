@@ -1,4 +1,5 @@
 import { NodePropName } from '@parser'
+import { Assert } from '@shared/TaoErrors'
 import { AstNode, Properties, Reference } from 'langium'
 
 export type { NodePropName }
@@ -30,21 +31,20 @@ export function compileNodeListProperty<
     [K in NodePropName<NodeT>]: Required<NodeT>[K] extends Iterable<any> ? K : never
   }[NodePropName<NodeT>],
 >(
-  node: NodeT | undefined,
+  node: NodeT,
   propertyName: PropName,
   compileListItemFn: CompileListItemFn<ItemOfIterable<Required<NodeT[PropName]>>>,
-): Compiled | undefined {
-  if (!node) {
-    return undefined
-  }
-  if (!node[propertyName]) {
-    return undefined
-  }
+): Compiled {
+  Assert(node[propertyName], 'Node and property must be defined')
   return _compileNodeListProperty(node, propertyName, compileListItemFn, { appendNewLineIfNotEmpty: true })
 }
 
 import * as LangiumGen from 'langium/generate'
-export type Compiled = LangiumGen.CompositeGeneratorNode | undefined
+export type Compiled = LangiumGen.CompositeGeneratorNode
+
+export function compileNoop(): Compiled {
+  return new LangiumGen.CompositeGeneratorNode()
+}
 
 type CompileListItemFn<ItemT extends any> = (
   element: ItemT,
@@ -113,7 +113,7 @@ export function genNodePropertyRef<
   genFn: (resolved: PropVal) => Compiled,
 ): Compiled {
   const ref = node[propName] as Reference<_NodeRefTarget<NodeT, PropName>>
-  return ref ? genFn(ref.ref as PropVal) : undefined
+  return ref ? genFn(ref.ref as PropVal) : compileNoop()
 }
 
 type _NodeRefPropName<NodeT extends AstNode> = Extract<

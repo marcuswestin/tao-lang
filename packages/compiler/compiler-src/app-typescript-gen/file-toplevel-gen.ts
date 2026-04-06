@@ -1,4 +1,4 @@
-import { Compiled, compileNode, compileNodeListProperty } from '@compiler/compiler-utils'
+import { Compiled, compileNode, compileNodeListProperty, compileNoop } from '@compiler/compiler-utils'
 import { AST } from '@parser'
 import { switchProperty_Exhaustive, switchType_Exhaustive } from '@shared/TypeSafety'
 import { compileActionDeclaration } from './action-gen'
@@ -25,12 +25,9 @@ function compileTopLevelDeclaration(node: AST.TopLevelDeclaration): Compiled {
   })
 }
 
-/** compileUseStatement emits a comment placeholder for a Tao use line. Multi-file compilation will be implemented later. */
-function compileUseStatement(useStatement: AST.UseStatement): Compiled {
-  const fromClause = useStatement.modulePath ? ` from ${useStatement.modulePath}` : ''
-  return compileNode(useStatement)`
-    // Tao: use ${useStatement.importedNames.join(', ')}${fromClause}
-  `
+/** compileUseStatement is a no-op in the module body; ES imports are emitted in `import-header-gen`. */
+function compileUseStatement(_useStatement: AST.UseStatement): Compiled {
+  return compileNoop()
 }
 
 /** compileAppDeclaration emits all app statements for one app declaration. */
@@ -43,7 +40,7 @@ function compileAppStatement(statement: AST.AppStatement): Compiled {
   return switchProperty_Exhaustive(statement, 'type', {
     ui: () =>
       compileNode(statement)`
-      function AppUIView() {
+      export function AppUIView() {
         return <${statement.ui.ref!.name} />
       }
     `,
