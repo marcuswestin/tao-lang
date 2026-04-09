@@ -1,22 +1,18 @@
 import React from 'react'
 
-export function wrapReactUseState<T>([val, setter]: [T, (val: T) => void]) {
-  return new StateAccessUse(() => val, setter)
-}
-
-class StateAccessUse<T> {
+/** StateUse pairs a snapshot getter with React's useState setter for Tao compiled state. */
+export class StateUse<T> {
   constructor(
-    readonly get: () => T,
-    readonly set: (val: T) => void,
-  ) {
-  }
+    readonly value: T,
+    readonly setter: (val: T) => void,
+  ) {}
 
   read(): T {
-    return this.get()
+    return this.value
   }
 
-  write(val: T) {
-    this.set(val)
+  update(fn: (val: T) => T) {
+    this.setter(fn(this.value))
   }
 }
 
@@ -39,20 +35,6 @@ abstract class Expression<T> implements ExpressionI<T> {
 class StringLiteral extends Expression<string> {
 }
 
-class ReactState<T> extends Expression<T> {
-  private setter: (value: T) => void
-
-  use() {
-    const [value, setter] = React.useState(this.value)
-    this.setter = setter
-    return value
-  }
-
-  update(value: T) {
-    this.setter(value)
-  }
-}
-
 class Action extends Expression<() => void> {
   invoke() {
     return this.value()
@@ -71,14 +53,19 @@ class NumberLiteral extends Expression<number> {
 type ReferenceName = string & { __ReferenceName: true }
 
 export const TaoRuntime = new class TaoRuntime {
-  useState<T>(value: T) {
-    return value
-    // return React.useState(value)
+  /** useState allocates React state and returns a StateUse for read/write. */
+  useState<T>(initialValue: T) {
+    const [value, setter] = React.useState<T>(initialValue)
+    return new StateUse<T>(value, setter)
   }
 
-  useNamedReference(name: string) {
-    return name
-    // return // ???
+  /** useNamedReference reads StateUse in expressions; passes actions and other refs through unchanged. */
+  useNamedReference<T>(ref: T): T {
+    if (ref instanceof StateUse) {
+      return ref.read()
+    } else {
+      return ref
+    }
   }
 
   useExpression<T>(expression: Expression<T>) {
@@ -111,8 +98,14 @@ export const TaoRuntime = new class TaoRuntime {
     // return new Action(action)
   }
 
-  updateState(stateRef: any, op: string, value: any) {
-    return
-    // return stateRef.update(op, value)
+  /** updateState applies =, +=, or -= to a StateUse-backed cell. */
+  updateState<T>(stateRef: StateUse<T>, op: string, value: T) {
+    stateRef.update((curr) => OperatorMap[op]<T>(curr, value))
   }
 }()
+
+const OperatorMap = {
+  '=': <T>(_curr: T, operand: T) => operand as number,
+  '+=': <T>(curr: T, operand: T) => (curr as number) + (operand as number),
+  '-=': <T>(curr: T, operand: T) => (curr as number) - (operand as number),
+} as const

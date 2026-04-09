@@ -4,12 +4,10 @@ app HandlersStateAndActionsApp {
   ui RootView
 }
 
-state count2 = 1
-
 view RootView {
   state count = 1
   Button title count, Action IncrementAction { }
   action IncrementAction {
-    set count += 2
+    set count += 1
   }
 }
