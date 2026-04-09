@@ -66,12 +66,12 @@ share view Text value string {
   ```
 }
 
-share view Button title string {
+share view Button title string, Action string {
   // TODO: does press
   inject ```ts
     const renderViewParams = { children: props.children, params: {}, styles: {}, layouts: {}, uiLabel: '', RNProps: {}, RNStyle:{} }
     renderViewParams.styles = { backgroundColor: 'green', padding: 10 }
-    renderViewParams.RNProps = { title: props.title, onPress: props.on_action_press }
+    renderViewParams.RNProps = { title: props.title.toString(), onPress: props.Action }
     return ALRuntime.ui.renderView('Button', RN.Button, renderViewParams)
   ```
 }
