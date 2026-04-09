@@ -17,7 +17,7 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
 
   /** getScope returns available symbols for the given reference context. */
   override getScope(context: langium.ReferenceInfo): langium.Scope {
-    if (context.property === 'view' && AST.isViewRenderStatement(context.container)) {
+    if (context.property === 'view' && AST.isViewRender(context.container)) {
       return this.getModuleScopedDeclarations(context)
     }
 
@@ -57,7 +57,7 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
     const referenceType = this.reflection.getReferenceType(context)
     const imported: langium.AstNodeDescription[] = []
 
-    const useStatements = taoFile.topLevelStatements.filter((stmt) => AST.isUseStatement(stmt))
+    const useStatements = taoFile.statements.filter((stmt) => AST.isUseStatement(stmt))
 
     for (const useStmt of useStatements) {
       const imports = this.getSymbolsForUseStatement(useStmt, referenceType, document)

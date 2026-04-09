@@ -1,10 +1,40 @@
+import { assertNever } from '@compiler/compiler-utils'
 import { AST, type NodePropName } from '@parser'
 import type * as langium from 'langium'
 import { makeValidater, type Reporter } from './ValidationReporter'
 
+/** validationMessages are the exact diagnostics for TaoFile and Block placement rules. */
+export const validationMessages = {
+  viewBody: 'Only view/alias/state/action/inject statements are allowed in a view body.',
+  actionBody: 'Only state/action/inject/set statements are allowed in an action body.',
+  topLevel: 'Only alias/state/view/action/inject/use statements are allowed at file level.',
+} as const
+
 export const validator: langium.ValidationChecks<AST.TaoLangAstType> = {
-  AliasDeclaration: makeValidater((alias, report) => {
-    validateDuplicateIdentifier(alias, report)
+  TaoFile: makeValidater((file, report) => {
+    for (const stmt of file.statements) {
+      if (AST.isModuleDeclaration(stmt) || AST.isTopLevelStatement(stmt)) {
+        continue
+      }
+      report.error(validationMessages.topLevel, stmt)
+    }
+  }),
+
+  Block: makeValidater((block, report) => {
+    const ctx = getBlockStatementContext(block)
+    const checkFn = ctx === 'view' ? AST.isViewStatement : AST.isActionStatement
+    const message = ctx === 'view'
+      ? validationMessages.viewBody
+      : validationMessages.actionBody
+    for (const stmt of block.statements) {
+      if (!checkFn(stmt)) {
+        report.error(message, stmt)
+      }
+    }
+  }),
+
+  XDeclaration: makeValidater((decl, report) => {
+    validateDuplicateIdentifier(decl, report)
   }),
 
   ParameterDeclaration: makeValidater((param, report) => {
@@ -12,6 +42,7 @@ export const validator: langium.ValidationChecks<AST.TaoLangAstType> = {
   }),
 
   AppDeclaration: makeValidater((declaration, report) => {
+    validateDuplicateIdentifier(declaration, report)
     const uiDeclarations = declaration.appStatements.filter(stmt => stmt.type === 'ui')
 
     if (uiDeclarations.length === 0) {
@@ -19,7 +50,7 @@ export const validator: langium.ValidationChecks<AST.TaoLangAstType> = {
     }
 
     uiDeclarations.forEach(node => {
-      if (node.ui?.ref && !AST.isViewDeclaration(node.ui.ref)) {
+      if (node.ui?.ref && !AST.isViewDeclaration(node.ui.ref as unknown)) {
         report.error('App ui must be a view.', { node, property: 'ui' })
       }
       if (uiDeclarations.length > 1) {
@@ -32,6 +63,17 @@ export const validator: langium.ValidationChecks<AST.TaoLangAstType> = {
       }
     })
   }),
+}
+
+/** getBlockStatementContext returns whether `block` is nested under view-like or action-like syntax. */
+function getBlockStatementContext(block: AST.Block): 'view' | 'action' | null {
+  const parent = block.$container
+  if (AST.isView(parent) || AST.isViewRender(parent)) {
+    return 'view'
+  } else if (AST.isAction(parent)) {
+    return 'action'
+  }
+  assertNever(parent)
 }
 
 /** validateDuplicateIdentifier reports when another binding in scope shares the same name. */
@@ -65,32 +107,45 @@ function getSiblingStatements(binding: AST.Referenceable): langium.AstNode[] {
   const container = binding.$container
   if (AST.isParameterList(container)) {
     const parent = container.$container
-    if (AST.isViewDeclaration(parent)) {
-      return parent.viewStatements
-    }
-    if (AST.isActionDeclaration(parent)) {
-      return parent.actionStatements
+    if (AST.isBlockDeclaration(parent)) {
+      return parent.block.statements
     }
     return []
   }
-  if (AST.isViewDeclaration(container) || AST.isViewRenderStatement(container)) {
-    return container.viewStatements
+  if (AST.isModuleDeclaration(container)) {
+    const taoFile = container.$container
+    if (AST.isTaoFile(taoFile)) {
+      return flattenTopLevelDeclarations(taoFile.statements)
+    }
+    return []
   }
-  if (AST.isTopLevelDeclaration(container) && AST.isTaoFile(container.$container)) {
-    return container.$container.topLevelStatements
-      .filter((s: AST.TopLevelStatement): s is AST.TopLevelDeclaration => AST.isTopLevelDeclaration(s))
-      .map((s: AST.TopLevelDeclaration) => s.declaration)
+  if (AST.isTaoFile(container)) {
+    return flattenTopLevelDeclarations(container.statements)
+  }
+  if (AST.isBlock(container)) {
+    return container.statements
   }
   return []
 }
 
+/** flattenTopLevelDeclarations returns file-level declaration nodes (unwraps `ModuleDeclaration`). */
+function flattenTopLevelDeclarations(statements: readonly AST.Statement[]): langium.AstNode[] {
+  const out: langium.AstNode[] = []
+  for (const s of statements) {
+    if (AST.isModuleDeclaration(s)) {
+      out.push(s.declaration)
+    } else {
+      out.push(s)
+    }
+  }
+  return out
+}
+
 /** getDuplicateSiblingDeclarations returns same-scope declarations with the same name as the binding. */
-function getDuplicateSiblingDeclarations(binding: AST.Referenceable): AST.Declaration[] {
-  return getSiblingStatements(binding).filter(
-    (node): node is AST.Declaration => {
-      return AST.isDeclaration(node) && node !== binding && node.name === binding.name
-    },
-  )
+function getDuplicateSiblingDeclarations(binding: AST.Referenceable): langium.AstNode[] {
+  return getSiblingStatements(binding).filter(node => {
+    return AST.isReferenceable(node) && node.name === binding.name && node !== binding
+  })
 }
 
 /** findParameterizedDeclaration returns the nearest enclosing view or action that may own parameters. */

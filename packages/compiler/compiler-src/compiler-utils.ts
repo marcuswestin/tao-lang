@@ -10,16 +10,21 @@ export function assertNever<T extends never>(_arg: T): never {
   throw new Error(`assertNever called`)
 }
 
+type NonNullablePropName<N extends AstNode> = {
+  [K in NodePropName<N>]: undefined extends N[K] ? never : null extends N[K] ? never : K
+}[NodePropName<N>]
+
 /** compileNodeProperty emits traced code for one AST property with an optional per-value generator. */
-export function compileNodeProperty<NodeT extends AstNode, PropName extends NodePropName<NodeT>>(
+export function compileNodeProperty<NodeT extends AstNode, PropName extends NonNullablePropName<NodeT>>(
   node: NodeT,
   propertyName: PropName,
-  genFn?: (property: NonNullable<NodeT[PropName]>) => LangiumGen.Generated,
-): Compiled | undefined {
+  genFn?: (property: NodeT[PropName]) => LangiumGen.Generated,
+  // ): Compiled | undefined {
+): Compiled {
   const propertyVal = node[propertyName]
-  if (propertyVal === undefined || propertyVal === null) {
-    return undefined
-  }
+  // if (propertyVal === undefined || propertyVal === null) {
+  //   return undefined
+  // }
   const content = genFn ? genFn(propertyVal) : propertyVal
   return compileNode(node, propertyName)`${content}`
 }
@@ -97,13 +102,13 @@ export function compileNodeList<NodeT extends AstNode>(
   const compiledList = new LangiumGen.CompositeGeneratorNode()
   for (const node of nodes) {
     const compiledNode = LangiumGen.expandTracedToNode(node)`${genListItemFn(node)}`
-    compiledList.append(compiledNode)
+    compiledList.append(compiledNode).appendNewLineIfNotEmpty()
   }
   return compiledList
 }
 
-/** genNodePropertyRef resolves a reference property and emits code from the target. */
-export function genNodePropertyRef<
+/** compileNodePropertyRef resolves a reference property and emits code from the target. */
+export function compileNodePropertyRef<
   NodeT extends AstNode,
   PropName extends _NodeRefPropName<NodeT>,
   PropVal extends _NodeRefTarget<NodeT, PropName>,

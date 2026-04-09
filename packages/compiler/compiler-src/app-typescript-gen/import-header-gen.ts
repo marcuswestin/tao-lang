@@ -22,14 +22,20 @@ export function buildUriToTaoMap(allTaoFiles: AST.TaoFile[]): Map<string, AST.Ta
 
 /** getDocUrisAndPaths returns UriAndPath entries for all Tao documents with a file URI. */
 export function getDocUrisAndPaths(allTaoFiles: AST.TaoFile[]): UriAndPath[] {
-  const out: UriAndPath[] = []
-  for (const t of allTaoFiles) {
-    const doc = t.$document
-    if (doc?.uri.scheme === 'file') {
-      out.push({ uri: doc.uri.toString(), path: doc.uri.path })
-    }
+  return allTaoFiles
+    .filter(t => t.$document?.uri.scheme === 'file')
+    .map(t => ({ uri: t.$document!.uri.toString(), path: t.$document!.uri.path }))
+}
+
+/** topLevelDeclarationName returns the declared name for a file-level statement, if any. */
+function topLevelDeclarationName(stmt: AST.Statement): string | undefined {
+  if (AST.isModuleDeclaration(stmt)) {
+    return stmt.declaration.name
   }
-  return out
+  if (AST.isXDeclaration(stmt)) {
+    return stmt.name
+  }
+  return undefined
 }
 
 /** findDefiningUriForName returns the document URI that defines `name` among the given target URIs. */
@@ -43,8 +49,8 @@ function findDefiningUriForName(
     if (!t) {
       continue
     }
-    for (const stmt of t.topLevelStatements) {
-      if (AST.isTopLevelDeclaration(stmt) && stmt.declaration.name === name) {
+    for (const stmt of t.statements) {
+      if (topLevelDeclarationName(stmt) === name) {
         return uri
       }
     }
@@ -60,11 +66,23 @@ function collectViewCrossDocumentImports(
   uriToEmitPath: Map<string, string>,
   importMap: Map<string, Set<string>>,
 ) {
-  for (const stmt of taoFile.topLevelStatements) {
-    if (AST.isTopLevelDeclaration(stmt) && AST.isViewDeclaration(stmt.declaration)) {
-      walkViewDecl(stmt.declaration, doc, currentEmit, uriToEmitPath, importMap)
+  for (const stmt of taoFile.statements) {
+    const viewDecl = topLevelViewDeclaration(stmt)
+    if (viewDecl) {
+      walkViewDecl(viewDecl, doc, currentEmit, uriToEmitPath, importMap)
     }
   }
+}
+
+/** topLevelViewDeclaration returns a top-level view declaration from a file statement, if any. */
+function topLevelViewDeclaration(stmt: AST.Statement): AST.ViewDeclaration | undefined {
+  if (AST.isModuleDeclaration(stmt) && AST.isViewDeclaration(stmt.declaration)) {
+    return stmt.declaration
+  }
+  if (AST.isViewDeclaration(stmt)) {
+    return stmt
+  }
+  return undefined
 }
 
 /** walkViewDecl walks nested views and records cross-document view render imports. */
@@ -75,26 +93,44 @@ function walkViewDecl(
   uriToEmitPath: Map<string, string>,
   importMap: Map<string, Set<string>>,
 ) {
-  for (const vs of decl.viewStatements) {
-    if (AST.isViewRenderStatement(vs)) {
-      const viewDecl = vs.view.ref
-      if (viewDecl) {
-        const defDoc = langium.AstUtils.getDocument(viewDecl)
-        if (defDoc && defDoc.uri.toString() !== doc.uri.toString()) {
-          const targetEmit = uriToEmitPath.get(defDoc.uri.toString())
-          if (targetEmit && targetEmit !== currentEmit) {
-            let set = importMap.get(targetEmit)
-            if (!set) {
-              set = new Set()
-              importMap.set(targetEmit, set)
-            }
-            set.add(viewDecl.name)
+  for (const s of decl.block.statements) {
+    walkViewStatement(s, doc, currentEmit, uriToEmitPath, importMap)
+  }
+}
+
+/** walkViewStatement records cross-document view imports for a view-body or nested-block statement. */
+function walkViewStatement(
+  s: AST.Statement,
+  doc: langium.LangiumDocument,
+  currentEmit: string,
+  uriToEmitPath: Map<string, string>,
+  importMap: Map<string, Set<string>>,
+): void {
+  if (AST.isViewRender(s)) {
+    const viewDecl = s.view.ref
+    if (viewDecl) {
+      const defDoc = langium.AstUtils.getDocument(viewDecl)
+      if (defDoc && defDoc.uri.toString() !== doc.uri.toString()) {
+        const targetEmit = uriToEmitPath.get(defDoc.uri.toString())
+        if (targetEmit && targetEmit !== currentEmit) {
+          let set = importMap.get(targetEmit)
+          if (!set) {
+            set = new Set()
+            importMap.set(targetEmit, set)
           }
+          set.add(viewDecl.name)
         }
       }
-    } else if (AST.isViewDeclaration(vs)) {
-      walkViewDecl(vs, doc, currentEmit, uriToEmitPath, importMap)
     }
+    if (s.block) {
+      for (const inner of s.block.statements) {
+        walkViewStatement(inner, doc, currentEmit, uriToEmitPath, importMap)
+      }
+    }
+    return
+  }
+  if (AST.isViewDeclaration(s)) {
+    walkViewDecl(s, doc, currentEmit, uriToEmitPath, importMap)
   }
 }
 
@@ -116,7 +152,7 @@ export function buildImportLinesForTaoFile(
   }
   const importMap = new Map<string, Set<string>>()
 
-  for (const stmt of taoFile.topLevelStatements) {
+  for (const stmt of taoFile.statements) {
     if (!AST.isUseStatement(stmt)) {
       continue
     }

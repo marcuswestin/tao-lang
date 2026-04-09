@@ -3,47 +3,53 @@ import {
   compileNode,
   compileNodeList,
   compileNodeListProperty,
+  compileNodePropertyRef,
   compileNoop,
-  genNodePropertyRef,
 } from '@compiler/compiler-utils'
 import { AST } from '@parser'
+import { Assert } from '@shared/TaoErrors'
 import { switchType_Exhaustive } from '@shared/TypeSafety'
-import { compileActionDeclaration } from './action-gen'
-import { compileAliasDeclaration } from './alias-gen'
 import { compileExpression } from './expression-gen'
 import { compileInjection } from './injection-gen'
+import { RuntimeGen } from './runtime-gen'
 import { compileParameterList } from './shared-gen'
 
 /** compileViewDeclaration emits a React function component from the view AST. */
 export function compileViewDeclaration(declaration: AST.ViewDeclaration): Compiled {
-  const viewBlockStatements = declaration.viewStatements.filter(AST.isViewBlockStatement)
-  const renderStatements = declaration.viewStatements.filter(AST.isViewRenderStatement)
+  const stmts = declaration.block.statements
+  const viewBlockStatements = stmts.filter(s => !AST.isViewRender(s))
+  const renderStatements = stmts.filter(AST.isViewRender)
   return compileNode(declaration)`
-    export function ${declaration.name}(${compileParameterList(declaration.parameterList)}) {
+    function ${declaration.name}(${compileParameterList(declaration.parameterList)}) {
       ${compileNodeList(viewBlockStatements, compileViewStatement)}
-      return <>${compileNodeList(renderStatements, compileViewRenderStatement)}</>
+      return <>${compileNodeList(renderStatements, compileViewRender)}</>
     }
   `
 }
 
-/** compileViewRenderStatement emits child view JSX with args and nested statements. */
-function compileViewRenderStatement(node: AST.ViewRenderStatement): Compiled {
-  return genNodePropertyRef(node, 'view', view =>
-    compileNode(view)`
+/** compileViewRender emits child view JSX with args and nested statements. */
+function compileViewRender(node: AST.ViewRender): Compiled {
+  return compileNodePropertyRef(node, 'view', view => {
+    Assert(AST.isViewDeclaration(view), 'ViewRender.view must be a ViewDeclaration')
+    return compileNode(view)`
       <${view.name} ${compileArgsListToProps(node.args)}>
-        ${compileNodeListProperty(node, 'viewStatements', compileViewStatement)}
-      </${view.name}>
-    `)
+        ${node.block && compileNodeListProperty(node.block, 'statements', compileViewStatement)}
+      </${view.name}>`
+  })
 }
 
-/** compileViewStatement dispatches render, alias, injection, or nested view codegen. */
-function compileViewStatement(statement: AST.ViewStatement): Compiled {
+/** compileViewStatement dispatches one view-block statement. */
+function compileViewStatement(statement: AST.Statement): Compiled {
   return switchType_Exhaustive(statement, {
-    ViewRenderStatement: (n) => compileViewRenderStatement(n),
-    AliasDeclaration: (n) => compileAliasDeclaration(n),
+    ViewRender: (n) => compileViewRender(n),
     Injection: (n) => compileInjection(n),
     ViewDeclaration: (n) => compileViewDeclaration(n),
-    ActionDeclaration: (n) => compileActionDeclaration(n),
+    ActionDeclaration: (n) => RuntimeGen.Declaration(n),
+    AssignmentDeclaration: (n) => RuntimeGen.Declaration(n),
+    AppDeclaration: (n) => RuntimeGen.Declaration(n),
+    ModuleDeclaration: (n) => RuntimeGen.moduleDeclaration(n),
+    UseStatement: (n) => RuntimeGen.useStatement(n),
+    StateUpdate: (n) => RuntimeGen.updateState(n),
   })
 }
 

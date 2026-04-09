@@ -160,7 +160,7 @@ async function addReachableTaoFiles(
 ): Promise<void> {
   const seenFilePaths = new Set<string>(document.uri.path)
 
-  for (const ast of document.parseResult.value.topLevelStatements) {
+  for (const ast of document.parseResult.value.statements) {
     if (!AST.isUseStatement(ast)) {
       continue
     }

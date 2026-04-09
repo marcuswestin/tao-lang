@@ -176,11 +176,13 @@ export class UseStatementValidator {
         continue
       }
       const taoFile = value
-      for (const stmt of taoFile.topLevelStatements) {
-        if (AST.isTopLevelDeclaration(stmt) && stmt.visibility === 'file') {
-          if (stmt.declaration.name === name) {
-            return true
-          }
+      for (const stmt of taoFile.statements) {
+        if (
+          AST.isModuleDeclaration(stmt)
+          && stmt.visibility === 'file'
+          && stmt.declaration.name === name
+        ) {
+          return true
         }
       }
     }

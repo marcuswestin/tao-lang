@@ -11,13 +11,11 @@ export function compileInjection(injection: AST.Injection): Compiled {
   } else {
     const tsCodeBlock = compileNodeProperty(injection, 'tsCodeBlock', trimTsFence)
     return compileNode(injection)`
-      {
-        const injectionResult = (() => {
-          ${tsCodeBlock}
-        })()
-        if (typeof injectionResult !== 'undefined') {
-          return injectionResult
-        }
+      const injectionResult = (() => {
+        ${tsCodeBlock}
+      })()
+      if (typeof injectionResult !== 'undefined') {
+        return injectionResult
       }
     `
   }

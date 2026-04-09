@@ -7,7 +7,7 @@ export function getErrorAppString(errorReport: TaoErrorReport) {
 
   import * as RN from 'react-native'
 
-  const message = \`${messages}\`.replace('\`', '\\\`')
+  const message = \`${messages.replace(/`/g, '\\`')}\`.replace('\`', '\\\`')
 
   export default function CompiledTaoApp() {
     // Center view in parent

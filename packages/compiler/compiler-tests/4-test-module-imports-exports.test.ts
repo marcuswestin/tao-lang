@@ -12,7 +12,7 @@ describe('use statement parsing', () => {
       use PublicView from ./ui/views
       view MyView { }
     `)
-    const useStmt = doc.topLevelStatements.first.as_UseStatement
+    const useStmt = doc.statements.first.as_UseStatement
     expect(useStmt.modulePath).toBe('./ui/views')
     expect(useStmt.importedNames).toEqual(['PublicView'])
   })
@@ -22,7 +22,7 @@ describe('use statement parsing', () => {
       use PublicView, AnotherView, ThirdView from ./ui/views
       view MyView { }
     `)
-    const useStmt = doc.topLevelStatements.first.as_UseStatement
+    const useStmt = doc.statements.first.as_UseStatement
     expect(useStmt.modulePath).toBe('./ui/views')
     expect(useStmt.importedNames).toEqual(['PublicView', 'AnotherView', 'ThirdView'])
   })
@@ -32,7 +32,7 @@ describe('use statement parsing', () => {
       use Button from ../shared/components
       view MyView { }
     `)
-    const useStmt = doc.topLevelStatements.first.as_UseStatement
+    const useStmt = doc.statements.first.as_UseStatement
     expect(useStmt.modulePath).toBe('../shared/components')
     expect(useStmt.importedNames).toEqual(['Button'])
   })
@@ -43,9 +43,9 @@ describe('use statement parsing', () => {
       use Button, Input from ./ui/components
       view MyView { }
     `)
-    expect(doc.topLevelStatements.length).toBe(3)
-    expect(doc.topLevelStatements[0].as_UseStatement.modulePath).toBe('./ui/views')
-    expect(doc.topLevelStatements[1].as_UseStatement.modulePath).toBe('./ui/components')
+    expect(doc.statements.length).toBe(3)
+    expect(doc.statements[0].as_UseStatement.modulePath).toBe('./ui/views')
+    expect(doc.statements[1].as_UseStatement.modulePath).toBe('./ui/components')
   })
 
   test('parses same-module use statement (no from clause)', async () => {
@@ -53,7 +53,7 @@ describe('use statement parsing', () => {
       use Button
       view MyView { }
     `)
-    const useStmt = doc.topLevelStatements.first.as_UseStatement
+    const useStmt = doc.statements.first.as_UseStatement
     useStmt.expect('modulePath').toBeUndefined()
     expect(useStmt.importedNames).toEqual(['Button'])
   })
@@ -63,7 +63,7 @@ describe('use statement parsing', () => {
       use Button, Input, Label
       view MyView { }
     `)
-    const useStmt = doc.topLevelStatements.first.as_UseStatement
+    const useStmt = doc.statements.first.as_UseStatement
     useStmt.expect('modulePath').toBeUndefined()
     expect(useStmt.importedNames).toEqual(['Button', 'Input', 'Label'])
   })
@@ -86,7 +86,7 @@ describe('multi-file module parsing', () => {
       },
     ])
     const appFile = result.getFile('/project/app.tao')
-    expect(appFile.topLevelStatements.first.as_UseStatement.importedNames).toEqual(['PublicView'])
+    expect(appFile.statements.first.as_UseStatement.importedNames).toEqual(['PublicView'])
   })
 })
 
@@ -422,7 +422,7 @@ describe('cross-module import resolution (use statement)', () => {
 
     test('named module path parses without crashing', async () => {
       const doc = await parseAST(`use Foo from app/ui`)
-      expect(doc.topLevelStatements.first.as_UseStatement.modulePath).toBe('app/ui')
+      expect(doc.statements.first.as_UseStatement.modulePath).toBe('app/ui')
     })
   })
 })
@@ -567,7 +567,7 @@ describe('standard library imports (use @tao/...)', () => {
       use Col from @tao/ui
       view MyView { }
     `)
-    const useStmt = doc.topLevelStatements.first.as_UseStatement
+    const useStmt = doc.statements.first.as_UseStatement
     expect(useStmt.modulePath).toBe('@tao/ui')
     expect(useStmt.importedNames).toEqual(['Col'])
   })
@@ -577,7 +577,7 @@ describe('standard library imports (use @tao/...)', () => {
       use Col, Row, Text from @tao/ui
       view MyView { }
     `)
-    const useStmt = doc.topLevelStatements.first.as_UseStatement
+    const useStmt = doc.statements.first.as_UseStatement
     expect(useStmt.modulePath).toBe('@tao/ui')
     expect(useStmt.importedNames).toEqual(['Col', 'Row', 'Text'])
   })

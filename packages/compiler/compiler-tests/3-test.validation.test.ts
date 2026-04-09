@@ -1,3 +1,4 @@
+import { validationMessages } from '@compiler/validation/tao-lang-validator'
 import {
   describe,
   expect,
@@ -21,9 +22,7 @@ describe('parse:', () => {
     `
     const result = await parseTaoFully(code)
     expect(result).toBeDefined()
-    result.topLevelStatements.first.as_TopLevelDeclaration.declaration.as_AppDeclaration.expect('name').toBe(
-      'KitchenSink',
-    )
+    result.statements.first.as_AppDeclaration.expect('name').toBe('KitchenSink')
   })
 
   test('action nested in a view validates', async () => {
@@ -44,6 +43,74 @@ describe('parse:', () => {
       }
     `)
     expect(report.getHumanErrorMessages().some(m => m.includes("Duplicate identifier 'x'"))).toBe(true)
+  })
+})
+
+describe('statement placement validation:', () => {
+  test('state update in view body fails validation', async () => {
+    const report = await parseASTWithErrors(`
+      view V {
+        state s = 1
+        set s = 2
+      }
+    `)
+    expect(report.getHumanErrorMessages().some(m => m.includes(validationMessages.viewBody))).toBe(true)
+  })
+
+  test('use statement in view body fails validation', async () => {
+    const report = await parseASTWithErrors(`
+      view V {
+        use X from a/b
+      }
+    `)
+    expect(report.getHumanErrorMessages().some(m => m.includes(validationMessages.viewBody))).toBe(true)
+  })
+
+  test('view render at file level fails validation', async () => {
+    const report = await parseASTWithErrors(`
+      view Text value string { }
+      Text value "hi"
+    `)
+    expect(report.getHumanErrorMessages().some(m => m.includes(validationMessages.topLevel))).toBe(true)
+  })
+
+  test('state update at file level fails validation', async () => {
+    const report = await parseASTWithErrors(`
+      state x = 1
+      set x = 2
+    `)
+    expect(report.getHumanErrorMessages().some(m => m.includes(validationMessages.topLevel))).toBe(true)
+  })
+
+  test('module declaration in view body fails validation', async () => {
+    const report = await parseASTWithErrors(`
+      view Outer {
+        file view Inner { }
+      }
+    `)
+    expect(report.getHumanErrorMessages().some(m => m.includes(validationMessages.viewBody))).toBe(true)
+  })
+
+  test('view render in action body fails validation', async () => {
+    const report = await parseASTWithErrors(`
+      view Text value string { }
+      view V {
+        action A {
+          Text value "x"
+        }
+      }
+    `)
+    expect(report.getHumanErrorMessages().some(m => m.includes(validationMessages.actionBody))).toBe(true)
+  })
+
+  test('app declaration in view body fails validation', async () => {
+    const report = await parseASTWithErrors(`
+      view V {
+        view X { }
+        app A { ui X }
+      }
+    `)
+    expect(report.getHumanErrorMessages().some(m => m.includes(validationMessages.viewBody))).toBe(true)
   })
 })
 
@@ -101,7 +168,7 @@ describe('compile errors:', () => {
     const errorMessages = errorReport.getHumanErrorMessages()
 
     expect(errorMessages.length).toBeGreaterThan(0)
-    expect(errorMessages.some(msg => msg.includes("Could not resolve reference to Declaration named 'MissingView'")))
+    expect(errorMessages.some(msg => msg.includes('MissingView') && msg.includes('Could not resolve reference')))
       .toBe(true)
   })
 })
