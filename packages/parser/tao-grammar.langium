@@ -32,7 +32,7 @@ Block:
 
 terminal TS_CODE_BLOCK: '```ts' -> '```';
 Injection:
-    'inject' isRaw='raw'? tsCodeBlock=TS_CODE_BLOCK;
+    'inject' tsCodeBlock=TS_CODE_BLOCK;
 
 
 // Top/File Level Statements

@@ -38,10 +38,30 @@ export function compileNodeListProperty<
 >(
   node: NodeT,
   propertyName: PropName,
-  compileListItemFn: CompileListItemFn<ItemOfIterable<Required<NodeT[PropName]>>>,
+  compileListItemFn: CompileListItemFn<ItemOfIterable<NonNullable<NodeT[PropName]>>>,
 ): Compiled {
   Assert(node[propertyName], 'Node and property must be defined')
-  return _compileNodeListProperty(node, propertyName, compileListItemFn, { appendNewLineIfNotEmpty: true })
+  return compileNodeListPropertyOptional(node, propertyName, compileListItemFn)!
+}
+
+/** compileNodeListPropertyOptional emits traced code for an array property with a per-item generator,
+ *  or undefined when the node or the iterable property is missing.
+ */
+export function compileNodeListPropertyOptional<
+  NodeT extends AstNode,
+  PropName extends {
+    [K in NodePropName<NodeT>]: Required<NodeT>[K] extends Iterable<any> ? K : never
+  }[NodePropName<NodeT>],
+>(
+  node: NodeT | undefined,
+  propertyName: PropName,
+  compileListItemFn: CompileListItemFn<ItemOfIterable<NonNullable<NodeT[PropName]>>>,
+): Compiled | undefined {
+  if (!node || node[propertyName] == undefined) {
+    return undefined
+  }
+  const opts = { appendNewLineIfNotEmpty: true } as const
+  return _compileNodeListProperty(node, propertyName, compileListItemFn, opts)
 }
 
 import * as LangiumGen from 'langium/generate'

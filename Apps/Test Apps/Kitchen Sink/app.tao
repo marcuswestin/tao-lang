@@ -28,11 +28,11 @@ action IncrementAction {
 
 view TestButton Action string {
     Box {
-        inject raw ```ts <RN.Pressable onPress={props.Action}> ```
+        inject ```ts <RN.Pressable onPress={props.Action}> ```
         Box {
             Text value "Hello" { }
         }
-        inject raw ```ts </RN.Pressable> ```
+        inject ```ts </RN.Pressable> ```
     }
 }
 

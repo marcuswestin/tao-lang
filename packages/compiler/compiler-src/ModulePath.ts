@@ -1,5 +1,22 @@
 import { Assert } from '@shared/TaoErrors'
-import { normalizeModulePath } from './Paths'
+import { nodePath } from './util/libs'
+
+export type ModulePath = string & { __brand: 'ModulePath' }
+
+/** normalizeModulePath joins and normalizes path segments and strips trailing slashes. */
+export function normalizeModulePath(...parts: string[]): ModulePath {
+  return nodePath.normalize(nodePath.join(...parts)).replace(/\/+$/, '') as ModulePath
+}
+
+/** normalizedDirOfPath returns the normalized parent directory of a file path. */
+export function normalizedDirOfPath(filePath: string): ModulePath {
+  return normalizeModulePath(nodePath.dirname(filePath))
+}
+
+/** resolveModulePathFromFile resolves modulePath relative to the filePath directory. */
+export function resolveModulePathFromFile(filePath: string, modulePath: string): ModulePath {
+  return normalizeModulePath(normalizedDirOfPath(filePath), modulePath)
+}
 
 /** Prefix for Tao standard-library modules (`@tao/ui` → `<stdLibRoot>/tao/ui/...` on disk). */
 export const TAO_MODULE_PREFIX = '@tao/'

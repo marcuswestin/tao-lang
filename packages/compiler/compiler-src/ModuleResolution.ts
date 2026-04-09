@@ -1,6 +1,11 @@
 import { TAO_EXT } from '@shared/TaoPaths'
-import { isModuleImport, isTaoModuleImport, resolveModuleImportDirectory } from './ModulePaths'
-import { normalizedDirOfPath, resolveModulePathFromFile } from './Paths'
+import {
+  isModuleImport,
+  isTaoModuleImport,
+  normalizedDirOfPath,
+  resolveModuleImportDirectory,
+  resolveModulePathFromFile,
+} from './ModulePath'
 
 // UriAndPath pairs a document URI string with its filesystem path for module resolution.
 export type UriAndPath = { uri: string; path: string }

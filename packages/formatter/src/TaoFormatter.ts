@@ -177,9 +177,6 @@ export default class TaoFormatter extends AbstractFormatter {
   private formatInjection(node: AST.Injection): void {
     const f = this.getNodeFormatter(node)
     f.keyword('inject').append(Formatting.oneSpace())
-    if (node.isRaw) {
-      f.keyword('raw').append(Formatting.oneSpace())
-    }
   }
 
   // Private helpers

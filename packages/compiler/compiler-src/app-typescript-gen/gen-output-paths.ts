@@ -1,12 +1,12 @@
+import { nodePath } from '@compiler/util/libs'
 import { AST } from '@parser'
-import * as path from 'node:path'
 
 /** longestCommonDirectoryPrefix returns the longest directory prefix shared by all absolute file paths. */
 export function longestCommonDirectoryPrefix(absolutePaths: string[]): string {
   if (absolutePaths.length === 0) {
     return ''
   }
-  const normalized = absolutePaths.map(p => path.normalize(p))
+  const normalized = absolutePaths.map(p => nodePath.normalize(p))
   const sorted = [...normalized].sort()
   const first = sorted[0]!
   const last = sorted[sorted.length - 1]!
@@ -16,9 +16,9 @@ export function longestCommonDirectoryPrefix(absolutePaths: string[]): string {
     i++
   }
   const prefix = first.slice(0, i)
-  const lastSep = prefix.lastIndexOf(path.sep)
+  const lastSep = prefix.lastIndexOf(nodePath.sep)
   if (lastSep <= 0) {
-    return prefix.length > 0 && prefix[0] === path.sep ? path.sep : ''
+    return prefix.length > 0 && prefix[0] === nodePath.sep ? nodePath.sep : ''
   }
   return prefix.slice(0, lastSep)
 }
@@ -29,30 +29,30 @@ export function emitPathUnderTaoApp(
   projectRoot: string,
   stdLibRoot: string | undefined,
 ): string {
-  const normSource = path.normalize(sourceAbsolutePath)
-  if (stdLibRoot && normSource.startsWith(path.normalize(stdLibRoot + path.sep))) {
-    const rel = path.relative(stdLibRoot, normSource).replace(/\\/g, '/')
+  const normSource = nodePath.normalize(sourceAbsolutePath)
+  if (stdLibRoot && normSource.startsWith(nodePath.normalize(stdLibRoot + nodePath.sep))) {
+    const rel = nodePath.relative(stdLibRoot, normSource).replace(/\\/g, '/')
     const parts = rel.split('/').filter(Boolean)
     if (parts.length === 0) {
       throw new Error(`Invalid stdlib-relative path for ${sourceAbsolutePath}`)
     }
     parts[0] = `@${parts[0]}`
     const withExt = parts.join('/').replace(/\.tao$/i, '.tsx')
-    return path.posix.join('use', ...withExt.split('/'))
+    return nodePath.posix.join('use', ...withExt.split('/'))
   }
-  const rel = path.relative(projectRoot, normSource).replace(/\\/g, '/')
+  const rel = nodePath.relative(projectRoot, normSource).replace(/\\/g, '/')
   const withExt = rel.replace(/\.tao$/i, '.tsx')
-  return path.posix.join('app', withExt)
+  return nodePath.posix.join('app', withExt)
 }
 
 /** computeProjectRoot returns the directory used to mirror user app sources under `tao-app/app/`. */
 export function computeProjectRoot(entryAbsolutePath: string, appSourceAbsolutePaths: string[]): string {
-  const unique = [...new Set(appSourceAbsolutePaths.map(p => path.normalize(p)))]
+  const unique = [...new Set(appSourceAbsolutePaths.map(p => nodePath.normalize(p)))]
   if (unique.length === 0) {
-    return path.dirname(entryAbsolutePath)
+    return nodePath.dirname(entryAbsolutePath)
   }
   const prefix = longestCommonDirectoryPrefix(unique)
-  return prefix.length > 0 ? prefix : path.dirname(entryAbsolutePath)
+  return prefix.length > 0 ? prefix : nodePath.dirname(entryAbsolutePath)
 }
 
 /** buildUriToEmitPath maps each Tao document URI string to a path relative to `tao-app/` (posix slashes). */
@@ -69,8 +69,8 @@ export function buildUriToEmitPath(
     }
     paths.push(doc.uri.fsPath)
   }
-  const appPaths = paths.filter(p => !stdLibRoot || !p.startsWith(path.normalize(stdLibRoot + path.sep)))
-  const projectRoot = computeProjectRoot(path.normalize(entryAbsolutePath), appPaths)
+  const appPaths = paths.filter(p => !stdLibRoot || !p.startsWith(nodePath.normalize(stdLibRoot + nodePath.sep)))
+  const projectRoot = computeProjectRoot(nodePath.normalize(entryAbsolutePath), appPaths)
   const uriToEmitPath = new Map<string, string>()
   for (const t of allTaoFiles) {
     const doc = t.$document
@@ -89,8 +89,8 @@ export function buildUriToEmitPath(
 
 /** emitRelativeImport returns a relative ES import path from `fromEmitPath` to `toEmitPath` (tao-app-relative, posix). */
 export function emitRelativeImport(fromEmitPath: string, toEmitPath: string): string {
-  const fromDir = path.posix.dirname(fromEmitPath)
-  let rel = path.posix.relative(fromDir, toEmitPath)
+  const fromDir = nodePath.posix.dirname(fromEmitPath)
+  let rel = nodePath.posix.relative(fromDir, toEmitPath)
   if (!rel.startsWith('.')) {
     rel = `./${rel}`
   }

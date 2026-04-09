@@ -1,10 +1,10 @@
-import { compileNode, compileNodeListProperty } from '@compiler/compiler-utils'
+import { compileNode } from '@compiler/compiler-utils'
 import { AST } from '@parser'
 import * as LangiumGen from 'langium/generate'
 import type { UriAndPath } from '../ModuleResolution'
-import { compileStatement } from './file-toplevel-gen'
 import { buildUriToEmitPath, emitRelativeImport } from './gen-output-paths'
 import { buildImportLinesForTaoFile, buildUriToTaoMap, getDocUrisAndPaths } from './import-header-gen'
+import { compileTaoFile } from './runtime-gen'
 
 const BOOTSTRAP_RELATIVE_PATH = 'app-bootstrap.tsx'
 
@@ -35,7 +35,7 @@ function compileOneTaoFileModule(
     import * as RN from 'react-native'
     ${importHeader}// ${taoFile.$document!.uri}
   `)
-  const body = compileNodeListProperty(taoFile, 'statements', compileStatement)
+  const body = compileTaoFile(taoFile)
   if (body) {
     // Langium does not newline between separately appended generator nodes (URI comment was glued to `export`).
     result.append('\n').append(body)

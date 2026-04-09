@@ -1,10 +1,9 @@
 import { Assert } from '@shared/TaoErrors'
-import * as LangiumGen from 'langium/generate'
-import * as path from 'node:path'
 import { getErrorAppString } from './app-typescript-gen/app-gen-error'
 import { generateTypescriptReactNativeApp } from './app-typescript-gen/app-gen-main'
 import { TaoErrorReport } from './parse-errors'
 import { TaoParser } from './parser'
+import { langiumGen, nodePath } from './util/libs'
 
 export type CompileOutputFile = { relativePath: string; content: string }
 
@@ -40,7 +39,7 @@ export async function compileTao(opts: CompileOpts): Promise<CompileResult> {
     }
   }
   Assert(parsed.taoFileAST, 'taoFileAST is defined', parsed)
-  const entryAbsolutePath = path.resolve(opts.file)
+  const entryAbsolutePath = nodePath.resolve(opts.file)
   const generated = generateTypescriptReactNativeApp(
     parsed.taoFileAST,
     parsed.usedFilesASTs,
@@ -49,11 +48,11 @@ export async function compileTao(opts: CompileOpts): Promise<CompileResult> {
   )
   const files: CompileOutputFile[] = []
   for (const f of generated.fileNodes) {
-    files.push({ relativePath: f.relativePath, content: LangiumGen.toStringAndTrace(f.node).text })
+    files.push({ relativePath: f.relativePath, content: langiumGen.toStringAndTrace(f.node).text })
   }
   files.push({
     relativePath: generated.bootstrapRelativePath,
-    content: LangiumGen.toStringAndTrace(generated.bootstrapNode).text,
+    content: langiumGen.toStringAndTrace(generated.bootstrapNode).text,
   })
   return {
     ok: true,

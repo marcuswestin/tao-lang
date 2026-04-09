@@ -1,6 +1,5 @@
 import { Assert } from '@shared/TaoErrors'
-import { isTaoModuleImport } from './ModulePaths'
-import { normalizeModulePath } from './Paths'
+import { isTaoModuleImport, normalizeModulePath } from './ModulePath'
 
 /** isStdLibImport returns true when the module path is the built-in Tao standard library (`@tao/...`). */
 export function isStdLibImport(modulePath: string): boolean {

@@ -1,4 +1,4 @@
-inject raw ```ts
+inject ```ts
   type RenderTextViewParams = {
     value?: string
     RNStyle?: TextStyle

@@ -2,6 +2,8 @@ inject ```ts
   alert('Hello World')
 ```
 
-inject raw ```ts
+inject ```ts
+
   console.log('Raw inject, without `(function() { ... })()` wrapper')
+
 ```
