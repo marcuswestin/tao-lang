@@ -6,7 +6,7 @@ import * as AST from './_gen-tao-parser/ast'
  * helps type child traversals without index-signature noise. */
 export type NodePropName<N extends AstNode> = keyof Omit<N, keyof AstNode | number | symbol>
 
-/** isSharedModuleDeclaration returns true for a top-level declaration whose `visibility` is `'share'` (shared module surface). */
-export function isSharedModuleDeclaration(node: unknown): node is AST.TopLevelDeclaration {
-  return AST.isTopLevelDeclaration(node) && node.visibility === 'share'
+/** isSharedModuleDeclaration returns true for a `ModuleDeclaration` whose `visibility` is `'share'`. */
+export function isSharedModuleDeclaration(node: unknown): node is AST.ModuleDeclaration {
+  return AST.isModuleDeclaration(node) && node.visibility === 'share'
 }
