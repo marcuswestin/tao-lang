@@ -88,6 +88,7 @@ export class RuntimeGenCtx {
       NamedReference: compileNamedReference,
     })
   }
+
   // OLD: Save these for now
   //////////////////////////
   //
@@ -123,17 +124,4 @@ export class RuntimeGenCtx {
 }
 
 // TODO: Move all compilation in here, and stop using a singleton/global context.
-export const RuntimeGen = bindAllMethods(new RuntimeGenCtx())
-
-function bindAllMethods<T extends object>(obj: T): T {
-  const proto = Object.getPrototypeOf(obj)
-
-  for (const key of Object.getOwnPropertyNames(proto) as (keyof T)[]) {
-    const val = obj[key]
-    if (key !== 'constructor' && typeof val === 'function') {
-      obj[key] = val.bind(obj)
-    }
-  }
-
-  return obj
-}
+export const RuntimeGen = new RuntimeGenCtx()
