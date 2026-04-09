@@ -12,19 +12,28 @@ Also see Roadmap.
 
 ### Next tasks:
 
+- [x] Simplify grammar
+  - [x] Collapse all blocks into a single type: Block
+- [x] Move to multiple compiled files, and enable exports
+- [x] Simplify grammar. Collapse different types some: E.g AST.isBlock, AST.isDeclaration
+- [x] Make all declarations a single type: Declaration
+  - [x] Handle exports by creating an exports object for each top level declaration.
+- [x] Write e2e tests
+  - [x] Implement scenario actions
+- [ ] Move all compilation to runtime-gen
+  - [ ] Move use statement handling to RuntimeGen class: returns map of output file paths to compiled code for each.
+- [ ] Re-implement actions
+  - [ ] Add automated test for tapping buttons with actions.
+- [ ] Improve testing
+  - [ ] Add View Keys
+    - [ ] Dev System for accessing local State?
+    - Could be done with hidden dev-only view renders inside a view when a state is declared for accessing it.
 - [ ] Organize compiler-src - it's unorganized.
-- [ ] Simplify grammar
-  - [ ] Collapse all blocks into a single type: Block
-    - [ ] Formatting: allow consecutive lines of same type have no space between them.
+- [ ] Formatting: allow consecutive lines of same type have no space between them.
 - Have ALL Node imports through a single shared import. Path, etc
 - [ ] Fix just agents test with a pattern flag passed in
-- [ ] Move to multiple compiled files, and enable exports
-- [ ] Simplify grammar. Collapse different types some: E.g AST.isBlock, AST.isDeclaration
-- [ ] Add automated test for tapping buttons with actions.
 - [ ] The two test-runtime*.tsx files are almost identical. Consolidate them.
 - [ ] Simplify compiler test harness file ..
-- [ ] Make all declarations a single type: Declaration
-  - [x] Handle exports by creating an exports object for each top level declaration.
 - [ ] Consider requiring parameter lists to start with a comma.
 - [ ] Require reference names to be uppercase.
 - [ ] Actions
@@ -34,16 +43,6 @@ Also see Roadmap.
   - For each again:
     - [ ] Write e2e tests: AI
     - [ ] Implement e2e tests: Together
-  - Write e2e tests
-    - [ ] Implement scenario actions
-      - [ ] View Keys
-      - [ ] Dev System for accessing local State?
-        - Could be done with hidden dev-only view renders inside a view when a state is declared for accessing it.
-    - [ ] Parser
-    - [ ] Validator
-    - [ ] Formatter
-    - [ ]
-  - [ ] Declaration
 
 #### Unordered:
 
