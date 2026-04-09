@@ -2,8 +2,8 @@
   // Code appearance
   "editor.fontSize": 12.5,
   "editor.lineHeight": 17,
-  // "window.zoomLevel": 0.9, // Monitor
-  "window.zoomLevel": 0, // Laptop
+  // "window.zoomLevel": 1.6, // Monitor
+  "window.zoomLevel": 0.3, // Laptop
   // Use compiler typescript version, for langium generated code to typecheck properly
   "typescript.tsdk": "packages/compiler/node_modules/typescript/lib",
   // Build extension and restart host (requires extension ryuta46.multi-command).
