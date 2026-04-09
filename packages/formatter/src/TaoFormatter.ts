@@ -27,30 +27,34 @@ export default class TaoFormatter extends AbstractFormatter {
   /** format dispatches to per-node formatters. */
   protected format(node: AST.TaoLangAstType[keyof AST.TaoLangAstType]): void {
     return switchBindItemType_Exhaustive(node, this, {
-      'TaoFile': (n) => this.formatTaoFile(n),
-      'UseStatement': (n) => this.formatUseStatement(n),
-      'AppDeclaration': (n) => this.formatAppDeclaration(n),
-      'TopLevelDeclaration': (n) => this.formatTopLevelDeclaration(n),
-      'AppStatement': (n) => this.formatAppStatement(n),
-      'ViewDeclaration': (n) => this.formatViewDeclaration(n),
-      'ActionDeclaration': (n) => this.formatActionDeclaration(n),
-      'ViewRenderStatement': (n) => this.formatViewRenderStatement(n),
-      'ArgsList': (n) => this.formatArgsList(n),
-      'Argument': (n) => this.formatArgument(n),
-      'Injection': (n) => this.formatInjection(n),
-      'ParameterDeclaration': (n) => this.formatParameterDeclaration(n),
-      'ParameterList': (n) => this.formatParameterList(n),
-      'AliasDeclaration': (n) => this.formatAliasDeclaration(n),
-      'NamedReference': (n) => this.formatNamedReference(n),
-      'NumberLiteral': (n) => this.formatNumberLiteral(n),
-      'StringLiteral': (n) => this.formatStringLiteral(n),
+      TaoFile: (n) => this.formatTaoFile(n),
+      UseStatement: (n) => this.formatUseStatement(n),
+      ModuleDeclaration: (n) => this.formatModuleDeclaration(n),
+      AppDeclaration: (n) => this.formatAppDeclaration(n),
+      AppStatement: (n) => this.formatAppStatement(n),
+      ViewDeclaration: (n) => this.formatViewDeclaration(n),
+      ActionDeclaration: (n) => this.formatActionDeclaration(n),
+      InlineView: (n) => this.formatInlineView(n),
+      InlineAction: (n) => this.formatInlineAction(n),
+      ViewRender: (n) => this.formatViewRender(n),
+      Block: (n) => this.formatBlock(n),
+      ArgsList: (n) => this.formatArgsList(n),
+      Argument: (n) => this.formatArgument(n),
+      Injection: (n) => this.formatInjection(n),
+      ParameterDeclaration: (n) => this.formatParameterDeclaration(n),
+      ParameterList: (n) => this.formatParameterList(n),
+      AssignmentDeclaration: (n) => this.formatAssignmentDeclaration(n),
+      NamedReference: (n) => this.formatNamedReference(n),
+      NumberLiteral: (n) => this.formatNumberLiteral(n),
+      StringLiteral: (n) => this.formatStringLiteral(n),
+      StateUpdate: (n) => this.formatStateUpdate(n),
     })
   }
 
   /** formatTaoFile applies spacing between top-level statements. */
   private formatTaoFile(node: AST.TaoFile): void {
     const f = this.getNodeFormatter(node)
-    const stmts = node.topLevelStatements
+    const stmts = node.statements
     if (stmts[0]) {
       f.node(stmts[0]).prepend(Formatting.noSpace())
     }
@@ -88,34 +92,53 @@ export default class TaoFormatter extends AbstractFormatter {
     f.keyword('ui').append(Formatting.oneSpace())
   }
 
-  /** formatViewDeclaration formats name, parameters, and indented view body. */
+  /** formatViewDeclaration formats name, parameters; block body is formatted via `Block`. */
   private formatViewDeclaration(node: AST.ViewDeclaration): void {
     this._spaceAroundName(node)
     this._spaceAfterProperty(node, 'parameterList')
-    this._indentBlock(node, 'viewStatements')
   }
 
-  /** formatActionDeclaration formats name, parameters, and indented action body. */
+  /** formatActionDeclaration formats name, parameters; block body is formatted via `Block`. */
   private formatActionDeclaration(node: AST.ActionDeclaration): void {
     this._spaceAroundName(node)
     this._spaceAfterProperty(node, 'parameterList')
-    this._indentBlock(node, 'actionStatements')
   }
 
-  /** formatTopLevelDeclaration formats visibility then declaration spacing. */
-  private formatTopLevelDeclaration(node: AST.TopLevelDeclaration): void {
+  /** formatInlineView formats parameters; block body is formatted via `Block`. */
+  private formatInlineView(node: AST.InlineView): void {
+    this._spaceAfterProperty(node, 'parameterList')
+  }
+
+  /** formatInlineAction formats parameters; block body is formatted via `Block`. */
+  private formatInlineAction(node: AST.InlineAction): void {
+    this._spaceAfterProperty(node, 'parameterList')
+  }
+
+  /** formatModuleDeclaration formats optional visibility and inner declaration. */
+  private formatModuleDeclaration(node: AST.ModuleDeclaration): void {
     this._spaceAfterProperty(node, 'visibility')
     this._spaceAfterProperty(node, 'declaration')
   }
 
-  /** formatViewRenderStatement formats args, optional block brace, and nested statements. */
-  private formatViewRenderStatement(node: AST.ViewRenderStatement): void {
-    this._spaceBeforeProperty(node, 'args')
+  /** formatBlock formats `{ statements }` interiors (when the block node is formatted). */
+  private formatBlock(node: AST.Block): void {
+    this._indentBlock(node, 'statements')
+  }
+
+  /** formatStateUpdate formats `set name <op> value`. */
+  private formatStateUpdate(node: AST.StateUpdate): void {
     const f = this.getNodeFormatter(node)
-    // Space before optional block brace (e.g. "value x { }"). No-op when block omitted.
-    f.keyword('{').prepend(Formatting.oneSpace())
-    // Format block (empty -> "{ }", non-empty -> indented). Omitted block has no braces so _indentBlock no-ops.
-    this._indentBlock(node, 'viewStatements')
+    f.keyword('set').append(Formatting.oneSpace())
+    f.property('stateRef').append(Formatting.oneSpace())
+    f.property('op').append(Formatting.oneSpace())
+  }
+
+  /** formatViewRender formats args and spacing before an optional child `Block`. */
+  private formatViewRender(node: AST.ViewRender): void {
+    this._spaceBeforeProperty(node, 'args')
+    if (node.block) {
+      this._spaceBeforeProperty(node, 'block')
+    }
   }
 
   /** formatArgsList applies comma spacing between arguments. */
@@ -151,10 +174,10 @@ export default class TaoFormatter extends AbstractFormatter {
     // No formatting for string literals
   }
 
-  /** formatAliasDeclaration formats alias, name, and = spacing. */
-  private formatAliasDeclaration(node: AST.AliasDeclaration): void {
+  /** formatAssignmentDeclaration formats `alias` / `state` and `=` spacing (name uses default CST gaps). */
+  private formatAssignmentDeclaration(node: AST.AssignmentDeclaration): void {
     const f = this.getNodeFormatter(node)
-    f.keyword('alias').append(Formatting.oneSpace())
+    f.keyword(node.type).append(Formatting.oneSpace())
     f.keyword('=').surround(Formatting.oneSpace())
   }
 
