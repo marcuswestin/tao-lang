@@ -32,7 +32,7 @@ function topLevelDeclarationName(stmt: AST.Statement): string | undefined {
   if (AST.isModuleDeclaration(stmt)) {
     return stmt.declaration.name
   }
-  if (AST.isXDeclaration(stmt)) {
+  if (AST.isDeclaration(stmt)) {
     return stmt.name
   }
   return undefined

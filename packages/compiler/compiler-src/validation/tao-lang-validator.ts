@@ -33,7 +33,7 @@ export const validator: langium.ValidationChecks<AST.TaoLangAstType> = {
     }
   }),
 
-  XDeclaration: makeValidater((decl, report) => {
+  Declaration: makeValidater((decl, report) => {
     validateDuplicateIdentifier(decl, report)
   }),
 
@@ -68,9 +68,9 @@ export const validator: langium.ValidationChecks<AST.TaoLangAstType> = {
 /** getBlockStatementContext returns whether `block` is nested under view-like or action-like syntax. */
 function getBlockStatementContext(block: AST.Block): 'view' | 'action' | null {
   const parent = block.$container
-  if (AST.isView(parent) || AST.isViewRender(parent)) {
+  if (AST.isViewDeclaration(parent) || AST.isViewRender(parent)) {
     return 'view'
-  } else if (AST.isAction(parent)) {
+  } else if (AST.isActionDeclaration(parent)) {
     return 'action'
   }
   assertNever(parent)
@@ -154,7 +154,7 @@ function findParameterizedDeclaration(
 ): AST.ViewDeclaration | AST.ActionDeclaration | undefined {
   let current: langium.AstNode | undefined = binding.$container
   while (current) {
-    if (AST.isNodeWithParameters(current)) {
+    if (AST.isBlockDeclaration(current)) {
       return current
     }
     current = current.$container

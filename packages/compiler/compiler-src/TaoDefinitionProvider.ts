@@ -140,9 +140,9 @@ export class TaoDefinitionProvider extends DefaultDefinitionProvider {
     desc: langium.AstNodeDescription,
     name: string,
     targetUriSet: Set<string>,
-  ): desc is langium.AstNodeDescription & { node: AST.ImportableDeclaration } {
+  ): desc is langium.AstNodeDescription & { node: AST.Declaration } {
     return targetUriSet.has(desc.documentUri.toString())
       && desc.name === name
-      && AST.isImportableDeclaration(desc.node)
+      && AST.isDeclaration(desc.node)
   }
 }

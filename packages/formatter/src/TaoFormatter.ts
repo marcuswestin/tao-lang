@@ -34,11 +34,9 @@ export default class TaoFormatter extends AbstractFormatter {
       AppStatement: (n) => this.formatAppStatement(n),
       ViewDeclaration: (n) => this.formatViewDeclaration(n),
       ActionDeclaration: (n) => this.formatActionDeclaration(n),
-      InlineView: (n) => this.formatInlineView(n),
-      InlineAction: (n) => this.formatInlineAction(n),
       ViewRender: (n) => this.formatViewRender(n),
       Block: (n) => this.formatBlock(n),
-      ArgsList: (n) => this.formatArgsList(n),
+      ArgumentList: (n) => this.formatArgumentList(n),
       Argument: (n) => this.formatArgument(n),
       Injection: (n) => this.formatInjection(n),
       ParameterDeclaration: (n) => this.formatParameterDeclaration(n),
@@ -104,16 +102,6 @@ export default class TaoFormatter extends AbstractFormatter {
     this._spaceAfterProperty(node, 'parameterList')
   }
 
-  /** formatInlineView formats parameters; block body is formatted via `Block`. */
-  private formatInlineView(node: AST.InlineView): void {
-    this._spaceAfterProperty(node, 'parameterList')
-  }
-
-  /** formatInlineAction formats parameters; block body is formatted via `Block`. */
-  private formatInlineAction(node: AST.InlineAction): void {
-    this._spaceAfterProperty(node, 'parameterList')
-  }
-
   /** formatModuleDeclaration formats optional visibility and inner declaration. */
   private formatModuleDeclaration(node: AST.ModuleDeclaration): void {
     this._spaceAfterProperty(node, 'visibility')
@@ -133,16 +121,16 @@ export default class TaoFormatter extends AbstractFormatter {
     f.property('op').append(Formatting.oneSpace())
   }
 
-  /** formatViewRender formats args and spacing before an optional child `Block`. */
+  /** formatViewRender formats argument list and spacing before an optional child `Block`. */
   private formatViewRender(node: AST.ViewRender): void {
-    this._spaceBeforeProperty(node, 'args')
+    this._spaceBeforeProperty(node, 'argumentList')
     if (node.block) {
       this._spaceBeforeProperty(node, 'block')
     }
   }
 
-  /** formatArgsList applies comma spacing between arguments. */
-  private formatArgsList(node: AST.ArgsList): void {
+  /** formatArgumentList applies comma spacing between arguments. */
+  private formatArgumentList(node: AST.ArgumentList): void {
     this._spaceBetweenCommaSeperatedItems(node)
   }
 

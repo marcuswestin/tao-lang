@@ -177,7 +177,7 @@ describe('alias statements', () => {
     `)
     const view = doc.statements.second.as_ViewDeclaration
     const render = view.block.statements.second.as_ViewRender
-    const arg = render.args.args.first
+    const arg = render.argumentList.arguments.first
     arg.expect('name').toBe('value')
   })
 
@@ -221,7 +221,7 @@ describe('scope resolution', () => {
     `)
     const view = doc.statements.second.as_ViewDeclaration
     const render = view.block.statements.second.as_ViewRender
-    const arg = render.args.args.first
+    const arg = render.argumentList.arguments.first
     arg.value.as_NamedReference.referenceName.as_AssignmentDeclaration.expect('name').toBe('msg')
   })
 
@@ -234,7 +234,7 @@ describe('scope resolution', () => {
     `)
     const view = doc.statements.second.as_ViewDeclaration
     const render = view.block.statements.first.as_ViewRender
-    const arg = render.args.args.first
+    const arg = render.argumentList.arguments.first
     arg.value.as_NamedReference.referenceName.as_ParameterDeclaration.expect('name').toBe('label')
   })
 
@@ -249,7 +249,8 @@ describe('scope resolution', () => {
     `)
     const view = doc.statements.second.as_ViewDeclaration
     const render = view.block.statements.last.as_ViewRender
-    render.args.args.first.value.as_NamedReference.referenceName.as_AssignmentDeclaration.expect('name').toBe('a')
+    render.argumentList.arguments.first.value.as_NamedReference.referenceName.as_AssignmentDeclaration.expect('name')
+      .toBe('a')
   })
 })
 

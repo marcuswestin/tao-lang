@@ -3,39 +3,44 @@ grammar TaoLang
 entry TaoFile:
     statements += Statement*;
 
+Statement: Declaration | ModuleDeclaration | UseStatement | Injection | ViewRender | StateUpdate;
+
+
 // Shared Types
 ///////////////
 
-type Referenceable = XDeclaration | ParameterDeclaration;
+type Referenceable = Declaration | ParameterDeclaration;
 
-type ScopeRelevantNode = UseStatement | XDeclaration | AppDeclaration | ParameterDeclaration;
+type ScopeRelevantNode = UseStatement | Declaration | AppDeclaration | ParameterDeclaration;
 
 type ViewStatement = ViewRender | Injection | AssignmentDeclaration | BlockDeclaration;
-type TopLevelStatement = XDeclaration | UseStatement | Injection;
+type TopLevelStatement = Declaration | UseStatement | Injection;
 type ActionStatement = StateUpdate | Injection | AssignmentDeclaration | BlockDeclaration;
 
-Statement: XDeclaration | ModuleDeclaration | UseStatement | Injection | ViewRender | StateUpdate;
 
 // Shared Statements
 ////////////////////
+
+Declaration: AppDeclaration | AssignmentDeclaration | BlockDeclaration;
+
+AssignmentType returns string: 'alias' | 'state';
+AssignmentDeclaration:
+    type=AssignmentType name=ID '=' value=Expression;
+
+Block:
+    '{' statements += Statement* '}';
 
 terminal TS_CODE_BLOCK: '```ts' -> '```';
 Injection:
     'inject' isRaw='raw'? tsCodeBlock=TS_CODE_BLOCK;
 
 
-// TODO: Remove this.
-type ImportableDeclaration = XDeclaration;
-
 // Top/File Level Statements
 ////////////////////////////
-
 
 terminal USE_MODULE_PATH: /(@[a-zA-Z0-9._\-]+\/[a-zA-Z0-9._\-\/]+)|([a-zA-Z.][a-zA-Z0-9._\-]*\/[a-zA-Z0-9._\-\/]*)/;
 UseStatement:
     'use' importedNames+=ID (',' importedNames+=ID)* ('from' modulePath=USE_MODULE_PATH)?;
-
-XDeclaration: AppDeclaration | AssignmentDeclaration | BlockDeclaration;
 
 AppDeclaration:
     type='app' name=ID '{' appStatements += AppStatement* '}';
@@ -46,61 +51,55 @@ AppStatement:
 
 DeclarationVisibility returns string: 'file' | 'share' | 'module';
 ModuleDeclaration:
-    visibility=DeclarationVisibility declaration=XDeclaration;
+    visibility=DeclarationVisibility declaration=Declaration;
 
-AssignmentType returns string: 'alias' | 'state';
-AssignmentDeclaration:
-    type=AssignmentType name=ID '=' value=Expression;
+
+// Declarations
+///////////////
 
 BlockDeclaration: ViewDeclaration | ActionDeclaration;
-InlineBlock: InlineView | InlineAction;
-
-type View = ViewDeclaration | InlineView;
-type Action = ActionDeclaration | InlineAction;
 
 ViewDeclaration: type='view' name=ID parameterList=ParameterList? block=Block;
 ActionDeclaration: type='action' name=ID parameterList=ParameterList? block=Block;
 
-InlineView: type='view' parameterList=ParameterList? block=Block;
-InlineAction: type='action' parameterList=ParameterList? block=Block;
 
-
-Block:
-    '{' statements += Statement* '}';
+// View-only statements
+///////////////////////
 
 ViewRender:
-    view=[XDeclaration:ID] args=ArgsList? block=Block?;
+    view=[Declaration:ID] argumentList=ArgumentList? block=Block?;
+
+
+// Action-only statements
+/////////////////////////
 
 StateUpdateOperator returns string: '+=' | '-=' | '=';
 StateUpdate:
     'set' stateRef=[Referenceable:ID] op=StateUpdateOperator value=Expression;
 
+
 // Parameters and Arguments
 ///////////////////////////
-
-type NodeWithParameters = BlockDeclaration; // TODO: Remove this?
 
 ParameterList:
     parameters += ParameterDeclaration (',' parameters += ParameterDeclaration)*;
 
+ParameterType returns string: 'string' | 'number';
 ParameterDeclaration:
-    name=ID ParameterType;
-fragment ParameterType:
-    type='string' | type='number';
+    name=ID type=ParameterType;
 
-ArgsList: // TODO: Rename to ArgumentList? (singular, expanded)
-    args += Argument (',' args += Argument)*;
+ArgumentList: // TODO: Rename to ArgumentList? (singular, expanded)
+    arguments += Argument (',' arguments += Argument)*;
 
 Argument:
     name=ID value=Expression;
-
 
 
 // Value Expressions
 ////////////////////
 
 Expression:
-    StringLiteral | NumberLiteral |  NamedReference | InlineBlock;
+    StringLiteral | NumberLiteral |  NamedReference;
 
 StringLiteral:
     string=STRING;
@@ -124,58 +123,3 @@ terminal NUMBER returns number: /[0-9]+/;
 
 hidden terminal ML_COMMENT: /\/\*[\s\S]*?\*\//;
 hidden terminal SL_COMMENT: /\/\/[^\n\r]*/;
-
-
-
-
-// BaseStatement:
-//     Declaration | Injection;
-
-// Declaration:
-//     AliasDeclaration | ViewDeclaration | ActionDeclaration | StateDeclaration;
-
-// AliasDeclaration:
-//     'alias' name=ID '=' value=Expression;
-
-
-
-// StateDeclaration:
-//     type='state' name=ID '=' value=Expression;
-
-// TopLevelDeclaration:
-//     visibility=TopLevelDeclarationVisibility? declaration=XDeclaration;
-// TopLevelDeclarationVisibility returns string:
-//     'file' | 'share' | 'module'; // Optional; when absent, declaration is module
-
-
-// Views
-////////
-
-// ViewDeclaration:
-//     type='view' name=ID parameterList=ParameterList? '{'
-//         viewStatements += ViewStatement*
-//     '}';
-
-// ViewStatement:
-//     BaseStatement | StateDeclaration | ViewRenderStatement;
-
-// ViewRenderStatement:
-//     view=[ViewDeclaration:ID] args=ArgsList? ('{' viewStatements += ViewStatement* '}')?;
-
-
-// Actions
-//////////
-
-// ActionDeclaration:
-//     type='action' name=ID parameterList=ParameterList? '{'
-//         actionStatements += ActionStatement*
-//     '}';
-
-// ActionStatement:
-//     Injection | StateUpdateStatement;
-
-// StateUpdateStatement:
-//     'set' stateRef=[Referenceable:ID] op=StateUpdateOperator value=Expression;
-
-// StateUpdateOperator returns string:
-//     '+=' | '-=' | '=';

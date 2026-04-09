@@ -155,7 +155,7 @@ export class UseStatementValidator {
         continue
       }
       const node = desc.node
-      if (!AST.isImportableDeclaration(node)) {
+      if (!AST.isDeclaration(node)) {
         continue
       }
       results.push(desc)
@@ -200,7 +200,7 @@ export class UseStatementValidator {
       }
 
       const node = desc.node
-      if (!AST.isImportableDeclaration(node)) {
+      if (!AST.isDeclaration(node)) {
         continue
       }
 
@@ -227,7 +227,7 @@ export class UseStatementValidator {
       }
 
       const node = desc.node
-      if (!AST.isImportableDeclaration(node)) {
+      if (!AST.isDeclaration(node)) {
         continue
       }
 

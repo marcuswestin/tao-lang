@@ -38,7 +38,7 @@ export class TaoScopeComputation extends langium.DefaultScopeComputation {
       const declaration = statement.declaration
       return this.descriptions.createDescription(declaration, declaration.name, document)
     }
-    if (AST.isXDeclaration(statement)) {
+    if (AST.isDeclaration(statement)) {
       return this.descriptions.createDescription(statement, statement.name, document)
     }
     return null

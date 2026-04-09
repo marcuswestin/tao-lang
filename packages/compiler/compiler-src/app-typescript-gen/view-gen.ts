@@ -32,7 +32,7 @@ function compileViewRender(node: AST.ViewRender): Compiled {
   return compileNodePropertyRef(node, 'view', view => {
     Assert(AST.isViewDeclaration(view), 'ViewRender.view must be a ViewDeclaration')
     return compileNode(view)`
-      <${view.name} ${compileArgsListToProps(node.args)}>
+      <${view.name} ${compileArgumentList(node.argumentList)}>
         ${node.block && compileNodeListProperty(node.block, 'statements', compileViewStatement)}
       </${view.name}>`
   })
@@ -53,12 +53,12 @@ function compileViewStatement(statement: AST.Statement): Compiled {
   })
 }
 
-/** compileArgsListToProps emits JSX prop assignments from an args list. */
-function compileArgsListToProps(args?: AST.ArgsList): Compiled {
-  if (!args) {
+/** compileArgumentList emits JSX prop assignments from an argument list. */
+function compileArgumentList(argumentList?: AST.ArgumentList): Compiled {
+  if (!argumentList) {
     return compileNoop()
   }
-  return compileNodeListProperty(args, 'args', argument => {
+  return compileNodeListProperty(argumentList, 'arguments', argument => {
     return compileNode(argument)`
       ${argument.name} = {${compileExpression(argument.value)}}
     `

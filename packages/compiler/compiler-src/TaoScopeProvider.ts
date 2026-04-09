@@ -118,7 +118,7 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
       return true
     }
     // Cross-module: only `share`-marked declarations
-    if (AST.isImportableDeclaration(node) && ASTUtils.isSharedModuleDeclaration(node.$container)) {
+    if (AST.isDeclaration(node) && ASTUtils.isSharedModuleDeclaration(node.$container)) {
       return true
     }
     return false

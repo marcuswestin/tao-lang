@@ -165,7 +165,7 @@ export function createTaoWorkspace(
     TaoFile: validator.TaoFile,
     Block: validator.Block,
     AppDeclaration: validator.AppDeclaration,
-    XDeclaration: validator.XDeclaration,
+    Declaration: validator.Declaration,
     ParameterDeclaration: validator.ParameterDeclaration,
   })
 

@@ -59,7 +59,7 @@ export class RuntimeGenCtx {
       // TaoRuntime.updateState(${stateRef}, ${op}, ${value})
     `
   }
-  Declaration(declaration: AST.XDeclaration): Compiled {
+  Declaration(declaration: AST.Declaration): Compiled {
     if (AST.isAssignmentDeclaration(declaration)) {
       return this.AssignmentDeclaration(declaration)
     } else if (AST.isBlockDeclaration(declaration)) {
@@ -86,8 +86,6 @@ export class RuntimeGenCtx {
       StringLiteral: compileStringLiteral,
       NumberLiteral: compileNumberLiteral,
       NamedReference: compileNamedReference,
-      InlineAction: compileTODO,
-      InlineView: compileTODO,
     })
   }
   // OLD: Save these for now
