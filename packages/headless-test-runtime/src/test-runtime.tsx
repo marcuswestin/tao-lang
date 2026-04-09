@@ -1,4 +1,5 @@
 import type { CompiledTaoScenario, CompiledTaoScenarioAdapter } from '@shared/CompiledTaoScenarios'
+import { sanitizeCompiledScenarioOutputSegment } from '@shared/TaoPaths'
 import * as RNTesting from '@testing-library/react-native'
 import { spawnSync } from 'node:child_process'
 import { resolve as resolvePath } from 'node:path'
@@ -22,6 +23,7 @@ type CompiledAppModule = {
 
 type RenderCompiledAppResult = RNTesting.RenderResult & {
   compiledModule: CompiledAppModule
+  pressVisibleText(text: string): void
 }
 
 const runtimeDir = resolvePath(__dirname, '..')
@@ -35,8 +37,8 @@ export function getHeadlessTestRuntimeDir() {
   return runtimeDir
 }
 
-/** createHeadlessScenarioAdapter builds a `CompiledTaoScenarioAdapter` that compiles `${scenarioDir}/app.tao` into a unique
- * file under `src/_gen-runtime-tests/`, renders via Testing Library, and runs RTL `cleanup` on adapter cleanup. */
+/** createHeadlessScenarioAdapter builds a `CompiledTaoScenarioAdapter` that compiles `${scenarioDir}/app.tao` into the stable
+ * per-scenario path under `src/_gen-runtime-tests/`, renders via Testing Library, and runs RTL `cleanup` on adapter cleanup. */
 export function createHeadlessScenarioAdapter() {
   const adapter: CompiledTaoScenarioAdapter = {
     async compileScenario(
@@ -95,9 +97,13 @@ export function renderCompiledHeadlessTaoApp(outputPath = compiledAppModulePath)
   const compiledModule = loadCompiledAppModule(outputPath)
   const CompiledHeadlessTaoApp = compiledModule.default
 
+  const screen = RNTesting.render(<CompiledHeadlessTaoApp />)
   return {
-    ...RNTesting.render(<CompiledHeadlessTaoApp />),
+    ...screen,
     compiledModule,
+    pressVisibleText(text: string) {
+      RNTesting.fireEvent.press(screen.getByText(text))
+    },
   }
 }
 
@@ -117,8 +123,7 @@ function getCompiledOutputPath(outputFileName?: string) {
 }
 
 function getGeneratedOutputFileName(scenarioName: string) {
-  const sanitized = scenarioName.replace(/[^a-zA-Z0-9]+/g, '-')
-  return `${sanitized}-${new Date().getTime()}/tao-app/app-bootstrap.tsx`
+  return `test-${sanitizeCompiledScenarioOutputSegment(scenarioName)}/tao-app/app-bootstrap.tsx`
 }
 
 function getCompileCommandError(command: ReturnType<typeof spawnSync>) {

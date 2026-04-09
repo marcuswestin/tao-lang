@@ -19,7 +19,11 @@ describe('runtime:', () => {
 
     const result = await TaoSDK_compile({ path: taoPath, runtimeDir })
     expect(result.outputPath).toBeDefined()
-    expect(result.files.some((f: { content: string }) => f.content.includes(needle))).toBe(true)
+    expect(
+      result.files.some((
+        f: { content: { includes: (arg0: string) => { content: string | string[] } } },
+      ): { content: string | string[] } => f.content.includes(needle)),
+    ).toBe(true)
 
     await assertBootstrapRendersNeedle(needle, result.outputPath)
     nodeFs.rmSync(path.dirname(taoPath), { recursive: true })
@@ -27,9 +31,10 @@ describe('runtime:', () => {
 
   test('compile and run with cli', async () => {
     const { needle, runtimeDir, taoPath } = makeNeedleApp()
-    // `just tao` runs `_tao`, which cds via justfile_dir(); cwd may be repo root or a package.
+    // `just tao` runs `_tao`, which does `pushd ../tao-cli`; cwd must be `packages/*` (not repo root).
     const exitCode = await _cmd('just', ['tao', 'compile', taoPath, '--runtime-dir', runtimeDir], {
-      cwd: path.resolve(__dirname, '..'),
+      // cwd: path.resolve(__dirname, '..'), ???
+      cwd: path.join(__dirname, '../../..', 'packages/expo-runtime'),
     })
     expect(exitCode).toBe(0)
     const bootstrapPath = path.resolve(runtimeDir, `app/_gen-tao-compiler/tao-app/app-bootstrap.tsx`)

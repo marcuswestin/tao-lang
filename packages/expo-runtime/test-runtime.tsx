@@ -6,6 +6,7 @@ import { resolve as resolvePath } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import type { ComponentType as CompiledAppComponent } from 'react'
 import type { CompiledTaoScenario, CompiledTaoScenarioAdapter } from '../shared/shared-src/CompiledTaoScenarios'
+import { sanitizeCompiledScenarioOutputSegment } from '../shared/shared-src/TaoPaths'
 
 type CompileOpts = {
   path: string
@@ -20,6 +21,7 @@ type CompileResult = {
 
 type RenderCompiledAppResult = RNTesting.RenderResult & {
   CompiledComponent: CompiledAppComponent
+  pressVisibleText(text: string): void
 }
 
 const runtimeDir = resolvePath(__dirname)
@@ -52,7 +54,7 @@ export function createExpoScenarioAdapter() {
   return adapter
 }
 
-// compileTaoForExpoRuntime Compile a scenario's app.tao into a unique generated Expo module for this test run.
+// compileTaoForExpoRuntime compiles a scenario's app.tao into its expo runtime test output directory.
 function compileTaoForExpoRuntime(opts: CompileOpts): CompileResult {
   const outputPath = resolvePath(runtimeDir, opts.outputFileName)
   const code = `
@@ -78,10 +80,13 @@ function compileTaoForExpoRuntime(opts: CompileOpts): CompileResult {
 function renderCompiledTaoApp(outputPath: string): RenderCompiledAppResult {
   RNTesting.cleanup()
   const CompiledTaoApp = loadCompiledAppModule(outputPath)
-
+  const renderedScreen = RNTesting.render(<CompiledTaoApp />)
   return {
-    ...RNTesting.render(<CompiledTaoApp />),
+    ...renderedScreen,
     CompiledComponent: CompiledTaoApp,
+    pressVisibleText(text: string) {
+      RNTesting.fireEvent.press(renderedScreen.getByText(text))
+    },
   }
 }
 
@@ -93,11 +98,7 @@ function loadCompiledAppModule(outputPath: string): CompiledAppComponent {
   return result.default
 }
 
-// getGeneratedOutputFileName Create per-test output files so shared scenarios do not collide in parallel or cached runs.
+// getGeneratedOutputFileName returns the stable relative output path for a scenario under _gen-runtime-tests.
 function getGeneratedOutputFileName(baseName: string) {
-  return `test-${sanitizePathSegment(baseName)}-${Math.random().toString(36).slice(2, 12)}/tao-app/app-bootstrap.tsx`
-}
-
-function sanitizePathSegment(value: string) {
-  return value.replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-+|-+$/g, '').toLowerCase()
+  return `test-${sanitizeCompiledScenarioOutputSegment(baseName)}/tao-app/app-bootstrap.tsx`
 }
