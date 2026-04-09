@@ -2,6 +2,31 @@ import { describe, test } from 'bun:test'
 import { testFormatter } from './formatter-test-utils'
 
 describe('Format Injections', () => {
+  testFormatter('empty injection')
+    .format(`
+      inject \`\`\`ts
+      \`\`\`
+    `)
+    .equals(`
+      inject \`\`\`ts
+      \`\`\`
+    `)
+  testFormatter('multiple injections')
+    .format(`
+      inject \`\`\`ts
+      \`\`\`
+      inject \`\`\`ts
+          console.log(1)
+      \`\`\`
+    `)
+    .equals(`
+      inject \`\`\`ts
+      \`\`\`
+
+      inject \`\`\`ts
+          console.log(1)
+      \`\`\`
+    `)
   testFormatter('injection formatting')
     .format(`
       view MyView {inject \`\`\`ts

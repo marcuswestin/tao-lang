@@ -11,11 +11,11 @@ export function shouldFormat(code: string, expected: string) {
 
 export function testFormatter(feature: string) {
   return {
-    format(code: string) {
+    format(code: string, numberOfTimes: number = 1) {
       return {
         equals(expected: string) {
           test(feature, async () => {
-            await testFormatCode(code, expected)
+            await testFormatCode(code, expected, numberOfTimes)
           })
         },
       }
@@ -23,8 +23,11 @@ export function testFormatter(feature: string) {
   }
 }
 
-export async function testFormatCode(code: string, expectedFormattedCode: string) {
-  const rawFormattedCode = await formatCode(code)
+export async function testFormatCode(code: string, expectedFormattedCode: string, numberOfTimes: number = 1) {
+  let rawFormattedCode = await formatCode(code)
+  for (let i = 0; i < numberOfTimes; i++) {
+    rawFormattedCode = await formatCode(rawFormattedCode)
+  }
 
   // TODO: Ensuring TaoFile ends in Newline is not working. Remove trimEnd() from both and Fix this!
   const formattedCode = dedent(rawFormattedCode).trimEnd()
