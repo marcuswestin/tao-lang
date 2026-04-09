@@ -1,5 +1,3 @@
 {
-  "assertions": [
-    { "type": "textVisible", "text": "Hello from shared scenario" }
-  ]
+  "steps": [{ "assertVisibleText": "Hello from shared scenario" }]
 }

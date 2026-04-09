@@ -1,5 +1,3 @@
 {
-  "assertions": [
-    { "type": "textVisible", "text": "Hello Kitchen Sink" }
-  ]
+  "steps": [{ "assertVisibleText": "Hello Kitchen Sink" }]
 }

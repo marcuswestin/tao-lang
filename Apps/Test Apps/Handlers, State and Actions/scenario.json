@@ -1,0 +1,8 @@
+{
+  "skip": false,
+  "steps": [
+    { "assertVisibleText": "1" },
+    { "pressVisibleText": "1" },
+    { "assertVisibleText": "1" }
+  ]
+}
