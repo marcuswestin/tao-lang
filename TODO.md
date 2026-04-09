@@ -2,18 +2,87 @@
 
 Tao Lang TODOs.
 
-## Tools next:
-
-- [ ] Conductor
-- [ ] Whispr flow
-- [ ] Clawdbot
+Also see Roadmap.
 
 ## STACK
 
-Next tasks, in order:
+### Recently DONE:
+
+- [x] Fix extension. Not fully working anymore.
+
+### Next tasks:
+
+- [ ] Organize compiler-src - it's unorganized.
+- [ ] Simplify grammar
+  - [ ] Collapse all blocks into a single type: Block
+    - [ ] Formatting: allow consecutive lines of same type have no space between them.
+- Have ALL Node imports through a single shared import. Path, etc
+- [ ] Fix just agents test with a pattern flag passed in
+- [ ] Move to multiple compiled files, and enable exports
+- [ ] Simplify grammar. Collapse different types some: E.g AST.isBlock, AST.isDeclaration
+- [ ] Add automated test for tapping buttons with actions.
+- [ ] The two test-runtime*.tsx files are almost identical. Consolidate them.
+- [ ] Simplify compiler test harness file ..
+- [ ] Make all declarations a single type: Declaration
+  - [x] Handle exports by creating an exports object for each top level declaration.
+- [ ] Consider requiring parameter lists to start with a comma.
+- [ ] Require reference names to be uppercase.
+- [ ] Actions
+  - For each of: Declaration, Registration; Statements: State Update, Action invocation:
+    - [ ] Write Parser tests: AI
+    - [ ] Implement parser tests: AI
+  - For each again:
+    - [ ] Write e2e tests: AI
+    - [ ] Implement e2e tests: Together
+  - Write e2e tests
+    - [ ] Implement scenario actions
+      - [ ] View Keys
+      - [ ] Dev System for accessing local State?
+        - Could be done with hidden dev-only view renders inside a view when a state is declared for accessing it.
+    - [ ] Parser
+    - [ ] Validator
+    - [ ] Formatter
+    - [ ]
+  - [ ] Declaration
+
+#### Unordered:
+
+- [ ] Consolidate README and TODO.md.
+- [ ] Clean up headless-test-runtime slop.
+
+#### In Order:
+
+### DONE Stack
+
+- [x] Start app to implement against (Tao Studio)
+- [x] App and View declaration
+- [x] Validation
+- [x] Scoping
+
+## TODO Categories:
 
 ### IMPLEMENTATION TASKS
 
+- [ ] Write the FULL Language Design, and FULL Specification.
+  - [ ] FIRST of all: Write a tao script that demonstrates all CURRENT working features. That's v0.1
+  - [ ] Create the roadmap by writing out small example apps with features added in order.
+    - -> Start with a tao program that demonstrates all the v0.2 features.
+      - -> Then derive a spec from that.
+      - -> Then create a roadmap for that.
+      - -> Then start checking off the milestones one by one.
+    - -> Then a v0.3 app.
+      - -> ...
+- [ ] Start dividing up @Language Spec - Syntax Semantics.md into smaller files.
+  - (These files might be used to create LLM skills.)
+  - (Probably want a folder hierarchy of some sort, even if loose.)
+- [ ] String operations
+  - [ ] adjacency concatenation
+    - "Year is " birthYear + age " today."
+    - [ ] Requires EITHER newline-delimited statements; OR view render always ends with "{ .. }" AND the only non-keyword prefixed view body statement type is a view render AND keywords are reserved and cannot be alias names.
+    - Without `{}` termination: `Text "hi " name \n Button title "click me" {}` becomes ambiguous. I.e is it a concatenation of "hi " + name + Button + ..., or "hi " + name; Button render; ...?
+  - [ ] interpolation
+    - "Hello, {name}!"
+    - "A block starts with \{ and {"ends"} with \}."
 - [x] Fix just check
 - [x] Merge shared and shared-tools
 - [x] Formatter
@@ -58,18 +127,22 @@ Next tasks, in order:
 - [x] Rename Agents.md to AGENTS.md
 - [x] Update OXLINT_CMD: `OXLINT_CMD := "oxlint --ignore-path .gitignore --type-aware"`
 
-#### Parser
+### Parser
 
 - [ ] Flesh out Validation
 - [x] Standard Library
 - [ ] Type System
 
-#### Language
+### Language
 
 - [x] Alias
 - [ ] State
 
-#### Improve Dev Environment
+### Improve Dev Environment
+
+- [ ] Non e2e Testing: Compiler
+  - [ ] Compiler should be tested on a per-statement basis.
+    - Could be compiled, then run in isolation, with a mock runtime.
 
 First:
 
@@ -102,24 +175,25 @@ First:
 - [ ] Create test watch runner for all test suites
 - [ ] Split up Justfile into smaller files
 
-- Check other LLM editor envs
+### Dev Tooling to check out, LLM editor environments, dev productivity for our repo, etc
+
+- Editors to review:
   - [ ] Try google antigravity
   - [ ] Try Gemini code assist
   - [ ] Try gemini cli
   - [ ] Try Claude code direct
   - [ ] Try Codex code direct
 
-Then:
+### Tools to try next
 
-- [ ] Start app to implement against (Tao Studio)
-- [ ] App and View declaration
-- [ ] Validation
-- [ ] Scoping
+- [ ] Conductor
+- [ ] Whispr flow
+- [ ] Clawdbot
 
-#### Start stubbing out Docs
+### Start stubbing out Docs
 
-- [ ] Create Docs with explanation for Tao, and language design
+- [x] Create Docs with explanation for Tao, and language design
 
-#### Fixes
+### Fixes
 
-- [ ] Describe all package justfile commands with a comment
+- [x] Describe all package justfile commands with a comment
