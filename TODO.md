@@ -20,7 +20,7 @@ Also see Roadmap.
   - [x] Handle exports by creating an exports object for each top level declaration.
 - [x] Write e2e tests
   - [x] Implement scenario actions
-- [ ] Move all compilation to runtime-gen
+- [x] Move all compilation to runtime-gen
   - [ ] Move use statement handling to RuntimeGen class: returns map of output file paths to compiled code for each.
 - [ ] Re-implement actions
   - [ ] Add automated test for tapping buttons with actions.
