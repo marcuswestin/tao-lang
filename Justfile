@@ -81,7 +81,7 @@ fmt: _fmt
 fix: _fix
 
 # Check all code: lint, typecheck, etc.
-check: test _check
+check: _check
 
 # Lint all code
 lint: _lint
@@ -124,6 +124,9 @@ clean-all: clean
 
 compiler *ARGS:
     cd {{ justfile_dir() }}/packages/compiler && just {{ ARGS }}
+
+formatter *ARGS:
+    cd {{ justfile_dir() }}/packages/formatter && just {{ ARGS }}
 
 expo-runtime *ARGS:
     cd {{ justfile_dir() }}/packages/expo-runtime && just {{ ARGS }}

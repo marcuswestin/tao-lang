@@ -25,6 +25,7 @@ _watch_all_tests *PATTERNS:
             "headless runtime" "cd packages/headless-test-runtime && just watch-tests {{ PATTERNS }}" \
             "extension" "cd packages/ide-extension && bun test --watch --silent --reporter=dot {{ PATTERNS }}" \
             "runtime" "cd packages/expo-runtime && just watch-tests {{ PATTERNS }}" \
+            "test apps" "just _watch_test_apps {{ PATTERNS }}" \
             "q Exit" "just _r_reloead_q_quit" || break;
     done
 
@@ -54,9 +55,16 @@ _watch_grammar:
     # Watch grammar file and regenerate compiler + IDE syntax on change
     watchexec --restart --watch=packages/parser/tao-grammar.langium -- 'just gen'
 
-_watch_kitchen_sink_build APP_PATH="./Apps/Test Apps/Kitchen Sink/app.tao":
+_watch_test_apps:
+    watchexec --restart --watch='Apps/Test Apps/' -- 'just gen'
+
+DEV_APP_PATH := "./Apps/Test Apps/Handlers, State and Actions/app.tao"
+
+# DEV_APP_PATH := "./Apps/Test Apps/Kitchen Sink/app.tao"
+
+_watch_kitchen_sink_build:
     cd packages/tao-cli && bun run  --watch --no-clear-screen \
-        ./tao-cli.ts compile "`pwd`/../../{{ APP_PATH }}" \
+        ./tao-cli.ts compile "`pwd`/../../{{ DEV_APP_PATH }}" \
             --runtime-dir "../expo-runtime" \
             --std-lib-root "../tao-std-lib" \
             --verbose --watch

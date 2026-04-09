@@ -19,8 +19,8 @@ _unstage_changes:
 _prep_commit:
     echo "\n> Clean build artifacts..." && just clean
     echo "> Build everything..." && just build
-    echo "> Run pre-commit checks..." && just check
     echo "> Run code tests..." && just test-all
+    echo "> Run pre-commit checks..." && just check
     echo "\n> Pre-commit checks complete. Ready to commit.\n"
 
 _post_commit_unstash:
