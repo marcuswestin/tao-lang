@@ -122,7 +122,7 @@ async function checkUserInputs(opts: TaoSDK_compileOpts) {
   }
   const packageJson = readJsonFile(packageJsonPath)
   const runtimeManifest = getTaoRuntimeManifest(packageJson)
-  if (runtimeManifest === undefined) {
+  if (!runtimeManifest) {
     throwUserInputRejectionError(`Runtime path is not a tao runtime: ${runtimeDir}`)
   }
   return getRuntimeOutputPath(runtimeDir, runtimeManifest, opts.outputFileName)
