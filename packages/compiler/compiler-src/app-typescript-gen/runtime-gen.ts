@@ -56,17 +56,23 @@ class RuntimeGen {
   Expression(expression: AST.Expression): Compiled {
     return switchType_Exhaustive(expression, {
       StringLiteral: (node) => {
-        return compileNode(node)`${JSON.stringify(node.string)}`
+        return compileNode(node)`
+          TaoRuntime.StringLiteral(${JSON.stringify(node.string)})
+        `
       },
       NumberLiteral: (node) => {
-        return compileNode(node)`${JSON.stringify(node.number)}`
+        return compileNode(node)`
+          TaoRuntime.NumberLiteral(${JSON.stringify(node.number)})
+        `
       },
       NamedReference: (node) => {
         // Prefer the linked declaration’s name when the reference is resolved; fall back to the
         // reference token text when `ref` is missing so codegen does not throw on unresolved refs
         // (partial workspace, broken files, or pre-scope-computation runs).
         const id = node.referenceName.ref?.name ?? node.referenceName.$refText
-        return compileNode(node)`${id}`
+        return compileNode(node)`
+          TaoRuntime.useNamedReference(${id})
+        `
       },
     })
   }
@@ -82,11 +88,11 @@ class RuntimeGen {
   }
 
   AliasDeclaration(declaration: AST.AssignmentDeclaration): Compiled {
-    // TODO: const ${name} = new TaoRuntime.${declaration.$type}_Constructor(${value});
+    // TODO: const ${name} = TaoRuntime.${declaration.$type}_Constructor(${value});
     const name = compileRefName(declaration)
     const value = this.Expression(declaration.value)
     return compileNode(declaration)`
-      const ${name} = ${value};
+      const ${name} = TaoRuntime.Alias(${value});
     `
   }
 
@@ -137,19 +143,20 @@ class RuntimeGen {
   //////////
 
   ActionDeclaration(declaration: AST.ActionDeclaration): Compiled {
+    const parameterList = compileParameterList(declaration.parameterList)
+    const block = this.Block(declaration.block)
     return compileNode(declaration)`
-      function ${declaration.name}(${compileParameterList(declaration.parameterList)}) {
-        ${this.Block(declaration.block)}
-      }
+      const ${declaration.name} = TaoRuntime.Action(function ${declaration.name}(${parameterList}) {
+        ${block}
+      })
     `
   }
 
   StateDeclaration(declaration: AST.AssignmentDeclaration): Compiled {
-    // TODO: const ${name} = new TaoRuntime.${declaration.$type}_Constructor(${value});
     const name = compileRefName(declaration)
     const value = this.Expression(declaration.value)
     return compileNode(declaration)`
-      const ${name} = ${value};
+      const ${name} = TaoRuntime.useState(${value});
     `
   }
 
@@ -158,7 +165,7 @@ class RuntimeGen {
     const op = compileNodeProperty(update, 'op')
     const value = this.Expression(update.value)
     return compileNode(update)`
-      // TaoRuntime.updateState(${stateRef}, ${op}, ${value})
+      TaoRuntime.updateState(${stateRef}, '${op}', ${value})
     `
   }
 

@@ -1,4 +1,6 @@
 import { Assert } from '@shared/TaoErrors'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { getErrorAppString } from './app-typescript-gen/app-gen-error'
 import { generateTypescriptReactNativeApp } from './app-typescript-gen/app-gen-main'
 import { TaoErrorReport } from './parse-errors'
@@ -53,6 +55,10 @@ export async function compileTao(opts: CompileOpts): Promise<CompileResult> {
   files.push({
     relativePath: generated.bootstrapRelativePath,
     content: langiumGen.toStringAndTrace(generated.bootstrapNode).text,
+  })
+  files.push({
+    relativePath: 'use/@tao/tao-runtime.ts',
+    content: readFileSync(join(__dirname, '../../tao-std-lib/tao/tao-runtime.ts'), 'utf8'),
   })
   return {
     ok: true,

@@ -33,6 +33,8 @@ function compileOneTaoFileModule(
   result.append(compileNode(taoFile)`
     // @ts-nocheck
     import * as RN from 'react-native'
+    import { TaoRuntime } from '../use/@tao/tao-runtime.ts'
+
     ${importHeader}// ${taoFile.$document!.uri}
   `)
   const body = compileTaoFile(taoFile)
