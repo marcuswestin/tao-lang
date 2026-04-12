@@ -19,7 +19,7 @@
 ## Misc Instructions:
 
 - **NEVER** delete files without asking.
-- **ALWAYS** run `fix` and `prep-commit` before committing, unless explicitly instructed not to.
+- **Git / commits:** follow `.cursor/skills/tao-git-workflow/SKILL.md` (attach when committing). In short: run `./just-agents fix` and `./just-agents prep-commit` before landing work unless the user opts out.
 - **ALWAYS** use the return type of an invoked function (either implicitly or explicitly) rather than redeclaring an identical type. Don't: `type AType = { ... }; let foo: AType = fn();`, Do: `let foo = fn();`
 - _NEVER_ use imports from generated files in our main source code.
 
@@ -52,6 +52,28 @@ Agent instructions:
 - `AGENTS.md` - Agent instructions
 - `just-agents` - Agent command runner (`./just-agents <command> <args>`)
 - `just-agents.Justfile` - Agent commands
+
+## Cursor: rules, commands, skills
+
+**Authoritative paths** (edit these when improving agent guidance):
+
+| Area                  | Location                                          | Notes                                                                                                   |
+| --------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Core agent text       | `AGENTS.md` (this file), `CLAUDE.md`              | Stacked in Cursor; keep commands/testing here.                                                          |
+| Enforced command gate | `.cursor/rules/running-commands.mdc`              | `alwaysApply: true` — keep tiny; duplicate only what must never be missed.                              |
+| Other Cursor rules    | `.cursor/rules/*.mdc`, `.cursor/rules/**/RULE.md` | Usually `alwaysApply: false` + `globs` so they load when relevant files are open.                       |
+| Slash commands        | `.cursor/commands/*.md`                           | Optional; repo workflows live in **skills** under `.cursor/skills/`.                                    |
+| Skills                | `.cursor/skills/**/SKILL.md`                      | User-attached or explicitly referenced; not auto-loaded for every message unless your client pins them. |
+| Hooks                 | `.cursor/hooks.json`                              | Repo automation around agent/IDE events.                                                                |
+| Human runner          | `Justfile`                                        | `just` recipes for people; agents use `./just-agents` only.                                             |
+
+**Project skills (attach when relevant):** `tao-git-workflow`, `create-spec-file`, `create-project`, `implement-from-spec`, `implement-todo-batch`, `prep-feature-branch-merge`, `plan-next-from-todo`, `check-for-improvements`.
+
+**What tends to sit in context vs on-demand**
+
+- **Every relevant turn:** `running-commands.mdc` (`alwaysApply: true`), plus project instructions that include `AGENTS.md` / `CLAUDE.md` when the editor loads them.
+- **When editing matching paths:** rules with `globs` (e.g. Bun, compiler AST, formatter).
+- **On demand:** skills you attach in chat (e.g. `tao-git-workflow`, `implement-from-spec`), optional `.cursor/commands/*`, MCP tools you call.
 
 Misc configs and artifacts:
 

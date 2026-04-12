@@ -13,3 +13,5 @@ alwaysApply: true
 - **Justfile Documentation:**
     - For a succinct summary, first see: https://cheatography.com/linux-china/cheat-sheets/justfile/
     - **If** you need more details, see:: https://just.systems/man/en/
+
+Full package layout, testing commands, and Cursor file map: **`AGENTS.md`** (section *Cursor: rules, commands, skills*).
