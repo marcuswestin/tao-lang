@@ -1,9 +1,4 @@
-import "./packages/shared/just/all-imports.just"
-
-# Settings for the agent justfile
-# - `quiet` -> Don't print each command as it's executed.
-# - `shell` -> recipe step command: zsh, exit on error, error on unset variable, fail on pipefail
-# - `dotenv-load` -> Load environment variables from .env
+import "./packages/shared/just/_shared-vars.just"
 
 MAIN_JUSTFILE := "--justfile Justfile"
 AGENT_JUSTFILE := "--justfile just-agents.Justfile"
@@ -31,17 +26,15 @@ fix:
 
 # Run full battery of checks and builds to prepare for commit.
 prep-commit:
-    echo 'Running ./just-agents prep-commit...\n'
     just {{ MAIN_JUSTFILE }} prep-commit
-    echo '\nPrep-commit complete!\n'
 
-# Checks: Run tests - optionally specify which `TEST_NAMES_PATTERN` to filter test with (e.g. `test "formatter"`, test `"validation|parser"`)
-test *TEST_NAMES_PATTERN:
-    just {{ MAIN_JUSTFILE }} test "{{ TEST_NAMES_PATTERN }}"
+# Checks: Run tests. Optionally specify which tests to run by a filter: `test "compile"`, test `"validation"`
+test *NAME:
+    just {{ MAIN_JUSTFILE }} test '{{ NAME }}'
 
 # Test all packages, including slow ones
-test-all:
-    just {{ MAIN_JUSTFILE }} test-all
+test-all *NAME:
+    just {{ MAIN_JUSTFILE }} test-all '{{ NAME }}'
 
 # Checks: Lint all code
 lint:
@@ -67,8 +60,34 @@ clean:
 expo-runtime *ARGS:
     just {{ MAIN_JUSTFILE }} expo-runtime {{ ARGS }}
 
+compiler *ARGS:
+    just {{ MAIN_JUSTFILE }} compiler {{ ARGS }}
+
+headless-test-runtime *ARGS:
+    just {{ MAIN_JUSTFILE }} headless-test-runtime {{ ARGS }}
+
+ide-extension *ARGS:
+    just {{ MAIN_JUSTFILE }} ide-extension {{ ARGS }}
+
+shared *ARGS:
+    just {{ MAIN_JUSTFILE }} shared {{ ARGS }}
+
+cli *ARGS:
+    just {{ MAIN_JUSTFILE }} cli {{ ARGS }}
+
+tao *ARGS:
+    just {{ MAIN_JUSTFILE }} tao {{ ARGS }}
+
 # --- Dangerous git (raw `git` passthrough) ---
-# **NEVER** run without explicit user merge instruction; see `.cursor/skills/tao-git-workflow/SKILL.md`.
+#
+# **NEVER** run `./just-agents git-dangerously …` for **fetch, checkout, pull, merge, push, rebase**, or other **merge/remotes** work unless the user **explicitly** instructed the agent to perform a **merge** (or an equally explicit one-off like “push this branch to origin after merge”).
+# **`git-dangerously commit`:** only under **`tao-git-workflow`** fast-batch rules (run `./just-agents prep-commit` once first); otherwise use `./just-agents shell git commit` so prep-commit runs.
+# Normal read-only / safe git: `./just-agents shell git log|status|diff|add|commit` only. This recipe bypasses the shell git allowlist.
+#
+# After merging `main` into the feature branch: run `./just-agents prep-commit` until green before squash, push, or PR steps (see `tao-git-workflow`).
+# Typical local squash onto `main` (prep-commit green on feature after main integration, then on squashed index): `./just-agents git-dangerously fetch origin` → `./just-agents git-dangerously checkout main` → `./just-agents git-dangerously pull origin main` → `./just-agents git-dangerously merge --squash <feature-branch>` → resolve if needed → `./just-agents prep-commit` → stage → `./just-agents git-dangerously commit …` or `shell git commit` → `./just-agents git-dangerously push origin main` (adjust names to match the repo).
+
+# git-dangerously forwards all arguments to `git` (subcommand + flags + operands). Requires at least one argument (the git subcommand).
 [positional-arguments]
 git-dangerously *GIT_ARGS:
     #!{{ ZSH_INIT }}

@@ -11,7 +11,8 @@ export default function extensivelyFormatInjectionBlocks(
   // Re-indent injection blocks
   const originalText = document.textDocument.getText()
   const firstFormattedText = applyEdits(originalText, edits)
-  const reFormattedText = reindentInjectionBlocks(firstFormattedText, params.options.tabSize)
+  const tabSize = params.options?.tabSize ?? 4
+  const reFormattedText = reindentInjectionBlocks(firstFormattedText, tabSize)
 
   // If nothing changed, return original edits
   if (reFormattedText === firstFormattedText) {
@@ -62,9 +63,12 @@ function applyEdits(text: string, edits: TextEdit[]): string {
 /** reindentInjectionBlocks normalizes inject fence indentation relative to the inject keyword.
  * - Deepest content line sits one tab under inject; closing fence aligns with inject. */
 function reindentInjectionBlocks(code: string, tabSize: number): string {
+  code = code.replace(/\r\n/g, '\n')
   // Match inject blocks with either ``` or ''' markers
-  // Capture: indent, opening marker (``` or '''), content, closing marker
-  const injectPattern = /^(\s*)inject\s+(```\w*|'''\w*)\n([\s\S]*?)\n(\s*)(```|''')/gm
+  // Capture: indent, opening marker, content lines (each ends with \n), spaces before closing fence, closing fence
+  // Content uses (?:.*\n)*? so the closing ``` may sit on the line right after ```ts (no blank line required).
+  // Use [ \t]* for indents — (\s*) would treat a blank line before `inject` as part of baseIndent (\\n + spaces).
+  const injectPattern = /^([ \t]*)inject\s+(```\w*|'''\w*)\n((?:.*\n)*?)([ \t]*)(```|''')/gm
 
   return code.replace(
     injectPattern,
@@ -75,8 +79,16 @@ function reindentInjectionBlocks(code: string, tabSize: number): string {
       // Determine which marker type we're using
       const markerType = (openMarker as string).startsWith("'''") ? "'''" : '```'
 
-      // Split content into lines
-      const contentLines = (content as string).split('\n')
+      // Split content into lines; trim leading/trailing newlines so statement spacing between injections
+      // is not mistaken for blank lines inside the fence.
+      const body = (content as string).replace(/^\n+/, '').replace(/\n+$/, '')
+      const contentLines = body.split('\n').map((l: string) => l.replace(/^\n+/, ''))
+      while (contentLines.length > 0 && contentLines[0]!.trim() === '') {
+        contentLines.shift()
+      }
+      while (contentLines.length > 0 && contentLines[contentLines.length - 1]!.trim() === '') {
+        contentLines.pop()
+      }
 
       // Find minimum indent of non-empty lines
       const nonEmptyLines = contentLines.filter((l: string) => l.trim().length > 0)
@@ -85,9 +97,13 @@ function reindentInjectionBlocks(code: string, tabSize: number): string {
         return `${baseIndent}inject ${openMarker}\n${baseIndent}${markerType}`
       }
 
-      const minIndent = Math.min(
-        ...nonEmptyLines.map((l: string) => l.match(/^\s*/)?.[0].length ?? 0),
-      )
+      /** leadingSpaceLen returns the width of leading spaces/tabs only (not newlines). */
+      const leadingSpaceLen = (line: string): number => {
+        const m = line.match(/^[ \t]*/)
+        return m?.[0].length ?? 0
+      }
+
+      const minIndent = Math.min(...nonEmptyLines.map(leadingSpaceLen))
 
       // Re-indent each line: strip minIndent, add contentIndent
       const reindentedLines = contentLines.map((line: string) => {
@@ -96,6 +112,12 @@ function reindentInjectionBlocks(code: string, tabSize: number): string {
         }
         return contentIndent + line.slice(minIndent)
       })
+      while (reindentedLines.length > 0 && reindentedLines[0] === '') {
+        reindentedLines.shift()
+      }
+      while (reindentedLines.length > 0 && reindentedLines[reindentedLines.length - 1] === '') {
+        reindentedLines.pop()
+      }
 
       return `${baseIndent}inject ${openMarker}\n${reindentedLines.join('\n')}\n${baseIndent}${markerType}`
     },

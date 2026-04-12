@@ -5,25 +5,24 @@ build: _deps
     # It's a hack, and I'd like to make it cleaner.
     just cli build-lib {{ justfile_directory() }}/_gen-tao-lib
 
-watch: _deps
+watch-lib: _deps
     just cli watch-lib {{ justfile_directory() }}/_gen-tao-lib
 
 release-prep: _deps build test
     npx expo prebuild
 
 run: _deps
-    bunx expo start --web --ios
+    BROWSER="none" bunx expo start --web --ios
 
 JEST_ARGS := "--detectOpenHandles --watchman=false"
 JEST_WATCH_ARGS := JEST_ARGS + " --watch --silent --reporter=dot"
 
 [no-quiet]
-test *FLAGS_AND_PATTERNS: _deps build
-    bunx jest {{ JEST_ARGS }} -t {{ FLAGS_AND_PATTERNS }}
+test *FILTER: _deps build
+    bunx jest {{ JEST_ARGS }} -t {{ FILTER }}
 
-
-watch-tests *FLAGS_AND_PATTERNS:
-    bunx jest {{ JEST_WATCH_ARGS }} -t {{ FLAGS_AND_PATTERNS }}
+watch *FILTER:
+    bunx jest {{ JEST_WATCH_ARGS }} -t {{ FILTER }}
 
 _deps:
     bun install

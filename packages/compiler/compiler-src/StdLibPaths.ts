@@ -1,13 +1,14 @@
-import { normalizeModulePath } from './Paths'
+import { Assert } from '@shared/TaoErrors'
+import { isTaoModuleImport, normalizeModulePath } from './ModulePath'
 
-const STD_LIB_PREFIX = 'tao/'
-
-/** isStdLibImport returns true when the module path starts with the tao/ std-lib prefix. */
+/** isStdLibImport returns true when the module path is the built-in Tao standard library (`@tao/...`). */
 export function isStdLibImport(modulePath: string): boolean {
-  return modulePath.startsWith(STD_LIB_PREFIX)
+  return isTaoModuleImport(modulePath)
 }
 
-/** resolveStdLibModuleDirectory returns the filesystem directory for a tao/... module under stdLibRoot. */
+/** resolveStdLibModuleDirectory returns the filesystem directory for a std-lib module path under stdLibRoot
+ * (`@tao/ui` → `<stdLibRoot>/tao/ui`, matching on-disk layout under `tao-std-lib`). */
 export function resolveStdLibModuleDirectory(modulePath: string, stdLibRoot: string): string {
-  return normalizeModulePath(stdLibRoot, modulePath)
+  Assert(isStdLibImport(modulePath), 'modulePath is not a std-lib import', { modulePath })
+  return normalizeModulePath(stdLibRoot, modulePath.slice('@'.length))
 }

@@ -1,4 +1,5 @@
 import { Log, setLogTransport } from '@shared/Log.js'
+import type { TaoError } from '@shared/TaoErrors.js'
 import * as process from 'node:process'
 import * as vscode from 'vscode'
 import type { LanguageClientOptions, ServerOptions } from 'vscode-languageclient/node.js'
@@ -25,7 +26,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       info,
       warn,
       error: trace,
-      taoError(error, ...args) {
+      taoError(error: TaoError, ...args: unknown[]) {
         err(error.getLogMessage(), ...args)
       },
       trace,

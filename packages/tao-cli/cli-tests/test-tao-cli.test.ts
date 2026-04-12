@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test'
-import { resolve as resolvePath } from 'node:path'
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join, resolve as resolvePath } from 'node:path'
 import { TaoSDK_compile } from '../cli-src/tao-cli-main'
 
 describe('cli:', () => {
@@ -7,16 +9,22 @@ describe('cli:', () => {
 
   test('compile and run with cli', async () => {
     const { code, needle } = getRandomUI()
-    const res = await TaoSDK_compile({ code, runtimeDir: resolvePath(__dirname, '../../expo-runtime/') })
-    expect(res.result).toBeDefined()
-    expect(res.result?.code).toContain(needle)
+    const dir = mkdtempSync(join(tmpdir(), 'tao-cli-test-'))
+    try {
+      const taoPath = join(dir, 'app.tao')
+      writeFileSync(taoPath, code)
+      const res = await TaoSDK_compile({ path: taoPath, runtimeDir: resolvePath(__dirname, '../../expo-runtime/') })
+      expect(res.files.some(f => f.text.includes(needle))).toBe(true)
+    } finally {
+      rmSync(dir, { recursive: true })
+    }
   })
 
   test('compile file with use statement', async () => {
     const path = resolvePath(__dirname, '../../../Apps/Test Apps/Kitchen Sink/app.tao')
     const stdLibRoot = resolvePath(__dirname, '../../../packages/tao-std-lib')
     const res = await TaoSDK_compile({ path, runtimeDir: resolvePath(__dirname, '../../expo-runtime/'), stdLibRoot })
-    expect(res.result).toBeDefined()
+    expect(res.files.length).toBeGreaterThan(0)
   })
 })
 

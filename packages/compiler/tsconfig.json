@@ -3,6 +3,7 @@
   "compilerOptions": {
     "module": "ESNext",
     "composite": true,
+    "noUnusedLocals": true,
     "rootDir": "..",
     "emitDeclarationOnly": true,
     "outDir": "../../.builds/ts-packages/@tao-compiler"

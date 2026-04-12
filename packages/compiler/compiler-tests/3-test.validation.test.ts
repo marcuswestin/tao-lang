@@ -1,5 +1,12 @@
-// import { wrap } from './test-utils/AST-Wrapper'
-import { describe, expect, parseTaoFully, test } from './test-utils/test-harness'
+import { validationMessages } from '@compiler/validation/tao-lang-validator'
+import {
+  describe,
+  expect,
+  parseASTWithErrors,
+  parseMultipleFiles,
+  parseTaoFully,
+  test,
+} from './test-utils/test-harness'
 
 describe('parse:', () => {
   test('stub test', () => expect(true).toBe(true))
@@ -15,46 +22,153 @@ describe('parse:', () => {
     `
     const result = await parseTaoFully(code)
     expect(result).toBeDefined()
-    result.topLevelStatements.first.as_TopLevelDeclaration.declaration.as_AppDeclaration.expect('name').toBe(
-      'KitchenSink',
-    )
+    result.statements.first.as_AppDeclaration.expect('name').toBe('KitchenSink')
   })
 
-  // test('no newlines in code', async () => {
-  //   const document = await parseTaoString(`app MyApp { ui MyView } view MyView { }`)
-  //   expect(document).toBeDefined()
-  // })
+  test('action nested in a view validates', async () => {
+    await parseTaoFully(`
+      view V {
+        action A {
+          inject \`\`\`ts void 0 \`\`\`
+        }
+      }
+    `)
+  })
 
-  // test('basic app', async () => {
-  //   const document = await parseTaoString(`
-  //       app MyApp {
-  //           ui MyView
-  //       }
-  //       view MyView {
-  //       }
-  //       view Text {}
-  //   `)
+  test('duplicate parameter and alias name in same view fails validation', async () => {
+    const report = await parseASTWithErrors(`
+      view V x string {
+        alias x = 1
+        Text value "hi" { }
+      }
+    `)
+    expect(report.getHumanErrorMessages().some(m => m.includes("Duplicate identifier 'x'"))).toBe(true)
+  })
+})
 
-  //   const appFile = wrap(document)
-  //   const appDeclaration = appFile.topLevelStatements[0]!.as_AppDeclaration
-  //   appDeclaration.expect('type').toBe('app')
-  //   appDeclaration.expect('name').toBe('MyApp')
-  //   const uiView = appDeclaration.appStatements[0]!.ui.as_ViewDeclaration
-  //   uiView.expect('name').toBe('MyView')
-  //   const viewDeclaration = appFile.topLevelStatements[1]!.as_ViewDeclaration
-  //   expect(viewDeclaration.unwrap()).toEqual(uiView.unwrap())
-  // })
+describe('statement placement validation:', () => {
+  test('state update in view body fails validation', async () => {
+    const report = await parseASTWithErrors(`
+      view V {
+        state s = 1
+        set s = 2
+      }
+    `)
+    expect(report.getHumanErrorMessages().some(m => m.includes(validationMessages.viewBody))).toBe(true)
+  })
 
-  // test('reference validation errors', async () => {
-  //   const errorReport = await ensureHasErrors(`
-  //       app MyApp {
-  //           ui MyApp
-  //       }
-  //       view MyView {
-  //           Text value "Hello World"
-  //       }
-  //   `)!
-  //   expect(errorReport!.errorString).toContain('Could not resolve reference')
-  //   expect(errorReport!.errorString).toContain('App ui must be a view declaration')
-  // })
+  test('use statement in view body fails validation', async () => {
+    const report = await parseASTWithErrors(`
+      view V {
+        use X from a/b
+      }
+    `)
+    expect(report.getHumanErrorMessages().some(m => m.includes(validationMessages.viewBody))).toBe(true)
+  })
+
+  test('view render at file level fails validation', async () => {
+    const report = await parseASTWithErrors(`
+      view Text value string { }
+      Text value "hi"
+    `)
+    expect(report.getHumanErrorMessages().some(m => m.includes(validationMessages.topLevel))).toBe(true)
+  })
+
+  test('state update at file level fails validation', async () => {
+    const report = await parseASTWithErrors(`
+      state x = 1
+      set x = 2
+    `)
+    expect(report.getHumanErrorMessages().some(m => m.includes(validationMessages.topLevel))).toBe(true)
+  })
+
+  test('module declaration in view body fails validation', async () => {
+    const report = await parseASTWithErrors(`
+      view Outer {
+        file view Inner { }
+      }
+    `)
+    expect(report.getHumanErrorMessages().some(m => m.includes(validationMessages.viewBody))).toBe(true)
+  })
+
+  test('view render in action body fails validation', async () => {
+    const report = await parseASTWithErrors(`
+      view Text value string { }
+      view V {
+        action A {
+          Text value "x"
+        }
+      }
+    `)
+    expect(report.getHumanErrorMessages().some(m => m.includes(validationMessages.actionBody))).toBe(true)
+  })
+
+  test('app declaration in view body fails validation', async () => {
+    const report = await parseASTWithErrors(`
+      view V {
+        view X { }
+        app A { ui X }
+      }
+    `)
+    expect(report.getHumanErrorMessages().some(m => m.includes(validationMessages.viewBody))).toBe(true)
+  })
+})
+
+describe('parameter declaration validation:', () => {
+  test('duplicate parameter names in a view parameter list fail validation', async () => {
+    const report = await parseASTWithErrors(`
+      view V x string, x string {
+      }
+    `)
+    expect(report.getHumanErrorMessages().some(m => m.includes("Duplicate identifier 'x'"))).toBe(true)
+  })
+
+  test('duplicate parameter names in an action parameter list fail validation', async () => {
+    const report = await parseASTWithErrors(`
+      view V {
+        action A x string, x string {
+          inject \`\`\`ts void 0 \`\`\`
+        }
+      }
+    `)
+    expect(report.getHumanErrorMessages().some(m => m.includes("Duplicate identifier 'x'"))).toBe(true)
+  })
+
+  test('parameter name same as nested view declaration in body fails validation', async () => {
+    const report = await parseASTWithErrors(`
+      view V x string {
+        view x {
+        }
+      }
+    `)
+    expect(report.getHumanErrorMessages().some(m => m.includes("Duplicate identifier 'x'"))).toBe(true)
+  })
+
+  test('distinct parameter names in one view validate', async () => {
+    await parseTaoFully(`
+      view V a string, b string {
+      }
+    `)
+  })
+})
+
+describe('compile errors:', () => {
+  test('missing view reference in app ui produces linking error with expected message', async () => {
+    const multi = await parseMultipleFiles([
+      {
+        path: '/project/app.tao',
+        code: `file app CompileErrorApp {
+    ui MissingView
+}
+`,
+      },
+    ])
+
+    const errorReport = multi.getErrors()
+    const errorMessages = errorReport.getHumanErrorMessages()
+
+    expect(errorMessages.length).toBeGreaterThan(0)
+    expect(errorMessages.some(msg => msg.includes('MissingView') && msg.includes('Could not resolve reference')))
+      .toBe(true)
+  })
 })

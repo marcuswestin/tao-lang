@@ -5,6 +5,7 @@
     "continue.continue",
     "langium.langium-vscode",
     "expo.vscode-expo-tools",
-    "nefrob.vscode-just-syntax"
+    "nefrob.vscode-just-syntax",
+    "ryuta46.multi-command"
   ]
 }

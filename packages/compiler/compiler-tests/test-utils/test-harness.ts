@@ -69,14 +69,21 @@ export async function parseASTWithErrors(code: string, stdLibRoot = ''): Promise
 
 /** resolveReferences parses through linking; fails the test if lexer, parser, or linker reported errors (validation not run). */
 export async function resolveReferences(code: string, stdLibRoot = ''): Promise<Wrapped<AST.TaoFile>> {
-  const { errorReport, taoFileAST } = await TaoParser.parseString(code, { stdLibRoot, validateUpToStage: 'linking' })
-  Assert(!errorReport.hasError(), 'Expected no errors, but got: ' + errorReport.getHumanErrorMessage())
-  return wrap(taoFileAST!)
+  return _parseUpToStage(code, stdLibRoot, 'linking')
 }
 
 /** parseTaoFully runs lex → parse → link → validation; fails the test on any reported error. */
 export async function parseTaoFully(code: string, stdLibRoot = ''): Promise<Wrapped<TaoFile>> {
-  const { errorReport, taoFileAST } = await TaoParser.parseString(code, { stdLibRoot, validateUpToStage: 'all' })
+  return _parseUpToStage(code, stdLibRoot, 'all')
+}
+
+/** _parseUpToStage parses `code` through `stage` and fails the test when the parser reports errors. */
+async function _parseUpToStage(
+  code: string,
+  stdLibRoot: string,
+  stage: 'lexing' | 'parsing' | 'linking' | 'all' | 'none',
+): Promise<Wrapped<TaoFile>> {
+  const { errorReport, taoFileAST } = await TaoParser.parseString(code, { stdLibRoot, validateUpToStage: stage })
   Assert(!errorReport.hasError(), 'Expected no errors, but got: ' + errorReport.getHumanErrorMessage())
   return wrap(taoFileAST!)
 }
@@ -95,6 +102,8 @@ export type MultiFileParseResult = {
   getFile(path: string): Wrapped<TaoFile>
   /** getErrors returns the combined error report for all documents (no assertion). */
   getErrors(): TaoErrorReport
+  /** workspace is the Langium workspace used to build and validate `documents` (e.g. LSP `getDocumentDefinition`). */
+  workspace: TaoWorkspace
   /** documents maps each virtual path to its Langium document after `buildDocuments`. */
   documents: Map<string, Langium.LangiumDocument<TaoFile>>
 }
@@ -103,8 +112,36 @@ export type ParseMultipleFilesOpts = {
   stdLibRoot?: string
 }
 
-/** buildWorkspaceAndDocuments registers each virtual file under `file://` URIs and runs `buildDocuments` with validation. */
-async function buildWorkspaceAndDocuments(
+/** parseMultipleFiles builds one workspace from `files` so imports/refs resolve across them; pass `stdLibRoot` to resolve
+ * `tao/...` like the real compiler. `getFile` insists on zero errors workspace-wide.
+ * It also exposes `workspace` for LSP-style services (e.g. go-to-definition). */
+export async function parseMultipleFiles(
+  files: VirtualFile[],
+  opts: ParseMultipleFilesOpts = {},
+): Promise<MultiFileParseResult> {
+  const { workspace, documents } = await _buildWorkspaceAndDocuments(files, opts.stdLibRoot ?? '')
+
+  return {
+    workspace,
+    documents,
+    getFile(path: string): Wrapped<TaoFile> {
+      const doc = documents.get(path)
+      Assert(doc, `No document found for path: ${path}`)
+      const errorReports = getDocumentErrors(...documents.values())
+      Assert(
+        !errorReports.hasError(),
+        `Expected no errors for ${path}, but got: ${errorReports.getHumanErrorMessage()}`,
+      )
+      return wrap(doc.parseResult.value)
+    },
+    getErrors(): TaoErrorReport {
+      return getDocumentErrors(...documents.values())
+    },
+  }
+}
+
+/** _buildWorkspaceAndDocuments registers each virtual file under `file://` URIs and runs `buildDocuments` with validation. */
+async function _buildWorkspaceAndDocuments(
   files: VirtualFile[],
   stdLibRoot?: string,
 ): Promise<{ workspace: TaoWorkspace; documents: Map<string, Langium.LangiumDocument<TaoFile>> }> {
@@ -119,59 +156,4 @@ async function buildWorkspaceAndDocuments(
   const allDocs = Array.from(documents.values())
   await workspace.buildDocuments(allDocs, { validation: true })
   return { workspace, documents }
-}
-
-/** parseMultipleFiles builds one workspace from `files` so imports/refs resolve across them; pass `stdLibRoot` to resolve
- * `tao/...` like the real compiler. `getFile` insists on zero errors workspace-wide. */
-export async function parseMultipleFiles(
-  files: VirtualFile[],
-  opts: ParseMultipleFilesOpts = { stdLibRoot: '' },
-): Promise<MultiFileParseResult> {
-  const { documents } = await buildWorkspaceAndDocuments(files, opts.stdLibRoot)
-
-  return {
-    getFile(path: string): Wrapped<TaoFile> {
-      const doc = documents.get(path)
-      Assert(doc, `No document found for path: ${path}`)
-      const errorReports = getDocumentErrors(...documents.values())
-      Assert(
-        !errorReports.hasError(),
-        `Expected no errors for ${path}, but got: ${errorReports.getHumanErrorMessage()}`,
-      )
-      return wrap(doc.parseResult.value)
-    },
-    getErrors(): TaoErrorReport {
-      return getDocumentErrors(...documents.values())
-    },
-    documents,
-  }
-}
-
-/** buildWorkspaceWithFiles is like `parseMultipleFiles` but exposes `workspace` for LSP services; `getFile` still requires
- * a clean build for all documents. */
-export async function buildWorkspaceWithFiles(
-  files: VirtualFile[],
-  opts: ParseMultipleFilesOpts = {},
-): Promise<{
-  workspace: TaoWorkspace
-  documents: Map<string, Langium.LangiumDocument<TaoFile>>
-  getFile: (path: string) => Wrapped<TaoFile>
-  getErrors: () => TaoErrorReport
-}> {
-  const { workspace, documents } = await buildWorkspaceAndDocuments(files, opts.stdLibRoot ?? undefined)
-
-  return {
-    workspace,
-    documents,
-    getFile(path: string): Wrapped<TaoFile> {
-      const doc = documents.get(path)
-      Assert(doc, `No document found for path: ${path}`)
-      const errorReports = getDocumentErrors(...documents.values())
-      Assert(!errorReports.hasError(), `Expected no errors: ${errorReports.getHumanErrorMessage()}`)
-      return wrap(doc.parseResult.value)
-    },
-    getErrors(): TaoErrorReport {
-      return getDocumentErrors(...documents.values())
-    },
-  }
 }

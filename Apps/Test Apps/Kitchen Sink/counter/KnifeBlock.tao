@@ -1,5 +1,5 @@
 use FridgeView from ../
-use Text from tao/ui
+use Text, Button from @tao/ui
 
 view Test { }
 
@@ -7,7 +7,16 @@ share view KnifeBlock {
     Text value "Knife Block"
 }
 
+state TestState = 0
+
 share view RootView {
     KnifeBlock { }
     FridgeView { }
+    Button Action TestAction, title TestState { }
+}
+
+// TODO: This doesn't have access to the "used" state activation inside RootView. So we need to pass it in somehow.
+
+action TestAction {
+    set TestState += 1
 }

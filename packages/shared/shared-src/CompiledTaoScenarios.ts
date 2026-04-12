@@ -1,19 +1,20 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { resolve as resolvePath } from 'node:path'
 
-export type CompiledTaoScenarioAssertion = {
-  type: 'textVisible'
-  text: string
-}
+export type CompiledTaoScenarioStep =
+  | { type: 'assertVisibleText'; text: string }
+  | { type: 'pressVisibleText'; text: string }
 
 export type CompiledTaoScenario = {
-  assertions: CompiledTaoScenarioAssertion[]
+  /** When truthy, shared scenario tests skip this folder: `true`, missing file, or a string reason for `test.todo`. */
+  skip: boolean | string
+  steps: CompiledTaoScenarioStep[]
 }
 
 export type DiscoveredCompiledTaoScenario = {
   scenarioDir: string
   scenario: CompiledTaoScenario | undefined
-  isReady: boolean
+  skip: boolean | string
 }
 
 export type CompiledTaoScenarioCompileResult = {
@@ -22,11 +23,14 @@ export type CompiledTaoScenarioCompileResult = {
 
 export type CompiledTaoScenarioRenderResult = {
   getByText(text: string): unknown
+  /** pressVisibleText dispatches a press on the element returned by `getByText` (e.g. Testing Library `fireEvent.press`). */
+  pressVisibleText(text: string): void
 }
 
 export type CompiledTaoScenarioAdapter = {
   compileScenario(args: {
     scenarioDir: string
+    scenarioName: string
     scenario: CompiledTaoScenario
   }): Promise<CompiledTaoScenarioCompileResult> | CompiledTaoScenarioCompileResult
   renderCompiledApp(args: {
@@ -45,26 +49,26 @@ export function getCompiledTaoScenariosRootDir() {
   return compiledTaoScenariosRootDir
 }
 
-/** discoverCompiledTaoScenarios visits every immediate subdirectory of `rootDir` (sorted by path) and loads
- * `scenario.json` from each. A directory without a valid `scenario.json` causes `loadCompiledTaoScenario` to throw. */
+/** discoverCompiledTaoScenarios visits every immediate subdirectory of `rootDir` (sorted by path). When
+ * `scenario.json` is missing, returns `skip: true` and `scenario: undefined`. When the file exists, loads
+ * and validates via `loadCompiledTaoScenario` (throws on invalid shape). The returned `skip` is the scenario’s
+ * `skip` field (boolean or string reason), or `true` when the file is absent. */
 export function discoverCompiledTaoScenarios(rootDir = compiledTaoScenariosRootDir): DiscoveredCompiledTaoScenario[] {
   return readdirSync(rootDir, { withFileTypes: true })
     .filter(entry => entry.isDirectory())
     .map(entry => resolvePath(rootDir, entry.name))
     .sort((left, right) => left.localeCompare(right))
     .map(scenarioDir => {
-      const isReady = existsSync(resolvePath(scenarioDir, 'scenario.json'))
-      return {
-        scenarioDir,
-        scenario: isReady ? loadCompiledTaoScenario(scenarioDir) : undefined,
-        isReady,
+      const scenarioPath = resolvePath(scenarioDir, 'scenario.json')
+      if (!existsSync(scenarioPath)) {
+        return { scenarioDir, scenario: undefined, skip: true }
       }
+      const scenario = loadCompiledTaoScenario(scenarioDir)
+      return { scenarioDir, scenario, skip: scenario.skip }
     })
 }
 
-/** loadCompiledTaoScenario reads `${scenarioDir}/scenario.json`, parses it, and validates shape
- * (`assertions` array; each entry `type: "textVisible"` with non-empty `text`). Throws `Error` with the path
- * in the message when validation fails. */
+/** loadCompiledTaoScenario reads `${scenarioDir}/scenario.json`, parses it, and validates shape */
 export function loadCompiledTaoScenario(scenarioDir: string): CompiledTaoScenario {
   const scenarioPath = resolvePath(scenarioDir, 'scenario.json')
   const rawScenario = JSON.parse(readFileSync(scenarioPath, 'utf8')) as unknown
@@ -72,19 +76,23 @@ export function loadCompiledTaoScenario(scenarioDir: string): CompiledTaoScenari
   return parseCompiledTaoScenario(rawScenario, scenarioPath)
 }
 
-/** runScenario drives the adapter lifecycle: `cleanup()` before work, then compile → render → run each assertion,
- * then `cleanup()` again in `finally`. Assertion behavior depends on `renderResult.getByText` (e.g. testing-library
- * will throw if text is missing). Any adapter or compile error propagates to the caller. */
+/** runScenario drives the adapter lifecycle: `cleanup()` → compile → render → run steps. */
 export async function runScenario(opts: {
   scenarioDir: string
+  scenarioName: string
   scenario: CompiledTaoScenario
   adapter: CompiledTaoScenarioAdapter
 }) {
+  if (opts.scenario.skip) {
+    return
+  }
+
   await opts.adapter.cleanup()
 
   try {
     const compileResult = await opts.adapter.compileScenario({
       scenarioDir: opts.scenarioDir,
+      scenarioName: opts.scenarioName,
       scenario: opts.scenario,
     })
     const renderResult = await opts.adapter.renderCompiledApp({
@@ -93,8 +101,8 @@ export async function runScenario(opts: {
       scenario: opts.scenario,
     })
 
-    for (const assertion of opts.scenario.assertions) {
-      runAssertion(assertion, renderResult)
+    for (const step of opts.scenario.steps) {
+      runStep(step, renderResult)
     }
   } finally {
     await opts.adapter.cleanup()
@@ -107,45 +115,56 @@ function parseCompiledTaoScenario(rawScenario: unknown, scenarioPath: string): C
     throw new Error(`Scenario must be an object: ${scenarioPath}`)
   }
 
-  const { assertions } = rawScenario
-  if (!Array.isArray(assertions)) {
-    throw new Error(`Scenario must include an "assertions" array: ${scenarioPath}`)
+  const { steps } = rawScenario
+  if (!Array.isArray(steps)) {
+    throw new Error(`Scenario must include a "steps" array: ${scenarioPath}`)
   }
 
   return {
-    assertions: assertions.map((assertion, index) => parseAssertion(assertion, scenarioPath, index)),
+    skip: rawScenario['skip'] as boolean | string,
+    steps: steps.map((step, index) => parseStep(step, scenarioPath, index)),
   }
 }
 
-/** parseAssertion parses one assertion object; only `textVisible` is supported today. */
-function parseAssertion(
-  rawAssertion: unknown,
-  scenarioPath: string,
-  assertionIndex: number,
-): CompiledTaoScenarioAssertion {
-  if (!isRecord(rawAssertion)) {
-    throw new Error(`Scenario assertion must be an object: ${scenarioPath}#${assertionIndex}`)
+const STEP_KEYS = ['assertVisibleText', 'pressVisibleText'] as const
+
+/** parseStep parses one step object with exactly one supported key. */
+function parseStep(rawStep: unknown, scenarioPath: string, stepIndex: number): CompiledTaoScenarioStep {
+  if (!isRecord(rawStep)) {
+    throw new Error(`Scenario step must be an object: ${scenarioPath}#${stepIndex}`)
   }
 
-  if (rawAssertion['type'] !== 'textVisible') {
-    throw new Error(`Unsupported scenario assertion type: ${scenarioPath}#${assertionIndex}`)
-  }
-  if (typeof rawAssertion['text'] !== 'string' || rawAssertion['text'].length === 0) {
-    throw new Error(`Scenario assertion must include non-empty "text": ${scenarioPath}#${assertionIndex}`)
+  const present = STEP_KEYS.filter(k => rawStep[k] !== undefined)
+  if (present.length !== 1) {
+    throw new Error(
+      `Scenario step must have exactly one of ${
+        STEP_KEYS.map(k => JSON.stringify(k)).join(', ')
+      }: ${scenarioPath}#${stepIndex}`,
+    )
   }
 
-  return {
-    type: 'textVisible',
-    text: rawAssertion['text'],
+  const key = present[0]
+  const text = rawStep[key]
+  if (typeof text !== 'string' || text.length === 0) {
+    throw new Error(`Scenario step ${JSON.stringify(key)} must be a non-empty string: ${scenarioPath}#${stepIndex}`)
+  }
+
+  switch (key) {
+    case 'assertVisibleText':
+      return { type: 'assertVisibleText', text }
+    case 'pressVisibleText':
+      return { type: 'pressVisibleText', text }
   }
 }
 
-/** runAssertion delegates to `renderResult.getByText` for `textVisible` (callers usually rely on that to throw
- * when the string is absent from the tree). */
-function runAssertion(assertion: CompiledTaoScenarioAssertion, renderResult: CompiledTaoScenarioRenderResult) {
-  switch (assertion.type) {
-    case 'textVisible':
-      renderResult.getByText(assertion.text)
+/** runStep runs one scenario step against the rendered app. */
+function runStep(step: CompiledTaoScenarioStep, renderResult: CompiledTaoScenarioRenderResult) {
+  switch (step.type) {
+    case 'assertVisibleText':
+      renderResult.getByText(step.text)
+      return
+    case 'pressVisibleText':
+      renderResult.pressVisibleText(step.text)
       return
   }
 }

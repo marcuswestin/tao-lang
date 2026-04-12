@@ -1,0 +1,10 @@
+---
+description: Conventions for Tao Expo app runtime and React Native tests in this repo.
+globs: packages/expo-runtime/**/*.ts, packages/expo-runtime/**/*.tsx
+alwaysApply: false
+---
+
+- Prefer patterns already used in `packages/expo-runtime/` (scenario layout, `test-runtime`, jest config) over new one-off harnesses.
+- For component and scenario tests, align with **React Native Testing Library** usage already in this package; see [RNTL docs](https://callstack.github.io/react-native-testing-library/).
+- For Expo-specific APIs and config, default to [Expo documentation](https://docs.expo.dev/); for core RN views and APIs, [React Native documentation](https://reactnative.dev/docs/getting-started).
+- When changing compile → run adapters (paths, env, spawn), consider parity with `packages/headless-test-runtime/` so behavior does not drift silently.

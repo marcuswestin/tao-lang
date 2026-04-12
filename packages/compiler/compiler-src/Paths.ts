@@ -1,20 +1,5 @@
 import { readdirSync, statSync } from 'node:fs'
-import * as path from 'node:path'
-
-/** normalizeModulePath joins and normalizes path parts and strips trailing slashes. */
-export function normalizeModulePath(...parts: string[]): string {
-  return path.normalize(path.join(...parts)).replace(/\/+$/, '')
-}
-
-/** normalizedDirOfPath returns the normalized parent directory of a file path. */
-export function normalizedDirOfPath(filePath: string): string {
-  return normalizeModulePath(path.dirname(filePath))
-}
-
-/** resolveModulePathFromFile resolves modulePath relative to the filePath directory. */
-export function resolveModulePathFromFile(filePath: string, modulePath: string): string {
-  return normalizeModulePath(normalizedDirOfPath(filePath), modulePath)
-}
+import { nodePath } from './util/libs'
 
 /** fileExists returns true when the path exists and is a regular file. */
 export function fileExists(filePath: string): boolean {
@@ -43,9 +28,9 @@ export function readDir(filePath: string): string[] {
   }
 }
 
-/** resolvePath returns the absolute path via path.resolve. */
+/** resolvePath returns the absolute path via nodePath.resolve. */
 export function resolvePath(filePath: string): string {
-  return path.resolve(filePath)
+  return nodePath.resolve(filePath)
 }
 
 type StreamFilesOptions = {
@@ -60,7 +45,7 @@ export async function* streamFilesIn(dirPath: string, opts: StreamFilesOptions =
   const { includeDirectories = false, includeHidden = false, includeOnlyExtensions = [] } = opts
 
   for (const entry of readDir(dirPath)) {
-    const fullPath = path.join(dirPath, entry)
+    const fullPath = nodePath.join(dirPath, entry)
 
     if (!includeHidden && entry.startsWith('.')) {
       continue
@@ -71,7 +56,7 @@ export async function* streamFilesIn(dirPath: string, opts: StreamFilesOptions =
       yield* streamFilesIn(fullPath, opts)
       continue
     } else if (includeOnlyExtensions.length > 0) {
-      if (!includeOnlyExtensions.includes(path.extname(entry))) {
+      if (!includeOnlyExtensions.includes(nodePath.extname(entry))) {
         continue
       }
     } else {

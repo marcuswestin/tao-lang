@@ -1,6 +1,6 @@
 file app StdLibTextRenderApp { ui RootView }
 
-use Col, Row, Text from tao/ui
+use Col, Row, Text from @tao/ui
 
 view RootView {
   Col {

@@ -8,8 +8,14 @@ alwaysApply: true
 - ALWAYS start your session with `./just-agents help`
 
 
-- **NEVER** edit `just-agents.Justfile` without asking first.
+- **NEVER** edit `just-agents.Justfile` without asking first (unless the user explicitly asked for a change to agent commands there).
+
+- **Git / merge:** never run `./just-agents git-dangerously` with `fetch`, `checkout`, `switch`, `pull`, `merge`, `push`, `rebase`, or similar merge/remote work unless the user **explicitly** instructed a merge (see `.cursor/skills/tao-git-workflow/SKILL.md` and comments in `just-agents.Justfile`).
+
+- **Git / merge:** after merging **`main` into a feature branch**, run **`./just-agents prep-commit`** until green before squash merge, push, or PR handoff (see `tao-git-workflow` and `prep-feature-branch-merge`).
 
 - **Justfile Documentation:**
     - For a succinct summary, first see: https://cheatography.com/linux-china/cheat-sheets/justfile/
     - **If** you need more details, see:: https://just.systems/man/en/
+
+Full package layout, testing commands, and Cursor file map: **`AGENTS.md`** (section *Cursor: rules, commands, skills*).

@@ -1,11 +1,15 @@
 ---
 name: create-project
-description: Create and initialize new projects in the Dev Log with a spec from template. Use when starting a new project, creating a project spec, initiating a dev log entry, or beginning a new feature.
+description: >-
+  Create and initialize new Tao Lang projects in the Dev Log with a spec from
+  template plus feature branch guidance. Use when starting a new project,
+  initiating a dev log entry, or beginning a new feature with folder + spec +
+  branch. For spec-only authoring steps, see create-spec-file.
 ---
 
 # Create Project
 
-Initialize a new project in the Dev Log by creating a folder, spec file, and feature branch.
+Initialize a new project in the Dev Log by creating a folder, spec file, and (optionally) a feature branch.
 
 ## Workflow
 
@@ -19,36 +23,13 @@ Ask the user for:
 
 Use the AskQuestion tool if available, otherwise ask conversationally. If the user already provided some of this info in their message, infer what you can and only ask for what's missing.
 
-### Step 2: Create Project Folder and Spec
+### Step 2–3: Create and fill the spec
 
-1. Determine today's date in `YYYY-MM-DD` format
-2. Read the template at `Docs/Dev Log/Project Spec Template.md`
-3. Create the project folder and spec file:
+Follow **`create-spec-file`** for template path, folder naming, placeholders, checkboxes, and user review. Do not skip reading `Docs/Dev Log/Project Spec Template.md`.
 
-```
-Docs/Dev Log/<YYYY-MM-DD> - <Project Name>/<Project Name> Spec.md
-```
+### Step 4: Commit the spec (optional)
 
-4. Fill in the template fields:
-   - Replace `{start date}` with the date
-   - Replace `{Project Name}` with the project name
-   - Replace `{1-2 sentence description...}` with the goal
-   - Replace the Scope and Steps placeholders with real content
-
-### Step 3: Fill Out the Spec
-
-Fill out the spec to the best of your ability based on:
-
-- Context from the user's request
-- Knowledge of the codebase (explore as needed)
-- The project's `AGENTS.md`, design docs, and roadmap if relevant
-
-**Ask the user questions** if you need clarification on scope, priorities, or approach. Present your draft and ask for feedback before finalizing.
-
-### Step 4: Commit the Spec
-
-1. Stage the new files: `./just-agents shell git add "Docs/Dev Log/"`
-2. Commit: `./just-agents shell git commit -m "docs: create <Project Name> project spec"`
+If the user wants the spec in git immediately, use **`tao-git-workflow`**: stage under `Docs/Dev Log/` with `./just-agents shell git add`, then `./just-agents shell git commit -m "docs: create <Project Name> project spec"` (runs `prep-commit` via `just-agents`).
 
 ### Step 5: Create Feature Branch
 
@@ -60,10 +41,9 @@ git checkout -b "ft/<project-name-kebab-case>"
 
 Examples: `ft/pattern-matching`, `ft/error-handling`.
 
-> Note: `checkout` is not in the `./just-agents shell git` whitelist. Run `./just-agents shell git checkout` directly, or ask the user to switch branches.
+> Note: `checkout` is not in the `./just-agents shell git` whitelist. Ask the user to run checkout locally, or if they **explicitly** asked for a merge-style git operation, use `./just-agents git-dangerously checkout …` per **`tao-git-workflow`** (never without that explicit instruction).
 
 ## Notes
 
 - The template lives at `Docs/Dev Log/Project Spec Template.md` — always read it fresh in case it's been updated.
-- The spec should be actionable: concrete steps with checkboxes, not vague aspirations.
-- Keep the spec concise but complete enough to guide implementation.
+- Implementation work after the spec exists: **`implement-from-spec`**.

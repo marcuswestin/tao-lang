@@ -1,5 +1,13 @@
 import "./packages/shared/just/all-imports.just"
 
+alias b := build
+alias c := check
+alias f := fmt
+alias l := lint
+alias d := dev
+alias t := test
+alias w := watch
+
 # Dev Environment Setup
 #######################
 
@@ -19,7 +27,7 @@ setup: _setup_git_repo
 #############
 
 # Run all components in watch mode
-dev: _dev
+dev: build _dev
 
 # Run full battery of checks and builds to prepare for commit.
 prep-commit: _prep_commit
@@ -36,28 +44,28 @@ ensure-repo-clean: _ensure_repo_clean
 # Testing
 #########
 
-# Run tests for whatever directory we're in
+# Run tests for whatever directory we're in, with an optional filter
 [no-cd]
-test *PATTERNS: gen
-    bun test --reporter=dot --test-name-pattern "{{ PATTERNS }}"
-    just headless-test-runtime test {{ PATTERNS }}
+test *FILTER: gen
+    bun test --reporter=dot --test-name-pattern '{{ FILTER }}'
+    just headless-test-runtime test '{{ FILTER }}'
 
-theadless *PATTERNS: gen
-    just headless-test-runtime test {{ PATTERNS }}
+theadless *FILTER: gen
+    just headless-test-runtime test '{{ FILTER }}'
 
 # Watch tests, but bail on first failure
-bail-watch-tests *PATTERNS:
-    bun test --watch --bail --test-name-pattern "{{ PATTERNS }}"
+bail-watch *FILTER:
+    bun test --watch --bail --test-name-pattern '{{ FILTER }}'
 
 # Run all tests, including slow ones
-test-all *PATTERNS:
-    just test {{ PATTERNS }}
-    cd packages/expo-runtime && just test {{ PATTERNS }}
+test-all *FILTER:
+    just test '{{ FILTER }}'
+    cd packages/expo-runtime && just test '{{ FILTER }}'
 
 # Watch all tests
-watch-tests *PATTERNS:
-    # If run in any package without watch-tests already defined, watch all tests
-    just _watch_all_tests {{ PATTERNS }}
+watch *FILTER:
+    # If run in any package without watch already defined, watch all tests
+    just _watch_all_tests '{{ FILTER }}'
 
 # Formatting, Linting, etc.
 ###########################
@@ -81,7 +89,7 @@ fmt: _fmt
 fix: _fix
 
 # Check all code: lint, typecheck, etc.
-check: _check
+check: build _check
 
 # Lint all code
 lint: _lint
@@ -108,14 +116,25 @@ gen:
 extension-build-package-and-install:
     cd packages/ide-extension && just build-package-and-install
 
+# Drop build outputs and local caches. Does not remove node_modules — use `clean-all` for that.
 clean:
     rm -rf .builds
+    rm -rf packages/expo-runtime/.expo
+    find . -type d -name '_gen-*' -prune -exec rm -rf {} +
+    find . -type f -name '*.tsbuildinfo' -delete
+
+# Like `clean`, plus all `node_modules` directories.
+clean-all: clean
+    find . -name node_modules -type d -prune -exec rm -rf {} +
 
 # Package command runners
 # #######################
 
 compiler *ARGS:
     cd {{ justfile_dir() }}/packages/compiler && just {{ ARGS }}
+
+formatter *ARGS:
+    cd {{ justfile_dir() }}/packages/formatter && just {{ ARGS }}
 
 expo-runtime *ARGS:
     cd {{ justfile_dir() }}/packages/expo-runtime && just {{ ARGS }}

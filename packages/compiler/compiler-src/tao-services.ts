@@ -162,8 +162,11 @@ export function createTaoWorkspace(
   TaoModule.validation.ValidationRegistry.register<AST.TaoLangAstType>({
     // TODO: Use validator instead of separate class
     UseStatement: useStatementValidator.checkUseStatement.bind(useStatementValidator),
+    TaoFile: validator.TaoFile,
+    Block: validator.Block,
     AppDeclaration: validator.AppDeclaration,
-    AliasDeclaration: validator.AliasDeclaration,
+    Declaration: validator.Declaration,
+    ParameterDeclaration: validator.ParameterDeclaration,
   })
 
   if (!context.connection) {

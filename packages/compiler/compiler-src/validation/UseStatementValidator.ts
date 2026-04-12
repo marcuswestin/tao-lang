@@ -31,7 +31,7 @@ export class UseStatementValidator {
     }
 
     if (useStatement.modulePath && isStdLibImport(useStatement.modulePath) && !this.stdLibRoot) {
-      accept('error', 'Standard library root is not configured; cannot resolve tao/... imports.', {
+      accept('error', 'Standard library root is not configured; cannot resolve @tao/... imports.', {
         node: useStatement,
         property: 'modulePath',
       })
@@ -155,7 +155,7 @@ export class UseStatementValidator {
         continue
       }
       const node = desc.node
-      if (!AST.isImportableDeclaration(node)) {
+      if (!AST.isDeclaration(node)) {
         continue
       }
       results.push(desc)
@@ -176,11 +176,13 @@ export class UseStatementValidator {
         continue
       }
       const taoFile = value
-      for (const stmt of taoFile.topLevelStatements) {
-        if (AST.isTopLevelDeclaration(stmt) && stmt.visibility === 'file') {
-          if (stmt.declaration.name === name) {
-            return true
-          }
+      for (const stmt of taoFile.statements) {
+        if (
+          AST.isModuleDeclaration(stmt)
+          && stmt.visibility === 'file'
+          && stmt.declaration.name === name
+        ) {
+          return true
         }
       }
     }
@@ -198,7 +200,7 @@ export class UseStatementValidator {
       }
 
       const node = desc.node
-      if (!AST.isImportableDeclaration(node)) {
+      if (!AST.isDeclaration(node)) {
         continue
       }
 
@@ -225,7 +227,7 @@ export class UseStatementValidator {
       }
 
       const node = desc.node
-      if (!AST.isImportableDeclaration(node)) {
+      if (!AST.isDeclaration(node)) {
         continue
       }
 

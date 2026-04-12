@@ -1,8 +1,9 @@
 import "./_shared-vars.just"
 
+[no-cd]
 [positional-arguments]
 _tao *ARGS:
-    pushd ../tao-cli && just build && popd
+    cd "../../packages/tao-cli" && just build
     ../../.builds/tao-cli "$@"
 
 _stash_unstaged_changes:
@@ -16,10 +17,11 @@ _unstage_changes:
     echo "> Abort successful."
 
 _prep_commit:
-    echo "\n> Clean build artifacts..." && just clean
+    echo "\n> Make auto-fixable changes..." && just fix
+    echo "> Clean build artifacts..." && just clean
     echo "> Build everything..." && just build
-    echo "> Run pre-commit checks..." && just check
     echo "> Run code tests..." && just test-all
+    echo "> Run pre-commit checks..." && just check
     echo "\n> Pre-commit checks complete. Ready to commit.\n"
 
 _post_commit_unstash:

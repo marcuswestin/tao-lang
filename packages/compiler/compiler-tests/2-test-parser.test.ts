@@ -1,3 +1,4 @@
+import { AST } from '@parser'
 import { describe, expect, parseAST, parseASTWithErrors, resolveReferences, test } from './test-utils/test-harness'
 
 describe('parse:', () => {
@@ -17,13 +18,12 @@ describe('parse:', () => {
         view Text {}
     `)
 
-    const topLevel = appFile.topLevelStatements.first.as_TopLevelDeclaration
-    const appDeclaration = topLevel.declaration.as_AppDeclaration
+    const appDeclaration = appFile.statements.first.as_AppDeclaration
     appDeclaration.expect('type').toBe('app')
     appDeclaration.expect('name').toBe('MyApp')
     const uiView = appDeclaration.appStatements.first.ui.as_ViewDeclaration
     uiView.expect('name').toBe('MyView')
-    const viewDeclaration = appFile.topLevelStatements.second.as_TopLevelDeclaration.declaration.as_ViewDeclaration
+    const viewDeclaration = appFile.statements.second.as_ViewDeclaration
     expect(viewDeclaration.unwrap()).toEqual(uiView.unwrap())
   })
 
@@ -38,21 +38,36 @@ describe('parse:', () => {
     `)
     const messages = errorReport.getHumanErrorMessages().join('\n')
     expect(messages).toContain('Could not resolve reference')
-    // When ui references an app name, resolution fails (Declaration = ViewDeclaration | AliasDeclaration). If it resolved, validator would report "App ui must be a view declaration".
+    // When ui references an app name, resolution fails (Declaration includes views/aliases/actions). If it resolved, validator would report "App ui must be a view declaration".
+  })
+
+  test('parses action with parameters and inject body', async () => {
+    const doc = await parseAST(`
+      action TestAction message string {
+        inject \`\`\`ts {
+          alert("Test Action")
+        }
+        \`\`\`
+      }
+    `)
+    const action = doc.statements.first.as_ActionDeclaration
+    action.expect('name').toBe('TestAction')
+    expect(action.unwrap().parameterList?.parameters.length).toBe(1)
+    expect(action.unwrap().block.statements.length).toBe(1)
   })
 })
 
 describe('module declaration visibility', () => {
   test('parses file view declaration', async () => {
     const doc = await parseAST(`file view PrivateView { }`)
-    const viewDecl = doc.topLevelStatements.first.as_TopLevelDeclaration
+    const viewDecl = doc.statements.first.as_ModuleDeclaration
     viewDecl.expect('visibility').toBe('file')
     viewDecl.declaration.as_ViewDeclaration.expect('name').toBe('PrivateView')
   })
 
   test('parses share view declaration', async () => {
     const doc = await parseAST(`share view PublicView { }`)
-    const viewDecl = doc.topLevelStatements.first.as_TopLevelDeclaration
+    const viewDecl = doc.statements.first.as_ModuleDeclaration
     viewDecl.expect('visibility').toBe('share')
     viewDecl.declaration.as_ViewDeclaration.expect('name').toBe('PublicView')
   })
@@ -62,10 +77,10 @@ describe('module declaration visibility', () => {
       file app PrivateApp { ui MyView }
       view MyView { }
     `)
-    const appDecl = doc.topLevelStatements.first.as_TopLevelDeclaration
+    const appDecl = doc.statements.first.as_ModuleDeclaration
     appDecl.expect('visibility').toBe('file')
     appDecl.declaration.as_AppDeclaration.expect('name').toBe('PrivateApp')
-    const myView = doc.topLevelStatements.second.as_TopLevelDeclaration.declaration.as_ViewDeclaration
+    const myView = doc.statements.second.as_ViewDeclaration
     myView.expect('name').toBe('MyView')
   })
 
@@ -74,14 +89,14 @@ describe('module declaration visibility', () => {
       share app PublicApp { ui MyView }
       view MyView { }
     `)
-    const appDecl = doc.topLevelStatements.first.as_TopLevelDeclaration
+    const appDecl = doc.statements.first.as_ModuleDeclaration
     appDecl.expect('visibility').toBe('share')
     appDecl.declaration.as_AppDeclaration.expect('name').toBe('PublicApp')
   })
 
   test('parses declaration without visibility modifier (default)', async () => {
     const doc = await parseAST(`view DefaultView { }`)
-    const viewDecl = doc.topLevelStatements.first.as_TopLevelDeclaration.declaration.as_ViewDeclaration
+    const viewDecl = doc.statements.first.as_ViewDeclaration
     viewDecl.expect('name').toBe('DefaultView')
   })
 })
@@ -92,7 +107,7 @@ describe('alias statements', () => {
       alias pi = 3
       view MyView { }
     `)
-    const alias = doc.topLevelStatements.first.as_TopLevelDeclaration.declaration.as_AliasDeclaration
+    const alias = doc.statements.first.as_AssignmentDeclaration
     alias.expect('name').toBe('pi')
     alias.value.as_NumberLiteral.expect('number').toBe(3)
   })
@@ -103,8 +118,8 @@ describe('alias statements', () => {
         alias age = 1
       }
     `)
-    const view = doc.topLevelStatements.first.as_TopLevelDeclaration.declaration.as_ViewDeclaration
-    const alias = view.viewStatements.first.as_AliasDeclaration
+    const view = doc.statements.first.as_ViewDeclaration
+    const alias = view.block.statements.first.as_AssignmentDeclaration
     alias.expect('name').toBe('age')
     alias.value.as_NumberLiteral.expect('number').toBe(1)
   })
@@ -115,8 +130,8 @@ describe('alias statements', () => {
         alias greeting = "hello"
       }
     `)
-    const view = doc.topLevelStatements.first.as_TopLevelDeclaration.declaration.as_ViewDeclaration
-    const alias = view.viewStatements.first.as_AliasDeclaration
+    const view = doc.statements.first.as_ViewDeclaration
+    const alias = view.block.statements.first.as_AssignmentDeclaration
     alias.expect('name').toBe('greeting')
     alias.value.as_StringLiteral.expect('string').toBe('hello')
   })
@@ -128,11 +143,11 @@ describe('alias statements', () => {
         alias count = 42
       }
     `)
-    const view = doc.topLevelStatements.first.as_TopLevelDeclaration.declaration.as_ViewDeclaration
-    const first = view.viewStatements.first.as_AliasDeclaration
+    const view = doc.statements.first.as_ViewDeclaration
+    const first = view.block.statements.first.as_AssignmentDeclaration
     first.expect('name').toBe('name')
     first.value.as_StringLiteral.expect('string').toBe('world')
-    const second = view.viewStatements.second.as_AliasDeclaration
+    const second = view.block.statements.second.as_AssignmentDeclaration
     second.expect('name').toBe('count')
     second.value.as_NumberLiteral.expect('number').toBe(42)
   })
@@ -145,9 +160,11 @@ describe('alias statements', () => {
         Text value "hello"
       }
     `)
-    const view = doc.topLevelStatements.second.as_TopLevelDeclaration.declaration.as_ViewDeclaration
-    view.viewStatements.first.as_AliasDeclaration.expect('name').toBe('msg')
-    view.viewStatements.second.as_ViewRenderStatement.view.expect('name').toBe('Text')
+    const view = doc.statements.second.as_ViewDeclaration
+    view.block.statements.first.as_AssignmentDeclaration.expect('name').toBe('msg')
+    const st = view.unwrap().block.statements[1]
+    expect(AST.isViewRender(st)).toBe(true)
+    expect((st as AST.ViewRender).view?.ref?.name).toBe('Text')
   })
 
   test('identifier reference in argument', async () => {
@@ -158,9 +175,9 @@ describe('alias statements', () => {
         Text value msg
       }
     `)
-    const view = doc.topLevelStatements.second.as_TopLevelDeclaration.declaration.as_ViewDeclaration
-    const render = view.viewStatements.second.as_ViewRenderStatement
-    const arg = render.args.args.first
+    const view = doc.statements.second.as_ViewDeclaration
+    const render = view.block.statements.second.as_ViewRender
+    const arg = render.argumentList.arguments.first
     arg.expect('name').toBe('value')
   })
 
@@ -173,9 +190,9 @@ describe('alias statements', () => {
         }
       }
     `)
-    const view = doc.topLevelStatements.second.as_TopLevelDeclaration.declaration.as_ViewDeclaration
-    const container = view.viewStatements.first.as_ViewRenderStatement
-    const nestedAlias = container.viewStatements.first.as_AliasDeclaration
+    const view = doc.statements.second.as_ViewDeclaration
+    const container = view.block.statements.first.as_ViewRender
+    const nestedAlias = container.block.statements.first.as_AssignmentDeclaration
     nestedAlias.expect('name').toBe('nested')
     nestedAlias.value.as_NumberLiteral.expect('number').toBe(99)
   })
@@ -189,9 +206,9 @@ describe('scope resolution', () => {
         alias y = x
       }
     `)
-    const view = doc.topLevelStatements.first.as_TopLevelDeclaration.declaration.as_ViewDeclaration
-    const aliasY = view.viewStatements.second.as_AliasDeclaration
-    aliasY.value.as_NamedReference.referenceName.as_AliasDeclaration.expect('name').toBe('x')
+    const view = doc.statements.first.as_ViewDeclaration
+    const aliasY = view.block.statements.second.as_AssignmentDeclaration
+    aliasY.value.as_NamedReference.referenceName.as_AssignmentDeclaration.expect('name').toBe('x')
   })
 
   test('alias used as view argument resolves', async () => {
@@ -202,10 +219,10 @@ describe('scope resolution', () => {
         Text label msg
       }
     `)
-    const view = doc.topLevelStatements.second.as_TopLevelDeclaration.declaration.as_ViewDeclaration
-    const render = view.viewStatements.second.as_ViewRenderStatement
-    const arg = render.args.args.first
-    arg.value.as_NamedReference.referenceName.as_AliasDeclaration.expect('name').toBe('msg')
+    const view = doc.statements.second.as_ViewDeclaration
+    const render = view.block.statements.second.as_ViewRender
+    const arg = render.argumentList.arguments.first
+    arg.value.as_NamedReference.referenceName.as_AssignmentDeclaration.expect('name').toBe('msg')
   })
 
   test('view parameter resolves as identifier reference', async () => {
@@ -215,9 +232,9 @@ describe('scope resolution', () => {
         Text label label
       }
     `)
-    const view = doc.topLevelStatements.second.as_TopLevelDeclaration.declaration.as_ViewDeclaration
-    const render = view.viewStatements.first.as_ViewRenderStatement
-    const arg = render.args.args.first
+    const view = doc.statements.second.as_ViewDeclaration
+    const render = view.block.statements.first.as_ViewRender
+    const arg = render.argumentList.arguments.first
     arg.value.as_NamedReference.referenceName.as_ParameterDeclaration.expect('name').toBe('label')
   })
 
@@ -230,9 +247,10 @@ describe('scope resolution', () => {
         Text label a
       }
     `)
-    const view = doc.topLevelStatements.second.as_TopLevelDeclaration.declaration.as_ViewDeclaration
-    const render = view.viewStatements.last.as_ViewRenderStatement
-    render.args.args.first.value.as_NamedReference.referenceName.as_AliasDeclaration.expect('name').toBe('a')
+    const view = doc.statements.second.as_ViewDeclaration
+    const render = view.block.statements.last.as_ViewRender
+    render.argumentList.arguments.first.value.as_NamedReference.referenceName.as_AssignmentDeclaration.expect('name')
+      .toBe('a')
   })
 })
 

@@ -1,6 +1,6 @@
 use KnifeBlock, RootView from ./counter
 use FridgeView
-use Col, Row, Text from tao/ui
+use Col, Row, Text, Box, Button from @tao/ui
 
 app KitchenSink {
     ui AppView
@@ -8,5 +8,22 @@ app KitchenSink {
 
 view AppView {
     Text value "Hello Kitchen Sink" { }
+    HandlerTestView { }
     RootView { }
+}
+
+view HandlerTestView {
+    Button Action EmptyAction, title "Test" { }
+}
+
+action EmptyAction {
+    inject ```ts console.log('Test') ```
+}
+
+view LoginForm {
+// @PasswordInput TextInput { }
+// @UsernameInput TextInput { }
+// Button "Login" action {
+//     loginUser username @UsernameInput.value, password @PasswordInput.value
+// }
 }

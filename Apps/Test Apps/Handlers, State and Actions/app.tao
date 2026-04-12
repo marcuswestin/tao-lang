@@ -1,0 +1,25 @@
+use Text, Button, Row from @tao/ui
+
+app HandlersStateAndActionsApp {
+  ui RootView
+}
+
+state globalCount = 300
+
+view RootView {
+  state count1 = 100
+  Text value globalCount
+  Row {
+    state count2 = 200
+    Button title count1, Action IncrementAction { }
+    Button title count2, Action IncrementAction2 { }
+    action IncrementAction2 {
+      set globalCount += 1
+      set count2 += 1
+    }
+  }
+  action IncrementAction {
+    set globalCount += 1
+    set count1 += 1
+  }
+}

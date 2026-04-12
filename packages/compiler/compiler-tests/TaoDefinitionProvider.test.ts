@@ -1,11 +1,9 @@
 import { describe, expect, test } from 'bun:test'
-import { buildWorkspaceWithFiles } from './test-utils/test-harness'
-
-type WorkspaceResult = Awaited<ReturnType<typeof buildWorkspaceWithFiles>>
+import { MultiFileParseResult, parseMultipleFiles } from './test-utils/test-harness'
 
 // getDefinitionAt returns definition links for the given document path and position.
 async function getDefinitionAt(
-  result: WorkspaceResult,
+  result: MultiFileParseResult,
   docPath: string,
   line: number,
   character: number,
@@ -16,9 +14,9 @@ async function getDefinitionAt(
 
 describe('TaoDefinitionProvider', () => {
   test('getDefinition on imported name in use statement returns link to declaration', async () => {
-    const result = await buildWorkspaceWithFiles(
+    const result = await parseMultipleFiles(
       [
-        { path: '/project/app.tao', code: 'use Text from tao/ui\nview MyView { }' },
+        { path: '/project/app.tao', code: 'use Text from @tao/ui\nview MyView { }' },
         {
           path: '/tao-std-lib/tao/ui/Views.tao',
           code: 'share view Text value string { inject ```ts return null ``` }',
@@ -38,7 +36,7 @@ describe('TaoDefinitionProvider', () => {
   })
 
   test('getDefinition on same-module imported name returns link to declaration', async () => {
-    const result = await buildWorkspaceWithFiles([
+    const result = await parseMultipleFiles([
       { path: '/project/app.tao', code: 'use Button\nview MyView { }' },
       { path: '/project/other.tao', code: 'view Button { }' },
     ])

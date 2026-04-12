@@ -1,7 +1,11 @@
 import { NodePropName } from '@parser'
+import { Assert } from '@shared/TaoErrors'
 import { AstNode, Properties, Reference } from 'langium'
+import * as LangiumGen from 'langium/generate'
+import { NewLineNode } from 'langium/generate'
 
 export type { NodePropName }
+export type Compiled = LangiumGen.CompositeGeneratorNode
 
 /** assertNever throws at runtime when reached; use as exhaustive switch default so missing cases are a type error.
  * - Example: `default: assertNever(expr)`. */
@@ -9,16 +13,21 @@ export function assertNever<T extends never>(_arg: T): never {
   throw new Error(`assertNever called`)
 }
 
+type NonNullablePropName<N extends AstNode> = {
+  [K in NodePropName<N>]: undefined extends N[K] ? never : null extends N[K] ? never : K
+}[NodePropName<N>]
+
 /** compileNodeProperty emits traced code for one AST property with an optional per-value generator. */
-export function compileNodeProperty<NodeT extends AstNode, PropName extends NodePropName<NodeT>>(
+export function compileNodeProperty<NodeT extends AstNode, PropName extends NonNullablePropName<NodeT>>(
   node: NodeT,
   propertyName: PropName,
-  genFn?: (property: NonNullable<NodeT[PropName]>) => LangiumGen.Generated,
-): Compiled | undefined {
+  genFn?: (property: NodeT[PropName]) => LangiumGen.Generated,
+  // ): Compiled | undefined {
+): Compiled {
   const propertyVal = node[propertyName]
-  if (propertyVal === undefined || propertyVal === null) {
-    return undefined
-  }
+  // if (propertyVal === undefined || propertyVal === null) {
+  //   return undefined
+  // }
   const content = genFn ? genFn(propertyVal) : propertyVal
   return compileNode(node, propertyName)`${content}`
 }
@@ -30,21 +39,38 @@ export function compileNodeListProperty<
     [K in NodePropName<NodeT>]: Required<NodeT>[K] extends Iterable<any> ? K : never
   }[NodePropName<NodeT>],
 >(
-  node: NodeT | undefined,
+  node: NodeT,
   propertyName: PropName,
-  compileListItemFn: CompileListItemFn<ItemOfIterable<Required<NodeT[PropName]>>>,
-): Compiled | undefined {
-  if (!node) {
-    return undefined
-  }
-  if (!node[propertyName]) {
-    return undefined
-  }
-  return _compileNodeListProperty(node, propertyName, compileListItemFn, { appendNewLineIfNotEmpty: true })
+  compileListItemFn: CompileListItemFn<ItemOfIterable<NonNullable<NodeT[PropName]>>>,
+): Compiled {
+  Assert(node[propertyName], 'Node and property must be defined')
+  return compileNodeListPropertyOptional(node, propertyName, compileListItemFn)!
 }
 
-import * as LangiumGen from 'langium/generate'
-export type Compiled = LangiumGen.CompositeGeneratorNode | undefined
+/** compileNodeListPropertyOptional emits traced code for an array property with a per-item generator,
+ *  or undefined when the node or the iterable property is missing.
+ */
+export function compileNodeListPropertyOptional<
+  NodeT extends AstNode,
+  PropName extends {
+    [K in NodePropName<NodeT>]: Required<NodeT>[K] extends Iterable<any> ? K : never
+  }[NodePropName<NodeT>],
+>(
+  node: NodeT | undefined,
+  propertyName: PropName,
+  compileListItemFn: CompileListItemFn<ItemOfIterable<NonNullable<NodeT[PropName]>>>,
+): Compiled | undefined {
+  if (!node || node[propertyName] == undefined) {
+    return undefined
+  }
+  return _compileNodeListProperty(node, propertyName, compileListItemFn, {
+    prefix: new NewLineNode(),
+  })
+}
+
+export function compileNoop(): Compiled {
+  return new LangiumGen.CompositeGeneratorNode()
+}
 
 type CompileListItemFn<ItemT extends any> = (
   element: ItemT,
@@ -89,23 +115,21 @@ function assert(condition: boolean, message: string): void {
   }
 }
 
-/** compileList joins arbitrary iterable items with tracing to astNode. */
-export function compileList<NodeT extends AstNode, ItemT>(
-  astNode: NodeT,
-  items: Iterable<ItemT>,
-  genListItemFn: GenListItemFn<ItemT>,
-  options?: LangiumGen.JoinOptions<ItemT>,
+/** compileNodeList joins arbitrary iterable nodes with tracing to a composite generator node. */
+export function compileNodeList<NodeT extends AstNode>(
+  nodes: Iterable<NodeT> | Generator<NodeT, void, unknown>,
+  genListItemFn: (node: NodeT) => LangiumGen.Generated,
 ): Compiled {
-  return LangiumGen.joinTracedToNode(astNode)<ItemT>(items, genListItemFn, options)
+  const compiledList = new LangiumGen.CompositeGeneratorNode()
+  for (const node of nodes) {
+    const compiledNode = LangiumGen.expandTracedToNode(node)`${genListItemFn(node)}`
+    compiledList.append(compiledNode).appendNewLineIfNotEmpty()
+  }
+  return compiledList
 }
-type GenListItemFn<ItemT extends any> = (
-  element: ItemT,
-  index: number,
-  isLast: boolean,
-) => LangiumGen.Generated
 
-/** genNodePropertyRef resolves a reference property and emits code from the target. */
-export function genNodePropertyRef<
+/** compileNodePropertyRef resolves a reference property and emits code from the target. */
+export function compileNodePropertyRef<
   NodeT extends AstNode,
   PropName extends _NodeRefPropName<NodeT>,
   PropVal extends _NodeRefTarget<NodeT, PropName>,
@@ -115,7 +139,7 @@ export function genNodePropertyRef<
   genFn: (resolved: PropVal) => Compiled,
 ): Compiled {
   const ref = node[propName] as Reference<_NodeRefTarget<NodeT, PropName>>
-  return ref ? genFn(ref.ref as PropVal) : undefined
+  return ref ? genFn(ref.ref as PropVal) : compileNoop()
 }
 
 type _NodeRefPropName<NodeT extends AstNode> = Extract<
