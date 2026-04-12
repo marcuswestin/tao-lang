@@ -69,7 +69,7 @@ Apply only the approved changes. After editing each file:
 1. Check for linter errors with ReadLints
 2. Fix any introduced errors before moving to the next file
 
-Do **not** commit. The user decides when to commit.
+Do **not** commit. The user decides when to commit. For staging and commits afterward, use **`tao-git-workflow`**.
 
 Do **not** stage changes: never run `git add` (or equivalent) as part of this workflow. Leave all edits **unstaged** in the working tree so the user can review and stage themselves.
 
