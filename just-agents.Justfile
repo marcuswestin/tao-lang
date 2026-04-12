@@ -67,6 +67,17 @@ clean:
 expo-runtime *ARGS:
     just {{ MAIN_JUSTFILE }} expo-runtime {{ ARGS }}
 
+# --- Dangerous git (raw `git` passthrough) ---
+# **NEVER** run without explicit user merge instruction; see `.cursor/skills/tao-git-workflow/SKILL.md`.
+[positional-arguments]
+git-dangerously *GIT_ARGS:
+    #!{{ ZSH_INIT }}
+    if [[ $# -eq 0 ]]; then
+        echo 'git-dangerously: pass a git subcommand and args, e.g. `./just-agents git-dangerously fetch origin`.' >&2
+        exit 1
+    fi
+    exec git "$@"
+
 # Pass-through commands
 #======================
 
