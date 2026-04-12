@@ -31,6 +31,7 @@ _watch_all_tests *PATTERNS:
 
 _steal_focus:
     #!/bin/zsh
+    exit 0 # DISABLED FOR NOW
     current_app=$(osascript -e 'tell application "System Events" to get name of first application process whose frontmost is true')
     targets=(Simulator "Google Chrome")
     while (( ${#targets[@]} > 0 )); do
