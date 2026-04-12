@@ -1,14 +1,14 @@
-inject ```ts
-  type RenderTextViewParams = {
+inject raw ```ts
+type RenderTextViewParams = {
     value?: string
-    RNStyle?: TextStyle
+    RNStyle?: RN.TextStyle
   }
 
   type RenderViewParams = {
     children?: ReactNode
     RNProps?: Record<string, unknown>
-    RNStyle?: ViewStyle
-    styles?: ViewStyle
+    RNStyle?: RN.ViewStyle
+    styles?: RN.ViewStyle
   }
 
   export const ALRuntime = {
@@ -58,7 +58,7 @@ share view Row {
   ```
 }
 
-share view Text value string {
+share view Text value any {
   inject ```ts
     const renderViewParams = { value: props.value, params: {}, styles: {}, layouts: {}, children: [], uiLabel: '', RNProps: {}, RNStyle:{} }
     renderViewParams.RNStyle = { color: 'green', padding: 10, fontSize: 40, fontWeight: 'bold' }
@@ -66,7 +66,7 @@ share view Text value string {
   ```
 }
 
-share view Button title string, Action string {
+share view Button title any, Action any {
   // TODO: does press
   inject ```ts
     const renderViewParams = { children: props.children, params: {}, styles: {}, layouts: {}, uiLabel: '', RNProps: {}, RNStyle:{} }
