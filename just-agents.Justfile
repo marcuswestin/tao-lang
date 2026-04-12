@@ -84,12 +84,17 @@ tao *ARGS:
 # **`git-dangerously commit`:** only under **`tao-git-workflow`** fast-batch rules (run `./just-agents prep-commit` once first); otherwise use `./just-agents shell git commit` so prep-commit runs.
 # Normal read-only / safe git: `./just-agents shell git log|status|diff|add|commit` only. This recipe bypasses the shell git allowlist.
 #
-# Typical local squash onto `main` (after `prep-commit` is green): `./just-agents git-dangerously fetch origin` → `./just-agents git-dangerously checkout main` → `./just-agents git-dangerously pull origin main` → `./just-agents git-dangerously merge --squash <feature-branch>` → resolve if needed → `./just-agents prep-commit` → stage → `./just-agents git-dangerously commit …` or `shell git commit` → `./just-agents git-dangerously push origin main` (adjust names to match the repo).
+# After merging `main` into the feature branch: run `./just-agents prep-commit` until green before squash, push, or PR steps (see `tao-git-workflow`).
+# Typical local squash onto `main` (prep-commit green on feature after main integration, then on squashed index): `./just-agents git-dangerously fetch origin` → `./just-agents git-dangerously checkout main` → `./just-agents git-dangerously pull origin main` → `./just-agents git-dangerously merge --squash <feature-branch>` → resolve if needed → `./just-agents prep-commit` → stage → `./just-agents git-dangerously commit …` or `shell git commit` → `./just-agents git-dangerously push origin main` (adjust names to match the repo).
 
 # git-dangerously forwards all arguments to `git` (subcommand + flags + operands). Requires at least one argument (the git subcommand).
 [positional-arguments]
 git-dangerously *GIT_ARGS:
     #!{{ ZSH_INIT }}
+    if [[ $# -eq 0 ]]; then
+        echo 'git-dangerously: pass a git subcommand and args, e.g. `./just-agents git-dangerously fetch origin`.' >&2
+        exit 1
+    fi
     exec git "$@"
 
 # Pass-through commands
