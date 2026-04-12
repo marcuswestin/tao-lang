@@ -2,9 +2,10 @@
 name: tao-git-workflow
 description: >-
   Tao Lang git and commit workflows using ./just-agents only: allowed git
-  subcommands, prep-commit vs fast commits, drafting messages, and multi-piece
-  commits. Use when staging, committing, reviewing git state, or after
-  check-for-improvements when the user wants to land changes.
+  subcommands, prep-commit vs fast commits, drafting messages, multi-piece
+  commits, and squash-merge policy for default branch. Use when staging,
+  committing, reviewing git state, or after check-for-improvements when the user
+  wants to land changes.
 ---
 
 # Tao Lang git workflow
@@ -55,7 +56,15 @@ For several small commits in a row (e.g. splitting logical changes):
 - **CRITICAL**: The scope is the name of the feature or the file that was changed
 - **CRITICAL**: The <short-summary> is a short description of the change
 - **CRITICAL**: The <short-summary> should be no more than ~60 characters
-- **CRITICAL**: The detailed description is an itamized description of all changes.
+- **CRITICAL**: The detailed description is an itemized description of all changes.
+
+## Merging into `main` (or default branch)
+
+When landing a feature branch on **`main`** (or the repo’s default branch), unless the user explicitly asks otherwise:
+
+- **CRITICAL**: Use **squash merge** only (e.g. GitHub **Squash and merge**). Do **not** use a regular merge commit that preserves every branch commit on `main`.
+- **CRITICAL**: The **squash commit message body** must list **every** commit that is being squashed, so the collapsed work stays recoverable from `git show` on `main`. At minimum, paste one line per squashed commit in chronological order, e.g. the user runs `git log main..HEAD --reverse --oneline` locally and copies that block into the squash description (keep GitHub’s prefilled list if it already contains all of them; otherwise replace or append until nothing is missing).
+- Optional: above that list, keep a short human summary (title + bullets by theme); then a separator line (`---` or similar), then the full per-commit list.
 
 ## Interaction with `check-for-improvements`
 

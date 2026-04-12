@@ -46,13 +46,13 @@ Write the cleanup / merge plan and status into:
 
 (or the spec folder that matches this work). Include what was reviewed, what still needs doing, and **stop for user approval** before committing that summary if they want to edit it.
 
-## Merge handoff (squash or merge commit)
+## Merge handoff (squash merge)
 
-When the user is ready to land the branch on `main` (or the default base):
+When the user is ready to land the branch on `main` (or the default base), follow **`tao-git-workflow`**: **squash merge** only, and the squash commit body must include **all** squashed commit lines (see that skill).
 
-1. Draft a **one-line title** listing major areas touched (example shape: `Parser validation; runtime cleanup; agent skills`).
-2. Write a **short body**: why the change matters, grouped by theme. Do **not** paste the full `git log`; compress and add context that individual commits omit. Cite specific hashes only when they disambiguate.
-3. **Stop** and ask the user to review before they run **local** git steps the agent cannot do via the allowlist: merge `main` into the branch, resolve conflicts, `push`, or squash-merge. After merges, they should run `./just-agents prep-commit` (or follow **`tao-git-workflow`**) before the final merge to default branch.
+1. Draft a **one-line squash title** listing major areas touched (example shape: `Parser validation; runtime cleanup; agent skills`).
+2. For the **PR description** (if used), write a **short** themed summary; do not rely on the PR alone for history. The **squash commit message** is where the full `git log main..HEAD` list belongs (per `tao-git-workflow`).
+3. **Stop** and ask the user to review before they run **local** git steps the agent cannot do via the allowlist: merge `main` into the branch, resolve conflicts, `push`, or squash-merge on the host. After merges, they should run `./just-agents prep-commit` (or follow **`tao-git-workflow`**) before the final merge to default branch.
 
 ## After approval
 
