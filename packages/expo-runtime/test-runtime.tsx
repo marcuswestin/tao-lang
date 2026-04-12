@@ -1,8 +1,12 @@
 import { jest } from '@jest/globals'
 import type { CompiledTaoScenario, CompiledTaoScenarioAdapter } from '@shared/CompiledTaoScenarios'
+import {
+  formatBunSpawnSyncErrorMessage,
+  runTaoSdkCompileBunSync,
+  TAO_SDK_COMPILE_OPTS_ENV_EXPO,
+} from '@shared/TaoBunSdk'
 import { sanitizeCompiledScenarioOutputSegment } from '@shared/TaoPaths'
 import * as RNTesting from '@testing-library/react-native'
-import { spawnSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { resolve as resolvePath } from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -57,18 +61,14 @@ export function createExpoScenarioAdapter() {
 // compileTaoForExpoRuntime compiles a scenario's app.tao into its expo runtime test output directory.
 function compileTaoForExpoRuntime(opts: CompileOpts): CompileResult {
   const outputPath = resolvePath(runtimeDir, opts.outputFileName)
-  const code = `
-    import { TaoSDK_compile } from '${taoSdkModuleUrl}'
-    const opts = JSON.parse(process.env.TAO_EXPO_COMPILE_OPTS ?? '{}')
-    await TaoSDK_compile(opts)
-  `
-  const env = {
-    ...process.env,
-    TAO_EXPO_COMPILE_OPTS: JSON.stringify({ ...opts, runtimeDir }),
-  }
-  const command = spawnSync('bun', ['-e', code], { cwd: repoRoot, encoding: 'utf8', env })
+  const command = runTaoSdkCompileBunSync({
+    repoRoot,
+    taoSdkModuleUrl,
+    compileOpts: { ...opts, runtimeDir },
+    optsEnvVar: TAO_SDK_COMPILE_OPTS_ENV_EXPO,
+  })
 
-  const compileError = command.stderr || command.stdout || `bun exited with status ${command.status}`
+  const compileError = formatBunSpawnSyncErrorMessage(command)
   if (command.status !== 0 || !existsSync(outputPath)) {
     throw new Error(`Failed to compile Tao for the Expo runtime: ${compileError}`)
   }

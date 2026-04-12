@@ -18,7 +18,7 @@
 
 ## Misc Instructions:
 
-- **NEVER** delete files without asking.
+- **ONLY** delete files if you know it is appropriate, and can likely be restored by git checking it out back out before a commit is done.
 - **Git / commits:** follow `.cursor/skills/tao-git-workflow/SKILL.md` (attach when committing). In short: run `./just-agents fix` and `./just-agents prep-commit` before landing work unless the user opts out.
 - **Git / merge:** never run `./just-agents git-dangerously` with `fetch`, `checkout`, `switch`, `pull`, `merge`, `push`, `rebase`, or similar merge/remote work unless the user **explicitly** instructed a merge (or the same skill’s equally explicit remote step); see `tao-git-workflow` and the comment block in `just-agents.Justfile`.
 - **Git / merge:** after merging **`main` into a feature branch** (or rebasing onto it), run **`./just-agents prep-commit`** until green **before** squash merge, push, or treating the branch as merge-ready; see **`tao-git-workflow`** (_After integrating `main` on a feature branch_) and **`prep-feature-branch-merge`**.
@@ -44,6 +44,7 @@
 - **USUALLY** jsdoc on a single line, unless more is appropriate: `/** <fn name> <verb> <desc> */`.
 - **ALWAYS** start multiline jsdoc lines right after `/**` without a newline; and end with `*/` right at the end of the last line, without a newline before it.
 - **SOMETIMES** jsdoc additional details with list items when appropriate: `/** <fn name> <verb> <desc>\n * - ...\n * - ...\n */`.
+- **USUALLY** prefer conventional acronym casing in new identifiers (`URL`, `HTTP`), not mid-word `Url`/`Http`, unless matching an external API.
 
 - `README.md` - Human instructions
 - `Justfile` - Human command runner file (`just <command> <args>`)

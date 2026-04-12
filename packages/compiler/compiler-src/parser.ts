@@ -7,9 +7,9 @@ import * as Langium from 'langium'
 import { NodeFileSystem } from 'langium/node'
 import { createHash } from 'node:crypto'
 import path from 'node:path'
+import { isTaoModuleImport, resolveModuleImportDirectory } from './ModulePath'
 import { getDocumentErrors, TaoErrorReport } from './parse-errors'
 import { readDir, streamFilesIn } from './Paths'
-import { isStdLibImport, resolveStdLibModuleDirectory } from './StdLibPaths'
 
 export type ParseOptions = {
   stdLibRoot?: string
@@ -132,8 +132,11 @@ function getUseStatementModuleDirectory(
   if (!ast.modulePath) {
     return undefined
   }
-  if (isStdLibImport(ast.modulePath)) {
-    return resolveStdLibModuleDirectory(ast.modulePath, stdLibRoot!)
+  if (isTaoModuleImport(ast.modulePath)) {
+    if (!stdLibRoot) {
+      return undefined
+    }
+    return resolveModuleImportDirectory(ast.modulePath, { stdLibRoot })
   }
   return path.resolve(currentDir, ast.modulePath)
 }

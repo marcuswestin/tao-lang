@@ -7,6 +7,10 @@ description: Reads a markdown TODO list, picks the next coherent batch of items 
 
 Execute **one batch** of work from a markdown TODO file: choose items, implement them, update the list, **then stop** (do not start the next batch unless the user asks again).
 
+If there are uncommitted changes from a previous batch, commit those first.
+
+ALWAYS alert the user with a notification signal when you need their input to proceed.
+
 ## Inputs
 
 - The user names or implies a markdown file (often `TODO.md`). If unclear, ask which file once.

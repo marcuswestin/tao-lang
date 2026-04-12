@@ -44,6 +44,7 @@ Also see Roadmap.
   - [ ] Apps, Docs, and TODOs are likely needing a lot of cleanup.
   - [ ] Find all unused code/files/etc
   - [ ] Improve Agents instructions, rules, and commands.
+    - [x] Document acronym casing for new identifiers (`URL` not `Url`) in `AGENTS.md`.
     - [ ] Consider making all commands in to skills instead. Use /migrate-to-skills? Then delete?
     - [ ] Search online and find skills for used dependencies!
       - (E.g if we were using instant-db, it would mean finding https://www.instantdb.com/docs/using-llms and deciding to run `npx skills add instantdb/skills`)
@@ -55,9 +56,11 @@ Also see Roadmap.
       - `packages/expo-runtime/test-runtime.tsx` and `packages/headless-test-runtime/src/test-runtime.tsx` share adapter shape, bun `TaoSDK_compile` spawn, path slugs, RTL cleanup / `pressVisibleText`; differ on module load (jest reset vs `require.cache`), SDK URL, env keys, output roots—share only the safe common bits (e.g. spawn/error/path helpers).
       - `packages/expo-runtime/jest.config.js` and `packages/headless-test-runtime/jest.config.js` are almost the same (`moduleNameMapper`); presets / `testMatch` differ.
       - [x] Dropped spaced test folder name: `tests-expo-runtime/` + `testMatch` in `jest.config.js`.
+      - [x] Shared Jest `moduleNameMapper` in `packages/shared/jest-module-name-mapper.cjs`; both runtimes `require` it from `jest.config.js`.
+      - [x] Shared Tao bun harness in `@shared/TaoBunSdk` (`runTaoSdkCompileBunSync`, inline script builder, `formatBunSpawnSyncErrorMessage`) for test-runtime `TaoSDK_compile` subprocesses.
     - [ ] Compiler layout
-      - `packages/compiler/compiler-src` mixes codegen (`app-typescript-gen/`, `compiler-main.ts`), validation (`validation/`, `parse-errors.ts`), path/module resolution (`Paths.ts`, `ModulePath.ts`, `ModuleResolution.ts`, `StdLibPaths.ts`), LSP/services (`tao-services.ts`, `langium-lsp.ts`, `Tao*Provider.ts`, `TaoWorkspaceManager.ts`), and `parser.ts`—group into subfolders when you refactor paths/imports.
-      - `StdLibPaths.ts` is a thin wrapper over `ModulePath.ts`; merge or inline to reduce parallel path modules.
+      - `packages/compiler/compiler-src` mixes codegen (`app-typescript-gen/`, `compiler-main.ts`), validation (`validation/`, `parse-errors.ts`), path/module resolution (`Paths.ts`, `ModulePath.ts`, `ModuleResolution.ts`), LSP/services (`tao-services.ts`, `langium-lsp.ts`, `Tao*Provider.ts`, `TaoWorkspaceManager.ts`), and `parser.ts`—group into subfolders when you refactor paths/imports.
+      - [x] `StdLibPaths.ts` removed; `@tao/...` directory resolution lives on `ModulePath.ts` (`isTaoModuleImport`, `resolveModuleImportDirectory`).
       - `compiler-utils.ts` name vs contents (Langium codegen + shared bits)—split or rename for clarity.
     - [ ] Apps / repo noise (optional)
       - `Apps/` has many scenarios and scratch artifacts; tighten conventions or ignore patterns if reviews feel noisy.

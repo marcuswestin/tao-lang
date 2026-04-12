@@ -19,7 +19,7 @@ Roughly 70+ commits covering:
 ### Files changed (stat)
 
 - **124 files** changed, **+7530 / -886** lines (approx)
-- New compiler modules: Paths, StdLibPaths, TaoScopeComputation, TaoScopeProvider, TaoDefinitionProvider, TaoWorkspaceManager, UseStatementValidator; formatter (TaoFormatter, injectionFormatter); TaoWorkspace class and tao-services API
+- New compiler modules: Paths, TaoScopeComputation, TaoScopeProvider, TaoDefinitionProvider, TaoWorkspaceManager, UseStatementValidator; formatter (TaoFormatter, injectionFormatter); TaoWorkspace class and tao-services API (std `@tao/...` paths later folded into `ModulePath.ts`)
 - New shared: TypeSafety; Log/TaoErrors/q-dev updates
 - Tests: 4-test-module-imports-exports.test.ts, TaoDefinitionProvider.test.ts, test-harness tests, formatter tests
 - Apps: Kitchen Sink, Tao Studio, Tao Design .tao(-todo) files updated for use/visibility
@@ -33,7 +33,7 @@ Roughly 70+ commits covering:
 - **Validation**: UseStatementValidator (imported names exist, visibility: same-module default+share, cross-module share only; stdLibRoot for tao/...)
 - **Scoping**: TaoScopeComputation (share + same-module exports), TaoScopeProvider (scope chain: local → imported)
 - **Go-to-definition**: TaoDefinitionProvider; TaoWorkspace.getDocumentDefinition for document + position
-- **Paths**: Paths.ts (normalizeModulePath, normalizedDirOfPath, resolveModulePathFromFile, fileExists, isDirectory, readDir, resolvePath, streamFilesIn); StdLibPaths (isStdLibImport, resolveStdLibModuleDirectory)
+- **Paths**: Paths.ts (normalizeModulePath, normalizedDirOfPath, resolveModulePathFromFile, fileExists, isDirectory, readDir, resolvePath, streamFilesIn); ModulePath.ts also covers `@tao/...` imports (`isTaoModuleImport`, `resolveModuleImportDirectory`)
 - **Workspace**: TaoWorkspace class (private fields; addDocument, supportsExtension, getFileExtensions, getStdLibRoot, getShared, hasStdLib, buildDocument/buildDocuments, createDocumentFromString/FromUri, getAllDocuments, formatDocument, getDocumentDefinition); TaoWorkspaceConfig, TaoWorkspaceBuildOptions, TaoDocument; createTaoWorkspace; TaoWorkspaceManager (std lib loading); TaoErrorReport API
 - **CLI & IDE**: stdLibRoot and multi-file compilation; tao-cli compiles used files into output; IDE uses createTaoWorkspace and parser.getShared()
 - **Formatter**: TaoFormatter (AST-driven), injection block re-indent, use-statement symbol list formatting
@@ -47,7 +47,7 @@ Roughly 70+ commits covering:
 
 - **Check must pass**: expo-runtime typecheck fails on `app/_gen-tao-compiler/app-output.tsx` because it is **imported** by `app/index.tsx`. TypeScript compiles all referenced files regardless of `exclude`. So `exclude` in tsconfig does not fix this. **Options**: (1) Fix compiler/runtime so generated app-output.tsx is valid (duplicate RootView, missing ALRuntime/on_action_press/children/title); (2) Use a stub or conditional import in app/index.tsx when generated file is invalid (follow-up). Until then, `just check` will fail at expo-runtime. **Done for this prep**: expo-runtime tsconfig has `app/_gen-tao-compiler/**/*` in exclude for when that file is not imported; doc updated.
 - **Documentation**: All exported TS must use `// <name> <description>` (no `/** */`). Paths.ts and TypeSafety.ts already documented. **Todo**: tao-services.ts — add `// <Name> <description>` for exported types (TaoWorkspaceConfig, TaoWorkspaceBuildOptions, TaoDocument) and for TaoWorkspace class and its public methods (addDocument already has one; add for supportsExtension, getFileExtensions, getStdLibRoot, getShared, hasStdLib, buildDocument, buildDocuments, createDocumentFromString, createDocumentFromUri, getAllDocuments, formatDocument, getDocumentDefinition). createTaoWorkspace already has a comment.
-- **DRY**: `isSameModuleImport`, `getSameModuleUris`, and `resolveModulePath` (and similar) are duplicated across TaoScopeProvider, TaoDefinitionProvider, and UseStatementValidator. **Recommendation**: Extract to a shared module (e.g. ModuleResolution.ts or helpers in Paths/StdLibPaths). Defer to follow-up branch if time before merge is short.
+- **DRY**: `isSameModuleImport`, `getSameModuleUris`, and `resolveModulePath` (and similar) are duplicated across TaoScopeProvider, TaoDefinitionProvider, and UseStatementValidator. **Recommendation**: Extract to a shared module (e.g. ModuleResolution.ts or helpers in Paths/ModulePath). Defer to follow-up branch if time before merge is short.
 - **Naming**: Names are descriptive (TaoWorkspace, TaoWorkspaceBuildOptions, getDocumentDefinition, etc.). No renames required for merge.
 - **Tests**: Module system has parsing + validation + (multi-file) resolution tests. Formatter has tests. TaoDefinitionProvider has tests. Runtime (expo) tests exist. **Status**: `./just-agents test` passes (130 pass, 1 todo).
 

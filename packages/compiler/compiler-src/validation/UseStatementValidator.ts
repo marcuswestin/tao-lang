@@ -1,12 +1,12 @@
 import { AST, ASTUtils } from '@parser'
 import * as langium from 'langium'
+import { isTaoModuleImport } from '../ModulePath'
 import {
   getSameModuleUris,
   isSameModuleImport,
   resolveModulePathToUris,
   type UriAndPath,
 } from '../ModuleResolution'
-import { isStdLibImport } from '../StdLibPaths'
 
 /** UseStatementValidator validates use imports and enforces share/file visibility rules.
  * - Same-module: module-visible names; file-private blocked across files.
@@ -30,7 +30,7 @@ export class UseStatementValidator {
       return
     }
 
-    if (useStatement.modulePath && isStdLibImport(useStatement.modulePath) && !this.stdLibRoot) {
+    if (useStatement.modulePath && isTaoModuleImport(useStatement.modulePath) && !this.stdLibRoot) {
       accept('error', 'Standard library root is not configured; cannot resolve @tao/... imports.', {
         node: useStatement,
         property: 'modulePath',
