@@ -18,6 +18,7 @@ ALWAYS alert the user with a notification signal when you need their input to pr
 
 ## Step 1: Read and triage the list
 
+0. If your context window is close to half full, compact it first.
 1. Read the full TODO markdown file.
 2. Ignore items already marked done (e.g. `[x]`, strikethrough, or explicit "done" sections) unless the user says otherwise.
 3. Build a mental map of dependencies: do not pick items that require undone prerequisites unless the batch includes those prerequisites.

@@ -50,8 +50,6 @@ Also see Roadmap.
       - (E.g if we were using instant-db, it would mean finding https://www.instantdb.com/docs/using-llms and deciding to run `npx skills add instantdb/skills`)
   - [ ] Naming conventions. E,g ThisIsAURLFunction, not ThisIsAUrlFunction; private justfiles should be _snake_case, not kebab-case.
   - [ ] Already identified:
-    - [ ] Runtime code duplication
-      - Single **source** tree: `packages/tao-std-lib/tao/tao-runtime/` (`tao-runtime.ts`, `runtime-store.ts`, `runtime-operators.ts`). Compiler copies that folder into each compiled app under `use/@tao/tao-runtime/` (not a second maintained package under `expo-runtime/`). Residual risk: emit/import path bugs or stale copies—not parallel hand-edited duplicates.
     - [ ] Test harness assimilation
       - `packages/expo-runtime/test-runtime.tsx` and `packages/headless-test-runtime/src/test-runtime.tsx` share adapter shape, bun `TaoSDK_compile` spawn, path slugs, RTL cleanup / `pressVisibleText`; differ on module load (jest reset vs `require.cache`), SDK URL, env keys, output roots—share only the safe common bits (e.g. spawn/error/path helpers).
       - `packages/expo-runtime/jest.config.js` and `packages/headless-test-runtime/jest.config.js` are almost the same (`moduleNameMapper`); presets / `testMatch` differ.
@@ -65,7 +63,7 @@ Also see Roadmap.
     - [ ] Apps / repo noise (optional)
       - `Apps/` has many scenarios and scratch artifacts; tighten conventions or ignore patterns if reviews feel noisy.
     - [ ] Misc
-      - [runtime_reload] λ WARN Route "./_gen-tao-compiler/tao-app/app/Fridge.tsx" is missing the required default export. Ensure a React component is exported as default. (This happens in all generated view files)
+      - [x] Expo Router warned on dev reload for every generated `.tsx` under `app/` (“missing the required default export”) because it treated compiler output as file-based routes. **Fix:** `compileOneTaoFileModule` in `app-gen-main.ts` appends a no-op `export default function TaoCompilerExpoRouterStub() { return null }` on each emitted Tao module (not the bootstrap), satisfying the router without moving emit roots.
     - [ ] Recipe dependencies. Many recipes call others unecessarily; and some dependencies are declared at the top, others in implementation. What makes most sense here? Are there recipies that should be changed?
     - [ ] While doing all this, a lot of code will end up in @shared. It will be important to organize well. START BY MAKING A PLAN FOR THIS. For example, test harnesses will be sharing things that other code probably doesn't need.
     - [ ] Do different parts of @shared need different dependencies when used? Do we handle it with a single package.json with peerDependencies?
