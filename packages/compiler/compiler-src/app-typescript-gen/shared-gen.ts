@@ -8,10 +8,12 @@ export function setterId(stateName: string): string {
   return `set_${stateName}`
 }
 
-/** compileParameterList emits `props` typing for view/action parameters. */
-export function compileParameterList(parameterList?: AST.ParameterList): Compiled {
+/** compileParameterList emits parameters for Tao views or for the inner `function` passed to `TaoRuntime.Action`.
+ * - Views with no list: `props: unknown` so `--noUnusedLocals` passes when the body ignores props.
+ * - Actions with no list: empty (emit `function name()`), not a dummy `props` parameter. */
+export function compileParameterList(parameterList: AST.ParameterList | undefined): Compiled {
   if (!parameterList) {
-    return new LangiumGen.CompositeGeneratorNode('props: any')
+    return new LangiumGen.CompositeGeneratorNode('props: unknown')
   }
   return compileNode(parameterList)`
     props: {${

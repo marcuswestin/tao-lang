@@ -1,8 +1,11 @@
 import { NodePropName } from '@parser'
 import { Assert } from '@shared/TaoErrors'
 import { AstNode, Properties, Reference } from 'langium'
+import * as LangiumGen from 'langium/generate'
+import { NewLineNode } from 'langium/generate'
 
 export type { NodePropName }
+export type Compiled = LangiumGen.CompositeGeneratorNode
 
 /** assertNever throws at runtime when reached; use as exhaustive switch default so missing cases are a type error.
  * - Example: `default: assertNever(expr)`. */
@@ -60,12 +63,10 @@ export function compileNodeListPropertyOptional<
   if (!node || node[propertyName] == undefined) {
     return undefined
   }
-  const opts = { appendNewLineIfNotEmpty: true } as const
-  return _compileNodeListProperty(node, propertyName, compileListItemFn, opts)
+  return _compileNodeListProperty(node, propertyName, compileListItemFn, {
+    prefix: new NewLineNode(),
+  })
 }
-
-import * as LangiumGen from 'langium/generate'
-export type Compiled = LangiumGen.CompositeGeneratorNode
 
 export function compileNoop(): Compiled {
   return new LangiumGen.CompositeGeneratorNode()
@@ -116,7 +117,7 @@ function assert(condition: boolean, message: string): void {
 
 /** compileNodeList joins arbitrary iterable nodes with tracing to a composite generator node. */
 export function compileNodeList<NodeT extends AstNode>(
-  nodes: Iterable<NodeT>,
+  nodes: Iterable<NodeT> | Generator<NodeT, void, unknown>,
   genListItemFn: (node: NodeT) => LangiumGen.Generated,
 ): Compiled {
   const compiledList = new LangiumGen.CompositeGeneratorNode()

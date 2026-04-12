@@ -1,4 +1,5 @@
 import { compileNode } from '@compiler/compiler-utils'
+import { nodePath } from '@compiler/util/libs'
 import { AST } from '@parser'
 import * as LangiumGen from 'langium/generate'
 import type { UriAndPath } from '../ModuleResolution'
@@ -23,6 +24,7 @@ function dedupeTaoFilesByUri(files: AST.TaoFile[]): AST.TaoFile[] {
 /** compileOneTaoFileModule emits one RN TSX module (preamble, imports, top-level statements). */
 function compileOneTaoFileModule(
   taoFile: AST.TaoFile,
+  relativePath: string,
   uriToEmitPath: Map<string, string>,
   uriToTao: Map<string, AST.TaoFile>,
   uriAndPaths: UriAndPath[],
@@ -30,11 +32,13 @@ function compileOneTaoFileModule(
 ): LangiumGen.GeneratorNode {
   const importHeader = buildImportLinesForTaoFile(taoFile, uriToEmitPath, uriToTao, uriAndPaths, stdLibRoot)
   const result = new LangiumGen.CompositeGeneratorNode()
+  const dirCount = relativePath.split(nodePath.sep).length
+  const importBase = '../'.repeat(dirCount - 1)
+
   result.append(compileNode(taoFile)`
     // @ts-nocheck
     import * as RN from 'react-native'
-    import { TaoRuntime } from '../use/@tao/tao-runtime.ts'
-
+    import { TaoRuntime } from '${importBase}use/@tao/tao-runtime/tao-runtime'
     ${importHeader}// ${taoFile.$document!.uri}
   `)
   const body = compileTaoFile(taoFile)
@@ -50,6 +54,7 @@ function compileBootstrapNode(importPathFromBootstrapToEntry: string): LangiumGe
   const n = new LangiumGen.CompositeGeneratorNode()
   n.append(`// @ts-nocheck
 import * as RN from 'react-native'
+import * as React from 'react'
 import { AppUIView } from '${importPathFromBootstrapToEntry}'
 
 export default function CompiledTaoApp() {
@@ -91,7 +96,7 @@ export function generateTypescriptReactNativeApp(
     }
     fileNodes.push({
       relativePath: rel,
-      node: compileOneTaoFileModule(t, uriToEmitPath, uriToTao, uriAndPaths, stdLibRoot),
+      node: compileOneTaoFileModule(t, rel, uriToEmitPath, uriToTao, uriAndPaths, stdLibRoot),
     })
   }
 

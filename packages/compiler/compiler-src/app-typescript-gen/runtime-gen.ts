@@ -11,6 +11,7 @@ import {
 import { langium } from '@compiler/util/libs'
 import { AST } from '@parser'
 import { switchProperty_Exhaustive, switchType_Exhaustive } from '@shared/TypeSafety'
+import { AstNode, AstUtils } from 'langium'
 import { ModuleImports } from './runtime-module-imports'
 import { compileParameterList, compileRefName, compileTODO } from './shared-gen'
 
@@ -27,19 +28,22 @@ class RuntimeGen {
   }
 
   TaoFile(taoFile: AST.TaoFile): Compiled {
-    return compileNodeListProperty(taoFile, 'statements', stmt => this.Statement(stmt))
+    return compileNode(taoFile)`
+      ${compileNodeListProperty(taoFile, 'statements', stmt => this.Statement(stmt))}
+    `
   }
 
   Statement(statement: AST.Statement): Compiled {
     return switchType_Exhaustive(statement, {
       Injection: (n) => this.Injection(n),
+      Debugger: (n) => this.Debugger(n),
       StateUpdate: (n) => this.StateUpdate(n),
       ModuleDeclaration: (n) => this.ModuleDeclaration(n),
       UseStatement: (n) => this.UseStatement(n),
-      AppDeclaration: (n) => this.Declaration(n),
-      AssignmentDeclaration: (n) => this.Declaration(n),
-      ViewDeclaration: (n) => this.Declaration(n),
-      ActionDeclaration: (n) => this.Declaration(n),
+      AppDeclaration: (n) => this.AppDeclaration(n),
+      AssignmentDeclaration: (n) => this.AssignmentDeclaration(n),
+      ViewDeclaration: (n) => this.ViewDeclaration(n),
+      ActionDeclaration: (n) => this.ActionDeclaration(n),
       ViewRender: (n) => this.ViewRender(n),
     })
   }
@@ -57,12 +61,12 @@ class RuntimeGen {
     return switchType_Exhaustive(expression, {
       StringLiteral: (node) => {
         return compileNode(node)`
-          TaoRuntime.StringLiteral(${JSON.stringify(node.string)})
+          TaoRuntime.StringLiteral(${JSON.stringify(node.string)}).read()
         `
       },
       NumberLiteral: (node) => {
         return compileNode(node)`
-          TaoRuntime.NumberLiteral(${JSON.stringify(node.number)})
+          TaoRuntime.NumberLiteral(${JSON.stringify(node.number)}).read()
         `
       },
       NamedReference: (node) => {
@@ -71,7 +75,7 @@ class RuntimeGen {
         // (partial workspace, broken files, or pre-scope-computation runs).
         const id = node.referenceName.ref?.name ?? node.referenceName.$refText
         return compileNode(node)`
-          TaoRuntime.useNamedReference(${id})
+          ${id}_use.read()
         `
       },
     })
@@ -82,12 +86,12 @@ class RuntimeGen {
 
   AssignmentDeclaration(declaration: AST.AssignmentDeclaration): Compiled {
     return switchProperty_Exhaustive(declaration, 'type', {
-      alias: () => this.AliasDeclaration(declaration),
-      state: () => this.StateDeclaration(declaration),
+      alias: () => this.Declaration_alias(declaration),
+      state: () => this.Declaration_state(declaration),
     })
   }
 
-  AliasDeclaration(declaration: AST.AssignmentDeclaration): Compiled {
+  Declaration_alias(declaration: AST.AssignmentDeclaration): Compiled {
     // TODO: const ${name} = TaoRuntime.${declaration.$type}_Constructor(${value});
     const name = compileRefName(declaration)
     const value = this.Expression(declaration.value)
@@ -106,8 +110,8 @@ class RuntimeGen {
   ArgumentList(argumentList?: AST.ArgumentList): Compiled | undefined {
     return compileNodeListPropertyOptional(argumentList, 'arguments', argument => {
       return compileNode(argument)`
-      ${argument.name} = {${this.Expression(argument.value)}}
-    `
+        /**/${argument.name} = {${this.Expression(argument.value)}}
+      `
     })
   }
 
@@ -133,7 +137,7 @@ class RuntimeGen {
 
   ModuleDeclaration(moduleDecl: AST.ModuleDeclaration): Compiled {
     const visibility = compileNodeProperty(moduleDecl, 'visibility', (val) => val ? 'export ' : '')
-    const declaration = this.Declaration(moduleDecl.declaration)
+    const declaration = this.Statement(moduleDecl.declaration)
     return compileNode(moduleDecl)`
       ${visibility}${declaration}
     `
@@ -152,12 +156,18 @@ class RuntimeGen {
     `
   }
 
-  StateDeclaration(declaration: AST.AssignmentDeclaration): Compiled {
+  Declaration_state(declaration: AST.AssignmentDeclaration): Compiled {
     const name = compileRefName(declaration)
     const value = this.Expression(declaration.value)
-    return compileNode(declaration)`
-      const ${name} = TaoRuntime.useState(${value});
-    `
+    if (AST.isTaoFile(declaration.$container)) {
+      return compileNode(declaration)`
+        const ${name} = TaoRuntime.TopLevelState(${value});
+      `
+    } else {
+      return compileNode(declaration)`
+        const ${name} = TaoRuntime.useViewState(${value});
+      `
+    }
   }
 
   StateUpdate(update: AST.StateUpdate): Compiled {
@@ -165,7 +175,7 @@ class RuntimeGen {
     const op = compileNodeProperty(update, 'op')
     const value = this.Expression(update.value)
     return compileNode(update)`
-      TaoRuntime.updateState(${stateRef}, '${op}', ${value})
+      TaoRuntime.updateState(${stateRef}_use, '${op}', ${value})
     `
   }
 
@@ -173,27 +183,91 @@ class RuntimeGen {
   ////////
 
   ViewDeclaration(declaration: AST.ViewDeclaration): Compiled {
-    const stmts = declaration.block.statements
-    const viewBlockStatements = stmts.filter(s => !AST.isViewRender(s))
-    const renderStatements = stmts.filter(AST.isViewRender)
+    const declarations = Array.from(this.filterNodeTree(declaration.block, AST.isDeclaration))
+    const expressions = Array.from(this.filterNodeTree(declaration.block, AST.isExpression))
+    const renderNodes = Array.from(
+      this.filterNodeChildren(declaration.block, n => AST.isViewRender(n) || AST.isInjection(n)),
+    )
     return compileNode(declaration)`
       function ${declaration.name}(${compileParameterList(declaration.parameterList)}) {
-        ${compileNodeList(viewBlockStatements, stmt => this.Statement(stmt))}
-        return <>${compileNodeList(renderStatements, stmt => this.Statement(stmt))}</>
-      }`
+        ${compileNodeList(declarations, declaration => this.Declaration(declaration))}
+         ${compileNodeList(expressions, stmt => this.useViewExpression(stmt))}
+          return <>${compileNodeList(renderNodes, renderNode => this.renderNode(renderNode))}</>
+    }`
+  }
+
+  renderNode(renderNode: AST.ViewRender | AST.Injection): Compiled {
+    return switchType_Exhaustive(renderNode, {
+      ViewRender: (stmt) => this.ViewRender(stmt),
+      Injection: (stmt) => compileNode(stmt)`{${this.Injection(stmt)}}`,
+    })
   }
 
   ViewRender(viewRender: AST.ViewRender): Compiled {
     return compileNodePropertyRef(viewRender, 'view', viewDecl => {
       return compileNode(viewDecl)`
-      <${viewDecl.name} ${this.ArgumentList(viewRender.argumentList)}>
-        ${this.Block(viewRender.block)}
+      <${viewDecl.name}${this.ArgumentList(viewRender.argumentList)}>
+        ${
+        viewRender.block && compileNodeList(viewRender.block?.statements, stmt => {
+          if (AST.isDeclaration(stmt)) {
+            return compileNoop()
+          } else {
+            return this.Statement(stmt)
+          }
+        })
+      }
       </${viewDecl.name}>`
     })
   }
 
+  useViewExpression(expression: AST.Expression): Compiled {
+    return switchType_Exhaustive(expression, {
+      NamedReference: (ref) => (compileNode(ref)`
+        const ${ref.referenceName.$refText}_use = ${ref.referenceName.$refText}.useState();
+      `),
+      NumberLiteral: compileNoop,
+      StringLiteral: compileNoop,
+    })
+  }
+
+  *filterNodeChildren<FilterT extends AstNode>(node: AstNode, predicate: (node: AstNode) => node is FilterT) {
+    for (const child of AstUtils.streamContents(node)) {
+      if (predicate(child)) {
+        yield child
+      }
+    }
+  }
+  *walkTree<NodeT extends AstNode>(node: NodeT): Generator<NodeT, void, unknown> {
+    for (const child of AstUtils.streamAllContents(node)) {
+      yield child as NodeT
+    }
+  }
+  *filterNodeTree<FilterT extends AstNode>(
+    node: AstNode,
+    predicate: (node: AstNode) => node is FilterT,
+  ) {
+    for (const child of this.walkTree(node)) {
+      if (predicate(child)) {
+        yield child
+      }
+    }
+  }
+
   Injection(injection: AST.Injection): Compiled {
-    return compileNodeProperty(injection, 'tsCodeBlock', (content) => this.trimTsFence(content))
+    return switchProperty_Exhaustive(injection, 'type', {
+      raw: () => (compileNode(injection)`
+        ${compileNodeProperty(injection, 'tsCodeBlock', (content) => this.trimTsFence(content))}
+      `),
+      undefined: () => (compileNode(injection)`
+        (function() {
+          ${compileNodeProperty(injection, 'tsCodeBlock', (content) => this.trimTsFence(content))}
+        })()
+      `),
+    })
+  }
+
+  Debugger(Debugger: AST.Debugger): Compiled {
+    return compileNode(Debugger)` debugger `
   }
 
   /** trimTsFence normalizes ```ts fences to commented markers for embedding. */
@@ -201,14 +275,4 @@ class RuntimeGen {
     const fenced = content.replace(/^```ts/g, '\n/* ```ts */\n').replace(/ *```$/g, '\n/* ``` */')
     return fenced.replace('```ts\n\n', '```ts\n').replace('\n\n/* ``` */', '\n/* ``` */')
   }
-
-  // readExpression(expression: AST.Expression) {
-  //   return `TaoRuntime.readExpsression(${compileExpression(expression)})`
-  // },
-  // readState(ref: AST.Referenceable) {
-  //   return `TaoRuntime.readState(${compileName(ref)})`
-  // },
-  // writeState(name: string, value: AST.Expression) {
-  //   return `TaoRuntime.writeState(${name}, ${compileExpression(value)})`
-  // },
 }
