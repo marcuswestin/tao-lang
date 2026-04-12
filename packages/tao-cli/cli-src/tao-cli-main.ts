@@ -76,6 +76,7 @@ type TaoSDK_compileResult = {
 /** TaoSDK_compile compiles `path` into the runtime package’s configured output file(s).
  * - `runtimeDir` must be a Tao runtime directory (`package.json` with `taoRuntime.outputPath`).
  * - `outputFileName`, if set, is resolved under `runtimeDir` and overrides the manifest output path.
+ * - After emitting TS, copies `compileTao`’s `copyDirs` into `dirname(outputPath)` (tao-app root), not directly under `runtimeDir`.
  * - Compile or validation failures become `UserInputRejectionError` with the human-readable report message. */
 export async function TaoSDK_compile(opts: TaoSDK_compileOpts): Promise<TaoSDK_compileResult> {
   const outputPath = await checkUserInputs(opts)
@@ -86,7 +87,16 @@ export async function TaoSDK_compile(opts: TaoSDK_compileOpts): Promise<TaoSDK_c
   }
   const emitFiles = planTaoSdkEmitFiles(result.files, result.entryRelativePath, outputPath)
   for (const f of emitFiles) {
-    await writeFile(f.dest, f.content)
+    await writeFile(f.dest, f.text)
+    if (f.trace) {
+      await writeFile(f.dest + '.trace', JSON.stringify(f.trace, null, 2))
+    }
+  }
+  const emitRoot = path.dirname(outputPath)
+  for (const f of result.copyDirs) {
+    const dest = path.resolve(emitRoot, f.to)
+    removeDirectory(dest)
+    copyDirectory(f.from, dest)
   }
   return { outputPath, files: emitFiles }
 }
@@ -181,5 +191,18 @@ function getTaoRuntimeManifest(packageJson: any): TaoRuntimeManifest | undefined
 
   return {
     outputPath: manifest.outputPath,
+  }
+}
+
+/** copyDirectory copies a directory from `src` to `dest` using synchronous fs APIs. */
+function copyDirectory(src: string, dest: string) {
+  nodeFs.mkdirSync(dest, { recursive: true })
+  nodeFs.cpSync(src, dest, { recursive: true })
+}
+
+/** removeDirectory removes a directory at `path` when it exists, using synchronous fs APIs. */
+function removeDirectory(path: string) {
+  if (isDirectory(path)) {
+    nodeFs.rmSync(path, { recursive: true })
   }
 }

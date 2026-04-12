@@ -14,7 +14,7 @@ describe('cli:', () => {
       const taoPath = join(dir, 'app.tao')
       writeFileSync(taoPath, code)
       const res = await TaoSDK_compile({ path: taoPath, runtimeDir: resolvePath(__dirname, '../../expo-runtime/') })
-      expect(res.files.some(f => f.content.includes(needle))).toBe(true)
+      expect(res.files.some(f => f.text.includes(needle))).toBe(true)
     } finally {
       rmSync(dir, { recursive: true })
     }
