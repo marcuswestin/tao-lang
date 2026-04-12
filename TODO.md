@@ -66,6 +66,7 @@ Also see Roadmap.
       - [ ] Try removing the just-agents restriction and see what development is like without it.
       - [ ] Remove, move, edit, add rules and commands and instructions. Especially add rules? React, react native, etc. Ask to find all relevant ones online.
       - [ ] List all skills etc that get loaded into context all the time. Improve.
+      - [ ] Consider making all commands in to skills instead.
 - [ ] Improve testing
   - [ ] Add View Keys
     - [ ] Dev System for accessing local State?
