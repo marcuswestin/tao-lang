@@ -7,12 +7,6 @@ import { NewLineNode } from 'langium/generate'
 export type { NodePropName }
 export type Compiled = LangiumGen.CompositeGeneratorNode
 
-/** assertNever throws at runtime when reached; use as exhaustive switch default so missing cases are a type error.
- * - Example: `default: assertNever(expr)`. */
-export function assertNever<T extends never>(_arg: T): never {
-  throw new Error(`assertNever called`)
-}
-
 type NonNullablePropName<N extends AstNode> = {
   [K in NodePropName<N>]: undefined extends N[K] ? never : null extends N[K] ? never : K
 }[NodePropName<N>]

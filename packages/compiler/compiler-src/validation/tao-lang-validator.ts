@@ -1,5 +1,5 @@
-import { assertNever } from '@compiler/compiler-utils'
 import { AST, type NodePropName } from '@parser'
+import { assertNever } from '@shared/TypeSafety'
 import type * as langium from 'langium'
 import { makeValidater, type Reporter } from './ValidationReporter'
 

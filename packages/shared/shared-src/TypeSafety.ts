@@ -47,3 +47,9 @@ export function switchBindItemType_Exhaustive<
   const key = item.$type as keyof ItemHandlerMap<ItemT, R>
   return handlers[key].bind(bindThis)(item as Extract<ItemT, { $type: typeof key }>)
 }
+
+/** assertNever throws at runtime when reached; use as exhaustive switch default so missing cases are a type error.
+ * - Example: `default: assertNever(expr)`. */
+export function assertNever<T extends never>(_arg: T): never {
+  throw new Error(`assertNever called`)
+}

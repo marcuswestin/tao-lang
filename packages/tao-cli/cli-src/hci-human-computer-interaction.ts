@@ -1,4 +1,3 @@
-import { assertNever } from '@compiler/compiler-utils'
 import { Log } from '@shared/Log'
 import {
   getTaoError,
@@ -6,6 +5,7 @@ import {
   UnexpectedBehavior,
   UserInputRejection,
 } from '@shared/TaoErrors'
+import { assertNever } from '@shared/TypeSafety'
 import { appendFileSync } from 'node:fs'
 import * as process from 'node:process'
 import { bgWhiteBright, blackBright, bold, cyan, gray, red, yellow } from 'picocolors'
