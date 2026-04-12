@@ -39,6 +39,7 @@ export default class TaoFormatter extends AbstractFormatter {
       ArgumentList: (n) => this.formatArgumentList(n),
       Argument: (n) => this.formatArgument(n),
       Injection: (n) => this.formatInjection(n),
+      Debugger: (n) => this.formatDebugger(n),
       ParameterDeclaration: (n) => this.formatParameterDeclaration(n),
       ParameterList: (n) => this.formatParameterList(n),
       AssignmentDeclaration: (n) => this.formatAssignmentDeclaration(n),
@@ -49,7 +50,6 @@ export default class TaoFormatter extends AbstractFormatter {
     })
   }
 
-  /** formatTaoFile applies spacing between top-level statements. */
   private formatTaoFile(node: AST.TaoFile): void {
     const f = this.getNodeFormatter(node)
     const stmts = node.statements
@@ -67,7 +67,6 @@ export default class TaoFormatter extends AbstractFormatter {
     }
   }
 
-  /** formatUseStatement formats use, commas, and from-clause spacing. */
   private formatUseStatement(node: AST.UseStatement): void {
     const f = this.getNodeFormatter(node)
     f.keyword('use').append(Formatting.oneSpace())
@@ -77,43 +76,36 @@ export default class TaoFormatter extends AbstractFormatter {
     }
   }
 
-  /** formatAppDeclaration formats the name and indented app block. */
   private formatAppDeclaration(node: AST.AppDeclaration): void {
     this._spaceAroundName(node)
     this._indentBlock(node, 'appStatements')
   }
 
-  /** formatAppStatement adds space after the ui keyword. */
   private formatAppStatement(node: AST.AppStatement): void {
     const f = this.getNodeFormatter(node)
     // Space after 'ui' keyword: "ui MyView"
     f.keyword('ui').append(Formatting.oneSpace())
   }
 
-  /** formatViewDeclaration formats name, parameters; block body is formatted via `Block`. */
   private formatViewDeclaration(node: AST.ViewDeclaration): void {
     this._spaceAroundName(node)
     this._spaceAfterProperty(node, 'parameterList')
   }
 
-  /** formatActionDeclaration formats name, parameters; block body is formatted via `Block`. */
   private formatActionDeclaration(node: AST.ActionDeclaration): void {
     this._spaceAroundName(node)
     this._spaceAfterProperty(node, 'parameterList')
   }
 
-  /** formatModuleDeclaration formats optional visibility and inner declaration. */
   private formatModuleDeclaration(node: AST.ModuleDeclaration): void {
     this._spaceAfterProperty(node, 'visibility')
     this._spaceAfterProperty(node, 'declaration')
   }
 
-  /** formatBlock formats `{ statements }` interiors (when the block node is formatted). */
   private formatBlock(node: AST.Block): void {
     this._indentBlock(node, 'statements')
   }
 
-  /** formatStateUpdate formats `set name <op> value`. */
   private formatStateUpdate(node: AST.StateUpdate): void {
     const f = this.getNodeFormatter(node)
     f.keyword('set').append(Formatting.oneSpace())
@@ -121,7 +113,6 @@ export default class TaoFormatter extends AbstractFormatter {
     f.property('op').append(Formatting.oneSpace())
   }
 
-  /** formatViewRender formats argument list and spacing before an optional child `Block`. */
   private formatViewRender(node: AST.ViewRender): void {
     this._spaceBeforeProperty(node, 'argumentList')
     if (node.block) {
@@ -129,66 +120,60 @@ export default class TaoFormatter extends AbstractFormatter {
     }
   }
 
-  /** formatArgumentList applies comma spacing between arguments. */
   private formatArgumentList(node: AST.ArgumentList): void {
     this._spaceBetweenCommaSeperatedItems(node)
   }
 
-  /** formatArgument adds space between argument name and value. */
   private formatArgument(node: AST.Argument): void {
     const f = this.getNodeFormatter(node)
     // Space between name and value: "name "hello""
     f.property('name').append(Formatting.oneSpace())
   }
 
-  /** formatParameterList applies spaces in the parameter list. */
   private formatParameterList(node: AST.ParameterList): void {
     this._spaceBetweenNodesInList(node, 'parameters')
     this._spaceBetweenCommaSeperatedItems(node)
   }
 
-  /** formatParameterDeclaration adds space after the parameter name. */
   private formatParameterDeclaration(node: AST.ParameterDeclaration): void {
     this._spaceAfterProperty(node, 'name')
   }
 
-  /** formatNumberLiteral is a no-op for number literals. */
   private formatNumberLiteral(_node: AST.NumberLiteral): void {
     // No formatting for number literals
   }
 
-  /** formatStringLiteral is a no-op for string literals. */
   private formatStringLiteral(_node: AST.StringLiteral): void {
     // No formatting for string literals
   }
 
-  /** formatAssignmentDeclaration formats `alias` / `state` and `=` spacing (name uses default CST gaps). */
   private formatAssignmentDeclaration(node: AST.AssignmentDeclaration): void {
     const f = this.getNodeFormatter(node)
     f.keyword(node.type).append(Formatting.oneSpace())
     f.keyword('=').surround(Formatting.oneSpace())
   }
 
-  /** formatNamedReference is a no-op for references. */
   private formatNamedReference(_node: AST.NamedReference): void {
   }
 
-  /** formatInjection adds space after the inject keyword. */
   private formatInjection(node: AST.Injection): void {
     const f = this.getNodeFormatter(node)
     f.keyword('inject').append(Formatting.oneSpace())
   }
 
+  private formatDebugger(node: AST.Debugger): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('debugger').append(Formatting.oneSpace())
+  }
+
   // Private helpers
   //////////////////
 
-  /** _spaceAroundName adds one space around the name property. */
   private _spaceAroundName(node: AstNode): void {
     const f = this.getNodeFormatter(node)
     f.property('name').surround(Formatting.oneSpace())
   }
 
-  /** _spaceAfterProperty adds one space after the child node if present. */
   private _spaceAfterProperty<NodeT extends AstNode>(
     node: NodeT,
     property: NodePropName<NodeT>,
@@ -200,7 +185,6 @@ export default class TaoFormatter extends AbstractFormatter {
     }
   }
 
-  /** _indentBlock formats brace-block interiors for an array property. */
   private _indentBlock<NodeT extends AstNode, K extends keyof NodeT>(
     node: NodeT,
     property: K & (NodeT[K] extends AstNode[] ? K : never),
@@ -211,7 +195,6 @@ export default class TaoFormatter extends AbstractFormatter {
     this._indentBetween(node, property, open, close)
   }
 
-  /** _indentBetween formats empty "{ }" or an indented interior between open and close regions. */
   private _indentBetween<NodeT extends AstNode, K extends keyof NodeT>(
     node: NodeT,
     property: K,
@@ -230,7 +213,6 @@ export default class TaoFormatter extends AbstractFormatter {
     }
   }
 
-  /** _spaceBeforeProperty adds one space before the child node if present. */
   private _spaceBeforeProperty<NodeT extends AstNode, K extends keyof NodeT>(
     node: NodeT,
     property: K & (NodeT[K] extends AstNode | undefined ? K : never),
@@ -242,12 +224,10 @@ export default class TaoFormatter extends AbstractFormatter {
     }
   }
 
-  /** _spaceBetweenCommaSeperatedItems ensures comma has no space before and one space after. */
   private _spaceBetweenCommaSeperatedItems<NodeT extends AstNode>(node: NodeT): void {
     const f = this.getNodeFormatter(node)
     f.keywords(',').prepend(Formatting.noSpace()).append(Formatting.oneSpace())
   }
-  /** _spaceBetweenNodesInList adds one space before each list item after the first. */
   private _spaceBetweenNodesInList<NodeT extends AstNode, K extends keyof NodeT>(
     node: NodeT,
     property: K & (NodeT[K] extends AstNode[] ? K : never),
