@@ -18,7 +18,7 @@ Add a formatter
 
 Currently there's a stub TaoFormatter.ts, and a formatter test that's failing (as it should be right now).
 
-Register the formatter in tao-services.ts, then out the formatter, based on langium best practices, until the test passes.
+Register the formatter in `langium/tao-services.ts`, then out the formatter, based on langium best practices, until the test passes.
 
 ## Langium Reference information
 

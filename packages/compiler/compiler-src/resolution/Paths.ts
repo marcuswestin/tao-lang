@@ -1,6 +1,6 @@
 import { isDirectory } from '@shared/FsPathChecks'
 import { readdirSync } from 'node:fs'
-import { nodePath } from './util/libs'
+import { nodePath } from '../util/libs'
 
 /** readDir returns directory entry names or an empty array on error. */
 export function readDir(filePath: string): string[] {

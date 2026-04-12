@@ -4,7 +4,7 @@ import {
   getSameModuleUris,
   isSameModuleImport,
   resolveModulePathToUris,
-} from './ModuleResolution'
+} from '../resolution/ModuleResolution'
 
 /** TaoScopeProvider resolves reference scopes using module and use-statement rules. */
 export class TaoScopeProvider extends langium.DefaultScopeProvider {

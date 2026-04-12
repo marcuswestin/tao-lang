@@ -5,7 +5,7 @@ import {
   isSameModuleImport,
   resolveModulePathToUris,
   type UriAndPath,
-} from '../ModuleResolution'
+} from '../../resolution/ModuleResolution'
 import { emitRelativeImport } from './gen-output-paths'
 
 /** buildUriToTaoMap maps document URI string to TaoFile AST. */

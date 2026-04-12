@@ -1,10 +1,10 @@
 // This file abstracts which test framework is used.
 // It allows e.g for switching to vitest.
 
-import { getDocumentErrors, TaoErrorReport } from '@compiler/parse-errors'
-import { TaoParser } from '@compiler/parser'
-import type { TaoWorkspace } from '@compiler/tao-services'
-import { createTaoWorkspace } from '@compiler/tao-services'
+import { TaoParser } from '@compiler/langium/parser'
+import type { TaoWorkspace } from '@compiler/langium/tao-services'
+import { createTaoWorkspace } from '@compiler/langium/tao-services'
+import { getDocumentErrors, TaoErrorReport } from '@compiler/validation/parse-errors'
 import { AST } from '@parser'
 import { TaoFile } from '@parser/_gen-tao-parser/ast'
 import { Assert } from '@shared/TaoErrors'

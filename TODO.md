@@ -56,10 +56,10 @@ Also see Roadmap.
       - [x] Dropped spaced test folder name: `tests-expo-runtime/` + `testMatch` in `jest.config.js`.
       - [x] Shared Jest `moduleNameMapper` in `packages/shared/jest-module-name-mapper.cjs`; both runtimes `require` it from `jest.config.js`.
       - [x] Shared Tao bun harness in `@shared/TaoBunSdk` (`runTaoSdkCompileBunSync`, inline script builder, `formatBunSpawnSyncErrorMessage`) for test-runtime `TaoSDK_compile` subprocesses.
-    - [ ] Compiler layout
-      - `packages/compiler/compiler-src` mixes codegen (`app-typescript-gen/`, `compiler-main.ts`), validation (`validation/`, `parse-errors.ts`), path/module resolution (`Paths.ts`, `ModulePath.ts`, `ModuleResolution.ts`), LSP/services (`tao-services.ts`, `langium-lsp.ts`, `Tao*Provider.ts`, `TaoWorkspaceManager.ts`), and `parser.ts`—group into subfolders when you refactor paths/imports.
+    - [x] Compiler layout
+      - [x] Grouped `packages/compiler/compiler-src`: `codegen/` (`compiler-codegen.ts`, `app/` ex-`app-typescript-gen/`), `resolution/` (`Paths`, `ModulePath`, `ModuleResolution`), `langium/` (`tao-services`, `langium-lsp`, `TaoDefinitionProvider`, `TaoScopeComputation`, `TaoScopeProvider`, `TaoWorkspaceManager`, `parser`), `validation/parse-errors.ts`; entry `compiler-main.ts` stays at root. Public imports include `@compiler/codegen/compiler-codegen`, `@compiler/resolution/ModulePath`, `@compiler/langium/tao-services`, `@compiler/validation/parse-errors`.
       - [x] `StdLibPaths.ts` removed; `@tao/...` directory resolution lives on `ModulePath.ts` (`isTaoModuleImport`, `resolveModuleImportDirectory`).
-      - [x] Renamed `compiler-utils.ts` → `compiler-codegen.ts` (Langium traced codegen); imports use `@compiler/compiler-codegen`. Further splits deferred.
+      - [x] Renamed `compiler-utils.ts` → `compiler-codegen.ts` (Langium traced codegen); imports use `@compiler/codegen/compiler-codegen`.
     - [ ] Apps / repo noise (optional)
       - `Apps/` has many scenarios and scratch artifacts; tighten conventions or ignore patterns if reviews feel noisy.
     - [ ] Misc
@@ -79,7 +79,6 @@ Also see Roadmap.
   - [ ] Gemini CLI
   - [ ] Claude Code Direct
   - [ ] Codex Code Direct
-- [ ] Organize compiler-src - it's unorganized.
 - [ ] Formatting: allow consecutive lines of same type have no space between them.
 - Have ALL Node imports through a single shared import. Path, etc
 - [ ] Fix just agents test with a pattern flag passed in

@@ -1,5 +1,5 @@
 import { Assert } from '@shared/TaoErrors'
-import { nodePath } from './util/libs'
+import { nodePath } from '../util/libs'
 
 export type ModulePath = string & { __brand: 'ModulePath' }
 

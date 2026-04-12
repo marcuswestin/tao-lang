@@ -1,14 +1,14 @@
 import * as langium from 'langium'
 import * as LSP from 'langium/lsp'
 
-import { TaoDefinitionProvider } from '@compiler/TaoDefinitionProvider'
-import { TaoScopeComputation } from '@compiler/TaoScopeComputation'
-import { TaoScopeProvider } from '@compiler/TaoScopeProvider'
-import { TaoWorkspaceManager } from '@compiler/TaoWorkspaceManager'
 import { validator } from '@compiler/validation/tao-lang-validator'
 import { UseStatementValidator } from '@compiler/validation/UseStatementValidator'
 import TaoFormatter from '@formatter/TaoFormatter'
 import { AST, TaoLangGeneratedModule, TaoLangGeneratedSharedModule } from '@parser'
+import { TaoDefinitionProvider } from './TaoDefinitionProvider'
+import { TaoScopeComputation } from './TaoScopeComputation'
+import { TaoScopeProvider } from './TaoScopeProvider'
+import { TaoWorkspaceManager } from './TaoWorkspaceManager'
 
 // TaoWorkspaceConfig configures createTaoWorkspace (e.g. std lib root path).
 export type TaoWorkspaceConfig = {

@@ -7,22 +7,19 @@ import {
   compileNodeProperty,
   compileNodePropertyRef,
   compileNoop,
-} from '@compiler/compiler-codegen'
+} from '@compiler/codegen/codegen-util'
 import { langium } from '@compiler/util/libs'
 import { AST } from '@parser'
 import { switchProperty_Exhaustive, switchType_Exhaustive } from '@shared/TypeSafety'
 import { AstNode, AstUtils } from 'langium'
-import { ModuleImports } from './runtime-module-imports'
-import { compileParameterList, compileRefName, compileTODO } from './shared-gen'
+import * as LangiumGen from 'langium/generate'
+import { compileTODO } from '../codegen-util'
 
 export function compileTaoFile(taoFile: AST.TaoFile): Compiled {
   return new RuntimeGen().TaoFile(taoFile)
 }
 
 class RuntimeGen {
-  // TODO: Track imported modules during compilation, rather than separately.
-  moduleImports = new ModuleImports()
-
   TODO(node: langium.AstNode): Compiled {
     return compileTODO(node)
   }
@@ -93,7 +90,7 @@ class RuntimeGen {
 
   Declaration_alias(declaration: AST.AssignmentDeclaration): Compiled {
     // TODO: const ${name} = TaoRuntime.${declaration.$type}_Constructor(${value});
-    const name = compileRefName(declaration)
+    const name = this.compileRefName(declaration)
     const value = this.Expression(declaration.value)
     return compileNode(declaration)`
       const ${name} = TaoRuntime.Alias(${value});
@@ -147,17 +144,31 @@ class RuntimeGen {
   //////////
 
   ActionDeclaration(declaration: AST.ActionDeclaration): Compiled {
-    const parameterList = compileParameterList(declaration.parameterList)
+    const parameterList = this.ParameterList(declaration.parameterList)
     const block = this.Block(declaration.block)
+    const name = declaration.name
     return compileNode(declaration)`
-      const ${declaration.name} = TaoRuntime.Action(function ${declaration.name}(${parameterList}) {
+      const ${name} = TaoRuntime.Action(function ${name}(${parameterList}) {
         ${block}
       })
     `
   }
 
+  ParameterList(parameterList: AST.ParameterList | undefined): Compiled {
+    if (!parameterList) {
+      return new LangiumGen.CompositeGeneratorNode('props: unknown')
+    }
+    return compileNode(parameterList)`
+    props: {${
+      compileNodeListProperty(parameterList, 'parameters', param => {
+        return compileNode(param)`${param.name}: ${param.type}`
+      })
+    }}
+  `
+  }
+
   Declaration_state(declaration: AST.AssignmentDeclaration): Compiled {
-    const name = compileRefName(declaration)
+    const name = this.compileRefName(declaration)
     const value = this.Expression(declaration.value)
     if (AST.isTaoFile(declaration.$container)) {
       return compileNode(declaration)`
@@ -171,13 +182,22 @@ class RuntimeGen {
   }
 
   StateUpdate(update: AST.StateUpdate): Compiled {
-    const stateRef = compileRefName(update.stateRef)
+    const stateRef = this.compileRefName(update.stateRef)
     const op = compileNodeProperty(update, 'op')
     const value = this.Expression(update.value)
     return compileNode(update)`
       TaoRuntime.updateState(${stateRef}_use, '${op}', ${value})
     `
   }
+
+  compileRefName(ref: AST.Referenceable | langium.Reference<AST.Referenceable>) {
+    if (langium.isReference(ref)) {
+      ref = ref.ref!
+    }
+    return compileNodeProperty(ref, 'name') // TODO: .prepend(`${ref.$type}_`)
+  }
+  // Node List Property Generator functions
+  /////////////////////////////////////////
 
   // Views
   ////////
@@ -189,7 +209,7 @@ class RuntimeGen {
       this.filterNodeChildren(declaration.block, n => AST.isViewRender(n) || AST.isInjection(n)),
     )
     return compileNode(declaration)`
-      function ${declaration.name}(${compileParameterList(declaration.parameterList)}) {
+      function ${declaration.name}(${this.ParameterList(declaration.parameterList)}) {
         ${compileNodeList(declarations, declaration => this.Declaration(declaration))}
          ${compileNodeList(expressions, stmt => this.useViewExpression(stmt))}
           return <>${compileNodeList(renderNodes, renderNode => this.renderNode(renderNode))}</>

@@ -1,3 +1,3 @@
 export * from './compiler-src/compiler-main'
-export * from './compiler-src/langium-lsp'
-export * from './compiler-src/tao-services'
+export * from './compiler-src/langium/langium-lsp'
+export * from './compiler-src/langium/tao-services'

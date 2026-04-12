@@ -1,8 +1,8 @@
 import { NodePropName } from '@parser'
 import { Assert } from '@shared/TaoErrors'
 import { AstNode, Properties, Reference } from 'langium'
+import * as langium from 'langium'
 import * as LangiumGen from 'langium/generate'
-import { NewLineNode } from 'langium/generate'
 
 export type { NodePropName }
 export type Compiled = LangiumGen.CompositeGeneratorNode
@@ -58,7 +58,7 @@ export function compileNodeListPropertyOptional<
     return undefined
   }
   return _compileNodeListProperty(node, propertyName, compileListItemFn, {
-    prefix: new NewLineNode(),
+    prefix: new LangiumGen.NewLineNode(),
   })
 }
 
@@ -149,5 +149,6 @@ type _NodeRefTarget<
 > = NodeT[PropName] extends Reference<infer T> ? T
   : NodeT[PropName] extends { ref: Reference<infer T> } ? T
   : never
-// Node List Property Generator functions
-/////////////////////////////////////////
+export function compileTODO(node: langium.AstNode, extraInfo?: string): Compiled {
+  return compileNode(node)`// TODO: Compile ${node.$type} ${extraInfo ?? ''}`
+}

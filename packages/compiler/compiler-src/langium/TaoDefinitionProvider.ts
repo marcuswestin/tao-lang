@@ -7,7 +7,7 @@ import {
   getSameModuleUris,
   isSameModuleImport,
   resolveModulePathToUris,
-} from './ModuleResolution'
+} from '../resolution/ModuleResolution'
 
 /** TaoDefinitionProvider implements go-to-definition including use-statement imported names. */
 export class TaoDefinitionProvider extends DefaultDefinitionProvider {

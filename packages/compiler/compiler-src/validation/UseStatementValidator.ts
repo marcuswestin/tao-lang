@@ -1,12 +1,12 @@
 import { AST, ASTUtils } from '@parser'
 import * as langium from 'langium'
-import { isTaoModuleImport } from '../ModulePath'
+import { isTaoModuleImport } from '../resolution/ModulePath'
 import {
   getSameModuleUris,
   isSameModuleImport,
   resolveModulePathToUris,
   type UriAndPath,
-} from '../ModuleResolution'
+} from '../resolution/ModuleResolution'
 
 /** UseStatementValidator validates use imports and enforces share/file visibility rules.
  * - Same-module: module-visible names; file-private blocked across files.

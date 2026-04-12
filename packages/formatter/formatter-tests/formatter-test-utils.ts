@@ -1,4 +1,4 @@
-import { createTaoWorkspace } from '@compiler/tao-services'
+import { createTaoWorkspace } from '@compiler/langium/tao-services'
 import { expect, test } from 'bun:test'
 import * as Langium from 'langium'
 import { NodeFileSystem } from 'langium/node'

@@ -1,4 +1,3 @@
-import { createTaoWorkspace, TaoWorkspace } from '@compiler/tao-services'
 import { AST } from '@parser'
 import { fileExists } from '@shared/FsPathChecks'
 import { throwUserInputRejectionError } from '@shared/TaoErrors'
@@ -7,9 +6,10 @@ import * as Langium from 'langium'
 import { NodeFileSystem } from 'langium/node'
 import { createHash } from 'node:crypto'
 import path from 'node:path'
-import { isTaoModuleImport, resolveModuleImportDirectory } from './ModulePath'
-import { getDocumentErrors, TaoErrorReport } from './parse-errors'
-import { readDir, streamFilesIn } from './Paths'
+import { isTaoModuleImport, resolveModuleImportDirectory } from '../resolution/ModulePath'
+import { readDir, streamFilesIn } from '../resolution/Paths'
+import { getDocumentErrors, TaoErrorReport } from '../validation/parse-errors'
+import { createTaoWorkspace, TaoWorkspace } from './tao-services'
 
 export type ParseOptions = {
   stdLibRoot?: string

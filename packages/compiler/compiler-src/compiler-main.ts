@@ -1,11 +1,11 @@
 import { Assert } from '@shared/TaoErrors'
 import { TraceRegion } from 'langium/generate'
 import path from 'node:path'
-import { getErrorAppString } from './app-typescript-gen/app-gen-error'
-import { generateTypescriptReactNativeApp } from './app-typescript-gen/app-gen-main'
-import { TaoErrorReport } from './parse-errors'
-import { TaoParser } from './parser'
+import { getErrorAppString } from './codegen/app/app-gen-error'
+import { generateTypescriptReactNativeApp } from './codegen/app/app-gen-main'
+import { TaoParser } from './langium/parser'
 import { langiumGen } from './util/libs'
+import { TaoErrorReport } from './validation/parse-errors'
 
 export type CompileOutputFile = {
   relativePath: string

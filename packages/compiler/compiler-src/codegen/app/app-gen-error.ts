@@ -1,4 +1,4 @@
-import { TaoErrorReport } from '@compiler/parse-errors'
+import { TaoErrorReport } from '@compiler/validation/parse-errors'
 
 /** getErrorAppString returns TSX source for a minimal error screen from a TaoErrorReport. */
 export function getErrorAppString(errorReport: TaoErrorReport) {

@@ -4,7 +4,7 @@ This guide covers implementing scoping in Langium—the mechanism that determine
 
 > **Version note:** This guide targets **Langium v4.x** (API: `collectExportedSymbols` / `collectLocalSymbols`). This project uses Langium 4.1+.
 
-> **In this project (Tao Lang):** Scoping is implemented in `packages/compiler/compiler-src/` — `TaoScopeComputation`, `TaoScopeProvider`, and `ModuleResolution`. `TaoWorkspaceManager` loads the workspace (including stdlib); there is no custom `AstNodeDescriptionProvider`.
+> **In this project (Tao Lang):** Scoping is implemented under `packages/compiler/compiler-src/langium/` (`TaoScopeComputation`, `TaoScopeProvider`) and `packages/compiler/compiler-src/resolution/` (`ModuleResolution`). `TaoWorkspaceManager` loads the workspace (including stdlib); there is no custom `AstNodeDescriptionProvider`.
 
 ## Core Mental Model
 
@@ -276,7 +276,7 @@ export class MyLangScopeProvider extends DefaultScopeProvider {
 
 ### Tao Lang: use-statement and module scoping
 
-Tao resolves `use ModulePath Name1, Name2` and same-module references. See `TaoScopeProvider` and `ModuleResolution` in `packages/compiler/compiler-src/`:
+Tao resolves `use ModulePath Name1, Name2` and same-module references. See `TaoScopeProvider` in `packages/compiler/compiler-src/langium/` and `ModuleResolution` in `packages/compiler/compiler-src/resolution/`:
 
 - **Same-module:** `isSameModuleImport()` + `getSameModuleUris()` — symbols from other files in the same directory.
 - **Cross-module:** `resolveModulePathToUris()` for relative or stdlib paths; only `share`-visible declarations are exposed (see `isImportAccessible`).
