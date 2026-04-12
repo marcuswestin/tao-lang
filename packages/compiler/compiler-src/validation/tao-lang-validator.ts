@@ -43,25 +43,28 @@ export const validator: langium.ValidationChecks<AST.TaoLangAstType> = {
 
   AppDeclaration: makeValidater((declaration, report) => {
     validateDuplicateIdentifier(declaration, report)
-    const uiDeclarations = declaration.appStatements.filter(stmt => stmt.type === 'ui')
+    const uiStatements = declaration.appStatements.filter(AST.isAppStatement)
 
-    if (uiDeclarations.length === 0) {
+    if (uiStatements.length === 0) {
       report.error('App must have a UI declaration.', { node: declaration, property: 'appStatements' })
     }
 
-    uiDeclarations.forEach(node => {
-      if (node.ui?.ref && !AST.isViewDeclaration(node.ui.ref as unknown)) {
-        report.error('App ui must be a view.', { node, property: 'ui' })
+    if (uiStatements.length > 1) {
+      const first = uiStatements[0]!
+      report.error('App can only have one UI declaration.', { node: first, property: 'type' }, {
+        alsoCheck: () => {
+          const message = 'Another ui declaration here.'
+          return removeItemFrom(first, uiStatements).map((n) => ({ node: n, message }))
+        },
+      })
+    }
+
+    for (const stmt of uiStatements) {
+      const ref = stmt.ui.ref
+      if (ref !== undefined && !AST.isViewDeclaration(ref)) {
+        report.error('App ui must be a view.', { node: stmt, property: 'ui' })
       }
-      if (uiDeclarations.length > 1) {
-        report.error('App can only have one UI declaration.', node, {
-          alsoCheck: () => {
-            const message = 'Another ui declaration here.'
-            return removeItemFrom(node, uiDeclarations).map(node => ({ node, message }))
-          },
-        })
-      }
-    })
+    }
   }),
 }
 
