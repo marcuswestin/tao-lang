@@ -24,9 +24,9 @@ Execute **one batch** of work from a markdown TODO file: choose items, implement
 Pick items that belong together in **one** session batch. If the user anchored a line, the **default intent** is the full subtree under that line (subject to small-enough split + ask above). Apply in order:
 
 1. **Simple-first** — Prefer "laundry list" chores first: cleanups, renames, mechanical refactors, docs-only, config tweaks, low behavioral risk. Do these before larger features when both are candidates.
-2. **Small-preferred** — If several batches are valid, prefer the **smallest** candidate batch first (fewer items or less scope).
-3. **Small enough** — Do not bite off an entire epic; split into sub-items that naturally fit one PR-sized chunk if the file lumps them together.
-4. **Big enough** — Prefer a batch where the user can reasonably step away for **more than a few seconds** (meaningful work: several files, tests, or non-trivial logic). If only tiny chores exist, a batch of **multiple** small items is fine.
+2. **Smallest-first** — If several batches are valid, prefer the **smallest** candidate batch first (fewer items or less scope).
+3. **Small enough** — Don't proceed through a non-trivial mulit-setp TODO list of items without checking in with the user. E.g make multiple small cleanups rather just just one small one.
+4. **Big enough** — Prefer a batch where the user can usually step away for **more than a minute** (meaningful work: several files, tests, or non-trivial logic).
 5. **Atomic-ish** — Prefer work where existing tests are **likely to stay green** while building. **Exception:** TDD items — add or adjust failing tests **first**, then implement until green.
 6. **TDD ordering** — If an item is explicitly test-first / TDD, order within the batch: failing test → implementation → green.
 
