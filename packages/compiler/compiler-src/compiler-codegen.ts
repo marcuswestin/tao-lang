@@ -102,7 +102,7 @@ export function compileNode<T extends AstNode>(
   return LangiumGen.expandTracedToNode(astNode, property)
 }
 
-/** assert throws if condition is false (internal compiler-utils check). */
+/** assert throws if condition is false (internal compiler-codegen check). */
 function assert(condition: boolean, message: string): void {
   if (!condition) {
     throw new Error(message)

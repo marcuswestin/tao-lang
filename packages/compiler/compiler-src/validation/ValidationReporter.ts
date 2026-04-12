@@ -1,4 +1,4 @@
-import { NodePropName } from '@compiler/compiler-utils'
+import { NodePropName } from '@compiler/compiler-codegen'
 import { AST } from '@parser'
 import {
   AstNode,

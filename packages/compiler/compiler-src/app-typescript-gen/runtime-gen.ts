@@ -7,7 +7,7 @@ import {
   compileNodeProperty,
   compileNodePropertyRef,
   compileNoop,
-} from '@compiler/compiler-utils'
+} from '@compiler/compiler-codegen'
 import { langium } from '@compiler/util/libs'
 import { AST } from '@parser'
 import { switchProperty_Exhaustive, switchType_Exhaustive } from '@shared/TypeSafety'

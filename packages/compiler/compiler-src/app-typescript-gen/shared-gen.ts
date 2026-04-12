@@ -1,4 +1,4 @@
-import { Compiled, compileNode, compileNodeListProperty, compileNodeProperty } from '@compiler/compiler-utils'
+import { Compiled, compileNode, compileNodeListProperty, compileNodeProperty } from '@compiler/compiler-codegen'
 import { AST } from '@parser'
 import * as langium from 'langium'
 import * as LangiumGen from 'langium/generate'

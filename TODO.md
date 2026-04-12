@@ -61,7 +61,7 @@ Also see Roadmap.
     - [ ] Compiler layout
       - `packages/compiler/compiler-src` mixes codegen (`app-typescript-gen/`, `compiler-main.ts`), validation (`validation/`, `parse-errors.ts`), path/module resolution (`Paths.ts`, `ModulePath.ts`, `ModuleResolution.ts`), LSP/services (`tao-services.ts`, `langium-lsp.ts`, `Tao*Provider.ts`, `TaoWorkspaceManager.ts`), and `parser.ts`—group into subfolders when you refactor paths/imports.
       - [x] `StdLibPaths.ts` removed; `@tao/...` directory resolution lives on `ModulePath.ts` (`isTaoModuleImport`, `resolveModuleImportDirectory`).
-      - `compiler-utils.ts` name vs contents (Langium codegen + shared bits)—split or rename for clarity.
+      - [x] Renamed `compiler-utils.ts` → `compiler-codegen.ts` (Langium traced codegen); imports use `@compiler/compiler-codegen`. Further splits deferred.
     - [ ] Apps / repo noise (optional)
       - `Apps/` has many scenarios and scratch artifacts; tighten conventions or ignore patterns if reviews feel noisy.
     - [ ] Misc
@@ -203,7 +203,7 @@ First:
   - [x] There are two almost idential justfiles in ide-extension...?
   - [ ] Fix the validator testing
   - [ ] Prefer backtick strings
-  - [ ] Read through compiler-utils.ts
+  - [ ] Read through compiler-codegen.ts
   - [ ] Read through other files
   - [ ] Create commit plan
   - [ ] Execute it
