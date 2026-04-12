@@ -3,7 +3,8 @@ grammar TaoLang
 entry TaoFile:
     statements += Statement*;
 
-Statement: Declaration | ModuleDeclaration | UseStatement | Injection | ViewRender | StateUpdate;
+Statement: Declaration | ModuleDeclaration | UseStatement | Debugger | Injection | ViewRender | StateUpdate;
+
 
 
 // Shared Types
@@ -13,10 +14,9 @@ type Referenceable = Declaration | ParameterDeclaration;
 
 type ScopeRelevantNode = UseStatement | Declaration | AppDeclaration | ParameterDeclaration;
 
-type ViewStatement = ViewRender | Injection | AssignmentDeclaration | BlockDeclaration;
-type TopLevelStatement = Declaration | UseStatement | Injection;
-type ActionStatement = StateUpdate | Injection | AssignmentDeclaration | BlockDeclaration;
-
+type ViewStatement = ViewRender | Injection | AssignmentDeclaration | BlockDeclaration | Debugger;
+type TopLevelStatement = Declaration | UseStatement | Injection | Debugger;
+type ActionStatement = StateUpdate | Injection | Debugger | AssignmentDeclaration | BlockDeclaration;
 
 // Shared Statements
 ////////////////////
@@ -32,8 +32,10 @@ Block:
 
 terminal TS_CODE_BLOCK: '```ts' -> '```';
 Injection:
-    'inject' tsCodeBlock=TS_CODE_BLOCK;
+    'inject' type='raw'? tsCodeBlock=TS_CODE_BLOCK;
 
+Debugger:
+    type='debugger';
 
 // Top/File Level Statements
 ////////////////////////////
@@ -84,7 +86,7 @@ StateUpdate:
 ParameterList:
     parameters += ParameterDeclaration (',' parameters += ParameterDeclaration)*;
 
-ParameterType returns string: 'string' | 'number';
+ParameterType returns string: 'string' | 'number' | 'any';
 ParameterDeclaration:
     name=ID type=ParameterType;
 
