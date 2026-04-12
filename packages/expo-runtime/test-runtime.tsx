@@ -1,12 +1,12 @@
 import { jest } from '@jest/globals'
+import type { CompiledTaoScenario, CompiledTaoScenarioAdapter } from '@shared/CompiledTaoScenarios'
+import { sanitizeCompiledScenarioOutputSegment } from '@shared/TaoPaths'
 import * as RNTesting from '@testing-library/react-native'
 import { spawnSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { resolve as resolvePath } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import type { ComponentType as CompiledAppComponent } from 'react'
-import type { CompiledTaoScenario, CompiledTaoScenarioAdapter } from '../shared/shared-src/CompiledTaoScenarios'
-import { sanitizeCompiledScenarioOutputSegment } from '../shared/shared-src/TaoPaths'
 
 type CompileOpts = {
   path: string
