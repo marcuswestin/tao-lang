@@ -6,15 +6,15 @@ export type CompiledTaoScenarioStep =
   | { type: 'pressVisibleText'; text: string }
 
 export type CompiledTaoScenario = {
-  /** When true, `discoverCompiledTaoScenarios` sets `isReady: false` (same as missing `scenario.json`). */
-  skip: boolean
+  /** When truthy, shared scenario tests skip this folder: `true`, missing file, or a string reason for `test.todo`. */
+  skip: boolean | string
   steps: CompiledTaoScenarioStep[]
 }
 
 export type DiscoveredCompiledTaoScenario = {
   scenarioDir: string
   scenario: CompiledTaoScenario | undefined
-  isReady: boolean
+  skip: boolean | string
 }
 
 export type CompiledTaoScenarioCompileResult = {
@@ -50,9 +50,9 @@ export function getCompiledTaoScenariosRootDir() {
 }
 
 /** discoverCompiledTaoScenarios visits every immediate subdirectory of `rootDir` (sorted by path). When
- * `scenario.json` is missing, returns `isReady: false` and `scenario: undefined`. When the file exists, loads
- * and validates via `loadCompiledTaoScenario` (throws on invalid shape). If parsed `skip` is true, returns
- * `isReady: false` and `scenario: undefined` (treat like not ready to run). */
+ * `scenario.json` is missing, returns `skip: true` and `scenario: undefined`. When the file exists, loads
+ * and validates via `loadCompiledTaoScenario` (throws on invalid shape). The returned `skip` is the scenario’s
+ * `skip` field (boolean or string reason), or `true` when the file is absent. */
 export function discoverCompiledTaoScenarios(rootDir = compiledTaoScenariosRootDir): DiscoveredCompiledTaoScenario[] {
   return readdirSync(rootDir, { withFileTypes: true })
     .filter(entry => entry.isDirectory())
@@ -61,11 +61,10 @@ export function discoverCompiledTaoScenarios(rootDir = compiledTaoScenariosRootD
     .map(scenarioDir => {
       const scenarioPath = resolvePath(scenarioDir, 'scenario.json')
       if (!existsSync(scenarioPath)) {
-        return { scenarioDir, scenario: undefined, isReady: false }
+        return { scenarioDir, scenario: undefined, skip: true }
       }
       const scenario = loadCompiledTaoScenario(scenarioDir)
-      const isReady = !scenario.skip
-      return { scenarioDir, scenario, isReady }
+      return { scenarioDir, scenario, skip: scenario.skip }
     })
 }
 
@@ -122,7 +121,7 @@ function parseCompiledTaoScenario(rawScenario: unknown, scenarioPath: string): C
   }
 
   return {
-    skip: rawScenario['skip'] === true,
+    skip: rawScenario['skip'] as boolean | string,
     steps: steps.map((step, index) => parseStep(step, scenarioPath, index)),
   }
 }

@@ -1,8 +1,16 @@
 {
   "skip": false,
   "steps": [
-    { "assertVisibleText": "1" },
-    { "pressVisibleText": "1" },
-    { "assertVisibleText": "1" }
+    { "assertVisibleText": "100" },
+    { "assertVisibleText": "200" },
+    { "assertVisibleText": "300" },
+    { "pressVisibleText": "100" },
+    { "assertVisibleText": "101" },
+    { "assertVisibleText": "200" },
+    { "assertVisibleText": "301" },
+    { "pressVisibleText": "200" },
+    { "assertVisibleText": "101" },
+    { "assertVisibleText": "201" },
+    { "assertVisibleText": "302" }
   ]
 }

@@ -11,10 +11,10 @@ const expoSharedScenarios = discoverCompiledTaoScenarios()
   .filter(({ scenarioDir }) => expoScenarioAllowList.has(basename(scenarioDir)))
 
 describe('expo runtime shared scenarios', () => {
-  for (const { scenarioDir, scenario, isReady } of expoSharedScenarios) {
+  for (const { scenarioDir, scenario, skip } of expoSharedScenarios) {
     const scenarioName = basename(scenarioDir)
-    if (!isReady) {
-      test.todo(scenarioName)
+    if (skip) {
+      test.todo(scenarioName + ' (' + skip + ')')
       continue
     }
     test(scenarioName, async () => {

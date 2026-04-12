@@ -71,8 +71,11 @@ Apply only the approved changes. After editing each file:
 
 Do **not** commit. The user decides when to commit.
 
+Do **not** stage changes: never run `git add` (or equivalent) as part of this workflow. Leave all edits **unstaged** in the working tree so the user can review and stage themselves.
+
 ## Notes
 
+- **No staging:** This skill must not modify the Git index (`git add`, `git restore --staged`, etc.). Only working-tree edits are allowed after approval.
 - Focus on the _diff_, not the entire file — unless surrounding context reveals an issue.
 - When in doubt about whether something is an improvement, include it but note it as low priority.
 - If there are no meaningful improvements to suggest, say so clearly and don't invent busywork.

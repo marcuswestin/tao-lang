@@ -48,10 +48,10 @@ describe('headless runtime', () => {
 })
 
 describe('headless runtime shared scenarios', () => {
-  for (const { scenarioDir, scenario, isReady } of sharedScenarios) {
+  for (const { scenarioDir, scenario, skip } of sharedScenarios) {
     const scenarioName = basename(scenarioDir)
-    if (!isReady) {
-      test.todo(scenarioName)
+    if (skip) {
+      test.todo(scenarioName + ' (' + skip + ')')
       continue
     }
     test(scenarioName, async () => {

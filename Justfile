@@ -1,5 +1,13 @@
 import "./packages/shared/just/all-imports.just"
 
+alias b := build
+alias c := check
+alias f := fmt
+alias l := lint
+alias d := dev
+alias t := test
+alias w := watch
+
 # Dev Environment Setup
 #######################
 
@@ -46,7 +54,7 @@ theadless *FILTER: gen
     just headless-test-runtime test '{{ FILTER }}'
 
 # Watch tests, but bail on first failure
-bail-watch-tests *FILTER:
+bail-watch *FILTER:
     bun test --watch --bail --test-name-pattern '{{ FILTER }}'
 
 # Run all tests, including slow ones
@@ -55,8 +63,8 @@ test-all *FILTER:
     cd packages/expo-runtime && just test '{{ FILTER }}'
 
 # Watch all tests
-watch-tests *FILTER:
-    # If run in any package without watch-tests already defined, watch all tests
+watch *FILTER:
+    # If run in any package without watch already defined, watch all tests
     just _watch_all_tests '{{ FILTER }}'
 
 # Formatting, Linting, etc.
@@ -81,7 +89,7 @@ fmt: _fmt
 fix: _fix
 
 # Check all code: lint, typecheck, etc.
-check: _check
+check: build _check
 
 # Lint all code
 lint: _lint

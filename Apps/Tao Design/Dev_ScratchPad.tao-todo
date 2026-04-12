@@ -1,5 +1,5 @@
 view MyButton < Button {
-    
+
 }
 
 // AppLang - std-ui
@@ -40,7 +40,7 @@ view MyButton < Button {
 
 
 
-// // type RowColAlignParams = 
+// // type RowColAlignParams =
 // //         GapAlign
 // //     <|> PadAlign
 // //     <|> SelfAligned
@@ -106,7 +106,7 @@ view LoginForm {
         with default ""
     type Password like Text with
         validation text.length > 6 "Password must be longer"
-    
+
     emits submit with Username, Password
 
     Col {

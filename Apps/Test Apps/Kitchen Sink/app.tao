@@ -8,38 +8,16 @@ app KitchenSink {
 
 view AppView {
     Text value "Hello Kitchen Sink" { }
-    StateView { }
     HandlerTestView { }
+    RootView { }
 }
 
 view HandlerTestView {
-    TestButton Action TestAction { }
+    Button Action EmptyAction, title "Test" { }
 }
 
-// state count = 1
-
-view StateView {
-// Button title count, Action IncrementAction { }
-}
-
-action IncrementAction {
-// count += 1
-}
-
-view TestButton Action string {
-    Box {
-        inject ```ts <RN.Pressable onPress={props.Action}> ```
-        Box {
-            Text value "Hello" { }
-        }
-        inject ```ts </RN.Pressable> ```
-    }
-}
-
-action TestAction message string {
-    inject ```ts
-        alert("Test Action")
-    ```
+action EmptyAction {
+    inject ```ts console.log('Test') ```
 }
 
 view LoginForm {
