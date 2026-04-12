@@ -18,13 +18,21 @@ Also see Roadmap.
 - [x] Write e2e tests
   - [x] Implement scenario actions
 - [x] Move all compilation to runtime-gen
-  - [ ] Move use statement handling to RuntimeGen class: returns map of output file paths to compiled code for each.
+  - [x] Move use statement handling to RuntimeGen class: returns map of output file paths to compiled code for each.
 - [x] Re-implement actions
   - [x] Implement global state - jotai prob
   - [x] Use legendapp/state instead of jotai.
   - [x] Roll up all view state references, and compile their hooks.
   - [x] Add automated test for tapping buttons with actions.
   - [x] Cleanup implementation.
+- [x] Major cleanup — phase 1 (inventory, shared helpers, Expo test imports)
+  - [x] Identify duplicates or near-duplicates of code, functionality, etc. (audit: dual `test-runtime` harnesses, shared jest `moduleNameMapper`, `FsPathChecks` + `assertNever` moves, runtime source vs emit copy).
+  - [x] Identify old and out of date code, writing, and documentation. (audit: corrected stale Expo runtime path; noted duplicate “consolidate harness” TODO themes.)
+  - [x] Identify idiosyncratic patterns. (audit: Expo `@shared` via mapper + sources; spaced test folder since renamed to `tests-expo-runtime/`; `compiler-src` mixing concerns.)
+  - [x] Improve Agents instructions, rules, and commands — list files, edit rules/commands/instructions, trim always-loaded skills.
+  - [x] Cross-package utils: `fileExists`/`isDirectory` in `@shared/FsPathChecks`; `assertNever` in `@shared/TypeSafety`; compiler `Paths` re-exports; CLI and validator imports updated.
+  - [x] Align Expo scenario sources with `@shared/...` (`test-runtime.tsx`, `shared-scenarios.jest-test.tsx`) and `expo-runtime/tsconfig.json` `paths` (no `baseUrl`, for oxlint).
+  - [x] Renamed Expo Jest folder to `packages/expo-runtime/tests-expo-runtime/` (was `tests - expo-runtime/`); updated `jest.config.js` `testMatch`.
 
 ### Next tasks:
 
@@ -33,27 +41,12 @@ Also see Roadmap.
 - [ ] Add ability to specify which app to dev-run.
 - [ ] Implement prototype-chaining based scope (See kitchen sink test scenario)
 - [ ] Ask agents to prepare and perform a MAJOR cleanup.
-  - [x] Identify duplicates or near-duplicates of code, functionality, etc. A great large example are the two runtime test harnesses. Lots of duplicated things with small variations.
-    - Audit 2026-04: `packages/expo-runtime/test-runtime.tsx` and `packages/headless-test-runtime/src/test-runtime.tsx` still share the same adapter shape, `spawnSync`/`bun -e` / `TaoSDK_compile` wiring, output slug sanitization, and `pressVisibleText`; differ on SDK URL (built `_gen-tao-lib` vs `tao-cli-main.ts`), env keys, default output paths, and sync vs async compile wrapper.
-    - `packages/expo-runtime/jest.config.js` and `packages/headless-test-runtime/jest.config.js` share the same `moduleNameMapper` block; presets / `testMatch` differ.
-    - `fileExists` / `isDirectory` deduped 2026-04 → `@shared/FsPathChecks` (was duplicated in `tao-cli-main` / `Paths.ts`).
-    - `assertNever` moved 2026-04 to `@shared/TypeSafety` (was in `compiler-utils.ts`).
-  - [x] Identify old and out of date code, writing, and documentation.
-    - Audit 2026-04: The bullet under “Already identified” that named `packages/expo-runtime/use/@tao/tao-runtime/` as a second source tree is **stale**: runtime **source** lives only under `packages/tao-std-lib/tao/tao-runtime/`; the compiler **copies** it into each emitted app at `use/@tao/tao-runtime/` (see `compiler-main.ts` copy step and `app-gen-main.ts` import path)—drift risk is copy/sync logic, not two hand-edited trees.
-    - Same section of this file repeats “consolidate test runtimes” themes in multiple places (nested here vs “Unordered” / lower stack)—worth merging when editing this doc.
-  - [x] Identify patterns that are idiosyncratic to the rest of the codebase. For example, previously the formatter lived inside compiler-src. Validator should probably be its own package. Tests use different and sprawly test harnesses I think that could be simpler.
-    - Audit 2026-04: Expo jest still resolves `@shared` via `moduleNameMapper`; **sources** now import `@shared/...` (`test-runtime.tsx`, `shared-scenarios.jest-test.tsx`) with matching `paths` in `expo-runtime/tsconfig.json` (no `baseUrl`, for oxlint).
-    - `packages/expo-runtime/tests - expo-runtime/` (space in folder name) remains awkward for scripts and globs.
-    - `compiler-src` mixing validation, LSP, paths, and codegen in one tree is still the main structural smell (already listed below).
   - [ ] Apps, Docs, and TODOs are likely needing a lot of cleanup.
   - [ ] Find all unused code/files/etc
   - [ ] Improve Agents instructions, rules, and commands.
     - [ ] Consider making all commands in to skills instead. Use /migrate-to-skills? Then delete?
     - [ ] Search online and find skills for used dependencies!
       - (E.g if we were using instant-db, it would mean finding https://www.instantdb.com/docs/using-llms and deciding to run `npx skills add instantdb/skills`)
-    - [x] List all files to consider.
-    - [x] Remove, move, edit, add rules and commands and instructions.
-    - [x] List all skills etc that get loaded into context all the time/too often. Make it more precise and efficient.
   - [ ] Naming conventions. E,g ThisIsAURLFunction, not ThisIsAUrlFunction; private justfiles should be _snake_case, not kebab-case.
   - [ ] Already identified:
     - [ ] Runtime code duplication
@@ -61,11 +54,7 @@ Also see Roadmap.
     - [ ] Test harness assimilation
       - `packages/expo-runtime/test-runtime.tsx` and `packages/headless-test-runtime/src/test-runtime.tsx` share adapter shape, bun `TaoSDK_compile` spawn, path slugs, RTL cleanup / `pressVisibleText`; differ on module load (jest reset vs `require.cache`), SDK URL, env keys, output roots—share only the safe common bits (e.g. spawn/error/path helpers).
       - `packages/expo-runtime/jest.config.js` and `packages/headless-test-runtime/jest.config.js` are almost the same (`moduleNameMapper`); presets / `testMatch` differ.
-      - [x] Align Expo sources with `@shared/...` (see `expo-runtime/tsconfig.json` `paths`; jest `moduleNameMapper` unchanged).
-      - Folder `packages/expo-runtime/tests - expo-runtime/` (space in name) is awkward for tooling and scripts.
-    - [x] Cross-package utils (tracked helpers moved; add new bullets here if more appear)
-      - [x] `fileExists` / `isDirectory`: shared implementation `packages/shared/shared-src/FsPathChecks.ts`; `tao-cli-main` imports it; `Paths.ts` re-exports for existing compiler imports.
-      - [x] `assertNever`: lives in `packages/shared/shared-src/TypeSafety.ts`; `parser`, `tao-lang-validator`, and `hci-human-computer-interaction` import `@shared/TypeSafety`.
+      - [x] Dropped spaced test folder name: `tests-expo-runtime/` + `testMatch` in `jest.config.js`.
     - [ ] Compiler layout
       - `packages/compiler/compiler-src` mixes codegen (`app-typescript-gen/`, `compiler-main.ts`), validation (`validation/`, `parse-errors.ts`), path/module resolution (`Paths.ts`, `ModulePath.ts`, `ModuleResolution.ts`, `StdLibPaths.ts`), LSP/services (`tao-services.ts`, `langium-lsp.ts`, `Tao*Provider.ts`, `TaoWorkspaceManager.ts`), and `parser.ts`—group into subfolders when you refactor paths/imports.
       - `StdLibPaths.ts` is a thin wrapper over `ModulePath.ts`; merge or inline to reduce parallel path modules.
