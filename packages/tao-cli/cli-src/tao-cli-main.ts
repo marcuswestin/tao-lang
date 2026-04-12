@@ -1,5 +1,6 @@
 import { Command } from '@commander-js/extra-typings'
 import { type CompileOutputFile, compileTao } from '@compiler'
+import { fileExists, isDirectory } from '@shared/FsPathChecks'
 import { Log } from '@shared/Log'
 import { getTaoError, throwUserInputRejectionError } from '@shared/TaoErrors'
 import chokidar from 'chokidar'
@@ -149,28 +150,10 @@ function getRuntimeOutputPath(runtimeDir: string, runtimeManifest: TaoRuntimeMan
   return path.resolve(runtimeDir, outputFileName)
 }
 
-/** isDirectory returns true when the path exists and is a directory. */
-function isDirectory(path: string): boolean {
-  try {
-    return nodeFs.statSync(path).isDirectory()
-  } catch {
-    return false // does not exist or inaccessible
-  }
-}
-
 /** writeFile ensures parent dirs exist then writes UTF-8 content. */
 async function writeFile(targetPath: string, content: string) {
   nodeFs.mkdirSync(path.dirname(targetPath), { recursive: true })
   nodeFs.writeFileSync(targetPath, content)
-}
-
-/** fileExists returns true when the path is an existing regular file. */
-function fileExists(path: string): boolean {
-  try {
-    return nodeFs.statSync(path).isFile()
-  } catch {
-    return false // does not exist or inaccessible
-  }
 }
 
 /** readJsonFile parses JSON from a path. */

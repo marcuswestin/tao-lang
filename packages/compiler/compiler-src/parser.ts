@@ -1,5 +1,6 @@
 import { createTaoWorkspace, TaoWorkspace } from '@compiler/tao-services'
 import { AST } from '@parser'
+import { fileExists } from '@shared/FsPathChecks'
 import { throwUserInputRejectionError } from '@shared/TaoErrors'
 import * as Langium from 'langium'
 import { NodeFileSystem } from 'langium/node'
@@ -7,7 +8,7 @@ import { createHash } from 'node:crypto'
 import path from 'node:path'
 import { assertNever } from './compiler-utils'
 import { getDocumentErrors, TaoErrorReport } from './parse-errors'
-import { fileExists, readDir, streamFilesIn } from './Paths'
+import { readDir, streamFilesIn } from './Paths'
 import { isStdLibImport, resolveStdLibModuleDirectory } from './StdLibPaths'
 
 export type ParseOptions = {

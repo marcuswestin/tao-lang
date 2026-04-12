@@ -1,23 +1,6 @@
-import { readdirSync, statSync } from 'node:fs'
+import { isDirectory } from '@shared/FsPathChecks'
+import { readdirSync } from 'node:fs'
 import { nodePath } from './util/libs'
-
-/** fileExists returns true when the path exists and is a regular file. */
-export function fileExists(filePath: string): boolean {
-  try {
-    return statSync(filePath).isFile()
-  } catch {
-    return false // does not exist or inaccessible
-  }
-}
-
-/** isDirectory returns true when the path exists and is a directory. */
-export function isDirectory(filePath: string): boolean {
-  try {
-    return statSync(filePath).isDirectory()
-  } catch {
-    return false
-  }
-}
 
 /** readDir returns directory entry names or an empty array on error. */
 export function readDir(filePath: string): string[] {
