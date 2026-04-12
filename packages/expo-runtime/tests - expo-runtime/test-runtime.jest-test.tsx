@@ -19,11 +19,7 @@ describe('runtime:', () => {
 
     const result = await TaoSDK_compile({ path: taoPath, runtimeDir })
     expect(result.outputPath).toBeDefined()
-    expect(
-      result.files.some((
-        f: { content: { includes: (arg0: string) => { content: string | string[] } } },
-      ): { content: string | string[] } => f.content.includes(needle)),
-    ).toBe(true)
+    expect(result.files.some((f: { text: string }) => f.text.includes(needle))).toBe(true)
 
     await assertBootstrapRendersNeedle(needle, result.outputPath)
     nodeFs.rmSync(path.dirname(taoPath), { recursive: true })
