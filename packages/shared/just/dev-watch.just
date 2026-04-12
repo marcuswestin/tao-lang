@@ -6,8 +6,7 @@ _dev:
     while true; do
         just _prefix_strip_parallel "_watch_" \
             {{ _DEV_WATCH_RECIPES }} \
-            _steal_focus \
-            _r_reloead_q_quit || break;
+            _r_reloead_q_quit || break; # consider adding _steal_focus
     done
 
 [private]
@@ -31,7 +30,6 @@ _watch_all_tests *PATTERNS:
 
 _steal_focus:
     #!/bin/zsh
-    exit 0 # DISABLED FOR NOW
     current_app=$(osascript -e 'tell application "System Events" to get name of first application process whose frontmost is true')
     targets=(Simulator "Google Chrome")
     while (( ${#targets[@]} > 0 )); do
