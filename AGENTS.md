@@ -21,6 +21,7 @@
 - **NEVER** delete files without asking.
 - **Git / commits:** follow `.cursor/skills/tao-git-workflow/SKILL.md` (attach when committing). In short: run `./just-agents fix` and `./just-agents prep-commit` before landing work unless the user opts out.
 - **Git / merge:** never run `./just-agents git-dangerously` with `fetch`, `checkout`, `switch`, `pull`, `merge`, `push`, `rebase`, or similar merge/remote work unless the user **explicitly** instructed a merge (or the same skill’s equally explicit remote step); see `tao-git-workflow` and the comment block in `just-agents.Justfile`.
+- **Git / merge:** after merging **`main` into a feature branch** (or rebasing onto it), run **`./just-agents prep-commit`** until green **before** squash merge, push, or treating the branch as merge-ready; see **`tao-git-workflow`** (_After integrating `main` on a feature branch_) and **`prep-feature-branch-merge`**.
 - **ALWAYS** use the return type of an invoked function (either implicitly or explicitly) rather than redeclaring an identical type. Don't: `type AType = { ... }; let foo: AType = fn();`, Do: `let foo = fn();`
 - _NEVER_ use imports from generated files in our main source code.
 

@@ -4,7 +4,8 @@ description: >-
   Tao Lang git and commit workflows using ./just-agents only: allowed git
   subcommands, prep-commit vs fast commits, drafting messages, multi-piece
   commits, git-dangerously raw git passthrough (merge/remotes only when the user explicitly asked),
-  and squash-merge policy for default branch. Use when staging, committing,
+  prep-commit after integrating main on a feature branch, and squash-merge policy for default branch.
+  Use when staging, committing,
   reviewing git state, or after check-for-improvements when the user wants to
   land changes.
 ---
@@ -33,7 +34,13 @@ The **`git-dangerously`** recipe forwards all arguments to **`git`** (same as ru
 
 **`git-dangerously commit`** is allowed only under the **fast batch** rules below (run **`./just-agents prep-commit`** once first); it bypasses the per-commit prep hook. For normal single commits, use **`./just-agents shell git commit`**.
 
-When a merge **is** explicitly requested: run **`./just-agents prep-commit`** before mutating `main`, follow the **squash** policy in _Merging into `main`_, and prefer the flow described in the comment block above **`git-dangerously`** in `just-agents.Justfile`.
+When a merge **is** explicitly requested: follow the **squash** policy in _Merging into `main`_ and the comment block above **`git-dangerously`** in `just-agents.Justfile`. Run **`./just-agents prep-commit`** before mutating `main`, and again **immediately after** integrating **`main` into the feature branch** (see below)—do not skip.
+
+## After integrating `main` on a feature branch
+
+Whenever **`main`** has been merged into the feature branch (or the branch was rebased onto **`main`**) and conflicts are resolved:
+
+- **CRITICAL**: Run **`./just-agents prep-commit`** (use **`./just-agents fix`** first if needed) until it passes **before** squash-merging onto **`main`**, pushing the branch, opening/updating a PR, or any further merge step. Git integration alone does **not** guarantee a green tree; typecheck and tests must be re-verified on the combined result.
 
 ## Before any commit (project policy)
 
@@ -71,6 +78,7 @@ For several small commits in a row (e.g. splitting logical changes):
 
 When landing a feature branch on **`main`** (or the repo’s default branch), unless the user explicitly asks otherwise:
 
+- **CRITICAL**: If you merged **`main` into the feature branch** first, you **already** ran **`./just-agents prep-commit`** after that merge per _After integrating `main` on a feature branch_; if not, do that now before landing.
 - **CRITICAL**: Use **squash merge** only (e.g. GitHub **Squash and merge**). Do **not** use a regular merge commit that preserves every branch commit on `main`.
 - **CRITICAL**: The **squash commit message body** must list **every** commit that is being squashed, so the collapsed work stays recoverable from `git show` on `main`. At minimum, paste one line per squashed commit in chronological order, e.g. `./just-agents shell git log main..HEAD --reverse --oneline` on the feature branch and copy that block into the squash description (keep GitHub’s prefilled list if it already contains all of them; otherwise replace or append until nothing is missing).
 - Optional: above that list, keep a short human summary (title + bullets by theme); then a separator line (`---` or similar), then the full per-commit list.
