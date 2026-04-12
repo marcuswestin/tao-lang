@@ -36,8 +36,8 @@ uninstall-extension:
     code --uninstall-extension tao.tao-ide-extension
 
 install-extension:
-    cursor --install-extension ../../.builds/tao-ide-extension-0.0.1.vsix --verbose --force
-    code --install-extension ../../.builds/tao-ide-extension-0.0.1.vsix --verbose --force
+    cursor --install-extension ../../.builds/tao-ide-extension-0.0.1.vsix --force
+    code --install-extension ../../.builds/tao-ide-extension-0.0.1.vsix --force
 
 restart-cursor:
     osascript -e 'quit app "Cursor"'
