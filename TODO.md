@@ -33,10 +33,20 @@ Also see Roadmap.
 - [ ] Add ability to specify which app to dev-run.
 - [ ] Implement prototype-chaining based scope (See kitchen sink test scenario)
 - [ ] Ask agents to prepare a MAJOR cleanup.
-  - [ ] Identify duplicates or near-duplicates of code, functionality, etc. A great large example are the two runtime test harnesses. Lots of duplicated things with small variations.
-  - [ ] Identify old and out of date code, writing, and documentation.
-  - [ ] Identify patterns that are idiosyncratic to the rest of the codebase. For example, previously the formatter lived inside compiler-src. Validator should probably be its own package. Tests use different and sprawly test harnesses I think that could be simpler.
+  - [x] Identify duplicates or near-duplicates of code, functionality, etc. A great large example are the two runtime test harnesses. Lots of duplicated things with small variations.
+    - Audit 2026-04: `packages/expo-runtime/test-runtime.tsx` and `packages/headless-test-runtime/src/test-runtime.tsx` still share the same adapter shape, `spawnSync`/`bun -e` / `TaoSDK_compile` wiring, output slug sanitization, and `pressVisibleText`; differ on SDK URL (built `_gen-tao-lib` vs `tao-cli-main.ts`), env keys, default output paths, and sync vs async compile wrapper.
+    - `packages/expo-runtime/jest.config.js` and `packages/headless-test-runtime/jest.config.js` share the same `moduleNameMapper` block; presets / `testMatch` differ.
+    - `fileExists` / `isDirectory` deduped 2026-04 → `@shared/FsPathChecks` (was duplicated in `tao-cli-main` / `Paths.ts`).
+    - `assertNever` lives only in `compiler-utils.ts` but is imported from CLI and validator—candidate to fold into `@shared` with other tiny cross-package helpers.
+  - [x] Identify old and out of date code, writing, and documentation.
+    - Audit 2026-04: The bullet under “Already identified” that named `packages/expo-runtime/use/@tao/tao-runtime/` as a second source tree is **stale**: runtime **source** lives only under `packages/tao-std-lib/tao/tao-runtime/`; the compiler **copies** it into each emitted app at `use/@tao/tao-runtime/` (see `compiler-main.ts` copy step and `app-gen-main.ts` import path)—drift risk is copy/sync logic, not two hand-edited trees.
+    - Same section of this file repeats “consolidate test runtimes” themes in multiple places (nested here vs “Unordered” / lower stack)—worth merging when editing this doc.
+  - [x] Identify patterns that are idiosyncratic to the rest of the codebase. For example, previously the formatter lived inside compiler-src. Validator should probably be its own package. Tests use different and sprawly test harnesses I think that could be simpler.
+    - Audit 2026-04: Expo jest resolves `@shared` via `moduleNameMapper` to `../shared/shared-src/…` while headless uses the same mapper pattern; **scenario tests** in expo still import `../shared/shared-src/...` in at least `test-runtime.tsx` instead of the `@shared/...` alias—align imports when consolidating harnesses.
+    - `packages/expo-runtime/tests - expo-runtime/` (space in folder name) remains awkward for scripts and globs.
+    - `compiler-src` mixing validation, LSP, paths, and codegen in one tree is still the main structural smell (already listed below).
   - [ ] Apps, Docs, and TODOs are likely needing a lot of cleanup.
+  - [ ] Find all unused code/files/etc
   - [ ] Improve Agents instructions, rules, and commands.
     - [ ] Consider making all commands in to skills instead. Use /migrate-to-skills? Then delete?
     - [ ] Search online and find skills for used dependencies!
@@ -47,15 +57,15 @@ Also see Roadmap.
   - [ ] Naming conventions. E,g ThisIsAURLFunction, not ThisIsAUrlFunction; private justfiles should be _snake_case, not kebab-case.
   - [ ] Already identified:
     - [ ] Runtime code duplication
-      - `packages/tao-std-lib/tao/tao-runtime/` and `packages/expo-runtime/use/@tao/tao-runtime/` are the same three files (`tao-runtime.ts`, `runtime-store.ts`, `runtime-operators.ts`); compiler already copies from std-lib into emit output, so the Expo copy is extra drift surface.
+      - Single **source** tree: `packages/tao-std-lib/tao/tao-runtime/` (`tao-runtime.ts`, `runtime-store.ts`, `runtime-operators.ts`). Compiler copies that folder into each compiled app under `use/@tao/tao-runtime/` (not a second maintained package under `expo-runtime/`). Residual risk: emit/import path bugs or stale copies—not parallel hand-edited duplicates.
     - [ ] Test harness assimilation
       - `packages/expo-runtime/test-runtime.tsx` and `packages/headless-test-runtime/src/test-runtime.tsx` share adapter shape, bun `TaoSDK_compile` spawn, path slugs, RTL cleanup / `pressVisibleText`; differ on module load (jest reset vs `require.cache`), SDK URL, env keys, output roots—share only the safe common bits (e.g. spawn/error/path helpers).
       - `packages/expo-runtime/jest.config.js` and `packages/headless-test-runtime/jest.config.js` are almost the same (`moduleNameMapper`); presets / `testMatch` differ.
       - Expo scenario tests use `../../shared/shared-src/...`; headless uses `@shared/...`—align imports.
       - Folder `packages/expo-runtime/tests - expo-runtime/` (space in name) is awkward for tooling and scripts.
     - [ ] Cross-package utils
-      - `packages/tao-cli/cli-src/tao-cli-main.ts` redefines `fileExists` / `isDirectory` next to the same helpers in `packages/compiler/compiler-src/Paths.ts`—collapse to one place (e.g. `packages/shared`).
-      - `assertNever` lives in `packages/compiler/compiler-src/compiler-utils.ts` but is imported from CLI and validator—move tiny helpers to `packages/shared` so `compiler-utils` stays codegen-focused.
+      - [x] `fileExists` / `isDirectory`: shared implementation `packages/shared/shared-src/FsPathChecks.ts`; `tao-cli-main` imports it; `Paths.ts` re-exports for existing compiler imports.
+      - [ ] `assertNever` lives in `packages/compiler/compiler-src/compiler-utils.ts` but is imported from CLI and validator—move tiny helpers to `packages/shared` so `compiler-utils` stays codegen-focused.
     - [ ] Compiler layout
       - `packages/compiler/compiler-src` mixes codegen (`app-typescript-gen/`, `compiler-main.ts`), validation (`validation/`, `parse-errors.ts`), path/module resolution (`Paths.ts`, `ModulePath.ts`, `ModuleResolution.ts`, `StdLibPaths.ts`), LSP/services (`tao-services.ts`, `langium-lsp.ts`, `Tao*Provider.ts`, `TaoWorkspaceManager.ts`), and `parser.ts`—group into subfolders when you refactor paths/imports.
       - `StdLibPaths.ts` is a thin wrapper over `ModulePath.ts`; merge or inline to reduce parallel path modules.
