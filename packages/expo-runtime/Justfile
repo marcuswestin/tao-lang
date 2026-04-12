@@ -5,7 +5,7 @@ build: _deps
     # It's a hack, and I'd like to make it cleaner.
     just cli build-lib {{ justfile_directory() }}/_gen-tao-lib
 
-watch: _deps
+watch-lib: _deps
     just cli watch-lib {{ justfile_directory() }}/_gen-tao-lib
 
 release-prep: _deps build test
@@ -21,7 +21,7 @@ JEST_WATCH_ARGS := JEST_ARGS + " --watch --silent --reporter=dot"
 test *FILTER: _deps build
     bunx jest {{ JEST_ARGS }} -t {{ FILTER }}
 
-watch-tests *FILTER:
+watch *FILTER:
     bunx jest {{ JEST_WATCH_ARGS }} -t {{ FILTER }}
 
 _deps:

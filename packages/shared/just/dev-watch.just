@@ -22,9 +22,9 @@ _watch_all_tests *PATTERNS:
             "compiler" "cd packages/compiler && bun test --watch --silent --reporter=dot {{ PATTERNS }}" \
             "formatter" "cd packages/formatter && bun test --watch --silent --reporter=dot {{ PATTERNS }}" \
             "tao-cli" "cd packages/tao-cli && bun test --watch --silent --reporter=dot {{ PATTERNS }}" \
-            "headless runtime" "cd packages/headless-test-runtime && just watch-tests {{ PATTERNS }}" \
+            "headless runtime" "cd packages/headless-test-runtime && just watch {{ PATTERNS }}" \
             "extension" "cd packages/ide-extension && bun test --watch --silent --reporter=dot {{ PATTERNS }}" \
-            "runtime" "cd packages/expo-runtime && just watch-tests {{ PATTERNS }}" \
+            "runtime" "cd packages/expo-runtime && just watch {{ PATTERNS }}" \
             "test apps" "just _watch_test_apps {{ PATTERNS }}" \
             "q Exit" "just _r_reloead_q_quit" || break;
     done
@@ -71,7 +71,7 @@ _watch_kitchen_sink_build:
 
 _watch_runtime_reload:
     cd packages/expo-runtime \
-        && EXPO_NO_CLEAR=true BROWSER="none" npx expo start -c --web --ios
+        && EXPO_NO_CLEAR=true BROWSER="none" npx expo start -c --web # --ios
 
 _watch_typecheck_extension:
     cd packages/ide-extension && tsc -b tsconfig.json --watch --preserveWatchOutput
