@@ -8,7 +8,9 @@ alwaysApply: true
 - ALWAYS start your session with `./just-agents help`
 
 
-- **NEVER** edit `just-agents.Justfile` without asking first.
+- **NEVER** edit `just-agents.Justfile` without asking first (unless the user explicitly asked for a change to agent commands there).
+
+- **Git / merge:** never run `./just-agents git-dangerously` with `fetch`, `checkout`, `switch`, `pull`, `merge`, `push`, `rebase`, or similar merge/remote work unless the user **explicitly** instructed a merge (see `.cursor/skills/tao-git-workflow/SKILL.md` and comments in `just-agents.Justfile`).
 
 - **Justfile Documentation:**
     - For a succinct summary, first see: https://cheatography.com/linux-china/cheat-sheets/justfile/

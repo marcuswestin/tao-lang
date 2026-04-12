@@ -8,7 +8,7 @@
 - **CRITICAL:** You may ONLY run commands with `./just-agents <cmd> <args>`.
 - **CRITICAL:** Execute shell commands with `./just-agents shell "<shell cmd>" "<args>"`.
 - **ALWAYS** use it for piping commands too, e.g: `./just-agents shell ls | ./just-agents shell head -n 20`
-- **CRITICAL**: **Never** modify just-agents.Justfile without asking first.
+- **CRITICAL**: **Never** modify just-agents.Justfile without asking first (unless the user explicitly asked for a change to agent commands in that file).
 - Favor using `./just-agents shell mv <src> <dest>` over rewriting files and then deleting them.
 - **Justfile Documentation:**
   - **If** you need to lookup `just`, first check: https://cheatography.com/linux-china/cheat-sheets/justfile/
@@ -20,6 +20,7 @@
 
 - **NEVER** delete files without asking.
 - **Git / commits:** follow `.cursor/skills/tao-git-workflow/SKILL.md` (attach when committing). In short: run `./just-agents fix` and `./just-agents prep-commit` before landing work unless the user opts out.
+- **Git / merge:** never run `./just-agents git-dangerously` with `fetch`, `checkout`, `switch`, `pull`, `merge`, `push`, `rebase`, or similar merge/remote work unless the user **explicitly** instructed a merge (or the same skill’s equally explicit remote step); see `tao-git-workflow` and the comment block in `just-agents.Justfile`.
 - **ALWAYS** use the return type of an invoked function (either implicitly or explicitly) rather than redeclaring an identical type. Don't: `type AType = { ... }; let foo: AType = fn();`, Do: `let foo = fn();`
 - _NEVER_ use imports from generated files in our main source code.
 

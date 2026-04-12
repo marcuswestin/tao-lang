@@ -41,7 +41,7 @@ git checkout -b "ft/<project-name-kebab-case>"
 
 Examples: `ft/pattern-matching`, `ft/error-handling`.
 
-> Note: `checkout` is not in the `./just-agents shell git` whitelist. Ask the user to run the checkout in their terminal, or to extend the allowlist in `just-agents.Justfile` (do not edit without approval).
+> Note: `checkout` is not in the `./just-agents shell git` whitelist. Ask the user to run checkout locally, or if they **explicitly** asked for a merge-style git operation, use `./just-agents git-dangerously checkout …` per **`tao-git-workflow`** (never without that explicit instruction).
 
 ## Notes
 

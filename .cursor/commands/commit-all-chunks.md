@@ -5,5 +5,5 @@
 ## -Favor committing the smallest, self-contained changes first.
 
 -**CRITICAL**: Run `./just-agents prep-commit` once first, to ensure the codebase is in a clean state.
--**CRITICAL**: To make a commit, use `./just-agents git-dangerously-commit-without-checks <commit-message>`. This avoids
+-**CRITICAL**: To make a commit, use `./just-agents git-dangerously commit -m '<commit-message>'` (single-quoted `-m` body). This avoids
 running the slow `prep-commit` check each time.

@@ -78,9 +78,19 @@ cli *ARGS:
 tao *ARGS:
     just {{ MAIN_JUSTFILE }} tao {{ ARGS }}
 
-# Only use this if you have already ran `./just-agents prep-commit` and are sure you want to commit without running checks.
-git-dangerously-commit-without-checks MESSAGE:
-    git commit -m "{{ MESSAGE }}"
+# --- Dangerous git (raw `git` passthrough) ---
+#
+# **NEVER** run `./just-agents git-dangerously …` for **fetch, checkout, pull, merge, push, rebase**, or other **merge/remotes** work unless the user **explicitly** instructed the agent to perform a **merge** (or an equally explicit one-off like “push this branch to origin after merge”).
+# **`git-dangerously commit`:** only under **`tao-git-workflow`** fast-batch rules (run `./just-agents prep-commit` once first); otherwise use `./just-agents shell git commit` so prep-commit runs.
+# Normal read-only / safe git: `./just-agents shell git log|status|diff|add|commit` only. This recipe bypasses the shell git allowlist.
+#
+# Typical local squash onto `main` (after `prep-commit` is green): `./just-agents git-dangerously fetch origin` → `./just-agents git-dangerously checkout main` → `./just-agents git-dangerously pull origin main` → `./just-agents git-dangerously merge --squash <feature-branch>` → resolve if needed → `./just-agents prep-commit` → stage → `./just-agents git-dangerously commit …` or `shell git commit` → `./just-agents git-dangerously push origin main` (adjust names to match the repo).
+
+# git-dangerously forwards all arguments to `git` (subcommand + flags + operands). Requires at least one argument (the git subcommand).
+[positional-arguments]
+git-dangerously *GIT_ARGS:
+    #!{{ ZSH_INIT }}
+    exec git "$@"
 
 # Pass-through commands
 #======================

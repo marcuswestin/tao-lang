@@ -3,9 +3,10 @@ name: tao-git-workflow
 description: >-
   Tao Lang git and commit workflows using ./just-agents only: allowed git
   subcommands, prep-commit vs fast commits, drafting messages, multi-piece
-  commits, and squash-merge policy for default branch. Use when staging,
-  committing, reviewing git state, or after check-for-improvements when the user
-  wants to land changes.
+  commits, git-dangerously raw git passthrough (merge/remotes only when the user explicitly asked),
+  and squash-merge policy for default branch. Use when staging, committing,
+  reviewing git state, or after check-for-improvements when the user wants to
+  land changes.
 ---
 
 # Tao Lang git workflow
@@ -24,7 +25,15 @@ Examples:
 - `./just-agents shell git log -n 25 --oneline`
 - `./just-agents shell git add path/to/file.ts`
 
-**Not whitelisted** (e.g. `checkout`, `pull`, `fetch`, `merge`, `rebase`, `push`): the agent cannot run them through `./just-agents shell`. Ask the user to run those in their own terminal, or to extend the allowlist in `just-agents.Justfile` (do not edit that file without explicit approval).
+**Not whitelisted** through `./just-agents shell git …`: `checkout`, `pull`, `fetch`, `merge`, `rebase`, `push`, etc. For those, use **`./just-agents git-dangerously <subcommand> …`** **only** when the policy below allows it (see `just-agents.Justfile`).
+
+## Dangerous git (`git-dangerously`)
+
+The **`git-dangerously`** recipe forwards all arguments to **`git`** (same as running `git …` in a normal shell). **NEVER** use it for **`fetch`**, **`checkout`**, **`switch`**, **`pull`**, **`merge`**, **`push`**, **`rebase`**, or other **merge / remote** operations unless the user **explicitly** asked the agent to **perform a merge** (or an equally explicit remote step in that merge context, e.g. “push `main` to origin after squash”). Do **not** use it for routine browsing or drive-by branch updates without that instruction.
+
+**`git-dangerously commit`** is allowed only under the **fast batch** rules below (run **`./just-agents prep-commit`** once first); it bypasses the per-commit prep hook. For normal single commits, use **`./just-agents shell git commit`**.
+
+When a merge **is** explicitly requested: run **`./just-agents prep-commit`** before mutating `main`, follow the **squash** policy in _Merging into `main`_, and prefer the flow described in the comment block above **`git-dangerously`** in `just-agents.Justfile`.
 
 ## Before any commit (project policy)
 
@@ -44,7 +53,7 @@ For several small commits in a row (e.g. splitting logical changes):
 
 1. Run `./just-agents prep-commit` **once** and fix failures until it passes.
 2. Stage: `./just-agents shell git add <paths>`.
-3. Commit each piece with: `./just-agents git-dangerously-commit-without-checks "type(scope): short summary"`\
+3. Commit each piece with: `./just-agents git-dangerously commit -m 'type(scope): short summary'` (quote the `-m` argument so spaces are preserved).\
    Use only after prep-commit is green; this bypasses the per-commit prep hook.
 
 **Multi-piece rules:** Do not edit the codebase during a “commits only” pass unless the user agrees. Prefer smallest coherent commits first.
@@ -63,7 +72,7 @@ For several small commits in a row (e.g. splitting logical changes):
 When landing a feature branch on **`main`** (or the repo’s default branch), unless the user explicitly asks otherwise:
 
 - **CRITICAL**: Use **squash merge** only (e.g. GitHub **Squash and merge**). Do **not** use a regular merge commit that preserves every branch commit on `main`.
-- **CRITICAL**: The **squash commit message body** must list **every** commit that is being squashed, so the collapsed work stays recoverable from `git show` on `main`. At minimum, paste one line per squashed commit in chronological order, e.g. the user runs `git log main..HEAD --reverse --oneline` locally and copies that block into the squash description (keep GitHub’s prefilled list if it already contains all of them; otherwise replace or append until nothing is missing).
+- **CRITICAL**: The **squash commit message body** must list **every** commit that is being squashed, so the collapsed work stays recoverable from `git show` on `main`. At minimum, paste one line per squashed commit in chronological order, e.g. `./just-agents shell git log main..HEAD --reverse --oneline` on the feature branch and copy that block into the squash description (keep GitHub’s prefilled list if it already contains all of them; otherwise replace or append until nothing is missing).
 - Optional: above that list, keep a short human summary (title + bullets by theme); then a separator line (`---` or similar), then the full per-commit list.
 
 ## Interaction with `check-for-improvements`

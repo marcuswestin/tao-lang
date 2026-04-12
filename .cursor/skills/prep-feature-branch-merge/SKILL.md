@@ -52,7 +52,7 @@ When the user is ready to land the branch on `main` (or the default base), follo
 
 1. Draft a **one-line squash title** listing major areas touched (example shape: `Parser validation; runtime cleanup; agent skills`).
 2. For the **PR description** (if used), write a **short** themed summary; do not rely on the PR alone for history. The **squash commit message** is where the full `git log main..HEAD` list belongs (per `tao-git-workflow`).
-3. **Stop** and ask the user to review before they run **local** git steps the agent cannot do via the allowlist: merge `main` into the branch, resolve conflicts, `push`, or squash-merge on the host. After merges, they should run `./just-agents prep-commit` (or follow **`tao-git-workflow`**) before the final merge to default branch.
+3. **Stop** and ask the user to review before finishing: either they merge on the host (PR squash), or they have **explicitly** told the agent to merge and the agent uses **`./just-agents git-dangerously …`** per **`tao-git-workflow`** (never merge/remote `git` subcommands that way without that explicit instruction). After integrating `main` or before updating `main`, run `./just-agents prep-commit` (or follow **`tao-git-workflow`**).
 
 ## After approval
 
