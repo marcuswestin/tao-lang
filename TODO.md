@@ -37,36 +37,37 @@ Also see Roadmap.
   - [ ] Identify old and out of date code, writing, and documentation.
   - [ ] Identify patterns that are idiosyncratic to the rest of the codebase. For example, previously the formatter lived inside compiler-src. Validator should probably be its own package. Tests use different and sprawly test harnesses I think that could be simpler.
   - [ ] Apps, Docs, and TODOs are likely needing a lot of cleanup.
-  - [ ] Agents instructions, rules, and commands.
+  - [ ] Improve Agents instructions, rules, and commands.
+    - [ ] Consider making all commands in to skills instead. Use /migrate-to-skills? Then delete?
+    - [ ] Search online and find skills for used dependencies!
+      - (E.g if we were using instant-db, it would mean finding https://www.instantdb.com/docs/using-llms and deciding to run `npx skills add instantdb/skills`)
+    - [x] List all files to consider.
+    - [x] Remove, move, edit, add rules and commands and instructions.
+    - [x] List all skills etc that get loaded into context all the time/too often. Make it more precise and efficient.
   - [ ] Naming conventions. E,g ThisIsAURLFunction, not ThisIsAUrlFunction; private justfiles should be _snake_case, not kebab-case.
-  - Already identified:
-    - Runtime code duplication
+  - [ ] Already identified:
+    - [ ] Runtime code duplication
       - `packages/tao-std-lib/tao/tao-runtime/` and `packages/expo-runtime/use/@tao/tao-runtime/` are the same three files (`tao-runtime.ts`, `runtime-store.ts`, `runtime-operators.ts`); compiler already copies from std-lib into emit output, so the Expo copy is extra drift surface.
-    - Test harness assimilation
+    - [ ] Test harness assimilation
       - `packages/expo-runtime/test-runtime.tsx` and `packages/headless-test-runtime/src/test-runtime.tsx` share adapter shape, bun `TaoSDK_compile` spawn, path slugs, RTL cleanup / `pressVisibleText`; differ on module load (jest reset vs `require.cache`), SDK URL, env keys, output roots—share only the safe common bits (e.g. spawn/error/path helpers).
       - `packages/expo-runtime/jest.config.js` and `packages/headless-test-runtime/jest.config.js` are almost the same (`moduleNameMapper`); presets / `testMatch` differ.
       - Expo scenario tests use `../../shared/shared-src/...`; headless uses `@shared/...`—align imports.
       - Folder `packages/expo-runtime/tests - expo-runtime/` (space in name) is awkward for tooling and scripts.
-    - Cross-package utils
+    - [ ] Cross-package utils
       - `packages/tao-cli/cli-src/tao-cli-main.ts` redefines `fileExists` / `isDirectory` next to the same helpers in `packages/compiler/compiler-src/Paths.ts`—collapse to one place (e.g. `packages/shared`).
       - `assertNever` lives in `packages/compiler/compiler-src/compiler-utils.ts` but is imported from CLI and validator—move tiny helpers to `packages/shared` so `compiler-utils` stays codegen-focused.
-    - Compiler layout
+    - [ ] Compiler layout
       - `packages/compiler/compiler-src` mixes codegen (`app-typescript-gen/`, `compiler-main.ts`), validation (`validation/`, `parse-errors.ts`), path/module resolution (`Paths.ts`, `ModulePath.ts`, `ModuleResolution.ts`, `StdLibPaths.ts`), LSP/services (`tao-services.ts`, `langium-lsp.ts`, `Tao*Provider.ts`, `TaoWorkspaceManager.ts`), and `parser.ts`—group into subfolders when you refactor paths/imports.
       - `StdLibPaths.ts` is a thin wrapper over `ModulePath.ts`; merge or inline to reduce parallel path modules.
       - `compiler-utils.ts` name vs contents (Langium codegen + shared bits)—split or rename for clarity.
-    - Apps / repo noise (optional)
+    - [ ] Apps / repo noise (optional)
       - `Apps/` has many scenarios and scratch artifacts; tighten conventions or ignore patterns if reviews feel noisy.
-    - Misc
+    - [ ] Misc
       - [runtime_reload] λ WARN Route "./_gen-tao-compiler/tao-app/app/Fridge.tsx" is missing the required default export. Ensure a React component is exported as default. (This happens in all generated view files)
-    - Recipe dependencies. Many recipes call others unecessarily; and some dependencies are declared at the top, others in implementation. What makes most sense here? Are there recipies that should be changed?
-    - While doing all this, a lot of code will end up in @shared. It will be important to organize well. START BY MAKING A PLAN FOR THIS. For example, test harnesses will be sharing things that other code probably doesn't need.
-    - Do different parts of @shared need different dependencies when used? Do we handle it with a single package.json with peerDependencies?
-    -
-    - [ ] Improve Agents
-      - [ ] Try removing the just-agents restriction and see what development is like without it.
-      - [ ] Remove, move, edit, add rules and commands and instructions. Especially add rules? React, react native, etc. Ask to find all relevant ones online.
-      - [ ] List all skills etc that get loaded into context all the time. Improve.
-      - [ ] Consider making all commands in to skills instead.
+    - [ ] Recipe dependencies. Many recipes call others unecessarily; and some dependencies are declared at the top, others in implementation. What makes most sense here? Are there recipies that should be changed?
+    - [ ] While doing all this, a lot of code will end up in @shared. It will be important to organize well. START BY MAKING A PLAN FOR THIS. For example, test harnesses will be sharing things that other code probably doesn't need.
+    - [ ] Do different parts of @shared need different dependencies when used? Do we handle it with a single package.json with peerDependencies?
+- [ ] Try removing the just-agents restriction and see what development is like without it.
 - [ ] Improve testing
   - [ ] Add View Keys
     - [ ] Dev System for accessing local State?
