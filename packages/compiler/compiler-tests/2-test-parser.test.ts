@@ -1,4 +1,4 @@
-import { AST } from '@parser'
+import { AST } from '@parser/parser'
 import { describe, expect, parseAST, parseASTWithErrors, resolveReferences, test } from './test-utils/test-harness'
 
 describe('parse:', () => {

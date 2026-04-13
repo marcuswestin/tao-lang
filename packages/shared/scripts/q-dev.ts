@@ -1,11 +1,11 @@
 import { Command } from '@commander-js/extra-typings'
-import path from 'node:path'
+import { FS } from '@shared'
 import { genSyntaxTmLanguageFiles } from './commands/gen-syntax-tmLanguage-files'
 
 const program = new Command()
 
 function genDefaultIdeSyntaxPathValue(forPath: string) {
-  return path.resolve(__dirname, '../../ide-extension/ide-syntaxes', forPath)
+  return FS.resolvePath(__dirname, '../../ide-extension/ide-syntaxes', forPath)
 }
 
 program.command('gen-syntax-tmLanguage-files')

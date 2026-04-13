@@ -1,16 +1,16 @@
+import { FS } from '@shared'
 import { Assert } from '@shared/TaoErrors'
-import { nodePath } from './util/libs'
 
 export type ModulePath = string & { __brand: 'ModulePath' }
 
 /** normalizeModulePath joins and normalizes path segments and strips trailing slashes. */
 export function normalizeModulePath(...parts: string[]): ModulePath {
-  return nodePath.normalize(nodePath.join(...parts)).replace(/\/+$/, '') as ModulePath
+  return FS.normalizePath(FS.joinPath(...parts)).replace(/\/+$/, '') as ModulePath
 }
 
 /** normalizedDirOfPath returns the normalized parent directory of a file path. */
 export function normalizedDirOfPath(filePath: string): ModulePath {
-  return normalizeModulePath(nodePath.dirname(filePath))
+  return normalizeModulePath(FS.dirname(filePath))
 }
 
 /** resolveModulePathFromFile resolves modulePath relative to the filePath directory. */

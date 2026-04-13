@@ -1,13 +1,12 @@
-import { AST, ASTUtils } from '@parser'
-import * as langium from 'langium'
-import { DefaultDefinitionProvider, type LangiumServices } from 'langium/lsp'
-import type { DefinitionParams } from 'vscode-languageserver'
-import { LocationLink } from 'vscode-languageserver'
+import { LGM as langium } from '@parser'
+import { DefaultDefinitionProvider, type LangiumServices } from '@parser/lsp'
+import { AST } from '@parser/parser'
+import { type DefinitionParams, LocationLink } from '@parser/vscode-languageserver'
 import {
   getSameModuleUris,
   isSameModuleImport,
   resolveModulePathToUris,
-} from './ModuleResolution'
+} from '../resolution/ModuleResolution'
 
 /** TaoDefinitionProvider implements go-to-definition including use-statement imported names. */
 export class TaoDefinitionProvider extends DefaultDefinitionProvider {
@@ -99,7 +98,7 @@ export class TaoDefinitionProvider extends DefaultDefinitionProvider {
     targetUris: string[],
     useStmt: AST.UseStatement,
     document: langium.LangiumDocument,
-  ): langium.AstNodeDescription | undefined {
+  ): AST.NodeDescription | undefined {
     const sameModule = isSameModuleImport(useStmt, document.uri.path)
     const targetUriSet = new Set(targetUris)
     for (const desc of this.indexManager.allElements()) {
@@ -113,11 +112,11 @@ export class TaoDefinitionProvider extends DefaultDefinitionProvider {
 
   /** findDeclarationInDesc resolves desc if it is the named shared or same-module export. */
   private findDeclarationInDesc(
-    desc: langium.AstNodeDescription,
+    desc: AST.NodeDescription,
     name: string,
     targetUriSet: Set<string>,
     sameModule: boolean,
-  ): langium.AstNodeDescription | undefined {
+  ): AST.NodeDescription | undefined {
     const isMatchingDeclaration = this.isMatchingDeclaration(desc, name, targetUriSet)
     if (!isMatchingDeclaration) {
       return undefined
@@ -128,7 +127,7 @@ export class TaoDefinitionProvider extends DefaultDefinitionProvider {
     }
 
     const container = desc.node.$container
-    if (ASTUtils.isSharedModuleDeclaration(container)) {
+    if (AST.isSharedModuleDeclaration(container)) {
       return desc
     }
 
@@ -137,10 +136,10 @@ export class TaoDefinitionProvider extends DefaultDefinitionProvider {
 
   /** isMatchingDeclaration returns true when name and URI match an importable AST node. */
   private isMatchingDeclaration(
-    desc: langium.AstNodeDescription,
+    desc: AST.NodeDescription,
     name: string,
     targetUriSet: Set<string>,
-  ): desc is langium.AstNodeDescription & { node: AST.Declaration } {
+  ): desc is AST.NodeDescription & { node: AST.Declaration } {
     return targetUriSet.has(desc.documentUri.toString())
       && desc.name === name
       && AST.isDeclaration(desc.node)

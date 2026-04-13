@@ -12,7 +12,7 @@
     "formatter.ts",
     "src/**/*",
     "formatter-tests/**/*",
-    "../parser/parser.ts",
+    "../parser/src/parser.ts",
     "../parser/src/**/*",
     "../shared/shared-src/**/*",
     "../compiler/tao-compiler.ts",

@@ -4,7 +4,7 @@ Run compiled Tao apps, by rendering them, programmatically interacting with them
 
 ## Scope
 
-The compiler's `app-typescript-gen/` pipeline now has separate modules for each codegen concern (views, aliases, expressions, injections, etc.), but none of them have tests. The existing runtime tests in `expo-runtime` use Jest and are slow to run.
+The compiler's `codegen/app/` pipeline now has separate modules for each codegen concern (views, aliases, expressions, injections, etc.), but none of them have tests. The existing runtime tests in `expo-runtime` use Jest and are slow to run.
 
 This project adds fast, focused tests directly in `packages/compiler` (using `bun test`). Each codegen module gets a corresponding test file that:
 

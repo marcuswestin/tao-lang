@@ -1,8 +1,8 @@
-import { AST, NodePropName } from '@parser'
+import { AST } from '@parser'
+import { AbstractFormatter, Formatting, FormattingRegion } from '@parser/lsp'
+import { NodePropName } from '@parser/parserASTExport'
+import { DocumentFormattingParams, TextEdit } from '@parser/vscode-languageserver'
 import { switchBindItemType_Exhaustive } from '@shared/TypeSafety'
-import { AstNode, LangiumDocument } from 'langium'
-import { AbstractFormatter, Formatting, FormattingRegion } from 'langium/lsp'
-import { DocumentFormattingParams, TextEdit } from 'vscode-languageserver'
 import extensivelyFormatInjectionBlocks from './injectionFormatter'
 
 const FORMAT_INJECTION_BLOCKS = true
@@ -12,7 +12,7 @@ export default class TaoFormatter extends AbstractFormatter {
   /** formatDocument runs Langium’s formatter; when injection re-indent runs and changes text, the result is a single
    * full-document edit (see `extensivelyFormatInjectionBlocks`), otherwise the usual granular edits are returned. */
   override async formatDocument(
-    document: LangiumDocument,
+    document: AST.Document,
     params: DocumentFormattingParams,
   ): Promise<TextEdit[]> {
     const edits = await super.formatDocument(document, params)
@@ -169,25 +169,25 @@ export default class TaoFormatter extends AbstractFormatter {
   // Private helpers
   //////////////////
 
-  private _spaceAroundName(node: AstNode): void {
+  private _spaceAroundName(node: AST.Node): void {
     const f = this.getNodeFormatter(node)
     f.property('name').surround(Formatting.oneSpace())
   }
 
-  private _spaceAfterProperty<NodeT extends AstNode>(
+  private _spaceAfterProperty<NodeT extends AST.Node>(
     node: NodeT,
     property: NodePropName<NodeT>,
   ): void {
     const f = this.getNodeFormatter(node)
-    const prop = node[property] as AstNode | undefined
+    const prop = node[property] as AST.Node | undefined
     if (prop !== undefined && prop !== null) {
       f.node(prop).append(Formatting.oneSpace())
     }
   }
 
-  private _indentBlock<NodeT extends AstNode, K extends keyof NodeT>(
+  private _indentBlock<NodeT extends AST.Node, K extends keyof NodeT>(
     node: NodeT,
-    property: K & (NodeT[K] extends AstNode[] ? K : never),
+    property: K & (NodeT[K] extends AST.Node[] ? K : never),
   ): void {
     const f = this.getNodeFormatter(node)
     const open = f.keyword('{')
@@ -195,7 +195,7 @@ export default class TaoFormatter extends AbstractFormatter {
     this._indentBetween(node, property, open, close)
   }
 
-  private _indentBetween<NodeT extends AstNode, K extends keyof NodeT>(
+  private _indentBetween<NodeT extends AST.Node, K extends keyof NodeT>(
     node: NodeT,
     property: K,
     openRegion: FormattingRegion,
@@ -203,7 +203,7 @@ export default class TaoFormatter extends AbstractFormatter {
   ): void {
     const f = this.getNodeFormatter(node)
 
-    if ((node[property] as NodeT[K] & AstNode[]).length === 0) {
+    if ((node[property] as NodeT[K] & AST.Node[]).length === 0) {
       // Empty body: "{ }"
       openRegion.append(Formatting.oneSpace())
     } else {
@@ -213,27 +213,27 @@ export default class TaoFormatter extends AbstractFormatter {
     }
   }
 
-  private _spaceBeforeProperty<NodeT extends AstNode, K extends keyof NodeT>(
+  private _spaceBeforeProperty<NodeT extends AST.Node, K extends keyof NodeT>(
     node: NodeT,
-    property: K & (NodeT[K] extends AstNode | undefined ? K : never),
+    property: K & (NodeT[K] extends AST.Node | undefined ? K : never),
   ): void {
     const f = this.getNodeFormatter(node)
-    const prop = node[property] as AstNode | undefined
+    const prop = node[property] as AST.Node | undefined
     if (prop !== undefined && prop !== null) {
       f.node(prop).prepend(Formatting.oneSpace())
     }
   }
 
-  private _spaceBetweenCommaSeperatedItems<NodeT extends AstNode>(node: NodeT): void {
+  private _spaceBetweenCommaSeperatedItems<NodeT extends AST.Node>(node: NodeT): void {
     const f = this.getNodeFormatter(node)
     f.keywords(',').prepend(Formatting.noSpace()).append(Formatting.oneSpace())
   }
-  private _spaceBetweenNodesInList<NodeT extends AstNode, K extends keyof NodeT>(
+  private _spaceBetweenNodesInList<NodeT extends AST.Node, K extends keyof NodeT>(
     node: NodeT,
-    property: K & (NodeT[K] extends AstNode[] ? K : never),
+    property: K & (NodeT[K] extends AST.Node[] ? K : never),
   ): void {
     const f = this.getNodeFormatter(node)
-    const list = node[property] as AstNode[]
+    const list = node[property] as AST.Node[]
     for (let i = 1; i < list.length; i++) {
       const item = list[i]
       if (item !== undefined) {

@@ -1,12 +1,14 @@
-import { jest } from '@jest/globals'
+import { FS } from '@shared'
+import type { CompiledTaoScenario, CompiledTaoScenarioAdapter } from '@shared/CompiledTaoScenarios'
+import {
+  formatBunSpawnSyncErrorMessage,
+  runTaoSdkCompileBunSync,
+  TAO_SDK_COMPILE_OPTS_ENV_EXPO,
+  throwIfTaoSdkCompileFailed,
+} from '@shared/TaoBunSdk'
+import { compiledScenarioTaoAppBootstrapRelativePath } from '@shared/TaoPaths'
 import * as RNTesting from '@testing-library/react-native'
-import { spawnSync } from 'node:child_process'
-import { existsSync } from 'node:fs'
-import { resolve as resolvePath } from 'node:path'
-import { pathToFileURL } from 'node:url'
 import type { ComponentType as CompiledAppComponent } from 'react'
-import type { CompiledTaoScenario, CompiledTaoScenarioAdapter } from '../shared/shared-src/CompiledTaoScenarios'
-import { sanitizeCompiledScenarioOutputSegment } from '../shared/shared-src/TaoPaths'
 
 type CompileOpts = {
   path: string
@@ -24,10 +26,10 @@ type RenderCompiledAppResult = RNTesting.RenderResult & {
   pressVisibleText(text: string): void
 }
 
-const runtimeDir = resolvePath(__dirname)
-const repoRoot = resolvePath(runtimeDir, '../..')
-const stdLibRoot = resolvePath(repoRoot, 'packages/tao-std-lib')
-const taoSdkModuleUrl = pathToFileURL(resolvePath(runtimeDir, '_gen-tao-lib/tao-cli-main.js')).href
+const runtimeDir = FS.resolvePath(__dirname)
+const repoRoot = FS.resolvePath(runtimeDir, '../..')
+const stdLibRoot = FS.resolvePath(repoRoot, 'packages/tao-std-lib')
+const taoSdkModuleUrl = FS.pathToFileURL(FS.resolvePath(runtimeDir, '_gen-tao-lib/tao-cli-main.js')).href
 
 // createExpoScenarioAdapter Create a shared-scenario adapter for the Expo runtime.
 export function createExpoScenarioAdapter() {
@@ -36,9 +38,9 @@ export function createExpoScenarioAdapter() {
       scenarioDir,
       scenarioName,
     }: { scenarioDir: string; scenarioName: string; scenario: CompiledTaoScenario }) {
-      const outputFileName = `app/_gen-runtime-tests/${getGeneratedOutputFileName(scenarioName)}`
+      const outputFileName = `app/_gen-runtime-tests/${compiledScenarioTaoAppBootstrapRelativePath(scenarioName)}`
       return compileTaoForExpoRuntime({
-        path: resolvePath(scenarioDir, 'app.tao'),
+        path: FS.resolvePath(scenarioDir, 'app.tao'),
         stdLibRoot,
         outputFileName,
       })
@@ -56,24 +58,21 @@ export function createExpoScenarioAdapter() {
 
 // compileTaoForExpoRuntime compiles a scenario's app.tao into its expo runtime test output directory.
 function compileTaoForExpoRuntime(opts: CompileOpts): CompileResult {
-  const outputPath = resolvePath(runtimeDir, opts.outputFileName)
-  const code = `
-    import { TaoSDK_compile } from '${taoSdkModuleUrl}'
-    const opts = JSON.parse(process.env.TAO_EXPO_COMPILE_OPTS ?? '{}')
-    await TaoSDK_compile(opts)
-  `
-  const env = {
-    ...process.env,
-    TAO_EXPO_COMPILE_OPTS: JSON.stringify({ ...opts, runtimeDir }),
-  }
-  const command = spawnSync('bun', ['-e', code], { cwd: repoRoot, encoding: 'utf8', env })
+  const outputPath = FS.resolvePath(runtimeDir, opts.outputFileName)
+  const command = runTaoSdkCompileBunSync({
+    repoRoot,
+    taoSdkModuleUrl,
+    compileOpts: { ...opts, runtimeDir },
+    optsEnvVar: TAO_SDK_COMPILE_OPTS_ENV_EXPO,
+  })
 
-  const compileError = command.stderr || command.stdout || `bun exited with status ${command.status}`
-  if (command.status !== 0 || !existsSync(outputPath)) {
-    throw new Error(`Failed to compile Tao for the Expo runtime: ${compileError}`)
-  }
+  throwIfTaoSdkCompileFailed(command, {
+    outputPath,
+    runtimeLabel: 'the Expo runtime',
+    requireOutputFile: true,
+  })
 
-  return { outputPath, compileError }
+  return { outputPath, compileError: formatBunSpawnSyncErrorMessage(command) }
 }
 
 // renderCompiledTaoApp Render the freshly compiled Expo module instead of a statically imported app entrypoint.
@@ -90,15 +89,11 @@ function renderCompiledTaoApp(outputPath: string): RenderCompiledAppResult {
   }
 }
 
-// loadCompiledAppModule Reset Jest's module cache and load the generated app module for this specific scenario run.
-// The compiled module path is only known after compilation, so the runtime test harness cannot use a static import here.
+/** loadCompiledAppModule evicts `require.cache` for `outputPath` then `require`s it (matches headless-test-runtime; avoids `jest.resetModules()` splitting React). */
 function loadCompiledAppModule(outputPath: string): CompiledAppComponent {
-  jest.resetModules()
-  const result = jest.requireActual(outputPath) as { default: CompiledAppComponent }
-  return result.default
-}
-
-// getGeneratedOutputFileName returns the stable relative output path for a scenario under _gen-runtime-tests.
-function getGeneratedOutputFileName(baseName: string) {
-  return `test-${sanitizeCompiledScenarioOutputSegment(baseName)}/tao-app/app-bootstrap.tsx`
+  const resolved = require.resolve(outputPath)
+  delete require.cache[resolved]
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const mod = require(resolved)
+  return mod.default
 }

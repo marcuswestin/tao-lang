@@ -1,10 +1,10 @@
-import { LangiumDocument } from 'langium'
-import { DocumentFormattingParams, TextEdit } from 'vscode-languageserver'
+import { AST } from '@parser'
+import { DocumentFormattingParams, TextEdit } from '@parser/vscode-languageserver'
 
 /** extensivelyFormatInjectionBlocks materializes Langium’s edits into text, normalizes ```/''' injection block indent
  * relative to `inject`, then either returns the original edits (no injection change) or one edit replacing the whole file. */
 export default function extensivelyFormatInjectionBlocks(
-  document: LangiumDocument,
+  document: AST.Document,
   edits: TextEdit[],
   params: DocumentFormattingParams,
 ): TextEdit[] {

@@ -1,36 +1,35 @@
-import { AST, ASTUtils } from '@parser'
-import * as langium from 'langium'
+import { AST, LGM } from '@parser/parser'
+import { isTaoModuleImport } from '../resolution/ModulePath'
 import {
   getSameModuleUris,
   isSameModuleImport,
   resolveModulePathToUris,
   type UriAndPath,
-} from '../ModuleResolution'
-import { isStdLibImport } from '../StdLibPaths'
+} from '../resolution/ModuleResolution'
 
 /** UseStatementValidator validates use imports and enforces share/file visibility rules.
  * - Same-module: module-visible names; file-private blocked across files.
  * - Cross-module: only share exports. */
 export class UseStatementValidator {
   constructor(
-    private readonly indexManager: langium.IndexManager,
-    private readonly documents: langium.LangiumDocuments,
+    private readonly indexManager: LGM.IndexManager,
+    private readonly documents: LGM.LangiumDocuments,
     private readonly stdLibRoot?: string,
   ) {}
 
   /** checkUseStatement reports errors for invalid or unreachable imports. */
   checkUseStatement(
     useStatement: AST.UseStatement,
-    accept: langium.ValidationAcceptor,
+    accept: LGM.ValidationAcceptor,
   ): void {
-    const document = langium.AstUtils.getDocument(useStatement)
+    const document = LGM.AstUtils.getDocument(useStatement)
 
     // Skip validation for non-file URIs (e.g., tao-string:// used in single-file parsing tests)
     if (document.uri.scheme !== 'file') {
       return
     }
 
-    if (useStatement.modulePath && isStdLibImport(useStatement.modulePath) && !this.stdLibRoot) {
+    if (useStatement.modulePath && isTaoModuleImport(useStatement.modulePath) && !this.stdLibRoot) {
       accept('error', 'Standard library root is not configured; cannot resolve @tao/... imports.', {
         node: useStatement,
         property: 'modulePath',
@@ -59,7 +58,7 @@ export class UseStatementValidator {
   private validateSameModuleImports(
     useStatement: AST.UseStatement,
     targetUris: string[],
-    accept: langium.ValidationAcceptor,
+    accept: LGM.ValidationAcceptor,
   ): void {
     const accessibleNames = new Set(this.getAccessibleSameModuleDeclarations(targetUris).map(d => d.name))
 
@@ -88,7 +87,7 @@ export class UseStatementValidator {
   private validateCrossModuleImports(
     useStatement: AST.UseStatement,
     targetUris: string[],
-    accept: langium.ValidationAcceptor,
+    accept: LGM.ValidationAcceptor,
   ): void {
     const shareNames = new Set(this.getShareDeclarations(targetUris).map(d => d.name))
 
@@ -130,7 +129,7 @@ export class UseStatementValidator {
   /** getTargetUrisForUseStatement returns target URIs and the same-module flag for resolution. */
   private getTargetUrisForUseStatement(
     useStatement: AST.UseStatement,
-    document: langium.LangiumDocument,
+    document: LGM.LangiumDocument,
   ): { targetUris: string[]; sameModule: boolean } {
     const docUrisAndPaths = this.getDocUrisAndPaths()
     const sameModule = isSameModuleImport(useStatement, document.uri.path)
@@ -146,9 +145,9 @@ export class UseStatementValidator {
   }
 
   /** getAccessibleSameModuleDeclarations returns importable descriptions in same-module target URIs. */
-  private getAccessibleSameModuleDeclarations(targetUris: string[]): langium.AstNodeDescription[] {
+  private getAccessibleSameModuleDeclarations(targetUris: string[]): AST.NodeDescription[] {
     const uriSet = new Set(targetUris)
-    const results: langium.AstNodeDescription[] = []
+    const results: AST.NodeDescription[] = []
 
     for (const desc of this.indexManager.allElements()) {
       if (!uriSet.has(desc.documentUri.toString())) {
@@ -190,9 +189,9 @@ export class UseStatementValidator {
   }
 
   /** getShareDeclarations returns share-marked importable descriptions in target URIs. */
-  private getShareDeclarations(targetUris: string[]): langium.AstNodeDescription[] {
+  private getShareDeclarations(targetUris: string[]): AST.NodeDescription[] {
     const uriSet = new Set(targetUris)
-    const results: langium.AstNodeDescription[] = []
+    const results: AST.NodeDescription[] = []
 
     for (const desc of this.indexManager.allElements()) {
       if (!uriSet.has(desc.documentUri.toString())) {
@@ -205,7 +204,7 @@ export class UseStatementValidator {
       }
 
       const container = node.$container
-      if (ASTUtils.isSharedModuleDeclaration(container)) {
+      if (AST.isSharedModuleDeclaration(container)) {
         results.push(desc)
       }
     }
@@ -232,7 +231,7 @@ export class UseStatementValidator {
       }
 
       const container = node.$container
-      if (!ASTUtils.isSharedModuleDeclaration(container)) {
+      if (!AST.isSharedModuleDeclaration(container)) {
         return true
       }
     }

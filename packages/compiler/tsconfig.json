@@ -13,7 +13,7 @@
     "compiler-src/**/*",
     "compiler-tests/**/*",
     "../shared/shared-src/**/*",
-    "../parser/parser.ts",
+    "../parser/src/parser.ts",
     "../parser/src/**/*",
     "../formatter/formatter.ts",
     "../formatter/src/**/*"

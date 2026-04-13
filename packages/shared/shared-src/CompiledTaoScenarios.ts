@@ -1,5 +1,4 @@
-import { existsSync, readdirSync, readFileSync } from 'node:fs'
-import { resolve as resolvePath } from 'node:path'
+import * as FS from './fs'
 
 export type CompiledTaoScenarioStep =
   | { type: 'assertVisibleText'; text: string }
@@ -41,8 +40,8 @@ export type CompiledTaoScenarioAdapter = {
   cleanup(): Promise<void> | void
 }
 
-const repoRootDir = resolvePath(__dirname, '../../..')
-const compiledTaoScenariosRootDir = resolvePath(repoRootDir, 'Apps', 'Test Apps')
+const repoRootDir = FS.resolvePath(__dirname, '../../..')
+const compiledTaoScenariosRootDir = FS.resolvePath(repoRootDir, 'Apps', 'Test Apps')
 
 /** getCompiledTaoScenariosRootDir returns the repo’s `Apps/Test Apps` directory (each subfolder is one scenario). */
 export function getCompiledTaoScenariosRootDir() {
@@ -54,13 +53,13 @@ export function getCompiledTaoScenariosRootDir() {
  * and validates via `loadCompiledTaoScenario` (throws on invalid shape). The returned `skip` is the scenario’s
  * `skip` field (boolean or string reason), or `true` when the file is absent. */
 export function discoverCompiledTaoScenarios(rootDir = compiledTaoScenariosRootDir): DiscoveredCompiledTaoScenario[] {
-  return readdirSync(rootDir, { withFileTypes: true })
+  return FS.readDirWithFileTypes(rootDir)
     .filter(entry => entry.isDirectory())
-    .map(entry => resolvePath(rootDir, entry.name))
+    .map(entry => FS.resolvePath(rootDir, entry.name))
     .sort((left, right) => left.localeCompare(right))
     .map(scenarioDir => {
-      const scenarioPath = resolvePath(scenarioDir, 'scenario.json')
-      if (!existsSync(scenarioPath)) {
+      const scenarioPath = FS.resolvePath(scenarioDir, 'scenario.json')
+      if (!FS.existsSync(scenarioPath)) {
         return { scenarioDir, scenario: undefined, skip: true }
       }
       const scenario = loadCompiledTaoScenario(scenarioDir)
@@ -70,8 +69,8 @@ export function discoverCompiledTaoScenarios(rootDir = compiledTaoScenariosRootD
 
 /** loadCompiledTaoScenario reads `${scenarioDir}/scenario.json`, parses it, and validates shape */
 export function loadCompiledTaoScenario(scenarioDir: string): CompiledTaoScenario {
-  const scenarioPath = resolvePath(scenarioDir, 'scenario.json')
-  const rawScenario = JSON.parse(readFileSync(scenarioPath, 'utf8')) as unknown
+  const scenarioPath = FS.resolvePath(scenarioDir, 'scenario.json')
+  const rawScenario = JSON.parse(FS.readTextFile(scenarioPath)) as unknown
 
   return parseCompiledTaoScenario(rawScenario, scenarioPath)
 }

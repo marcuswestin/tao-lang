@@ -1,14 +1,14 @@
-import * as langium from 'langium'
-import * as LSP from 'langium/lsp'
+import { LGM as langium } from '@parser'
+import * as LSP from '@parser/lsp'
 
-import { TaoDefinitionProvider } from '@compiler/TaoDefinitionProvider'
-import { TaoScopeComputation } from '@compiler/TaoScopeComputation'
-import { TaoScopeProvider } from '@compiler/TaoScopeProvider'
-import { TaoWorkspaceManager } from '@compiler/TaoWorkspaceManager'
 import { validator } from '@compiler/validation/tao-lang-validator'
 import { UseStatementValidator } from '@compiler/validation/UseStatementValidator'
 import TaoFormatter from '@formatter/TaoFormatter'
-import { AST, TaoLangGeneratedModule, TaoLangGeneratedSharedModule } from '@parser'
+import { AST } from '@parser/parser'
+import { TaoDefinitionProvider } from './TaoDefinitionProvider'
+import { TaoScopeComputation } from './TaoScopeComputation'
+import { TaoScopeProvider } from './TaoScopeProvider'
+import { TaoWorkspaceManager } from './TaoWorkspaceManager'
 
 // TaoWorkspaceConfig configures createTaoWorkspace (e.g. std lib root path).
 export type TaoWorkspaceConfig = {
@@ -70,9 +70,9 @@ export class TaoWorkspace {
     return this.shared
   }
 
-  /** hasStdLib returns true when a std-lib root is configured. */
+  /** hasStdLib returns true when a non-empty std-lib root path is configured. */
   hasStdLib(): boolean {
-    return this.stdLibRoot !== undefined
+    return Boolean(this.stdLibRoot)
   }
 
   /** buildDocument parses, links, and validates a single document. */
@@ -127,7 +127,7 @@ export function createTaoWorkspace(
 ): TaoWorkspace {
   const sharedTaoModule = langium.inject(
     LSP.createDefaultSharedModule(context),
-    TaoLangGeneratedSharedModule,
+    AST.GeneratedSharedModule,
     {
       workspace: {
         WorkspaceManager: (services: langium.LangiumSharedCoreServices) =>
@@ -138,7 +138,7 @@ export function createTaoWorkspace(
 
   const TaoModule = langium.inject(
     LSP.createDefaultModule({ shared: sharedTaoModule }),
-    TaoLangGeneratedModule,
+    AST.GeneratedModule,
     {
       lsp: {
         Formatter: () => new TaoFormatter(),

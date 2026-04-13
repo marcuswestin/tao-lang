@@ -1,11 +1,10 @@
-import { AST } from '@parser'
-import * as langium from 'langium'
+import { AST, LGM } from '@parser'
 import {
   getSameModuleUris,
   isSameModuleImport,
   resolveModulePathToUris,
   type UriAndPath,
-} from '../ModuleResolution'
+} from '../../resolution/ModuleResolution'
 import { emitRelativeImport } from './gen-output-paths'
 
 /** buildUriToTaoMap maps document URI string to TaoFile AST. */
@@ -61,7 +60,7 @@ function findDefiningUriForName(
 /** collectViewCrossDocumentImports adds imports for view references that resolve outside `doc`. */
 function collectViewCrossDocumentImports(
   taoFile: AST.TaoFile,
-  doc: langium.LangiumDocument,
+  doc: AST.Document,
   currentEmit: string,
   uriToEmitPath: Map<string, string>,
   importMap: Map<string, Set<string>>,
@@ -88,7 +87,7 @@ function topLevelViewDeclaration(stmt: AST.Statement): AST.ViewDeclaration | und
 /** walkViewDecl walks nested views and records cross-document view render imports. */
 function walkViewDecl(
   decl: AST.ViewDeclaration,
-  doc: langium.LangiumDocument,
+  doc: AST.Document,
   currentEmit: string,
   uriToEmitPath: Map<string, string>,
   importMap: Map<string, Set<string>>,
@@ -101,7 +100,7 @@ function walkViewDecl(
 /** walkViewStatement records cross-document view imports for a view-body or nested-block statement. */
 function walkViewStatement(
   s: AST.Statement,
-  doc: langium.LangiumDocument,
+  doc: AST.Document,
   currentEmit: string,
   uriToEmitPath: Map<string, string>,
   importMap: Map<string, Set<string>>,
@@ -109,7 +108,7 @@ function walkViewStatement(
   if (AST.isViewRender(s)) {
     const viewDecl = s.view.ref
     if (viewDecl) {
-      const defDoc = langium.AstUtils.getDocument(viewDecl)
+      const defDoc = LGM.AstUtils.getDocument(viewDecl)
       if (defDoc && defDoc.uri.toString() !== doc.uri.toString()) {
         const targetEmit = uriToEmitPath.get(defDoc.uri.toString())
         if (targetEmit && targetEmit !== currentEmit) {
@@ -142,7 +141,7 @@ export function buildImportLinesForTaoFile(
   uriAndPaths: UriAndPath[],
   stdLibRoot: string | undefined,
 ): string {
-  const doc = taoFile.$document
+  const doc = taoFile.$document as AST.Document | undefined
   if (!doc || doc.uri.scheme !== 'file') {
     return ''
   }

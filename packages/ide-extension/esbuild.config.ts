@@ -1,7 +1,6 @@
 import { context } from 'esbuild'
 import type { Plugin } from 'esbuild'
 import { cpSync, mkdirSync } from 'node:fs'
-import process from 'node:process'
 
 const watch = process.argv.includes('--watch')
 const minify = process.argv.includes('--minify')

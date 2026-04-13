@@ -168,15 +168,19 @@ class UnexpectedBehaviorError extends BaseTaoError {
     return `${this.name}: ${this.messageForEndUser}. ${safeJSONStringifyAdditionalInfo(this.logInfo)}. ${this.stack}`
   }
 
-  override readonly cause: Error
+  /** Stored separately from `Error.cause` so we do not fight `override` rules across TypeScript versions. */
+  private readonly _taoCause: Error
   readonly logInfo?: Record<string, unknown>
+
+  get cause(): Error {
+    return this._taoCause
+  }
 
   constructor(opts: UnexpectedBehaviorContext) {
     const { cause, logInfo } = UnexpectedBehaviorError.getCauseErrorAndLogInfo(opts)
     super(opts.humanMessage ?? 'Something went wrong. So sorry :(', cause)
 
-    this.name = 'UnexpectedBehaviorError'
-    this.cause = cause
+    this._taoCause = cause
     this.logInfo = logInfo
 
     // Exclude this constructor from the stack so traces start at the call site.
@@ -202,7 +206,7 @@ class UnexpectedBehaviorError extends BaseTaoError {
 
   override get stack(): string | undefined {
     const myStack = getStackMessage(this.name, super.stack)
-    const causeStack = getStackMessage(this.cause.name, this.cause.stack)
+    const causeStack = getStackMessage(this._taoCause.name, this._taoCause.stack)
 
     return (
       myStack + '\n'

@@ -1,7 +1,7 @@
-import { createTaoWorkspace } from '@compiler/tao-services'
+import { createTaoWorkspace } from '@compiler/langium/tao-services'
+import { LGM as Langium } from '@parser'
+import { NodeFileSystem } from '@parser/node'
 import { expect, test } from 'bun:test'
-import * as Langium from 'langium'
-import { NodeFileSystem } from 'langium/node'
 
 export function shouldFormat(code: string, expected: string) {
   return async () => {

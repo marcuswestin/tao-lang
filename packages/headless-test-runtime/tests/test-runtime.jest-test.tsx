@@ -1,11 +1,11 @@
+import { FS } from '@shared'
 import {
   discoverCompiledTaoScenarios,
   getCompiledTaoScenariosRootDir,
   runScenario,
 } from '@shared/CompiledTaoScenarios'
+import { spawnSync } from '@shared/exec'
 import { fireEvent, render } from '@testing-library/react-native'
-import { spawnSync } from 'node:child_process'
-import { basename, resolve as resolvePath } from 'node:path'
 import * as RN from 'react-native'
 import {
   createHeadlessScenarioAdapter,
@@ -30,10 +30,10 @@ describe('headless runtime', () => {
   })
 
   test('compiles and renders Tao code through the CLI entrypoint', () => {
-    const repoRoot = resolvePath(__dirname, '../../..')
-    const cliEntryPath = resolvePath(repoRoot, 'packages/tao-cli/tao-cli.ts')
+    const repoRoot = FS.resolvePath(__dirname, '../../..')
+    const cliEntryPath = FS.resolvePath(repoRoot, 'packages/tao-cli/tao-cli.ts')
     const runtimeDir = getHeadlessTestRuntimeDir()
-    const taoPath = resolvePath(getCompiledTaoScenariosRootDir(), 'Simple test render', 'app.tao')
+    const taoPath = FS.resolvePath(getCompiledTaoScenariosRootDir(), 'Simple test render', 'app.tao')
     const args = [cliEntryPath, 'compile', taoPath, '--runtime-dir', runtimeDir]
     const command = spawnSync(
       'bun',
@@ -49,7 +49,7 @@ describe('headless runtime', () => {
 
 describe('headless runtime shared scenarios', () => {
   for (const { scenarioDir, scenario, skip } of sharedScenarios) {
-    const scenarioName = basename(scenarioDir)
+    const scenarioName = FS.basename(scenarioDir)
     if (skip) {
       test.todo(scenarioName + ' (' + skip + ')')
       continue

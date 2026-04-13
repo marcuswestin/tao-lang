@@ -4,7 +4,7 @@ This guide covers implementing scoping in Langium—the mechanism that determine
 
 > **Version note:** This guide targets **Langium v4.x** (API: `collectExportedSymbols` / `collectLocalSymbols`). This project uses Langium 4.1+.
 
-> **In this project (Tao Lang):** Scoping is implemented in `packages/compiler/compiler-src/` — `TaoScopeComputation`, `TaoScopeProvider`, and `ModuleResolution`. `TaoWorkspaceManager` loads the workspace (including stdlib); there is no custom `AstNodeDescriptionProvider`.
+> **In this project (Tao Lang):** Scoping is implemented under `packages/compiler/compiler-src/langium/` (`TaoScopeComputation`, `TaoScopeProvider`) and `packages/compiler/compiler-src/resolution/` (`ModuleResolution`). `TaoWorkspaceManager` loads the workspace (including stdlib); there is no custom `AST.NodeDescriptionProvider`.
 
 ## Core Mental Model
 
@@ -40,20 +40,20 @@ const LangModule = inject(createDefaultModule({ shared: sharedModule }), {
 })
 ```
 
-Optional: override `AstNodeDescriptionProvider` in workspace to store metadata (e.g. visibility) on descriptions. Tao does not; it checks visibility on the AST node in `ScopeProvider` instead.
+Optional: override `AST.NodeDescriptionProvider` in workspace to store metadata (e.g. visibility) on descriptions. Tao does not; it checks visibility on the AST node in `ScopeProvider` instead.
 
 ---
 
 ## Quick Reference
 
-| Task                               | Class                        | Method                              |
-| ---------------------------------- | ---------------------------- | ----------------------------------- |
-| **Export symbols to other files**  | `ScopeComputation`           | `collectExportedSymbols()`          |
-| **Define local variable scopes**   | `ScopeComputation`           | `collectLocalSymbols()`             |
-| **Resolve a reference**            | `ScopeProvider`              | `getScope()`                        |
-| **Store metadata on symbols**      | `AstNodeDescriptionProvider` | `createDescription()` (optional)    |
-| **Load additional files (stdlib)** | `WorkspaceManager`           | `loadAdditionalDocuments()`         |
-| **Read precomputed local scopes**  | —                            | `document.localSymbols` (Langium 4) |
+| Task                               | Class                         | Method                              |
+| ---------------------------------- | ----------------------------- | ----------------------------------- |
+| **Export symbols to other files**  | `ScopeComputation`            | `collectExportedSymbols()`          |
+| **Define local variable scopes**   | `ScopeComputation`            | `collectLocalSymbols()`             |
+| **Resolve a reference**            | `ScopeProvider`               | `getScope()`                        |
+| **Store metadata on symbols**      | `AST.NodeDescriptionProvider` | `createDescription()` (optional)    |
+| **Load additional files (stdlib)** | `WorkspaceManager`            | `loadAdditionalDocuments()`         |
+| **Read precomputed local scopes**  | —                             | `document.localSymbols` (Langium 4) |
 
 ---
 
@@ -66,8 +66,8 @@ This phase populates the Global Index and defines local block scoping.
 ```typescript
 import { AST } from '@parser'
 import {
-  AstNode,
-  AstNodeDescription,
+  AST.Node,
+  AST.NodeDescription,
   AstUtils,
   Cancellation,
   DefaultScopeComputation,
@@ -85,8 +85,8 @@ export class MyLangScopeComputation extends DefaultScopeComputation {
   override async collectExportedSymbols(
     document: LangiumDocument,
     cancelToken = Cancellation.CancellationToken.None,
-  ): Promise<AstNodeDescription[]> {
-    const exports: AstNodeDescription[] = []
+  ): Promise<AST.NodeDescription[]> {
+    const exports: AST.NodeDescription[] = []
     const root = document.parseResult.value
     if (!root) {
       return exports
@@ -118,7 +118,7 @@ export class MyLangScopeComputation extends DefaultScopeComputation {
     document: LangiumDocument,
     cancelToken = Cancellation.CancellationToken.None,
   ): Promise<LocalSymbols> {
-    const scopes = new MultiMap<AstNode, AstNodeDescription>()
+    const scopes = new MultiMap<AST.Node, AST.NodeDescription>()
     const root = document.parseResult.value
     if (!root) {
       return scopes
@@ -153,30 +153,30 @@ export class MyLangScopeComputation extends DefaultScopeComputation {
 
 ### Storing Metadata (Type-Safe)
 
-To filter symbols efficiently (e.g., checking `"visibility"` without loading and walking full ASTs), store metadata in the `AstNodeDescription`.
+To filter symbols efficiently (e.g., checking `"visibility"` without loading and walking full ASTs), store metadata in the `AST.NodeDescription`.
 
 ```typescript
 import { AST } from '@parser'
 import {
-  AstNode,
-  AstNodeDescription,
-  DefaultAstNodeDescriptionProvider,
+  AST.Node,
+  AST.NodeDescription,
+  DefaultAST.NodeDescriptionProvider,
   LangiumDocument,
 } from 'langium'
 
 // 1. Define the custom interface
-export interface MyLangAstNodeDescription extends AstNodeDescription {
+export interface MyLangAST.NodeDescription extends AST.NodeDescription {
   visibility?: string
 }
 
-export class MyLangDescriptionProvider extends DefaultAstNodeDescriptionProvider {
+export class MyLangDescriptionProvider extends DefaultAST.NodeDescriptionProvider {
   // 2. Override createDescription to populate the metadata
   override createDescription(
-    node: AstNode,
+    node: AST.Node,
     name: string | undefined,
     document?: LangiumDocument,
-  ): AstNodeDescription {
-    const desc = super.createDescription(node, name, document) as MyLangAstNodeDescription
+  ): AST.NodeDescription {
+    const desc = super.createDescription(node, name, document) as MyLangAST.NodeDescription
 
     if (AST.isFunctionDecl(node)) {
       desc.visibility = node.visibility ?? 'default'
@@ -276,7 +276,7 @@ export class MyLangScopeProvider extends DefaultScopeProvider {
 
 ### Tao Lang: use-statement and module scoping
 
-Tao resolves `use ModulePath Name1, Name2` and same-module references. See `TaoScopeProvider` and `ModuleResolution` in `packages/compiler/compiler-src/`:
+Tao resolves `use ModulePath Name1, Name2` and same-module references. See `TaoScopeProvider` in `packages/compiler/compiler-src/langium/` and `ModuleResolution` in `packages/compiler/compiler-src/resolution/`:
 
 - **Same-module:** `isSameModuleImport()` + `getSameModuleUris()` — symbols from other files in the same directory.
 - **Cross-module:** `resolveModulePathToUris()` for relative or stdlib paths; only `share`-visible declarations are exposed (see `isImportAccessible`).
@@ -291,15 +291,15 @@ Symbols are visible only within the same directory, unless marked `public`.
 
 ```typescript
 import {
-  AstNode,
-  AstNodeDescription,
+  AST.Node,
+  AST.NodeDescription,
   AstUtils,
   DefaultScopeProvider,
   ReferenceInfo,
   Scope,
 } from 'langium'
 import { dirname } from 'node:path'
-import { MyLangAstNodeDescription } from './my-lang-description-provider'
+import { MyLangAST.NodeDescription } from './my-lang-description-provider'
 
 export class MyLangScopeProvider extends DefaultScopeProvider {
   override getScope(context: ReferenceInfo): Scope {
@@ -310,7 +310,7 @@ export class MyLangScopeProvider extends DefaultScopeProvider {
     // 1) Filter the global index by visibility rules
     const currentDir = dirname(document.uri.path)
     const visibleGlobals = this.indexManager.allElements(referenceType).filter(desc => {
-      const custom = desc as MyLangAstNodeDescription
+      const custom = desc as MyLangAST.NodeDescription
       const visibility = custom.visibility ?? 'default'
       if (visibility === 'public') {
         return true
@@ -324,8 +324,8 @@ export class MyLangScopeProvider extends DefaultScopeProvider {
     let result: Scope = this.createScope(visibleGlobals)
 
     // 2) Add local scopes on top (outer-to-inner so closer scopes shadow outer ones)
-    const localsChain: AstNodeDescription[][] = []
-    let current: AstNode | undefined = context.container
+    const localsChain: AST.NodeDescription[][] = []
+    let current: AST.Node | undefined = context.container
     while (current) {
       if (localSymbols.has(current)) {
         const locals = Array.from(localSymbols.getStream(current))

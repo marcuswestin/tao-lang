@@ -1,6 +1,6 @@
-import { assertNever } from '@compiler/compiler-utils'
-import { AST, type NodePropName } from '@parser'
-import type * as langium from 'langium'
+import type { LGM as langium } from '@parser'
+import { AST } from '@parser/parser'
+import { assertNever } from '@shared/TypeSafety'
 import { makeValidater, type Reporter } from './ValidationReporter'
 
 /** validationMessages are the exact diagnostics for TaoFile and Block placement rules. */
@@ -87,7 +87,7 @@ function validateDuplicateIdentifier<NodeT extends AST.Referenceable>(
   const duplicates = getDuplicateIdentifiers(binding)
   if (duplicates.length > 0) {
     const message = `Duplicate identifier '${binding.name}'.`
-    const property = 'name' as NodePropName<NodeT>
+    const property = 'name' as AST.NodePropName<NodeT>
     report.error(message, { node: binding, property }, {
       alsoCheck: () => duplicates.map(node => ({ node, message })),
     })
@@ -95,7 +95,7 @@ function validateDuplicateIdentifier<NodeT extends AST.Referenceable>(
 }
 
 /** getDuplicateIdentifiers returns parameters and sibling declarations that conflict with the binding name. */
-function getDuplicateIdentifiers(binding: AST.Referenceable): langium.AstNode[] {
+function getDuplicateIdentifiers(binding: AST.Referenceable): AST.Node[] {
   const siblingAliases = getDuplicateSiblingDeclarations(binding)
   const paramOwner = findParameterizedDeclaration(binding)
   const matchingParams = paramOwner?.parameterList?.parameters.filter(
@@ -106,7 +106,7 @@ function getDuplicateIdentifiers(binding: AST.Referenceable): langium.AstNode[] 
 }
 
 /** getSiblingStatements returns sibling nodes in the appropriate scope of the binding. */
-function getSiblingStatements(binding: AST.Referenceable): langium.AstNode[] {
+function getSiblingStatements(binding: AST.Referenceable): AST.Node[] {
   const container = binding.$container
   if (AST.isParameterList(container)) {
     const parent = container.$container
@@ -132,8 +132,8 @@ function getSiblingStatements(binding: AST.Referenceable): langium.AstNode[] {
 }
 
 /** flattenTopLevelDeclarations returns file-level declaration nodes (unwraps `ModuleDeclaration`). */
-function flattenTopLevelDeclarations(statements: readonly AST.Statement[]): langium.AstNode[] {
-  const out: langium.AstNode[] = []
+function flattenTopLevelDeclarations(statements: readonly AST.Statement[]): AST.Node[] {
+  const out: AST.Node[] = []
   for (const s of statements) {
     if (AST.isModuleDeclaration(s)) {
       out.push(s.declaration)
@@ -145,7 +145,7 @@ function flattenTopLevelDeclarations(statements: readonly AST.Statement[]): lang
 }
 
 /** getDuplicateSiblingDeclarations returns same-scope declarations with the same name as the binding. */
-function getDuplicateSiblingDeclarations(binding: AST.Referenceable): langium.AstNode[] {
+function getDuplicateSiblingDeclarations(binding: AST.Referenceable): AST.Node[] {
   return getSiblingStatements(binding).filter(node => {
     return AST.isReferenceable(node) && node.name === binding.name && node !== binding
   })
@@ -155,7 +155,7 @@ function getDuplicateSiblingDeclarations(binding: AST.Referenceable): langium.As
 function findParameterizedDeclaration(
   binding: AST.Referenceable,
 ): AST.ViewDeclaration | AST.ActionDeclaration | undefined {
-  let current: langium.AstNode | undefined = binding.$container
+  let current: AST.Node | undefined = binding.$container
   while (current) {
     if (AST.isBlockDeclaration(current)) {
       return current
