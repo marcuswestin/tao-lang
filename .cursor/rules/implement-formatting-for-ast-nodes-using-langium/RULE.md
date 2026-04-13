@@ -30,7 +30,7 @@ To access user preferences (e.g., Tab Size) or handle file-wide settings, you mu
 
 ```typescript
 import { AST } from '@parser'
-import { AbstractFormatter, AstNode, Formatting, FormattingOptions, LangiumDocument } from 'langium'
+import { AbstractFormatter, AST.Node, Formatting, FormattingOptions, LangiumDocument } from 'langium'
 import { TextEdit } from 'vscode-languageserver'
 
 export class TaoLangFormatter extends AbstractFormatter {
@@ -44,7 +44,7 @@ export class TaoLangFormatter extends AbstractFormatter {
   }
 
   // 2. The Recursive Walker
-  protected format(node: AstNode): void {
+  protected format(node: AST.Node): void {
     // Gatekeeper: Check for @formatter:off
     if (this.isFormattingSuppressed(node)) {
       return
@@ -165,7 +165,7 @@ In Langium, comments are **Hidden Tokens** attached to the **following** visible
 Langium has no built-in suppression. You must implement a "Gatekeeper".
 
 ```typescript
-private isFormattingSuppressed(node: AstNode): boolean {
+private isFormattingSuppressed(node: AST.Node): boolean {
     const cst = node.$cstNode;
     if (!cst) return false;
 

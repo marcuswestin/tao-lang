@@ -38,13 +38,13 @@ Langium
 
 Here is a real code sample adapted from the DomainModelFormatter recipe:
 
-import { AstNode } from 'langium';
+import { AST.Node } from 'langium';
 import { AbstractFormatter, Formatting } from 'langium/lsp';
 import { AST } from '@parser';
 
 export class DomainModelFormatter extends AbstractFormatter {
 
-    protected format(node: AstNode): void {
+    protected format(node: AST.Node): void {
 
         // Format model root if needed
         if (AST.isDomainmodel(node)) {
@@ -104,7 +104,7 @@ GitHub
 
 export class EntitiesFormatter extends AbstractFormatter {
 
-    protected format(node: AstNode): void {
+    protected format(node: AST.Node): void {
 
         if (AST.isModel(node)) {
             const lastEntity = node.entities[node.entities.length - 1];
@@ -192,12 +192,12 @@ This is from the official documentation:
 Formatting
 Langium’s formatting API allows to easily create formatters for your language. We start building a custom formatter for our language by creating a new class that inherits from AbstractFormatter.
 
-import { AstNode } from 'langium';
+import { AST.Node } from 'langium';
 import { AbstractFormatter, Formatting } from 'langium/lsp';
 
 export class CustomFormatter extends AbstractFormatter {
-    protected format(node: AstNode): void {
-        // This method is called for every AstNode in a document
+    protected format(node: AST.Node): void {
+        // This method is called for every AST.Node in a document
     }
 }
 ...
@@ -207,9 +207,9 @@ export const CustomModule: Module<CustomServices, PartialLangiumServices> = {
         Formatter: () => new CustomFormatter()
     }
 };
-The entry point for the formatter is the abstract format(AstNode) method. The AbstractFormatter calls this method for every node of our model. To perform custom formatting for every type of node, we will use pattern matching. In the following example, we will take a closer look at a formatter for the domain-model language. In particular, we will see how we can format the root of our model (DomainModel) and each nested element (Entity and PackageDeclaration).
+The entry point for the formatter is the abstract format(AST.Node) method. The AbstractFormatter calls this method for every node of our model. To perform custom formatting for every type of node, we will use pattern matching. In the following example, we will take a closer look at a formatter for the domain-model language. In particular, we will see how we can format the root of our model (DomainModel) and each nested element (Entity and PackageDeclaration).
 
-To format each node, we use the getNodeFormatter method of the AbstractFormatter. The resulting generic NodeFormatter<T extends AstNode> provides us with methods to select specific parts of a parsed AstNode such as properties or keywords.
+To format each node, we use the getNodeFormatter method of the AbstractFormatter. The resulting generic NodeFormatter<T extends AST.Node> provides us with methods to select specific parts of a parsed AST.Node such as properties or keywords.
 
 Once we have selected the nodes of our document that we are interested in formatting, we can start applying a specific formatting. Each formatting option allows to prepend/append whitespace to each note. The Formatting namespace provides a few predefined formatting options which we can use for this:
 
@@ -250,13 +250,13 @@ if (AST.isEntity(node) || AST.isPackageDeclaration(node)) {
 Note that most predefined Formatting methods accept additional arguments which make the resulting formatting more lenient. For example, the prepend(newLine({ allowMore: true })) formatting will not apply formatting in case the node is already preceeded by one or more newlines. It will still correctly indent the node in case the indentation is not as expected.
 
 Full Code Sample
-import { AstNode } from 'langium';
+import { AST.Node } from 'langium';
 import { AbstractFormatter, Formatting } from 'langium/lsp';
 import { AST } from '@parser';
 
 export class DomainModelFormatter extends AbstractFormatter {
 
-    protected format(node: AstNode): void {
+    protected format(node: AST.Node): void {
         if (AST.isEntity(node) || AST.isPackageDeclaration(node)) {
             const formatter = this.getNodeFormatter(node);
             const bracesOpen = formatter.keyword('{');
@@ -447,14 +447,14 @@ Formatter implementation
 import {
 AbstractFormatter,
 Formatting,
-type AstNode,
+type AST.Node,
 type LangiumDocument
 } from 'langium';
 import { AST } from '@parser';
 
 export class MyFormatter extends AbstractFormatter {
 
-override format(node: AstNode, doc: LangiumDocument): void {
+override format(node: AST.Node, doc: LangiumDocument): void {
 if (!AST.isBlock(node)) return;
 
     const f = this.getNodeFormatter(node);

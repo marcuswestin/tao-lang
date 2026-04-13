@@ -1,4 +1,5 @@
-import { spawnSync, type SpawnSyncReturns } from 'node:child_process'
+import { spawnSync, type SpawnSyncReturns } from './exec'
+import { existsSync } from './fs'
 
 /** TaoSdkCompileSpawnOptsJson is the JSON passed to `TaoSDK_compile` via env for subprocess `bun -e` harnesses. */
 export type TaoSdkCompileSpawnOptsJson = {
@@ -46,6 +47,20 @@ export function runTaoSdkCompileBunSync(args: {
       [args.optsEnvVar]: JSON.stringify(args.compileOpts),
     },
   })
+}
+
+/** throwIfTaoSdkCompileFailed throws when Bun exited non-zero or, if `requireOutputFile`, the output path is missing. */
+export function throwIfTaoSdkCompileFailed(
+  command: SpawnSyncReturns<string>,
+  opts: { outputPath: string; runtimeLabel: string; requireOutputFile?: boolean },
+): void {
+  const detail = formatBunSpawnSyncErrorMessage(command)
+  if (command.status !== 0) {
+    throw new Error(`Failed to compile Tao for ${opts.runtimeLabel}: ${detail}`)
+  }
+  if (opts.requireOutputFile && !existsSync(opts.outputPath)) {
+    throw new Error(`Failed to compile Tao for ${opts.runtimeLabel}: ${detail}`)
+  }
 }
 
 /** formatBunSpawnSyncErrorMessage returns stderr, stdout, or a status fallback after `spawnSync('bun', ...)`. */

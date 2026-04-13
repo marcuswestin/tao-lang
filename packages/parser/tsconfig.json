@@ -8,5 +8,8 @@
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true
   },
-  "include": ["parser.ts", "src/**/*"]
+  "include": [
+    "src/parser.ts",
+    "src/**/*"
+  ]
 }

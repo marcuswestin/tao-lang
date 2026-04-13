@@ -1,8 +1,12 @@
 {
+  "name": "@shared",
   "extends": "../tsconfig.dev.json",
-  "references": [{
-    "path": "../compiler"
-  }],
+  "main": "shared.ts",
+  "references": [
+    {
+      "path": "../compiler"
+    }
+  ],
   "include": [
     "shared-src/**/*",
     "shared-tests/**/*",

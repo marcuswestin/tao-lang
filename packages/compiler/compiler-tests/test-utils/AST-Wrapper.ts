@@ -1,11 +1,11 @@
-import { AstNode, Reference } from 'langium'
+import { AST, LGM } from '@parser'
 import { expect } from './test-harness'
 
 // Exported
 ///////////
 
 // wrap creates a proxy-based wrapper enabling type-safe AST traversal
-export function wrap<T extends AstNode>(node: T): Wrapped<T> {
+export function wrap<T extends AST.Node>(node: T): Wrapped<T> {
   const methods = {
     expect(key: string) {
       return expect((node as Record<string, unknown>)[key])
@@ -43,19 +43,19 @@ export function wrap<T extends AstNode>(node: T): Wrapped<T> {
       // Assert property exists (handles optional properties)
       expect(child, `Property '${String(prop)}' is undefined`).toBeDefined()
 
-      // Wrap AstNode children
+      // Wrap AST.Node children
       if (child !== null && typeof child === 'object' && '$type' in child) {
-        return wrap(child as AstNode)
+        return wrap(child as AST.Node)
       }
 
-      // Auto-dereference Reference<AstNode> properties
+      // Auto-dereference Reference<AST.Node> properties
       if (child !== null && typeof child === 'object' && 'ref' in child) {
-        const ref = child as Reference<AstNode>
+        const ref = child as LGM.Reference<AST.Node>
         expect(ref.ref, `Reference '${String(prop)}' is unresolved`).toBeDefined()
         return wrap(ref.ref!)
       }
 
-      // Wrap arrays of AstNodes
+      // Wrap arrays of AST.Nodes
       if (Array.isArray(child)) {
         return wrapArray(child)
       }
@@ -65,9 +65,9 @@ export function wrap<T extends AstNode>(node: T): Wrapped<T> {
   })
 }
 
-// Wrap an element lazily (only if it's an AstNode)
+// Wrap an element lazily (only if it's an AST.Node)
 function wrapElement(el: unknown): unknown {
-  return el && typeof el === 'object' && '$type' in el ? wrap(el as AstNode) : el
+  return el && typeof el === 'object' && '$type' in el ? wrap(el as AST.Node) : el
 }
 
 // wrapArray adds convenience accessors and wraps elements lazily on access
@@ -102,7 +102,7 @@ function wrapArray<T>(array: unknown[]): WrappedArray<T> {
 
 type ExtractByType<T, TypeName extends string> = T extends { $type: TypeName } ? T : never
 type TypeNames<T> = T extends { $type: infer U extends string } ? U : never
-type OwnKeys<T> = Exclude<keyof T, keyof AstNode>
+type OwnKeys<T> = Exclude<keyof T, keyof AST.Node>
 
 // IsUnion detects if T is a union type (e.g. A | B) vs a single type
 // This correctly distinguishes:
@@ -120,20 +120,20 @@ type WrappedArray<T> = T[] & {
 
 // WrappedProp strips undefined (optional props are asserted at runtime) then wraps
 type WrappedProp<T> = WrappedPropInner<NonNullable<T>>
-type WrappedPropInner<T> = [T] extends [AstNode] ? Wrapped<T>
-  : T extends Reference<infer R extends AstNode> ? Wrapped<R>
-  : T extends readonly (infer E)[] ? [E] extends [AstNode] ? WrappedArray<Wrapped<E>> : T
+type WrappedPropInner<T> = [T] extends [AST.Node] ? Wrapped<T>
+  : T extends LGM.Reference<infer R extends AST.Node> ? Wrapped<R>
+  : T extends readonly (infer E)[] ? [E] extends [AST.Node] ? WrappedArray<Wrapped<E>> : T
   : T
 
-type WrappedProps<T extends AstNode> = { readonly [K in OwnKeys<T>]: WrappedProp<T[K]> }
+type WrappedProps<T extends AST.Node> = { readonly [K in OwnKeys<T>]: WrappedProp<T[K]> }
 
-type AsGetters<T extends AstNode> = {
+type AsGetters<T extends AST.Node> = {
   readonly [TypeName in TypeNames<T> as `as_${TypeName}`]: Wrapped<ExtractByType<T, TypeName>>
 }
 
 type Expectation<T> = ReturnType<typeof expect<T>>
 
-export type Wrapped<T extends AstNode> =
+export type Wrapped<T extends AST.Node> =
   & (IsSingleType<T> extends true ? {
       expect<K extends OwnKeys<T>>(key: K): Expectation<T[K]>
       unwrap(): T

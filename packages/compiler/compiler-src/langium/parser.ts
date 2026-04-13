@@ -1,14 +1,11 @@
-import { AST } from '@parser'
-import { fileExists } from '@shared/FsPathChecks'
+import { NodeFileSystem } from '@parser/node'
+import { AST, LGM } from '@parser/parser'
+import { FS } from '@shared'
+import { createHash } from '@shared/crypto'
 import { throwUserInputRejectionError } from '@shared/TaoErrors'
 import { assertNever } from '@shared/TypeSafety'
-import * as Langium from 'langium'
-import { NodeFileSystem } from 'langium/node'
-import { createHash } from 'node:crypto'
-import path from 'node:path'
 import { isTaoModuleImport, resolveModuleImportDirectory } from '../resolution/ModulePath'
-import { readDir, streamFilesIn } from '../resolution/Paths'
-import { getDocumentErrors, TaoErrorReport } from '../validation/parse-errors'
+import { getParseError, ParseError } from '../validation/parse-errors'
 import { createTaoWorkspace, TaoWorkspace } from './tao-services'
 
 export type ParseOptions = {
@@ -20,53 +17,44 @@ export type ParseOptions = {
 export type ParseResult = {
   taoFileAST?: AST.TaoFile
   usedFilesASTs: AST.TaoFile[]
-  errorReport: TaoErrorReport
+  errorReport: ParseError
 }
 
 export const TaoParser = {
-  parseString,
-  parseFile,
-}
-
-/** parseString parses Tao source string into a TaoFile AST and related documents. */
-async function parseString(code: string, opts: ParseOptions): Promise<ParseResult> {
-  const codeHash = getCodeHash(code)
-  const evalCodeUri = `tao-string://v0/hash/${codeHash}.tao`
-  const uri = Langium.URI.parse(evalCodeUri, STRICT_URIs)
-  return await internalParseTaoCode(uri, opts, code)
-}
-
-/** parseFile parses a Tao file into a TaoFile AST and related documents. */
-async function parseFile(filePath: string, opts: ParseOptions): Promise<ParseResult> {
-  const resolvedPath = path.resolve(filePath)
-  const uri = toLangiumFileURI(resolvedPath)
-  if (uri.scheme !== 'file') {
-    throwUserInputRejectionError(`Unsupported scheme: ${uri.scheme}`)
-  }
-  if (!fileExists(uri.path)) {
-    throwUserInputRejectionError(`Missing file: ${filePath}. No file at ${uri.fsPath}`)
-  }
-  return await internalParseTaoCode(uri, opts, null)
+  /** parseFile parses a Tao code file into a `TaoFile` AST node and its related documents. */
+  async parseFile(filePath: string, opts: ParseOptions): Promise<ParseResult> {
+    const resolvedPath = FS.resolvePath(filePath)
+    const uri = toLangiumFileURI(resolvedPath)
+    if (uri.scheme !== 'file') {
+      throwUserInputRejectionError(`Unsupported scheme: ${uri.scheme}`)
+    }
+    if (!FS.isFile(uri.path)) {
+      throwUserInputRejectionError(`Missing file: ${filePath}. No file at ${uri.fsPath}`)
+    }
+    return await internalParseTaoCode(uri, opts, null)
+  },
+  /** parseString is like parseFile, but takes a string of code. Used for testing. */
+  async parseString(code: string, opts: ParseOptions): Promise<ParseResult> {
+    // codeHash creates a stable URI for the code string. Same code -> same URI.
+    const codeHash = createHash('sha256').update(code).digest('hex')
+    const evalCodeUri = `tao-string://v0/hash/${codeHash}.tao`
+    const uri = LGM.URI.parse(evalCodeUri, STRICT_URIs)
+    return await internalParseTaoCode(uri, opts, code)
+  },
 }
 
 // Internal functions
 /////////////////////
 const STRICT_URIs = true
 
-/** getCodeHash returns the SHA-256 hex digest of source for stable string URIs. */
-function getCodeHash(code: string) {
-  // Bun.hash(code).toString(16)
-  return createHash('sha256').update(code).digest('hex')
-}
-
 /** internalParseTaoCode parses from URI with optional in-memory string content. */
 async function internalParseTaoCode(
-  uri: Langium.URI,
+  uri: LGM.URI,
   opts: ParseOptions,
   evalString: string | null,
 ): Promise<ParseResult> {
   const workspace = createTaoWorkspace(NodeFileSystem, { stdLibRoot: opts.stdLibRoot })
-  const ext = path.extname(uri.path)
+  const ext = FS.extname(uri.path)
   if (!workspace.supportsExtension(ext)) {
     throwUserInputRejectionError(
       `Unsupported extension: ${ext}. (Supported: ${workspace.getFileExtensions().join(', ')})`,
@@ -77,7 +65,7 @@ async function internalParseTaoCode(
   const validation = getValidationOptions(opts)
   await workspace.buildDocuments(usedDocuments, { validation, eagerLinking: true })
   await workspace.buildDocument(entryDocument, { validation, eagerLinking: true })
-  const errorReport = getDocumentErrors(entryDocument, ...usedDocuments)
+  const errorReport = getParseError(entryDocument, ...usedDocuments)
 
   return {
     taoFileAST: entryDocument.parseResult.value,
@@ -88,12 +76,12 @@ async function internalParseTaoCode(
 
 /** loadEntryAndReachable loads the entry document and all docs to build (stdlib, imports, same dir). */
 async function loadEntryAndReachable(
-  uri: Langium.URI,
+  uri: LGM.URI,
   evalString: string | null,
   workspace: TaoWorkspace,
 ): Promise<{
-  entryDocument: Langium.LangiumDocument<AST.TaoFile>
-  usedDocuments: Langium.LangiumDocument<AST.TaoFile>[]
+  entryDocument: AST.Document
+  usedDocuments: AST.Document[]
 }> {
   const entryDocument = evalString !== null
     ? workspace.createDocumentFromString(evalString, uri)
@@ -115,7 +103,7 @@ async function addAllStdLibFiles(workspace: TaoWorkspace) {
   if (!workspace.hasStdLib()) {
     return
   }
-  const taoFilesStream = streamFilesIn(workspace.getStdLibRoot()!, {
+  const taoFilesStream = FS.streamFilesIn(workspace.getStdLibRoot()!, {
     includeOnlyExtensions: workspace.getFileExtensions(),
   })
   for await (const filePath of taoFilesStream) {
@@ -138,16 +126,16 @@ function getUseStatementModuleDirectory(
     }
     return resolveModuleImportDirectory(ast.modulePath, { stdLibRoot })
   }
-  return path.resolve(currentDir, ast.modulePath)
+  return FS.resolvePath(currentDir, ast.modulePath)
 }
 
 /** addSameDirectoryTaoFiles adds sibling .tao files in the entry file directory. */
 async function addSameDirectoryTaoFiles(
-  document: Langium.LangiumDocument<AST.TaoFile>,
+  document: AST.Document,
   workspace: TaoWorkspace,
 ) {
   const entryPath = document.uri.path
-  const dir = path.dirname(entryPath)
+  const dir = FS.dirname(entryPath)
   const sameDirFiles = getModuleTaoFiles(workspace, dir)
   for (const filePath of sameDirFiles) {
     if (filePath === entryPath) {
@@ -159,7 +147,7 @@ async function addSameDirectoryTaoFiles(
 
 /** addReachableTaoFiles adds .tao files reachable from the entry via use statements. */
 async function addReachableTaoFiles(
-  document: Langium.LangiumDocument<AST.TaoFile>,
+  document: AST.Document,
   workspace: TaoWorkspace,
 ): Promise<void> {
   const seenFilePaths = new Set<string>(document.uri.path)
@@ -171,7 +159,7 @@ async function addReachableTaoFiles(
 
     const directory = getUseStatementModuleDirectory(
       ast,
-      path.dirname(document.uri.path),
+      FS.dirname(document.uri.path),
       workspace.getStdLibRoot(),
     )
     if (!directory) {
@@ -189,9 +177,9 @@ async function addReachableTaoFiles(
 
 /** getModuleTaoFiles returns absolute paths to supported Tao files in a directory. */
 function getModuleTaoFiles(workspace: TaoWorkspace, directory: string): string[] {
-  return readDir(directory)
-    .filter((name) => workspace.supportsExtension(path.extname(name)))
-    .map((name) => path.resolve(directory, name))
+  return FS.readDir(directory)
+    .filter((name) => workspace.supportsExtension(FS.extname(name)))
+    .map((name) => FS.resolvePath(directory, name))
 }
 
 /** addReachableTaoFileDocument creates and adds a document for a .tao file path. */
@@ -202,12 +190,12 @@ async function addReachableTaoFileDocument(workspace: TaoWorkspace, filePath: st
 }
 
 /** toLangiumFileURI builds a Langium file URI from an absolute filesystem path. */
-function toLangiumFileURI(absolutePath: string): Langium.URI {
-  return Langium.URI.parse(`file://${absolutePath}`, STRICT_URIs)
+function toLangiumFileURI(absolutePath: string): LGM.URI {
+  return LGM.URI.parse(`file://${absolutePath}`, STRICT_URIs)
 }
 
 /** getValidationOptions maps ParseOptions to Langium validation flags. */
-function getValidationOptions(opts: ParseOptions): Langium.ValidationOptions | boolean {
+function getValidationOptions(opts: ParseOptions): LGM.ValidationOptions | boolean {
   const categories = opts.skipSlowValidation ? ['fast'] : undefined
   const validateUpToStage = opts.validateUpToStage ?? 'all'
 

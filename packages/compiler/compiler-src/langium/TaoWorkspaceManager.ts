@@ -1,4 +1,4 @@
-import * as langium from 'langium'
+import { LGM as langium } from '@parser'
 
 /** TaoWorkspaceManager preloads std-lib .tao files as workspace documents. */
 export class TaoWorkspaceManager extends langium.DefaultWorkspaceManager {

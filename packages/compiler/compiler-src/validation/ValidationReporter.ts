@@ -1,35 +1,26 @@
-import { NodePropName } from '@compiler/codegen/codegen-util'
-import { AST } from '@parser'
-import {
-  AstNode,
-  AstUtils,
-  DiagnosticInfo,
-  DocumentSegment,
-  getDiagnosticRange,
-  isAstNode,
-  ValidationAcceptor,
-} from 'langium'
-import type { DiagnosticRelatedInformation } from 'vscode-languageserver-types'
+import { AST } from '@parser/parser'
+import { DocumentSegment, NodePropName } from '@parser/parserASTExport'
+import type { DiagnosticRelatedInformation } from '@parser/vscode-languageserver'
 
 /** makeValidater wraps a validation function with a Reporter for the Langium acceptor API. */
-export function makeValidater<NodeT extends AstNode>(
+export function makeValidater<NodeT extends AST.Node>(
   fn: (node: NodeT, report: Reporter<NodeT>) => void,
-): (node: NodeT, accept: ValidationAcceptor) => void {
-  return (node: NodeT, accept: ValidationAcceptor) => {
+): (node: NodeT, accept: AST.ValidationAcceptor) => void {
+  return (node: NodeT, accept: AST.ValidationAcceptor) => {
     fn(node, new Reporter<NodeT>(node, accept))
   }
 }
 
 /** nodeProperty returns a diagnostic location on a node property. */
-export function nodeProperty<NodeT extends AstNode>(
+export function nodeProperty<NodeT extends AST.Node>(
   node: NodeT,
-  property: NodePropName<NodeT>,
+  property: AST.NodePropName<NodeT>,
 ): Report.Location<NodeT> {
   return { node, property }
 }
 
 /** nodeKeyword returns a diagnostic location on a Tao keyword within a node. */
-export function nodeKeyword<NodeT extends AstNode>(
+export function nodeKeyword<NodeT extends AST.Node>(
   node: NodeT,
   keyword: AST.TaoLangKeywordNames,
 ): Report.Location<NodeT> {
@@ -37,26 +28,26 @@ export function nodeKeyword<NodeT extends AstNode>(
 }
 
 /** nodeRange returns a diagnostic location on an explicit range within a node. */
-export function nodeRange<NodeT extends AstNode>(
+export function nodeRange<NodeT extends AST.Node>(
   node: NodeT,
   range: Report.Range,
 ): Report.Location<NodeT> {
   return { node, range }
 }
 
-type Location<NodeT extends AstNode, LocationNodeT extends AstNode = NodeT> =
+type Location<NodeT extends AST.Node, LocationNodeT extends AST.Node = NodeT> =
   | Report.Location<LocationNodeT>
-  | NodePropName<NodeT>
-type ExtraInfo<NodeT extends AstNode> = Report.ExtraInfo<NodeT> | undefined
+  | AST.NodePropName<NodeT>
+type ExtraInfo<NodeT extends AST.Node> = Report.ExtraInfo<NodeT> | undefined
 
-export class Reporter<NodeT extends AstNode> {
+export class Reporter<NodeT extends AST.Node> {
   constructor(
     private readonly node: NodeT,
-    private readonly validationAcceptor: ValidationAcceptor,
+    private readonly validationAcceptor: AST.ValidationAcceptor,
   ) {}
 
   /** error reports a validation error at an optional location. */
-  error<ErrorNodeT extends AstNode = NodeT>(
+  error<ErrorNodeT extends AST.Node = NodeT>(
     message: string,
     location?: Location<NodeT, ErrorNodeT> | ErrorNodeT,
     extraInfo?: ExtraInfo<ErrorNodeT>,
@@ -65,7 +56,7 @@ export class Reporter<NodeT extends AstNode> {
   }
 
   /** warning reports a validation warning. */
-  warning<WarningNodeT extends AstNode = NodeT>(
+  warning<WarningNodeT extends AST.Node = NodeT>(
     message: string,
     location: Location<NodeT, WarningNodeT>,
     extraInfo?: ExtraInfo<WarningNodeT>,
@@ -74,7 +65,7 @@ export class Reporter<NodeT extends AstNode> {
   }
 
   /** info reports an info-level diagnostic. */
-  info<InfoNodeT extends AstNode>(
+  info<InfoNodeT extends AST.Node>(
     message: string,
     location: Location<NodeT, InfoNodeT>,
     extraInfo?: ExtraInfo<InfoNodeT>,
@@ -83,7 +74,7 @@ export class Reporter<NodeT extends AstNode> {
   }
 
   /** deprecated reports deprecation as an info diagnostic. */
-  deprecated<DeprecatedNodeT extends AstNode>(
+  deprecated<DeprecatedNodeT extends AST.Node>(
     message: string,
     location: Location<NodeT, DeprecatedNodeT>,
     extraInfo?: ExtraInfo<DeprecatedNodeT>,
@@ -91,7 +82,7 @@ export class Reporter<NodeT extends AstNode> {
     this.validationAcceptor('info', message, this.diagnosticsInfo(location, extraInfo))
   }
   /** unnecessary reports unnecessary code as an info diagnostic. */
-  unnecessary<UnnecessaryNodeT extends AstNode>(
+  unnecessary<UnnecessaryNodeT extends AST.Node>(
     message: string,
     location: Location<NodeT, UnnecessaryNodeT>,
     extraInfo?: ExtraInfo<UnnecessaryNodeT>,
@@ -100,13 +91,13 @@ export class Reporter<NodeT extends AstNode> {
   }
 
   /** diagnosticsInfo builds DiagnosticInfo from location and optional extra metadata. */
-  private diagnosticsInfo<ForNodeT extends AstNode>(
+  private diagnosticsInfo<ForNodeT extends AST.Node>(
     location?: Location<NodeT, ForNodeT> | ForNodeT,
     extraInfo?: Report.ExtraInfo<ForNodeT>,
-  ): DiagnosticInfo<ForNodeT> {
+  ): AST.DiagnosticInfo<ForNodeT> {
     const relatedInformation = this.getRelatedInformation(extraInfo)
 
-    if (isAstNode(location)) {
+    if (AST.isNode(location)) {
       return { node: location, relatedInformation }
     }
 
@@ -122,7 +113,7 @@ export class Reporter<NodeT extends AstNode> {
     return { relatedInformation, data, code, codeDescription, ...extraInfo, ...nodeLocation, node }
   }
   /** getRelatedInformation maps alsoCheck callbacks to LSP related information. */
-  private getRelatedInformation<ForNodeT extends AstNode>(
+  private getRelatedInformation<ForNodeT extends AST.Node>(
     extraInfo?: Report.ExtraInfo<ForNodeT>,
   ): DiagnosticRelatedInformation[] {
     const alsoCheck = extraInfo?.alsoCheck
@@ -130,12 +121,12 @@ export class Reporter<NodeT extends AstNode> {
     const alsoCheckInfo = !alsoCheckRes ? [] : !Array.isArray(alsoCheckRes) ? [alsoCheckRes] : alsoCheckRes
     return alsoCheckInfo?.map((checkLocation) => {
       const node = checkLocation.node
-      const document = AstUtils.getDocument(node) || AstUtils.findRootNode(node).$document
+      const document = AST.Utils.getDocument(node) || AST.Utils.findRootNode(node).$document
       return {
         message: checkLocation.message,
         location: {
           uri: document!.uri.toString(),
-          range: getDiagnosticRange({ ...checkLocation, node }),
+          range: AST.Utils.getDiagnosticRange({ ...checkLocation, node }),
         },
       }
     })
@@ -152,10 +143,10 @@ export namespace Report {
 
   export type Range = DocumentSegment['range']
 
-  export type PropertyLocation<NodeT extends AstNode> = { property: NodePropName<NodeT>; index?: number }
+  export type PropertyLocation<NodeT extends AST.Node> = { property: NodePropName<NodeT>; index?: number }
   export type KeywordLocation = { keyword: AST.TaoLangKeywordNames }
   export type RangeLocation = { range: Range }
-  export type Location<NodeT extends AstNode> =
+  export type Location<NodeT extends AST.Node> =
     & (
       | PropertyLocation<NodeT>
       | KeywordLocation
@@ -163,7 +154,7 @@ export namespace Report {
     )
     & { node?: NodeT }
 
-  export type Diagnostics<NodeT extends AstNode> =
+  export type Diagnostics<NodeT extends AST.Node> =
     & (
       | { deprecated: boolean; unnecessary?: never }
       | { unnecessary: boolean; deprecated?: never }
@@ -177,14 +168,14 @@ export namespace Report {
       alsoCheck?: () => Report.AlsoCheckLocation<NodeT> | Report.AlsoCheckLocation<NodeT>[]
     }
 
-  export type ExtraInfo<NodeT extends AstNode> = {
+  export type ExtraInfo<NodeT extends AST.Node> = {
     alsoCheck?: () => Report.AlsoCheckLocation<NodeT> | Report.AlsoCheckLocation<NodeT>[]
     data?: unknown
     code?: Code // TODO: Consider making this required
   }
 
-  export type AlsoCheckLocation<NodeT extends AstNode> = {
-    node: AstNode
+  export type AlsoCheckLocation<NodeT extends AST.Node> = {
+    node: AST.Node
     message: string
     property?: NodePropName<NodeT>
     keyword?: AST.TaoLangKeywordNames

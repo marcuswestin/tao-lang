@@ -27,11 +27,11 @@ Also see Roadmap.
 - [x] Validation
 - [x] Standard Library
 - [x] Aliases
-- [ ] Type System
 - [x] State
 - [x] Actions
 - [ ] Runtime Scope
 - [ ] Operators +,-,*,/,%,(),.,->
+- [ ] Type System
 - [ ] Objects/Items, Arrays/Lists, and Tuples/Pairs
 - [ ] Event & Handler Syntax
 - [ ] Functions
@@ -48,8 +48,7 @@ Also see Roadmap.
 
 - [ ] Improve testing
   - [ ] Add View Keys
-  - [ ] Dev System for seeing local State?
-    - Could be done with hidden dev-only view renders inside a view when a state is declared for accessing it.
+  - [ ] Make test app less ugly. Black background, white text.
 - [ ] Implement prototype-chaining based scope (See kitchen sink test scenario)
   - [ ] Get kitchen sink test passing: invocations need to have scoped dependencies passed in somehow ..
 - [ ] Objects/Items

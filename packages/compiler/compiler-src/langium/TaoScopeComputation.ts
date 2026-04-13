@@ -1,7 +1,7 @@
-import { AST } from '@parser'
+import { LGM as langium } from '@parser'
+import { AST } from '@parser/parser'
 import { Assert, throwUnexpectedBehaviorError } from '@shared/TaoErrors'
 import { switchType_Exhaustive } from '@shared/TypeSafety'
-import * as langium from 'langium'
 
 /** TaoScopeComputation builds exported and local symbol tables for Tao files.
  * - Cross-module use sees share exports; same-module sees module-visible names. */
@@ -10,8 +10,8 @@ export class TaoScopeComputation extends langium.DefaultScopeComputation {
   override async collectExportedSymbols(
     document: langium.LangiumDocument,
     cancelToken = langium.Cancellation.CancellationToken.None,
-  ): Promise<langium.AstNodeDescription[]> {
-    const exports: langium.AstNodeDescription[] = []
+  ): Promise<AST.NodeDescription[]> {
+    const exports: AST.NodeDescription[] = []
     const taoFile = this.getTaoFile(document)
 
     for (const statement of taoFile.statements) {
@@ -25,11 +25,11 @@ export class TaoScopeComputation extends langium.DefaultScopeComputation {
     return exports
   }
 
-  /** processTopLevelStatementForExport returns an AstNodeDescription for exportable top-level declarations. */
+  /** processTopLevelStatementForExport returns an AST.NodeDescription for exportable top-level declarations. */
   private processTopLevelStatementForExport(
     statement: AST.Statement,
     document: langium.LangiumDocument,
-  ): langium.AstNodeDescription | null {
+  ): AST.NodeDescription | null {
     Assert(statement.$container.$type === 'TaoFile', 'expected top-level statement')
     if (AST.isModuleDeclaration(statement)) {
       if (statement.visibility === 'file') {
@@ -50,7 +50,7 @@ export class TaoScopeComputation extends langium.DefaultScopeComputation {
     cancelToken = langium.Cancellation.CancellationToken.None,
   ): Promise<langium.LocalSymbols> {
     const rootNode = this.getTaoFile(document)
-    const localSymbols = new langium.MultiMap<langium.AstNode, langium.AstNodeDescription>()
+    const localSymbols = new langium.MultiMap<AST.Node, AST.NodeDescription>()
 
     for await (const node of this.iterateAllNodesIn(rootNode, cancelToken)) {
       if (AST.isModuleDeclaration(node)) {
@@ -75,9 +75,9 @@ export class TaoScopeComputation extends langium.DefaultScopeComputation {
 
   /** collectParameterSymbolForScope registers the parameter name under scopeNode in localSymbols. */
   private collectParameterSymbolForScope(
-    node: langium.AstNode,
+    node: AST.Node,
     document: langium.LangiumDocument,
-    localSymbols: langium.MultiMap<langium.AstNode, langium.AstNodeDescription>,
+    localSymbols: langium.MultiMap<AST.Node, AST.NodeDescription>,
   ) {
     const paramList = node.$container
     const parentDecl = paramList?.$container
@@ -101,10 +101,10 @@ export class TaoScopeComputation extends langium.DefaultScopeComputation {
 
   /** collectSymbolForScope registers the node name under scopeNode in localSymbols. */
   private collectSymbolForScope(
-    node: langium.AstNode,
+    node: AST.Node,
     document: langium.LangiumDocument,
-    localSymbols: langium.MultiMap<langium.AstNode, langium.AstNodeDescription>,
-    scopeNode?: langium.AstNode,
+    localSymbols: langium.MultiMap<AST.Node, AST.NodeDescription>,
+    scopeNode?: AST.Node,
   ) {
     scopeNode ??= node.$container
     if (!scopeNode) {
@@ -119,9 +119,9 @@ export class TaoScopeComputation extends langium.DefaultScopeComputation {
   /** iterateAllNodesIn depth-first streams all nodes with cancel checks.
    * @yields each AST node under rootNode. */
   private async *iterateAllNodesIn(
-    rootNode: langium.AstNode,
+    rootNode: AST.Node,
     cancelToken: langium.Cancellation.CancellationToken,
-  ): AsyncGenerator<langium.AstNode> {
+  ): AsyncGenerator<AST.Node> {
     for (const node of langium.AstUtils.streamAllContents(rootNode)) {
       await langium.interruptAndCheck(cancelToken)
       yield node

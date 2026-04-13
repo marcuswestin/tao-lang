@@ -5,6 +5,9 @@
     "paths": {
       "@shared/*": [
         "../shared/shared-src/*"
+      ],
+      "@shared": [
+        "../shared/shared-src/shared.ts"
       ]
     }
   },

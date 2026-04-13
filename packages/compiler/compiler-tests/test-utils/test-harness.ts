@@ -4,12 +4,12 @@
 import { TaoParser } from '@compiler/langium/parser'
 import type { TaoWorkspace } from '@compiler/langium/tao-services'
 import { createTaoWorkspace } from '@compiler/langium/tao-services'
-import { getDocumentErrors, TaoErrorReport } from '@compiler/validation/parse-errors'
-import { AST } from '@parser'
+import { getParseError, ParseError } from '@compiler/validation/parse-errors'
+import { LGM as Langium } from '@parser'
 import { TaoFile } from '@parser/_gen-tao-parser/ast'
+import { NodeFileSystem } from '@parser/node'
+import { AST } from '@parser/parser'
 import { Assert } from '@shared/TaoErrors'
-import * as Langium from 'langium'
-import { NodeFileSystem } from 'langium/node'
 import { wrap, Wrapped } from './AST-Wrapper'
 
 export { describe, expect, test } from 'bun:test'
@@ -59,9 +59,9 @@ export async function parseAST(code: string, stdLibRoot = ''): Promise<Wrapped<A
   return wrap(taoFileAST!)
 }
 
-/** parseASTWithErrors runs the full pipeline and returns the aggregated `TaoErrorReport`; the test fails if the
+/** parseASTWithErrors runs the full pipeline and returns the aggregated `ParseError`; the test fails if the
  * pipeline produced no errors (use this only when you expect failure). */
-export async function parseASTWithErrors(code: string, stdLibRoot = ''): Promise<TaoErrorReport> {
+export async function parseASTWithErrors(code: string, stdLibRoot = ''): Promise<ParseError> {
   const { errorReport } = await TaoParser.parseString(code, { stdLibRoot, validateUpToStage: 'all' })
   Assert(errorReport.hasError(), 'parseASTWithErrors expected at least one error report, but got none.')
   return errorReport
@@ -101,7 +101,7 @@ export type MultiFileParseResult = {
   /** getFile returns the AST for `path` and asserts the whole workspace built cleanly (any error in any file fails the test). */
   getFile(path: string): Wrapped<TaoFile>
   /** getErrors returns the combined error report for all documents (no assertion). */
-  getErrors(): TaoErrorReport
+  getErrors(): ParseError
   /** workspace is the Langium workspace used to build and validate `documents` (e.g. LSP `getDocumentDefinition`). */
   workspace: TaoWorkspace
   /** documents maps each virtual path to its Langium document after `buildDocuments`. */
@@ -127,15 +127,15 @@ export async function parseMultipleFiles(
     getFile(path: string): Wrapped<TaoFile> {
       const doc = documents.get(path)
       Assert(doc, `No document found for path: ${path}`)
-      const errorReports = getDocumentErrors(...documents.values())
+      const errorReports = getParseError(...documents.values())
       Assert(
         !errorReports.hasError(),
         `Expected no errors for ${path}, but got: ${errorReports.getHumanErrorMessage()}`,
       )
       return wrap(doc.parseResult.value)
     },
-    getErrors(): TaoErrorReport {
-      return getDocumentErrors(...documents.values())
+    getErrors(): ParseError {
+      return getParseError(...documents.values())
     },
   }
 }

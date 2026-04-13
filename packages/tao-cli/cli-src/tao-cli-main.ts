@@ -1,12 +1,9 @@
 import { Command } from '@commander-js/extra-typings'
 import { type CompileOutputFile, compileTao } from '@compiler'
-import { fileExists, isDirectory } from '@shared/FsPathChecks'
+import { FS, TaoError } from '@shared'
 import { Log } from '@shared/Log'
-import { getTaoError, throwUserInputRejectionError } from '@shared/TaoErrors'
+import { throwUserInputRejectionError } from '@shared/TaoErrors'
 import chokidar from 'chokidar'
-import * as nodeFs from 'node:fs'
-import path from 'node:path'
-import * as process from 'node:process'
 import { hci } from './hci-human-computer-interaction'
 
 /** taoCliMain runs the Tao CLI via Commander (`process.argv`).
@@ -16,11 +13,11 @@ export function taoCliMain() {
 
   program.command('compile')
     .description('Compile a Tao file')
-    .argument('<path>', 'The file to compile', (value) => path.resolve(value))
-    .requiredOption('--runtime-dir <path>', 'The runtime to compile the code to', (value) => path.resolve(value))
+    .argument('<path>', 'The file to compile', (value) => FS.resolvePath(value))
+    .requiredOption('--runtime-dir <path>', 'The runtime to compile the code to', (value) => FS.resolvePath(value))
     .option('--watch', 'Watch the file and recompile when it changes')
     .option('--verbose', 'Verbose output', false)
-    .option('--std-lib-root <path>', 'The root directory of the standard library', (value) => path.resolve(value))
+    .option('--std-lib-root <path>', 'The root directory of the standard library', (value) => FS.resolvePath(value))
     .action(async (path, { watch, verbose, runtimeDir, stdLibRoot }) => {
       hci.setVerbose(verbose)
       await hci.wrapExecution(async () => {
@@ -37,7 +34,7 @@ export function taoCliMain() {
             await compileAndWrite()
           } catch (error) {
             if (watch) {
-              Log.taoError(getTaoError(error, { context: 'tao-cli compile --watch' }))
+              Log.taoError(TaoError.getTaoError(error, { context: 'tao-cli compile --watch' }))
             } else {
               throw error
             }
@@ -83,23 +80,29 @@ export async function TaoSDK_compile(opts: TaoSDK_compileOpts): Promise<TaoSDK_c
   const outputPath = await checkUserInputs(opts)
   const result = await compileTao({ file: opts.path, stdLibRoot: opts.stdLibRoot })
   if (!result.ok) {
-    await writeFile(outputPath, result.code)
+    FS.writeFile(outputPath, result.code)
     throwUserInputRejectionError(result.errorReport.getHumanErrorMessage())
   }
   const emitFiles = planTaoSdkEmitFiles(result.files, result.entryRelativePath, outputPath)
   for (const f of emitFiles) {
-    await writeFile(f.dest, f.text)
+    const path = getPath(outputPath, f.relativePath)
+    FS.writeFile(path, f.content)
     if (f.trace) {
-      await writeFile(f.dest + '.trace', JSON.stringify(f.trace, null, 2))
+      FS.writeFile(path + '.trace', JSON.stringify(f.trace, null, 2))
     }
   }
-  const emitRoot = path.dirname(outputPath)
+  const emitRoot = FS.dirname(outputPath)
   for (const f of result.copyDirs) {
-    const dest = path.resolve(emitRoot, f.to)
-    removeDirectory(dest)
-    copyDirectory(f.from, dest)
+    const from = FS.resolvePath(emitRoot, f.fromRelativePath)
+    const to = getPath(outputPath, f.toRelativePath)
+    FS.rmDirectory(to)
+    FS.copyDirectory(from, to)
   }
   return { outputPath, files: emitFiles }
+}
+
+function getPath(outputPath: string, relativePath: string) {
+  return FS.resolvePath(FS.dirname(outputPath), relativePath)
 }
 
 /** planTaoSdkEmitFiles maps each `CompileOutputFile` to an absolute `dest`: the manifest bootstrap path for
@@ -108,30 +111,30 @@ function planTaoSdkEmitFiles(
   files: CompileOutputFile[],
   entryRelativePath: string,
   outputPath: string,
-) {
-  const emitRoot = path.dirname(outputPath)
+): CompileOutputFile[] {
+  const emitRoot = FS.dirname(outputPath)
   return files.map(f => ({
     ...f,
-    dest: f.relativePath === entryRelativePath ? outputPath : path.join(emitRoot, f.relativePath),
+    dest: f.relativePath === entryRelativePath ? outputPath : FS.resolvePath(emitRoot, f.relativePath),
   }))
 }
 
 /** checkUserInputs ensures `runtimeDir` exists, contains `package.json` with a valid `taoRuntime` block,
  * optionally checks `stdLibRoot`, and returns where the emitted bootstrap file should be written. */
 async function checkUserInputs(opts: TaoSDK_compileOpts) {
-  const runtimeDir = path.resolve(opts.runtimeDir)
-  if (!isDirectory(runtimeDir)) {
+  const runtimeDir = FS.resolvePath(opts.runtimeDir)
+  if (!FS.isDirectory(runtimeDir)) {
     throwUserInputRejectionError(`Runtime path is not a directory: ${runtimeDir}`)
   }
   const stdLibRoot = opts.stdLibRoot
-  if (stdLibRoot && !isDirectory(stdLibRoot)) {
+  if (stdLibRoot && !FS.isDirectory(stdLibRoot)) {
     throwUserInputRejectionError(`Standard library path is not a directory: ${stdLibRoot}`)
   }
-  const packageJsonPath = path.resolve(runtimeDir, 'package.json')
-  if (!fileExists(packageJsonPath)) {
+  const packageJsonPath = FS.resolvePath(runtimeDir, 'package.json')
+  if (!FS.isFile(packageJsonPath)) {
     throwUserInputRejectionError(`Runtime path does not contain a package.json file: ${runtimeDir}`)
   }
-  const packageJson = readJsonFile(packageJsonPath)
+  const packageJson = FS.readJsonFile(packageJsonPath)
   const runtimeManifest = getTaoRuntimeManifest(packageJson)
   if (!runtimeManifest) {
     throwUserInputRejectionError(`Runtime path is not a tao runtime: ${runtimeDir}`)
@@ -142,23 +145,12 @@ async function checkUserInputs(opts: TaoSDK_compileOpts) {
 /** getRuntimeOutputPath joins `runtimeDir` with `taoRuntime.outputPath`, or with `outputFileName` when provided
  * (still anchored under `runtimeDir`). */
 function getRuntimeOutputPath(runtimeDir: string, runtimeManifest: TaoRuntimeManifest, outputFileName?: string) {
-  const defaultOutputPath = path.resolve(runtimeDir, runtimeManifest.outputPath)
+  const defaultOutputPath = FS.resolvePath(runtimeDir, runtimeManifest.outputPath)
   if (!outputFileName) {
     return defaultOutputPath
   }
 
-  return path.resolve(runtimeDir, outputFileName)
-}
-
-/** writeFile ensures parent dirs exist then writes UTF-8 content. */
-async function writeFile(targetPath: string, content: string) {
-  nodeFs.mkdirSync(path.dirname(targetPath), { recursive: true })
-  nodeFs.writeFileSync(targetPath, content)
-}
-
-/** readJsonFile parses JSON from a path. */
-function readJsonFile(path: string): any {
-  return JSON.parse(nodeFs.readFileSync(path, 'utf8'))
+  return FS.resolvePath(runtimeDir, outputFileName)
 }
 
 /** getTaoRuntimeManifest returns `{ outputPath }` when `packageJson.taoRuntime` is an object with a non-empty
@@ -174,18 +166,5 @@ function getTaoRuntimeManifest(packageJson: any): TaoRuntimeManifest | undefined
 
   return {
     outputPath: manifest.outputPath,
-  }
-}
-
-/** copyDirectory copies a directory from `src` to `dest` using synchronous fs APIs. */
-function copyDirectory(src: string, dest: string) {
-  nodeFs.mkdirSync(dest, { recursive: true })
-  nodeFs.cpSync(src, dest, { recursive: true })
-}
-
-/** removeDirectory removes a directory at `path` when it exists, using synchronous fs APIs. */
-function removeDirectory(path: string) {
-  if (isDirectory(path)) {
-    nodeFs.rmSync(path, { recursive: true })
   }
 }

@@ -1,6 +1,5 @@
 import { Log, setLogTransport } from '@shared/Log.js'
 import type { TaoError } from '@shared/TaoErrors.js'
-import * as process from 'node:process'
 import * as vscode from 'vscode'
 import type { LanguageClientOptions, ServerOptions } from 'vscode-languageclient/node.js'
 import { LanguageClient, TransportKind } from 'vscode-languageclient/node.js'

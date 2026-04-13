@@ -1,5 +1,5 @@
-import { AST, ASTUtils } from '@parser'
-import * as langium from 'langium'
+import { AST, LGM } from '@parser'
+import { LGM as langium } from '@parser'
 import {
   getSameModuleUris,
   isSameModuleImport,
@@ -35,7 +35,7 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
 
   /** getModuleScopedDeclarations merges local symbols with use-imported symbols. */
   private getModuleScopedDeclarations(context: langium.ReferenceInfo): langium.Scope {
-    const document = langium.AstUtils.getDocument(context.container)
+    const document = AST.Utils.getDocument(context.container) as AST.Document
     const value = document.parseResult.value
     if (!AST.isTaoFile(value)) {
       return this.createScope([])
@@ -51,11 +51,11 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
   /** getUseImportedSymbols returns descriptions for names imported via use statements. */
   private getUseImportedSymbols(
     taoFile: AST.TaoFile,
-    document: langium.LangiumDocument,
-    context: langium.ReferenceInfo,
-  ): langium.AstNodeDescription[] {
+    document: AST.Document,
+    context: LGM.ReferenceInfo,
+  ): AST.NodeDescription[] {
     const referenceType = this.reflection.getReferenceType(context)
-    const imported: langium.AstNodeDescription[] = []
+    const imported: AST.NodeDescription[] = []
 
     const useStatements = taoFile.statements.filter((stmt) => AST.isUseStatement(stmt))
 
@@ -71,8 +71,8 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
   private getSymbolsForUseStatement(
     useStmt: AST.UseStatement,
     referenceType: string,
-    document: langium.LangiumDocument,
-  ): langium.Stream<langium.AstNodeDescription> {
+    document: AST.Document,
+  ): langium.Stream<AST.NodeDescription> {
     const sameModule = isSameModuleImport(useStmt, document.uri.path)
     const indexUrisAndPaths = Array.from(this.indexManager.allElements(), (desc) => ({
       uri: desc.documentUri.toString(),
@@ -96,14 +96,14 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
     referenceType: string,
     useStmt: AST.UseStatement,
     sameModule: boolean,
-  ): langium.Stream<langium.AstNodeDescription> {
+  ): langium.Stream<AST.NodeDescription> {
     return this.indexManager.allElements(referenceType, new Set(targetUris))
       .filter((description) => this.isImportAccessible(description, useStmt, sameModule))
   }
 
   /** isImportAccessible returns whether the description matches the useStmt import list and share rules. */
   private isImportAccessible(
-    description: langium.AstNodeDescription,
+    description: AST.NodeDescription,
     useStmt: AST.UseStatement,
     sameModule: boolean,
   ): boolean {
@@ -118,7 +118,7 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
       return true
     }
     // Cross-module: only `share`-marked declarations
-    if (AST.isDeclaration(node) && ASTUtils.isSharedModuleDeclaration(node.$container)) {
+    if (AST.isDeclaration(node) && AST.isSharedModuleDeclaration(node.$container)) {
       return true
     }
     return false
@@ -128,15 +128,15 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
   private getLocalScope(
     context: langium.ReferenceInfo,
     document: langium.LangiumDocument,
-  ): langium.AstNodeDescription[] {
+  ): AST.NodeDescription[] {
     const referenceType = this.reflection.getReferenceType(context)
     const localSymbols = document.localSymbols
     if (!localSymbols) {
       return []
     }
 
-    const locals: langium.AstNodeDescription[] = []
-    let current: langium.AstNode | undefined = context.container
+    const locals: AST.NodeDescription[] = []
+    let current: AST.Node | undefined = context.container
     while (current) {
       if (localSymbols.has(current)) {
         for (const desc of localSymbols.getStream(current)) {

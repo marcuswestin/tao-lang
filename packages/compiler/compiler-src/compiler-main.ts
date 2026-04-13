@@ -1,31 +1,28 @@
-import { Assert } from '@shared/TaoErrors'
-import { TraceRegion } from 'langium/generate'
-import path from 'node:path'
+import { toStringAndTrace } from '@parser/generate'
+import { Assert, FS } from '@shared'
 import { getErrorAppString } from './codegen/app/app-gen-error'
 import { generateTypescriptReactNativeApp } from './codegen/app/app-gen-main'
 import { TaoParser } from './langium/parser'
-import { langiumGen } from './util/libs'
-import { TaoErrorReport } from './validation/parse-errors'
+import { ParseError } from './validation/parse-errors'
 
 export type CompileOutputFile = {
   relativePath: string
-  text: string
-  trace?: TraceRegion | undefined
+  content: string
+  trace?: any
 }
 
 export type CompileResult =
   | {
     ok: true
-    errorReport: TaoErrorReport
+    errorReport: ParseError
     files: CompileOutputFile[]
-    /** `to` is relative to the tao-app emit root (`dirname` of the written bootstrap file). */
-    copyDirs: { from: string; to: string }[]
     /** Relative path within `tao-app/` for the bootstrap file (e.g. `app-bootstrap.tsx`). */
     entryRelativePath: string
+    copyDirs: { fromRelativePath: string; toRelativePath: string }[]
   }
   | {
     ok: false
-    errorReport: TaoErrorReport
+    errorReport: ParseError
     /** Error-app TSX from `getErrorAppString`. */
     code: string
   }
@@ -47,7 +44,7 @@ export async function compileTao(opts: CompileOpts): Promise<CompileResult> {
     }
   }
   Assert(parsed.taoFileAST, 'taoFileAST is defined', parsed)
-  const entryAbsolutePath = path.resolve(opts.file)
+  const entryAbsolutePath = FS.resolvePath(opts.file)
   const generated = generateTypescriptReactNativeApp(
     parsed.taoFileAST,
     parsed.usedFilesASTs,
@@ -56,23 +53,24 @@ export async function compileTao(opts: CompileOpts): Promise<CompileResult> {
   )
   const files: CompileOutputFile[] = []
   for (const f of generated.fileNodes) {
-    files.push({ relativePath: f.relativePath, ...langiumGen.toStringAndTrace(f.node) })
+    const { text, trace } = toStringAndTrace(f.node)
+    files.push({ relativePath: f.relativePath, content: text, trace })
   }
   files.push({
     relativePath: generated.bootstrapRelativePath,
-    ...langiumGen.toStringAndTrace(generated.bootstrapNode),
+    content: toStringAndTrace(generated.bootstrapNode).text,
   })
   const copyDirs = [
     {
-      from: path.join(__dirname, '../../tao-std-lib/tao/tao-runtime'),
-      to: path.join('use', '@tao', 'tao-runtime'),
+      fromRelativePath: FS.joinPath(__dirname, '../../tao-std-lib/tao/tao-runtime'),
+      toRelativePath: FS.joinPath('use', '@tao', 'tao-runtime'),
     },
   ]
   return {
     ok: true,
     errorReport: parsed.errorReport,
     files,
-    copyDirs,
     entryRelativePath: generated.bootstrapRelativePath,
+    copyDirs,
   }
 }

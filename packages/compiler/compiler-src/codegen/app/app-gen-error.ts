@@ -1,7 +1,7 @@
-import { TaoErrorReport } from '@compiler/validation/parse-errors'
+import { ParseError } from '@compiler/validation/parse-errors'
 
-/** getErrorAppString returns TSX source for a minimal error screen from a TaoErrorReport. */
-export function getErrorAppString(errorReport: TaoErrorReport) {
+/** getErrorAppString returns TSX source for a minimal error screen from a ParseError. */
+export function getErrorAppString(errorReport: ParseError) {
   const messages = errorReport.getHumanErrorMessage()
   return `// @ts-nocheck
 

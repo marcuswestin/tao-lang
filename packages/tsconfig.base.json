@@ -1,7 +1,9 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "lib": ["ES2020"],
+    "lib": [
+      "ES2020"
+    ],
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "sourceMap": true,
@@ -9,7 +11,6 @@
     "composite": true,
     "strict": true,
     "skipLibCheck": true,
-
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
@@ -18,17 +19,36 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noPropertyAccessFromIndexSignature": true,
-
     "rootDir": ".",
     "paths": {
       // Paths are relative to packages/ (config file directory)
-      "@compiler": ["./compiler/tao-compiler.ts"],
-      "@compiler/*": ["./compiler/compiler-src/*"],
-      "@formatter/*": ["./formatter/src/*"],
-      "@parser": ["./parser/parser.ts"],
-      "@parser/*": ["./parser/src/*"],
-      "@shared/*": ["./shared/shared-src/*"],
-      "@cli/*": ["./tao-cli/cli-src/*"]
+      "@compiler": [
+        "./compiler/tao-compiler.ts"
+      ],
+      "@compiler/*": [
+        "./compiler/compiler-src/*"
+      ],
+      "@formatter/*": [
+        "./formatter/src/*"
+      ],
+      "@parser": [
+        "./parser/src/parser.ts"
+      ],
+      "@parser/vscode-languageserver": [
+        "./parser/src/vscode-languageserver/index.ts"
+      ],
+      "@parser/*": [
+        "./parser/src/*"
+      ],
+      "@shared": [
+        "./shared/shared-src/shared.ts"
+      ],
+      "@shared/*": [
+        "./shared/shared-src/*"
+      ],
+      "@cli/*": [
+        "./tao-cli/cli-src/*"
+      ]
     }
   },
   "include": [

@@ -8,11 +8,9 @@ import {
   compileNodePropertyRef,
   compileNoop,
 } from '@compiler/codegen/codegen-util'
-import { langium } from '@compiler/util/libs'
-import { AST } from '@parser'
+import * as LangiumGen from '@parser/generate'
+import { AST } from '@parser/parser'
 import { switchProperty_Exhaustive, switchType_Exhaustive } from '@shared/TypeSafety'
-import { AstNode, AstUtils } from 'langium'
-import * as LangiumGen from 'langium/generate'
 import { compileTODO } from '../codegen-util'
 
 export function compileTaoFile(taoFile: AST.TaoFile): Compiled {
@@ -20,7 +18,7 @@ export function compileTaoFile(taoFile: AST.TaoFile): Compiled {
 }
 
 class RuntimeGen {
-  TODO(node: langium.AstNode): Compiled {
+  TODO(node: AST.Node): Compiled {
     return compileTODO(node)
   }
 
@@ -190,8 +188,8 @@ class RuntimeGen {
     `
   }
 
-  compileRefName(ref: AST.Referenceable | langium.Reference<AST.Referenceable>) {
-    if (langium.isReference(ref)) {
+  compileRefName(ref: AST.Referenceable | AST.Reference<AST.Referenceable>) {
+    if (AST.isReference(ref)) {
       ref = ref.ref!
     }
     return compileNodeProperty(ref, 'name') // TODO: .prepend(`${ref.$type}_`)
@@ -211,7 +209,7 @@ class RuntimeGen {
     return compileNode(declaration)`
       function ${declaration.name}(${this.ParameterList(declaration.parameterList)}) {
         ${compileNodeList(declarations, declaration => this.Declaration(declaration))}
-         ${compileNodeList(expressions, stmt => this.useViewExpression(stmt))}
+        ${compileNodeList(expressions, stmt => this.useViewExpression(stmt))}
           return <>${compileNodeList(renderNodes, renderNode => this.renderNode(renderNode))}</>
     }`
   }
@@ -250,21 +248,21 @@ class RuntimeGen {
     })
   }
 
-  *filterNodeChildren<FilterT extends AstNode>(node: AstNode, predicate: (node: AstNode) => node is FilterT) {
-    for (const child of AstUtils.streamContents(node)) {
+  *filterNodeChildren<FilterT extends AST.Node>(node: AST.Node, predicate: (node: AST.Node) => node is FilterT) {
+    for (const child of AST.Utils.streamContents(node)) {
       if (predicate(child)) {
         yield child
       }
     }
   }
-  *walkTree<NodeT extends AstNode>(node: NodeT): Generator<NodeT, void, unknown> {
-    for (const child of AstUtils.streamAllContents(node)) {
+  *walkTree<NodeT extends AST.Node>(node: NodeT): Generator<NodeT, void, unknown> {
+    for (const child of AST.Utils.streamAllContents(node)) {
       yield child as NodeT
     }
   }
-  *filterNodeTree<FilterT extends AstNode>(
-    node: AstNode,
-    predicate: (node: AstNode) => node is FilterT,
+  *filterNodeTree<FilterT extends AST.Node>(
+    node: AST.Node,
+    predicate: (node: AST.Node) => node is FilterT,
   ) {
     for (const child of this.walkTree(node)) {
       if (predicate(child)) {

@@ -1,13 +1,13 @@
+import { FS } from '@shared'
 import type { CompiledTaoScenario, CompiledTaoScenarioAdapter } from '@shared/CompiledTaoScenarios'
 import {
   formatBunSpawnSyncErrorMessage,
   runTaoSdkCompileBunSync,
   TAO_SDK_COMPILE_OPTS_ENV_HEADLESS,
+  throwIfTaoSdkCompileFailed,
 } from '@shared/TaoBunSdk'
-import { sanitizeCompiledScenarioOutputSegment } from '@shared/TaoPaths'
+import { compiledScenarioTaoAppBootstrapRelativePath } from '@shared/TaoPaths'
 import * as RNTesting from '@testing-library/react-native'
-import { resolve as resolvePath } from 'node:path'
-import { pathToFileURL } from 'node:url'
 import type { ComponentType } from 'react'
 
 type CompileOpts = {
@@ -30,11 +30,11 @@ type RenderCompiledAppResult = RNTesting.RenderResult & {
   pressVisibleText(text: string): void
 }
 
-const runtimeDir = resolvePath(__dirname, '..')
-const repoRoot = resolvePath(runtimeDir, '../..')
-const stdLibRoot = resolvePath(repoRoot, 'packages/tao-std-lib')
-const compiledAppModulePath = resolvePath(runtimeDir, 'src/_gen-tao-compiler/tao-app/app-bootstrap.tsx')
-const taoSdkModuleUrl = pathToFileURL(resolvePath(repoRoot, 'packages/tao-cli/cli-src/tao-cli-main.ts')).href
+const runtimeDir = FS.resolvePath(__dirname, '..')
+const repoRoot = FS.resolvePath(runtimeDir, '../..')
+const stdLibRoot = FS.resolvePath(repoRoot, 'packages/tao-std-lib')
+const compiledAppModulePath = FS.resolvePath(runtimeDir, 'src/_gen-tao-compiler/tao-app/app-bootstrap.tsx')
+const taoSdkModuleUrl = FS.pathToFileURL(FS.resolvePath(repoRoot, 'packages/tao-cli/cli-src/tao-cli-main.ts')).href
 
 /** getHeadlessTestRuntimeDir returns this package’s root—the `runtimeDir` passed to `TaoSDK_compile` from headless tests. */
 export function getHeadlessTestRuntimeDir() {
@@ -48,9 +48,9 @@ export function createHeadlessScenarioAdapter() {
     async compileScenario(
       { scenarioDir, scenarioName }: { scenarioDir: string; scenarioName: string; scenario: CompiledTaoScenario },
     ) {
-      const outputFileName = `src/_gen-runtime-tests/${getGeneratedOutputFileName(scenarioName)}`
+      const outputFileName = `src/_gen-runtime-tests/${compiledScenarioTaoAppBootstrapRelativePath(scenarioName)}`
       return compileTaoForHeadlessRuntime({
-        path: resolvePath(scenarioDir, 'app.tao'),
+        path: FS.resolvePath(scenarioDir, 'app.tao'),
         stdLibRoot,
         outputFileName,
       })
@@ -77,12 +77,8 @@ export async function compileTaoForHeadlessRuntime(opts: CompileOpts): Promise<C
     optsEnvVar: TAO_SDK_COMPILE_OPTS_ENV_HEADLESS,
   })
 
-  const compileError = formatBunSpawnSyncErrorMessage(command)
-  if (command.status === 0) {
-    return { outputPath, compileError }
-  }
-
-  throw new Error(`Failed to compile Tao for the headless runtime: ${String(compileError)}`)
+  throwIfTaoSdkCompileFailed(command, { outputPath, runtimeLabel: 'the headless runtime' })
+  return { outputPath, compileError: formatBunSpawnSyncErrorMessage(command) }
 }
 
 /** renderCompiledHeadlessTaoApp `require`s the module at `outputPath` (default: shared stub `tao-app/app-bootstrap.tsx`), evicts that path
@@ -116,9 +112,5 @@ function getCompiledOutputPath(outputFileName?: string) {
     return compiledAppModulePath
   }
 
-  return resolvePath(runtimeDir, outputFileName)
-}
-
-function getGeneratedOutputFileName(scenarioName: string) {
-  return `test-${sanitizeCompiledScenarioOutputSegment(scenarioName)}/tao-app/app-bootstrap.tsx`
+  return FS.resolvePath(runtimeDir, outputFileName)
 }

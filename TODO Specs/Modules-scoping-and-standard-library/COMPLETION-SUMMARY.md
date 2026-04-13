@@ -11,7 +11,7 @@ This document summarizes the work on `ft-modules` vs `main`, the cleanup plan be
 Roughly 70+ commits covering:
 
 - **Module system**: `use X from <module>`, same-module `use Foo`, `file`/`share` visibility, std lib `use tao/ui Col, Row, Text`
-- **Compiler**: TaoWorkspace (class with private fields and API methods), createTaoWorkspace, TaoWorkspaceBuildOptions, TaoDocument, Paths helpers, TaoErrorReport refactor, compilation of used files and stdLibRoot wired through CLI and IDE
+- **Compiler**: TaoWorkspace (class with private fields and API methods), createTaoWorkspace, TaoWorkspaceBuildOptions, TaoDocument, Paths helpers, ParseError refactor, compilation of used files and stdLibRoot wired through CLI and IDE
 - **Scoping & IDE**: TaoScopeComputation, TaoScopeProvider, UseStatementValidator; TaoDefinitionProvider (go-to-definition); TaoWorkspaceManager; getDocumentDefinition on TaoWorkspace
 - **Formatter**: TaoFormatter, injection blocks, comma-separated use formatting
 - **Infra**: just-agents workflow, git-commit recipe for multi-word messages, shared-tools merged into shared, tsconfig/mise/oxlint updates, q-dev, formatter/lint commands
@@ -34,7 +34,7 @@ Roughly 70+ commits covering:
 - **Scoping**: TaoScopeComputation (share + same-module exports), TaoScopeProvider (scope chain: local → imported)
 - **Go-to-definition**: TaoDefinitionProvider; TaoWorkspace.getDocumentDefinition for document + position
 - **Paths**: Paths.ts (normalizeModulePath, normalizedDirOfPath, resolveModulePathFromFile, fileExists, isDirectory, readDir, resolvePath, streamFilesIn); ModulePath.ts also covers `@tao/...` imports (`isTaoModuleImport`, `resolveModuleImportDirectory`)
-- **Workspace**: TaoWorkspace class (private fields; addDocument, supportsExtension, getFileExtensions, getStdLibRoot, getShared, hasStdLib, buildDocument/buildDocuments, createDocumentFromString/FromUri, getAllDocuments, formatDocument, getDocumentDefinition); TaoWorkspaceConfig, TaoWorkspaceBuildOptions, TaoDocument; createTaoWorkspace; TaoWorkspaceManager (std lib loading); TaoErrorReport API
+- **Workspace**: TaoWorkspace class (private fields; addDocument, supportsExtension, getFileExtensions, getStdLibRoot, getShared, hasStdLib, buildDocument/buildDocuments, createDocumentFromString/FromUri, getAllDocuments, formatDocument, getDocumentDefinition); TaoWorkspaceConfig, TaoWorkspaceBuildOptions, TaoDocument; createTaoWorkspace; TaoWorkspaceManager (std lib loading); ParseError API
 - **CLI & IDE**: stdLibRoot and multi-file compilation; tao-cli compiles used files into output; IDE uses createTaoWorkspace and parser.getShared()
 - **Formatter**: TaoFormatter (AST-driven), injection block re-indent, use-statement symbol list formatting
 - **Std lib**: tao-std-lib views (share visibility), Text with props.value; Apps use `use Col, Row, Text from tao/ui`

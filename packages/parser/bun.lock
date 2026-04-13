@@ -4,13 +4,15 @@
   "workspaces": {
     "": {
       "name": "@tao/parser",
+      "dependencies": {
+        "langium": "^4.1.2",
+        "vscode-languageserver": "~9.0.1",
+        "vscode-languageserver-types": "~3.17.5",
+      },
       "devDependencies": {
         "@types/bun": "latest",
         "langium-cli": "^4.1.0",
         "typescript": "^5",
-      },
-      "peerDependencies": {
-        "langium": "^4",
       },
     },
   },

@@ -1,3 +1,4 @@
+import { FS } from '@shared'
 import { Log } from '@shared/Log'
 import {
   getTaoError,
@@ -6,14 +7,12 @@ import {
   UserInputRejection,
 } from '@shared/TaoErrors'
 import { assertNever } from '@shared/TypeSafety'
-import { appendFileSync } from 'node:fs'
-import * as process from 'node:process'
 import { bgWhiteBright, blackBright, bold, cyan, gray, red, yellow } from 'picocolors'
 
 /** print logs via `Log` and always appends the same line to `/tmp/hci.log` (useful for debugging CLI sessions). */
 function print(message: string) {
   Log(message)
-  appendFileSync('/tmp/hci.log', message + '\n')
+  FS.appendFileSync('/tmp/hci.log', message + '\n')
 }
 
 /** printToUser prefixes user-facing lines with >. */
