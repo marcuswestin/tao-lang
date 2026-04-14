@@ -10,7 +10,7 @@ _dev:
     done
 
 [private]
-_DEV_WATCH_RECIPES := "_watch_grammar _watch_kitchen_sink_build _watch_runtime_reload \
+_DEV_WATCH_RECIPES := "_watch_grammar _watch_app_build _watch_runtime_reload \
                        _watch_typecheck_extension _watch_esbuild_extension _watch_fmt_justfile"
 
 _watch_all_tests *PATTERNS:
@@ -23,9 +23,9 @@ _watch_all_tests *PATTERNS:
             "tao-cli" "cd packages/tao-cli && bun test --watch --silent --reporter=dot {{ PATTERNS }}" \
             "headless runtime" "cd packages/headless-test-runtime && just watch {{ PATTERNS }}" \
             "extension" "cd packages/ide-extension && bun test --watch --silent --reporter=dot {{ PATTERNS }}" \
-            "runtime" "cd packages/expo-runtime && just watch {{ PATTERNS }}" \
             "test apps" "just _watch_test_apps {{ PATTERNS }}" \
             "q Exit" "just _r_reloead_q_quit" || break;
+            # "runtime" "cd packages/expo-runtime && just watch {{ PATTERNS }}" \
     done
 
 _steal_focus:
@@ -57,11 +57,11 @@ _watch_grammar:
 _watch_test_apps:
     watchexec --restart --watch='Apps/Test Apps/' -- 'just gen'
 
-DEV_APP_PATH := "./Apps/Test Apps/Handlers, State and Actions/app.tao"
+DEV_APP_PATH := "./Apps/Test Apps/Studio/app.tao"
 
 # DEV_APP_PATH := "./Apps/Test Apps/Kitchen Sink/app.tao"
 
-_watch_kitchen_sink_build:
+_watch_app_build:
     cd packages/tao-cli && bun run  --watch --no-clear-screen \
         ./tao-cli.ts compile "`pwd`/../../{{ DEV_APP_PATH }}" \
             --runtime-dir "../expo-runtime" \

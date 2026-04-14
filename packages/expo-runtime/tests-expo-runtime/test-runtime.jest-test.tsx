@@ -5,7 +5,7 @@ import {
   runTaoSdkCompileBunSync,
   TAO_SDK_COMPILE_OPTS_ENV_EXPO,
   throwIfTaoSdkCompileFailed,
-} from '@shared/TaoBunSdk'
+} from '@shared/testing'
 import { render } from '@testing-library/react-native'
 import type { ComponentType } from 'react'
 import { Text } from 'react-native'

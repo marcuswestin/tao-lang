@@ -1,12 +1,15 @@
 import { FS } from '@shared'
-import type { CompiledTaoScenario, CompiledTaoScenarioAdapter } from '@shared/CompiledTaoScenarios'
+import { compiledScenarioTaoAppBootstrapRelativePath } from '@shared/TaoPaths'
 import {
+  attachPressVisibleText,
+  type CompiledTaoScenario,
+  type CompiledTaoScenarioAdapter,
   formatBunSpawnSyncErrorMessage,
+  loadCompiledTaoAppDefaultFromPath,
   runTaoSdkCompileBunSync,
   TAO_SDK_COMPILE_OPTS_ENV_EXPO,
   throwIfTaoSdkCompileFailed,
-} from '@shared/TaoBunSdk'
-import { compiledScenarioTaoAppBootstrapRelativePath } from '@shared/TaoPaths'
+} from '@shared/testing'
 import * as RNTesting from '@testing-library/react-native'
 import type { ComponentType as CompiledAppComponent } from 'react'
 
@@ -78,22 +81,11 @@ function compileTaoForExpoRuntime(opts: CompileOpts): CompileResult {
 // renderCompiledTaoApp Render the freshly compiled Expo module instead of a statically imported app entrypoint.
 function renderCompiledTaoApp(outputPath: string): RenderCompiledAppResult {
   RNTesting.cleanup()
-  const CompiledTaoApp = loadCompiledAppModule(outputPath)
-  const renderedScreen = RNTesting.render(<CompiledTaoApp />)
+  const CompiledTaoApp = loadCompiledTaoAppDefaultFromPath<CompiledAppComponent>(outputPath)
+  const screen = RNTesting.render(<CompiledTaoApp />)
   return {
-    ...renderedScreen,
+    ...screen,
     CompiledComponent: CompiledTaoApp,
-    pressVisibleText(text: string) {
-      RNTesting.fireEvent.press(renderedScreen.getByText(text))
-    },
+    ...attachPressVisibleText(screen, RNTesting.fireEvent),
   }
-}
-
-/** loadCompiledAppModule evicts `require.cache` for `outputPath` then `require`s it (matches headless-test-runtime; avoids `jest.resetModules()` splitting React). */
-function loadCompiledAppModule(outputPath: string): CompiledAppComponent {
-  const resolved = require.resolve(outputPath)
-  delete require.cache[resolved]
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const mod = require(resolved)
-  return mod.default
 }

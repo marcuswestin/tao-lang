@@ -17,11 +17,11 @@ _unstage_changes:
     echo "> Abort successful."
 
 _prep_commit:
-    echo "\n> Make auto-fixable changes..." && just fix
-    echo "> Clean build artifacts..." && just clean
+    echo "\n> Clean build artifacts..." && just clean
     echo "> Build everything..." && just build
     echo "> Run code tests..." && just test-all
     echo "> Run pre-commit checks..." && just check
+    echo "> Make auto-fixable changes..." && just fix
     echo "\n> Pre-commit checks complete. Ready to commit.\n"
 
 _post_commit_unstash:

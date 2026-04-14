@@ -32,7 +32,7 @@ export class TaoDefinitionProvider extends DefaultDefinitionProvider {
   }
 
   /** tryGetUseStatementDefinition returns a LocationLink when the cursor is on a use import name. */
-  private tryGetUseStatementDefinition(sourceCstNode: langium.CstNode): LocationLink | undefined {
+  private tryGetUseStatementDefinition(sourceCstNode: langium.CstNode) {
     const astNode = sourceCstNode.astNode
     if (!AST.isUseStatement(astNode)) {
       return undefined

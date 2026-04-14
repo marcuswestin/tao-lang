@@ -2,26 +2,32 @@ import { FS } from '@shared'
 import { describe, expect, test } from 'bun:test'
 import { TaoSDK_compile } from '../cli-src/tao-cli-main'
 
+const stdLibRoot = FS.resolvePath(__dirname, '../../../packages/tao-std-lib')
+const runtimeDir = FS.resolvePath(__dirname, '../../expo-runtime/')
+
+async function compileFile(path: string) {
+  return TaoSDK_compile({ path, runtimeDir, stdLibRoot })
+}
+
 describe('cli:', () => {
   test('stub test', () => expect(true).toBe(true))
 
   test('compile and run with cli', async () => {
     const { code, needle } = getRandomUI()
-    const dir = FS.mkTmpDir(FS.joinPath(FS.tmpdir(), 'tao-cli-test-'))
+    const tmpDir = FS.mkTmpDir(FS.joinPath(FS.tmpdir(), 'tao-cli-test-'))
     try {
-      const taoPath = FS.joinPath(dir, 'app.tao')
-      FS.writeFile(taoPath, code)
-      const res = await TaoSDK_compile({ path: taoPath, runtimeDir: FS.resolvePath(__dirname, '../../expo-runtime/') })
+      const appPath = FS.joinPath(tmpDir, 'app.tao')
+      FS.writeFile(appPath, code)
+      const res = await compileFile(appPath)
       expect(res.files.some(f => f.content.includes(needle))).toBe(true)
     } finally {
-      FS.rmDirectory(dir)
+      FS.rmDirectory(tmpDir)
     }
   })
 
   test('compile file with use statement', async () => {
-    const path = FS.resolvePath(__dirname, '../../../Apps/Test Apps/Kitchen Sink/app.tao')
-    const stdLibRoot = FS.resolvePath(__dirname, '../../../packages/tao-std-lib')
-    const res = await TaoSDK_compile({ path, runtimeDir: FS.resolvePath(__dirname, '../../expo-runtime/'), stdLibRoot })
+    const appPath = FS.resolvePath(__dirname, '../../../Apps/Test Apps/Kitchen Sink/app.tao')
+    const res = await compileFile(appPath)
     expect(res.files.length).toBeGreaterThan(0)
   })
 })

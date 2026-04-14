@@ -1,5 +1,5 @@
-import { spawnSync, type SpawnSyncReturns } from './exec'
-import { existsSync } from './fs'
+import { spawnSync, type SpawnSyncReturns } from '../exec'
+import { existsSync } from '../fs'
 
 /** TaoSdkCompileSpawnOptsJson is the JSON passed to `TaoSDK_compile` via env for subprocess `bun -e` harnesses. */
 export type TaoSdkCompileSpawnOptsJson = {

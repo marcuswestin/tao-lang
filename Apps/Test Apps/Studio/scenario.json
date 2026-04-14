@@ -1,0 +1,22 @@
+{
+  "steps": [
+    { "assertVisibleText": "Hello World" },
+    { "assertVisibleText": "100" },
+    { "assertVisibleText": "200" },
+    { "pressVisibleText": "200" },
+    { "assertVisibleText": "201" },
+    { "assertVisibleText": "101" },
+    { "assertVisibleText": "200" },
+    { "pressVisibleText": "201" },
+    { "assertVisibleText": "202" },
+    { "assertVisibleText": "102" },
+    { "assertVisibleText": "200" },
+    { "pressVisibleText": "200" },
+    { "assertVisibleText": "201" },
+    { "assertVisibleText": "103" },
+    { "assertVisibleText": "202" },
+    { "pressVisibleText": "103" },
+    { "assertVisibleText": "104" },
+    { "assertVisibleText": "202" }
+  ]
+}

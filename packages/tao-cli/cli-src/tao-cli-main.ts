@@ -78,6 +78,14 @@ type TaoSDK_compileResult = {
  * - Compile or validation failures become `UserInputRejectionError` with the human-readable report message. */
 export async function TaoSDK_compile(opts: TaoSDK_compileOpts): Promise<TaoSDK_compileResult> {
   const outputPath = await checkUserInputs(opts)
+  const outputDir = FS.dirname(outputPath)
+  if (FS.isDirectory(outputDir)) {
+    if (!FS.isFile(outputPath)) {
+      throwUserInputRejectionError(`Output path already exists: ${outputDir}`)
+    }
+    FS.rmDirectory(outputDir)
+  }
+
   const result = await compileTao({ file: opts.path, stdLibRoot: opts.stdLibRoot })
   if (!result.ok) {
     FS.writeFile(outputPath, result.code)

@@ -2,7 +2,7 @@ import { FS } from '@shared'
 import {
   discoverCompiledTaoScenarios,
   runScenario,
-} from '@shared/CompiledTaoScenarios'
+} from '@shared/testing'
 import { createExpoScenarioAdapter } from '../test-runtime'
 
 const expoScenarioAllowList = new Set(['Simple test render'])

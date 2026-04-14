@@ -29,7 +29,7 @@ Also see Roadmap.
 - [x] Aliases
 - [x] State
 - [x] Actions
-- [ ] Runtime Scope
+- [x] Runtime Scope
 - [ ] Operators +,-,*,/,%,(),.,->
 - [ ] Type System
 - [ ] Objects/Items, Arrays/Lists, and Tuples/Pairs
@@ -42,15 +42,25 @@ Also see Roadmap.
 ### NEXT - todo:
 
 - Dev Env:
+  - [ ] Worktrees
+  - [ ] Claude code direct
   - [ ] Try removing the just-agents restriction and see what development is like without it.
+  - [ ] Voice mode
+  - [ ] `just dev` warnings/errors/updates.
+  - [ ] export const SwitchSafe = { type: switchType_Exhaustive, ... }
 
 #### HIGH - MUST
+
+- [ ] Dedup code. Move to @shared:
+  - function compileTaoForExpoRuntime(opts: CompileOpts): CompileResult
+  - export async function compileTaoForHeadlessRuntime(opts: CompileOpts)
+  - .. and they're util functions
 
 - [ ] Improve testing
   - [ ] Add View Keys
   - [ ] Make test app less ugly. Black background, white text.
-- [ ] Implement prototype-chaining based scope (See kitchen sink test scenario)
-  - [ ] Get kitchen sink test passing: invocations need to have scoped dependencies passed in somehow ..
+- [x] Implement prototype-chaining based scope (See kitchen sink test scenario)
+  - [x] Get kitchen sink test passing: invocations need to have scoped dependencies passed in somehow ..
 - [ ] Objects/Items
 - [ ] Event & Handler Syntax
 - [ ] String operation: ADJACENCY CONCATENATION

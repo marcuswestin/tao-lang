@@ -2,6 +2,7 @@ import { AST, LGM } from '@parser'
 import { Assert } from '@shared/TaoErrors'
 
 import * as LangiumGen from '@parser/generate'
+import { Iterable, Stream } from '@shared'
 
 export type Compiled = LangiumGen.CompositeGeneratorNode
 export const CompositeGeneratorNode = LangiumGen.CompositeGeneratorNode
@@ -113,11 +114,11 @@ function assert(condition: boolean, message: string): void {
 
 /** compileNodeList joins arbitrary iterable nodes with tracing to a composite generator node. */
 export function compileNodeList<NodeT extends AST.Node>(
-  nodes: Iterable<NodeT> | Generator<NodeT, void, unknown>,
+  nodes: Iterable<NodeT> | Generator<NodeT, void, unknown> | Stream<NodeT>,
   genListItemFn: (node: NodeT) => LangiumGen.Generated,
 ): Compiled {
   const compiledList = new LangiumGen.CompositeGeneratorNode()
-  for (const node of nodes) {
+  for (const node of Iterable.from(nodes)) {
     const compiledNode = LangiumGen.expandTracedToNode(node)`${genListItemFn(node)}`
     compiledList.append(compiledNode).appendNewLineIfNotEmpty()
   }

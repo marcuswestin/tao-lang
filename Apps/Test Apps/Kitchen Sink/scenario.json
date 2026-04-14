@@ -1,5 +1,5 @@
 {
-  "skip": "external scope bug. Calling a function from a parent scope with a used variable doesn't pass properly in generated code. (X_use is not visible). Implement prototype-chaining based scope",
+  "skip": false,
   "steps": [
     { "assertVisibleText": "Hello Kitchen Sink" },
     { "assertVisibleText": "0" },

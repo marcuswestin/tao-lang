@@ -1,10 +1,10 @@
 import { FS } from '@shared'
+import { spawnSync } from '@shared/exec'
 import {
   discoverCompiledTaoScenarios,
   getCompiledTaoScenariosRootDir,
   runScenario,
-} from '@shared/CompiledTaoScenarios'
-import { spawnSync } from '@shared/exec'
+} from '@shared/testing'
 import { fireEvent, render } from '@testing-library/react-native'
 import * as RN from 'react-native'
 import {
@@ -12,6 +12,8 @@ import {
   getHeadlessTestRuntimeDir,
   renderCompiledHeadlessTaoApp,
 } from '../src/test-runtime'
+
+import './jest-watch-compiler-hook'
 
 const sharedScenarios = discoverCompiledTaoScenarios()
 
@@ -24,7 +26,7 @@ describe('headless runtime', () => {
       </RN.Pressable>,
     )
 
-    fireEvent.press(screen.getByText('Press me'))
+    fireEvent.press(screen.getAllByText('Press me')[0]!)
 
     expect(onPress).toHaveBeenCalledTimes(1)
   })
@@ -43,7 +45,7 @@ describe('headless runtime', () => {
 
     expect(command.status).toBe(0)
     const screen = renderCompiledHeadlessTaoApp()
-    expect(screen.getByText('Hello from shared scenario')).toBeTruthy()
+    expect(screen.getAllByText('Hello from shared scenario')).toBeTruthy()
   })
 })
 

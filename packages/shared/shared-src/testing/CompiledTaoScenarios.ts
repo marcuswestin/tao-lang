@@ -1,4 +1,4 @@
-import * as FS from './fs'
+import * as FS from '../fs'
 
 export type CompiledTaoScenarioStep =
   | { type: 'assertVisibleText'; text: string }
@@ -22,6 +22,10 @@ export type CompiledTaoScenarioCompileResult = {
 
 export type CompiledTaoScenarioRenderResult = {
   getByText(text: string): unknown
+  /** When present (e.g. RTL screen), duplicate visible text matches `assertVisibleText` without throwing. */
+  queryAllByText?(text: string): unknown[]
+  /** When present, `pressVisibleText` prefers the first matching pressable button by accessible name. */
+  queryAllByRole?(role: string, options?: { name: string }): unknown[]
   /** pressVisibleText dispatches a press on the element returned by `getByText` (e.g. Testing Library `fireEvent.press`). */
   pressVisibleText(text: string): void
 }
@@ -40,7 +44,7 @@ export type CompiledTaoScenarioAdapter = {
   cleanup(): Promise<void> | void
 }
 
-const repoRootDir = FS.resolvePath(__dirname, '../../..')
+const repoRootDir = FS.resolvePath(__dirname, '../../../..')
 const compiledTaoScenariosRootDir = FS.resolvePath(repoRootDir, 'Apps', 'Test Apps')
 
 /** getCompiledTaoScenariosRootDir returns the repo’s `Apps/Test Apps` directory (each subfolder is one scenario). */
@@ -160,6 +164,12 @@ function parseStep(rawStep: unknown, scenarioPath: string, stepIndex: number): C
 function runStep(step: CompiledTaoScenarioStep, renderResult: CompiledTaoScenarioRenderResult) {
   switch (step.type) {
     case 'assertVisibleText':
+      if (renderResult.queryAllByText) {
+        if (renderResult.queryAllByText(step.text).length === 0) {
+          renderResult.getByText(step.text)
+        }
+        return
+      }
       renderResult.getByText(step.text)
       return
     case 'pressVisibleText':

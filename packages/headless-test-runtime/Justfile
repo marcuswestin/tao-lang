@@ -2,6 +2,10 @@ set unstable := true
 set fallback := true
 set quiet := true
 
+# Matches packages/shared/just/parallel-and-concurrent.just so `just watch` can run two long-lived processes.
+_concurrently := "../shared/node_modules/.bin/concurrently"
+_concurrently_kill := "--kill-others --kill-others-on-fail"
+
 build: _install_deps
 
 [no-quiet]
@@ -9,7 +13,19 @@ test *FLAGS_AND_PATTERNS: build
     bunx jest --watchman=false --reporter=dot -t {{ FLAGS_AND_PATTERNS }}
 
 watch *FLAGS_AND_PATTERNS: build
-    bunx jest --watch --watchman=false --silent --reporter=dot -t {{ FLAGS_AND_PATTERNS }}
+    {{ _concurrently }} {{ _concurrently_kill }} \
+        --names "jest,compiler-watch" \
+        "bunx jest --watch --watchman=false --silent --reporter=dot -t {{ FLAGS_AND_PATTERNS }}" \
+        "watchexec --debounce 750ms --watch=../compiler -- just _headless_compiler_watch_hook"
+
+[private]
+_headless_compiler_watch_hook:
+    bun scripts/regenerate-headless-test-apps.ts
+    touch tests/jest-watch-compiler-hook.ts
+
+[no-quiet]
+regen-test-apps: build
+    bun scripts/regenerate-headless-test-apps.ts
 
 _install_deps:
     bun install
