@@ -1,0 +1,32 @@
+{
+  "steps": [
+    { "assertVisibleText": "100" },
+    { "assertVisibleText": "200" },
+    { "assertVisibleText": "300" },
+    { "assertVisibleText": "400" },
+
+    { "pressVisibleText": "400" },
+    { "assertVisibleText": "101" },
+    { "assertVisibleText": "200" },
+    { "assertVisibleText": "301" },
+    { "assertVisibleText": "401" },
+
+    { "pressVisibleText": "301" },
+    { "assertVisibleText": "102" },
+    { "assertVisibleText": "200" },
+    { "assertVisibleText": "302" },
+    { "assertVisibleText": "401" },
+
+    { "pressVisibleText": "200" },
+    { "assertVisibleText": "102" },
+    { "assertVisibleText": "201" },
+    { "assertVisibleText": "302" },
+    { "assertVisibleText": "401" },
+
+    { "pressVisibleText": "102" },
+    { "assertVisibleText": "103" },
+    { "assertVisibleText": "201" },
+    { "assertVisibleText": "302" },
+    { "assertVisibleText": "401" }
+  ]
+}

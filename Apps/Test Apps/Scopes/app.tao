@@ -1,0 +1,45 @@
+use Text, Button, Row, Col from @tao/ui
+
+app ScopesApp {
+    ui RootView
+}
+
+state fileState = 100
+
+action FileAction {
+    set fileState += 1
+}
+
+view RootView {
+    state viewState = 200
+
+    Button title fileState, Action FileAction { }
+    Button title viewState, Action ViewAction { }
+
+    action ViewAction {
+        set viewState += 1
+    }
+
+    Row {
+        state innerState = 300
+
+        Button title innerState, Action InnerAction { }
+
+        action InnerAction {
+            set innerState += 1
+            set fileState += 1
+        }
+
+        Col {
+            state deepState = 400
+
+            Button title deepState, Action DeepAction { }
+
+            action DeepAction {
+                set deepState += 1
+                set innerState += 1
+                set fileState += 1
+            }
+        }
+    }
+}

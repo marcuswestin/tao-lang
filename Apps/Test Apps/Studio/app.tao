@@ -1,0 +1,42 @@
+use Text, Button from @tao/ui
+
+app TaoStudio {
+    ui RootView
+}
+
+state GlobalCount = 100
+
+view RootView {
+    Text value "Hello World"
+    CountView { }
+    CountView { }
+    Text value "Global Count: " { }
+    Button title GlobalCount, Action GlobalIncrementAction { }
+}
+
+view CountView {
+    state LocalCount = 200
+    Text value LocalCount { }
+    Button title LocalCount, Action LocalIncrementAction { }
+    action LocalIncrementAction {
+        set LocalCount += 1
+        set GlobalCount += 1
+    }
+    state SubCount = 0
+    action SubIncrementAction {
+        set SubCount += 1
+        set LocalCount += 1
+        set GlobalCount += 1
+    }
+    view SubCountView {
+        Text value "Sub Count 1:" { }
+        Button title SubCount, Action SubIncrementAction { }
+    }
+    SubCountView { }
+    SubCountView { }
+    action EmptyAction { }
+}
+
+action GlobalIncrementAction {
+    set GlobalCount += 1
+}
