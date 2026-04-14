@@ -70,7 +70,7 @@ ActionDeclaration: type='action' name=ID parameterList=ParameterList? block=Bloc
 
 ViewRender:
     view=[Declaration:ID] argumentList=ArgumentList? block=Block?;
-
+type RenderNode = ViewRender | Injection;
 
 // Action-only statements
 /////////////////////////
@@ -79,6 +79,7 @@ StateUpdateOperator returns string: '+=' | '-=' | '=';
 StateUpdate:
     'set' stateRef=[Referenceable:ID] op=StateUpdateOperator value=Expression;
 
+type LiveStateBinding = StateUpdate;
 
 // Parameters and Arguments
 ///////////////////////////
