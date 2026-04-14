@@ -79,12 +79,19 @@ function compileTaoForExpoRuntime(opts: CompileOpts): CompileResult {
 function renderCompiledTaoApp(outputPath: string): RenderCompiledAppResult {
   RNTesting.cleanup()
   const CompiledTaoApp = loadCompiledAppModule(outputPath)
-  const renderedScreen = RNTesting.render(<CompiledTaoApp />)
+  const screen = RNTesting.render(<CompiledTaoApp />)
   return {
-    ...renderedScreen,
+    ...screen,
     CompiledComponent: CompiledTaoApp,
+    /** pressVisibleText dispatches a press on the first button with the given accessible name, else the first text match. */
     pressVisibleText(text: string) {
-      RNTesting.fireEvent.press(renderedScreen.getByText(text))
+      const buttons = screen.queryAllByRole('button', { name: text })
+      if (buttons.length > 0) {
+        RNTesting.fireEvent.press(buttons[0]!)
+        return
+      }
+      const nodes = screen.getAllByText(text)
+      RNTesting.fireEvent.press(nodes[0]!)
     },
   }
 }
@@ -94,6 +101,5 @@ function loadCompiledAppModule(outputPath: string): CompiledAppComponent {
   const resolved = require.resolve(outputPath)
   delete require.cache[resolved]
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const mod = require(resolved)
-  return mod.default
+  return require(resolved).default as CompiledAppComponent
 }
