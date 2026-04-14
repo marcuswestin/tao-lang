@@ -42,9 +42,19 @@ Also see Roadmap.
 ### NEXT - todo:
 
 - Dev Env:
+  - [ ] Worktrees
+  - [ ] Claude code direct
   - [ ] Try removing the just-agents restriction and see what development is like without it.
+  - [ ] Voice mode
+  - [ ] `just dev` warnings/errors/updates.
+  - [ ] export const SwitchSafe = { type: switchType_Exhaustive, ... }
 
 #### HIGH - MUST
+
+- [ ] Dedup code. Move to @shared:
+  - function compileTaoForExpoRuntime(opts: CompileOpts): CompileResult
+  - export async function compileTaoForHeadlessRuntime(opts: CompileOpts)
+  - .. and they're util functions
 
 - [ ] Improve testing
   - [ ] Add View Keys
