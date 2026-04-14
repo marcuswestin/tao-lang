@@ -1,10 +1,15 @@
 {
   "extends": "../tsconfig.base.json",
   "references": [
-    { "path": "../compiler" },
-    { "path": "../tao-cli" }
+    {
+      "path": "../compiler"
+    },
+    {
+      "path": "../tao-cli"
+    }
   ],
   "include": [
+    "scripts/**/*.ts",
     "src/**/*",
     "tests/**/*"
   ],
@@ -15,11 +20,14 @@
     "jsx": "react-jsx",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "types": ["node", "jest", "react"]
+    "types": [
+      "node",
+      "jest",
+      "react"
+    ]
   },
   "exclude": [
     "**/node_modules/**/*",
-    "src/_gen-runtime-tests/**/*",
     "src/_gen-tao-compiler/test-*-app-output.tsx"
   ]
 }

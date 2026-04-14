@@ -13,6 +13,8 @@ import {
   renderCompiledHeadlessTaoApp,
 } from '../src/test-runtime'
 
+import './jest-watch-compiler-hook'
+
 const sharedScenarios = discoverCompiledTaoScenarios()
 
 describe('headless runtime', () => {
@@ -24,7 +26,7 @@ describe('headless runtime', () => {
       </RN.Pressable>,
     )
 
-    fireEvent.press(screen.getByText('Press me'))
+    fireEvent.press(screen.getAllByText('Press me')[0]!)
 
     expect(onPress).toHaveBeenCalledTimes(1)
   })
@@ -43,7 +45,7 @@ describe('headless runtime', () => {
 
     expect(command.status).toBe(0)
     const screen = renderCompiledHeadlessTaoApp()
-    expect(screen.getByText('Hello from shared scenario')).toBeTruthy()
+    expect(screen.getAllByText('Hello from shared scenario')).toBeTruthy()
   })
 })
 
