@@ -1,4 +1,4 @@
-import * as FS from './fs'
+import * as FS from '../fs'
 
 export type CompiledTaoScenarioStep =
   | { type: 'assertVisibleText'; text: string }
@@ -44,7 +44,7 @@ export type CompiledTaoScenarioAdapter = {
   cleanup(): Promise<void> | void
 }
 
-const repoRootDir = FS.resolvePath(__dirname, '../../..')
+const repoRootDir = FS.resolvePath(__dirname, '../../../..')
 const compiledTaoScenariosRootDir = FS.resolvePath(repoRootDir, 'Apps', 'Test Apps')
 
 /** getCompiledTaoScenariosRootDir returns the repo’s `Apps/Test Apps` directory (each subfolder is one scenario). */

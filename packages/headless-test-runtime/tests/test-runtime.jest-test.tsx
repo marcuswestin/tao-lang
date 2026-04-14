@@ -1,10 +1,10 @@
 import { FS } from '@shared'
+import { spawnSync } from '@shared/exec'
 import {
   discoverCompiledTaoScenarios,
   getCompiledTaoScenariosRootDir,
   runScenario,
-} from '@shared/CompiledTaoScenarios'
-import { spawnSync } from '@shared/exec'
+} from '@shared/testing'
 import { fireEvent, render } from '@testing-library/react-native'
 import * as RN from 'react-native'
 import {

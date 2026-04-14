@@ -1,6 +1,11 @@
 import { FS } from '@shared'
-import type { CompiledTaoScenario, CompiledTaoScenarioAdapter } from '@shared/CompiledTaoScenarios'
 import { compiledScenarioTaoAppBootstrapRelativePath } from '@shared/TaoPaths'
+import {
+  attachPressVisibleText,
+  type CompiledTaoScenario,
+  type CompiledTaoScenarioAdapter,
+  loadCompiledTaoAppModuleFromPath,
+} from '@shared/testing'
 import * as RNTesting from '@testing-library/react-native'
 import type { ComponentType } from 'react'
 import {
@@ -62,29 +67,13 @@ export function renderCompiledHeadlessTaoApp(
   outputPath = headlessDefaultCompiledAppBootstrapPath,
 ): RenderCompiledAppResult {
   RNTesting.cleanup()
-  const compiledModule = loadCompiledAppModule(outputPath)
+  const compiledModule = loadCompiledTaoAppModuleFromPath(outputPath) as CompiledAppModule
   const CompiledHeadlessTaoApp = compiledModule.default
 
   const screen = RNTesting.render(<CompiledHeadlessTaoApp />)
   return {
     ...screen,
     compiledModule,
-    /** pressVisibleText dispatches a press on the first button with the given accessible name, else the first text match. */
-    pressVisibleText(text: string) {
-      const buttons = screen.queryAllByRole('button', { name: text })
-      if (buttons.length > 0) {
-        RNTesting.fireEvent.press(buttons[0]!)
-        return
-      }
-      const nodes = screen.getAllByText(text)
-      RNTesting.fireEvent.press(nodes[0]!)
-    },
+    ...attachPressVisibleText(screen, RNTesting.fireEvent),
   }
-}
-
-function loadCompiledAppModule(outputPath: string): CompiledAppModule {
-  const resolvedModulePath = require.resolve(outputPath)
-  delete require.cache[resolvedModulePath]
-
-  return require(resolvedModulePath) as CompiledAppModule
 }

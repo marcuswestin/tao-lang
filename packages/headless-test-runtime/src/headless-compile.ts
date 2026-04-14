@@ -1,12 +1,12 @@
 import { FS } from '@shared'
-import { discoverCompiledTaoScenarios } from '@shared/CompiledTaoScenarios'
+import { compiledScenarioTaoAppBootstrapRelativePath } from '@shared/TaoPaths'
 import {
+  discoverCompiledTaoScenarios,
   formatBunSpawnSyncErrorMessage,
   runTaoSdkCompileBunSync,
   TAO_SDK_COMPILE_OPTS_ENV_HEADLESS,
   throwIfTaoSdkCompileFailed,
-} from '@shared/TaoBunSdk'
-import { compiledScenarioTaoAppBootstrapRelativePath } from '@shared/TaoPaths'
+} from '@shared/testing'
 
 export type CompileOpts = {
   path: string
