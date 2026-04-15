@@ -29,7 +29,7 @@ describe('runtime:', () => {
       compileOpts: { path: taoPath, runtimeDir },
       optsEnvVar: TAO_SDK_COMPILE_OPTS_ENV_EXPO,
     })
-    throwIfTaoSdkCompileFailed(command, { outputPath, runtimeLabel: 'the Expo runtime', requireOutputFile: true })
+    throwIfTaoSdkCompileFailed(command, { outputPath, runtimeLabel: 'the Expo runtime' })
     expect(emitTreeContainsNeedle(FS.dirname(outputPath), needle)).toBe(true)
 
     await assertBootstrapRendersNeedle(needle, outputPath)

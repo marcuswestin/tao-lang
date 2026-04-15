@@ -49,17 +49,62 @@ export function runTaoSdkCompileBunSync(args: {
   })
 }
 
-/** throwIfTaoSdkCompileFailed throws when Bun exited non-zero or, if `requireOutputFile`, the output path is missing. */
+/** throwIfTaoSdkCompileFailed throws when Bun exited non-zero or the expected output file is missing after success. */
 export function throwIfTaoSdkCompileFailed(
   command: SpawnSyncReturns<string>,
-  opts: { outputPath: string; runtimeLabel: string; requireOutputFile?: boolean },
+  opts: { outputPath: string; runtimeLabel: string },
 ): void {
   const detail = formatBunSpawnSyncErrorMessage(command)
   if (command.status !== 0) {
     throw new Error(`Failed to compile Tao for ${opts.runtimeLabel}: ${detail}`)
   }
-  if (opts.requireOutputFile && !existsSync(opts.outputPath)) {
+  if (!existsSync(opts.outputPath)) {
     throw new Error(`Failed to compile Tao for ${opts.runtimeLabel}: ${detail}`)
+  }
+}
+
+/** TaoSdkRuntimeCompileResult bundles the resolved output path with subprocess stderr/stdout (or status fallback) after a successful compile. */
+export type TaoSdkRuntimeCompileResult = {
+  outputPath: string
+  compileError: string
+}
+
+type TaoSdkCompileArgs = {
+  repoRoot: string
+  runtimeDir: string
+  taoSdkModuleUrl: string
+  optsEnvVar: TaoSdkCompileOptsEnvVar
+  path: string
+  stdLibRoot?: string
+  outputFileName?: string
+}
+
+type CompileOutputOpts = { outputPath: string; runtimeLabel: string }
+
+/** compileTaoSdkWithBunSync compiles via `runTaoSdkCompileBunSync`, throws on failure per `throwIfTaoSdkCompileFailed`, and returns the output path plus stderr/stdout (or status fallback) from the subprocess. */
+export function compileTaoSdkWithBunSync(
+  args: TaoSdkCompileArgs & CompileOutputOpts,
+): TaoSdkRuntimeCompileResult {
+  const command = runTaoSdkCompileBunSync({
+    repoRoot: args.repoRoot,
+    taoSdkModuleUrl: args.taoSdkModuleUrl,
+    compileOpts: {
+      path: args.path,
+      runtimeDir: args.runtimeDir,
+      stdLibRoot: args.stdLibRoot,
+      outputFileName: args.outputFileName,
+    },
+    optsEnvVar: args.optsEnvVar,
+  })
+
+  throwIfTaoSdkCompileFailed(command, {
+    outputPath: args.outputPath,
+    runtimeLabel: args.runtimeLabel,
+  })
+
+  return {
+    outputPath: args.outputPath,
+    compileError: formatBunSpawnSyncErrorMessage(command),
   }
 }
 

@@ -6,13 +6,9 @@ export function loadCompiledTaoAppModuleFromPath(outputPath: string): { default:
   return require(resolvedModulePath) as { default: unknown }
 }
 
-/** loadCompiledTaoAppDefaultFromPath returns the module’s `default` export after the same cache-bust + `require` as {@link loadCompiledTaoAppModuleFromPath}. */
-export function loadCompiledTaoAppDefaultFromPath<T>(outputPath: string): T {
-  return loadCompiledTaoAppModuleFromPath(outputPath).default as T
-}
-
 /** PressVisibleTextScreen is the subset of a Testing Library render result used to resolve press targets. */
 export type PressVisibleTextScreen = {
+  getByText(text: string): unknown
   queryAllByRole(role: string, options?: { name: string }): unknown[]
   getAllByText(text: string): unknown[]
 }
@@ -33,7 +29,7 @@ function pressVisibleTextOnScreen(
 }
 
 /** attachPressVisibleText returns `{ pressVisibleText }` for merging into a Testing Library render result. */
-export function attachPressVisibleText(
+function attachPressVisibleText(
   screen: PressVisibleTextScreen,
   fireEvent: { press(target: unknown): void },
 ): { pressVisibleText(text: string): void } {
@@ -41,5 +37,34 @@ export function attachPressVisibleText(
     pressVisibleText(text: string) {
       pressVisibleTextOnScreen(screen, fireEvent, text)
     },
+  }
+}
+
+/** RuntimeTestingDeps carries RTL callbacks so shared helpers never import `@testing-library/react-native`. */
+export type RuntimeTestingDeps = {
+  cleanup(): void
+  /** render receives the compiled module's default export (component) and returns the Testing Library screen. */
+  render(element: unknown): PressVisibleTextScreen & Record<string, unknown>
+  fireEvent: { press(target: unknown): void }
+}
+
+/** RenderCompiledTaoAppResult is the RTL screen plus the loaded module namespace and {@link attachPressVisibleText} helper. */
+export type RenderCompiledTaoAppResult =
+  & PressVisibleTextScreen
+  & Record<string, unknown>
+  & {
+    compiledModule: { default: unknown }
+    pressVisibleText(text: string): void
+  }
+
+/** renderCompiledTaoApp loads the module at `outputPath` (cache-bust `require`), runs `cleanup`, `render(default)`, and merges `pressVisibleText`. */
+export function renderCompiledTaoApp(outputPath: string, deps: RuntimeTestingDeps): RenderCompiledTaoAppResult {
+  deps.cleanup()
+  const compiledModule = loadCompiledTaoAppModuleFromPath(outputPath)
+  const screen = deps.render(compiledModule.default)
+  return {
+    ...screen,
+    compiledModule,
+    ...attachPressVisibleText(screen, deps.fireEvent),
   }
 }

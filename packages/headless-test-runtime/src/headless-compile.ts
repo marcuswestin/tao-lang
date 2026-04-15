@@ -1,22 +1,16 @@
 import { FS } from '@shared'
 import { compiledScenarioTaoAppBootstrapRelativePath } from '@shared/TaoPaths'
 import {
+  compileTaoSdkWithBunSync,
   discoverCompiledTaoScenarios,
-  formatBunSpawnSyncErrorMessage,
-  runTaoSdkCompileBunSync,
   TAO_SDK_COMPILE_OPTS_ENV_HEADLESS,
-  throwIfTaoSdkCompileFailed,
+  type TaoSdkRuntimeCompileResult,
 } from '@shared/testing'
 
 export type CompileOpts = {
   path: string
   stdLibRoot?: string
   outputFileName?: string
-}
-
-export type CompileResult = {
-  outputPath: string
-  compileError?: unknown
 }
 
 const runtimeDir = FS.resolvePath(__dirname, '..')
@@ -40,7 +34,7 @@ export function getHeadlessTestRuntimeDir() {
 }
 
 /** regenerateAllHeadlessScenarioOutputs compiles every non-skipped Apps/Test Apps scenario into `.builds/headless-test-runtime/_gen-runtime-tests/`. */
-export async function regenerateAllHeadlessScenarioOutputs() {
+export function regenerateAllHeadlessScenarioOutputs() {
   for (const { scenarioDir, scenario, skip } of discoverCompiledTaoScenarios()) {
     if (skip || !scenario) {
       continue
@@ -50,7 +44,7 @@ export async function regenerateAllHeadlessScenarioOutputs() {
       runtimeDir,
       FS.resolvePath(headlessScenarioCompileOutputRoot, compiledScenarioTaoAppBootstrapRelativePath(scenarioName)),
     )
-    await compileTaoForHeadlessRuntime({
+    compileTaoForHeadlessRuntime({
       path: FS.resolvePath(scenarioDir, 'app.tao'),
       stdLibRoot,
       outputFileName,
@@ -60,17 +54,19 @@ export async function regenerateAllHeadlessScenarioOutputs() {
 
 /** compileTaoForHeadlessRuntime spawns `bun` from the repo root to run `TaoSDK_compile` with `runtimeDir` set to this package.
  * On success returns `{ outputPath, compileError }` (stderr/stdout may still be in `compileError`); otherwise throws. */
-export async function compileTaoForHeadlessRuntime(opts: CompileOpts): Promise<CompileResult> {
+export function compileTaoForHeadlessRuntime(opts: CompileOpts): TaoSdkRuntimeCompileResult {
   const outputPath = getCompiledOutputPath(opts.outputFileName)
-  const command = runTaoSdkCompileBunSync({
+  return compileTaoSdkWithBunSync({
     repoRoot,
+    runtimeDir,
     taoSdkModuleUrl,
-    compileOpts: { ...opts, runtimeDir },
     optsEnvVar: TAO_SDK_COMPILE_OPTS_ENV_HEADLESS,
+    path: opts.path,
+    stdLibRoot: opts.stdLibRoot,
+    outputFileName: opts.outputFileName,
+    outputPath,
+    runtimeLabel: 'the headless runtime',
   })
-
-  throwIfTaoSdkCompileFailed(command, { outputPath, runtimeLabel: 'the headless runtime' })
-  return { outputPath, compileError: formatBunSpawnSyncErrorMessage(command) }
 }
 
 function getCompiledOutputPath(outputFileName?: string) {
