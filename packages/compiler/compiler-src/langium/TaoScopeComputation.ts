@@ -1,7 +1,7 @@
 import { LGM as langium } from '@parser'
 import { AST } from '@parser/parser'
 import { Assert, throwUnexpectedBehaviorError } from '@shared/TaoErrors'
-import { switchType_Exhaustive } from '@shared/TypeSafety'
+import { Switch } from '@shared/TypeSafety'
 
 /** TaoScopeComputation builds exported and local symbol tables for Tao files.
  * - Cross-module use sees share exports; same-module sees module-visible names. */
@@ -60,7 +60,7 @@ export class TaoScopeComputation extends langium.DefaultScopeComputation {
       if (!AST.isScopeRelevantNode(node)) {
         continue
       }
-      switchType_Exhaustive(node, {
+      Switch.type(node, {
         UseStatement: (n) => this.collectSymbolForScope(n, document, localSymbols),
         AppDeclaration: (n) => this.collectSymbolForScope(n, document, localSymbols),
         AssignmentDeclaration: (n) => this.collectSymbolForScope(n, document, localSymbols),

@@ -11,7 +11,7 @@ import {
 import * as LangiumGen from '@parser/generate'
 import { AST } from '@parser/parser'
 import { Stream } from '@shared'
-import { assertNever, switchProperty_Exhaustive, switchType_Exhaustive } from '@shared/TypeSafety'
+import { assertNever, Switch } from '@shared/TypeSafety'
 import { compileTODO } from '../codegen-util'
 
 export function compileTaoFile(taoFile: AST.TaoFile): Compiled {
@@ -31,7 +31,7 @@ class RuntimeGen {
   }
 
   Statement(statement: AST.Statement): Compiled {
-    return switchType_Exhaustive(statement, {
+    return Switch.type(statement, {
       Injection: (n) => this.Injection(n),
       Debugger: (n) => this.Debugger(n),
       StateUpdate: (n) => this.StateUpdate(n),
@@ -46,7 +46,7 @@ class RuntimeGen {
   }
 
   Declaration(declaration: AST.Declaration): Compiled {
-    return switchType_Exhaustive(declaration, {
+    return Switch.type(declaration, {
       AssignmentDeclaration: (n) => this.AssignmentDeclaration(n),
       AppDeclaration: (n) => this.AppDeclaration(n),
       ActionDeclaration: (n) => this.ActionDeclaration(n),
@@ -55,7 +55,7 @@ class RuntimeGen {
   }
 
   Expression(expression: AST.Expression): Compiled {
-    return switchType_Exhaustive(expression, {
+    return Switch.type(expression, {
       StringLiteral: (node) => {
         return compileNode(node)`
           TaoRuntime.StringLiteral(${JSON.stringify(node.string)}).read()
@@ -76,7 +76,7 @@ class RuntimeGen {
   //////////////////////////
 
   AssignmentDeclaration(declaration: AST.AssignmentDeclaration): Compiled {
-    return switchProperty_Exhaustive(declaration, 'type', {
+    return Switch.property(declaration, 'type', {
       alias: () => this.Declaration_alias(declaration),
       state: () => this.Declaration_state(declaration),
     })
@@ -124,12 +124,12 @@ class RuntimeGen {
     const scopedName = this.scopedName(declaration)
     if (!isBlockWithStatements(declaration.block)) {
       return compileNode(declaration)`
-        ${scopedName} = TaoRuntime.Action(function ${declaration.name}(Scope: any) {})
+        ${scopedName} = TaoRuntime.Action(function ${declaration.name}(_Scope: any) {})
       `
     }
     const scopedBlock = this.Block(declaration.block)
     return compileNode(declaration)`
-      ${scopedName} = TaoRuntime.Action(function ${declaration.name}(Scope: any)${scopedBlock})
+      ${scopedName} = TaoRuntime.Action(function ${declaration.name}(_Scope: any)${scopedBlock})
     `
   }
 
@@ -185,17 +185,17 @@ class RuntimeGen {
   view_liveStateBinding(binding: AST.LiveStateBinding): Compiled {
     const state = binding.stateRef
     const declName = this.declarationName(state.ref!)
-    return compileNode(binding)`${this.scopedName(state)} = ${declName}.useState(Scope)`
+    return compileNode(binding)`${this.scopedName(state)} = ${declName}.useState(_Scope)`
   }
 
   view_useBinding(ref: AST.NamedReference): Compiled {
     return compileNode(ref)`
-      ${this.useReference(ref.referenceName)} = ${this.declarationName(ref.referenceName.ref!)}.useState(Scope)
+      ${this.useReference(ref.referenceName)} = ${this.declarationName(ref.referenceName.ref!)}.useState(_Scope)
     `
   }
 
   view_renderNode(renderNode: AST.ViewRender | AST.Injection): Compiled {
-    return switchType_Exhaustive(renderNode, {
+    return Switch.type(renderNode, {
       ViewRender: (stmt) => this.ViewRender(stmt),
       Injection: (stmt) => compileNode(stmt)`{${this.Injection(stmt)}}`,
     })
@@ -247,12 +247,12 @@ class RuntimeGen {
     if (!isNestedDeclaration(declaration)) {
       return compileNoop()
     }
-    return compileNode(declaration)` _taoScope={Scope}`
+    return compileNode(declaration)` _taoScope={_Scope}`
   }
 
   scoped(fn: () => Compiled): Compiled {
     const prevScope = this.declScope
-    this.declScope = 'Scope'
+    this.declScope = '_Scope'
     const compiled = fn()
     this.declScope = prevScope
     return compiled
@@ -260,7 +260,7 @@ class RuntimeGen {
 
   pushScopeDeclaration(block: AST.Block): Compiled {
     return compileNode(block)`
-      const Scope = TaoRuntime.pushScope(_taoScope ?? _fileScope)
+      const _Scope = TaoRuntime.pushScope(_taoScope ?? _fileScope)
     `
   }
 
@@ -320,7 +320,7 @@ class RuntimeGen {
 
   Injection(injection: AST.Injection): Compiled {
     const trimmedTsCodeBlock = compileNodeProperty(injection, 'tsCodeBlock', trimTsFence)
-    return switchProperty_Exhaustive(injection, 'type', {
+    return Switch.property(injection, 'type', {
       raw: () => (compileNode(injection)`
         ${trimmedTsCodeBlock}
       `),
