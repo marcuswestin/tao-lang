@@ -51,7 +51,7 @@ AppStatement:
     // | type='root' root=[Declaration:ID]
     );
 
-DeclarationVisibility returns string: 'file' | 'share' | 'module';
+DeclarationVisibility returns string: 'hide' | 'share' | 'module';
 ModuleDeclaration:
     visibility=DeclarationVisibility declaration=Declaration;
 

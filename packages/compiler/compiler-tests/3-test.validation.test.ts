@@ -85,7 +85,7 @@ describe('statement placement validation:', () => {
   test('module declaration in view body fails validation', async () => {
     const report = await parseASTWithErrors(`
       view Outer {
-        file view Inner { }
+        hide view Inner { }
       }
     `)
     expect(report.getHumanErrorMessages().some(m => m.includes(validationMessages.viewBody))).toBe(true)
@@ -157,7 +157,7 @@ describe('compile errors:', () => {
     const multi = await parseMultipleFiles([
       {
         path: '/project/app.tao',
-        code: `file app CompileErrorApp {
+        code: `hide app CompileErrorApp {
     ui MissingView
 }
 `,

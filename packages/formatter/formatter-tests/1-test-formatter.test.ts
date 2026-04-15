@@ -37,40 +37,40 @@ describe('Formatter', () => {
   testFormatter('Whitespace prefix removal')
     .format(`
 
-    file app MyApp {}
+    hide app MyApp {}
     `)
     .equals(`
-    file app MyApp { }
+    hide app MyApp { }
     `)
 
   testFormatter('Postfix whitespace remove and newline insertion')
     .format(`
-    file app MyApp {}
+    hide app MyApp {}
     `)
     .equals(`
-    file app MyApp { }
+    hide app MyApp { }
     `)
   testFormatter('empty body')
-    .format(`file app foo {}`)
+    .format(`hide app foo {}`)
     .equals(`
-        file app foo { }
+        hide app foo { }
     `)
   testFormatter('empty app')
-    .format(`file app MyApp {}`)
+    .format(`hide app MyApp {}`)
     .equals(`
-        file app MyApp { }
+        hide app MyApp { }
     `)
   testFormatter('app with single ui')
-    .format(`file app MyApp {ui MyView}`)
+    .format(`hide app MyApp {ui MyView}`)
     .equals(`
-      file app MyApp {
+      hide app MyApp {
           ui MyView
       }
     `)
   testFormatter('app with multiple ui statements')
-    .format(`file app MyApp {ui View1 ui View2}`)
+    .format(`hide app MyApp {ui View1 ui View2}`)
     .equals(`
-      file app MyApp {
+      hide app MyApp {
           ui View1
           ui View2
       }
@@ -136,9 +136,9 @@ describe('Formatter', () => {
       }
     `)
   testFormatter('top level declarations separated')
-    .format(`file app MyApp {}view MyView {}`)
+    .format(`hide app MyApp {}view MyView {}`)
     .equals(`
-      file app MyApp { }
+      hide app MyApp { }
 
       view MyView { }
     `)
@@ -165,25 +165,25 @@ describe('Formatter', () => {
     `)
   testFormatter('comment preservation')
     .format(`
-      file app MyApp {
+      hide app MyApp {
       // comment
       ui MyView}
     `)
     .equals(`
-      file app MyApp {
+      hide app MyApp {
           // comment
           ui MyView
       }
     `)
   testFormatter('multiple comments')
     .format(`
-      file app MyApp {
+      hide app MyApp {
       // one
       // two
       ui MyView}
     `)
     .equals(`
-      file app MyApp {
+      hide app MyApp {
           // one
           // two
           ui MyView
@@ -254,14 +254,14 @@ describe('Formatter', () => {
     `)
   testFormatter('Advanced formatting')
     .format(`
-      file app MyApp {
+      hide app MyApp {
       // comment
       ui MyView }
 
       view MyView { Child {} }
     `)
     .equals(`
-      file app MyApp {
+      hide app MyApp {
           // comment
           ui MyView
       }
@@ -350,24 +350,24 @@ describe('formatter edge cases', () => {
       share view Button { }
     `)
 
-  testFormatter('visibility modifiers - file')
+  testFormatter('visibility modifiers - hide')
     .format(`
-      file view   PrivateHelper{}
+      hide view   PrivateHelper{}
     `)
     .equals(`
-      file view PrivateHelper { }
+      hide view PrivateHelper { }
     `)
 
   testFormatter('multiple declarations with visibility modifiers')
     .format(`
       share view Button{}
-      file view Helper{}
+      hide view Helper{}
       view Default{}
     `)
     .equals(`
       share view Button { }
 
-      file view Helper { }
+      hide view Helper { }
 
       view Default { }
     `)
@@ -386,11 +386,11 @@ describe('formatter edge cases', () => {
 
   testFormatter('app with view reference')
     .format(`
-      file app MyApp{ui MainView}
+      hide app MyApp{ui MainView}
       view MainView{}
     `)
     .equals(`
-      file app MyApp {
+      hide app MyApp {
           ui MainView
       }
 
@@ -399,17 +399,17 @@ describe('formatter edge cases', () => {
 
   testFormatter('multiple apps in file')
     .format(`
-        file app App1{ui View1}
-        file app App2{ui View2}
+        hide app App1{ui View1}
+        hide app App2{ui View2}
         view View1{}
         view View2{}
       `)
     .equals(`
-        file app App1 {
+        hide app App1 {
             ui View1
         }
 
-        file app App2 {
+        hide app App2 {
             ui View2
         }
 

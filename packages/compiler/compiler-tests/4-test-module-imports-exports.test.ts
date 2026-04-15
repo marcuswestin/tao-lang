@@ -80,7 +80,7 @@ describe('multi-file module parsing', () => {
         path: '/project/app.tao',
         code: `
           use PublicView from ./ui/views
-          file app MyApp { ui MainView }
+          hide app MyApp { ui MainView }
           view MainView { }
         `,
       },
@@ -150,11 +150,11 @@ describe('cross-module import resolution (use statement)', () => {
     expect(errors.getHumanErrorMessage()).toContain('InternalView')
   })
 
-  test('error when importing file-private declaration', async () => {
+  test('error when importing hide-private declaration', async () => {
     const result = await parseMultipleFiles([
       {
         path: '/project/ui/views.tao',
-        code: `file view PrivateView { }`, // Explicitly private to file
+        code: `hide view PrivateView { }`, // Explicitly private to this file
       },
       {
         path: '/project/app.tao',
@@ -253,13 +253,13 @@ describe('cross-module import resolution (use statement)', () => {
     expect(errors.errorCount()).toBe(0)
   })
 
-  test('shared and file (default) declarations are accessible from within the same file', async () => {
+  test('shared and hide (non-export) declarations are accessible from within the same file', async () => {
     const result = await parseMultipleFiles([
       {
         path: '/project/app/Views.tao',
         code: `
           share view SharedView { }
-          file view FileView { }
+          hide view FileView { }
           view DefaultView { }
           view TestView {
             SharedView { }
@@ -374,11 +374,11 @@ describe('cross-module import resolution (use statement)', () => {
       expect(errors.getHumanErrorMessage()).toContain('Button')
     })
 
-    test('file-private declarations are NOT accessible via use statement', async () => {
+    test('hide-private declarations are NOT accessible via use statement', async () => {
       const result = await parseMultipleFiles([
         {
           path: '/project/ui/buttons.tao',
-          code: `file view PrivateHelper { }`,
+          code: `hide view PrivateHelper { }`,
         },
         {
           path: '/project/ui/forms.tao',
@@ -534,13 +534,13 @@ describe('module system edge cases', () => {
     expect(errors.getHumanErrorMessage()).toContain('InternalHelper')
   })
 
-  test('mixed visibility in same file - share and file declarations', async () => {
+  test('mixed visibility in same file - share and hide declarations', async () => {
     const result = await parseMultipleFiles([
       {
         path: '/project/ui/mixed.tao',
         code: `
           share view PublicButton { }
-          file view PrivateHelper { }
+          hide view PrivateHelper { }
           view ModuleOnlyView { }
         `,
       },

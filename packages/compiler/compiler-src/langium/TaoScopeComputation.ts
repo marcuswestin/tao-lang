@@ -31,7 +31,7 @@ export class TaoScopeComputation extends langium.DefaultScopeComputation {
   ): AST.NodeDescription | null {
     Assert(statement.$container.$type === 'TaoFile', 'expected top-level statement')
     if (AST.isModuleDeclaration(statement)) {
-      if (statement.visibility === 'file') {
+      if (statement.visibility === 'hide') {
         return null
       }
       const declaration = statement.declaration

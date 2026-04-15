@@ -7,8 +7,8 @@ import {
   type UriAndPath,
 } from '../resolution/ModuleResolution'
 
-/** UseStatementValidator validates use imports and enforces share/file visibility rules.
- * - Same-module: module-visible names; file-private blocked across files.
+/** UseStatementValidator validates use imports and enforces share/hide visibility rules.
+ * - Same-module: module-visible names; hide-private blocked across files.
  * - Cross-module: only share exports. */
 export class UseStatementValidator {
   constructor(
@@ -54,7 +54,7 @@ export class UseStatementValidator {
     }
   }
 
-  /** validateSameModuleImports checks that each import exists in the module and is not file-only from elsewhere. */
+  /** validateSameModuleImports checks that each import exists in the module and is not hide-only from elsewhere. */
   private validateSameModuleImports(
     useStatement: AST.UseStatement,
     targetUris: string[],
@@ -67,7 +67,7 @@ export class UseStatementValidator {
 
       if (!accessibleNames.has(importedName)) {
         if (this.isFilePrivateDeclaration(importedName, targetUris)) {
-          accept('error', `'${importedName}' is marked as 'file' and cannot be accessed from other files.`, {
+          accept('error', `'${importedName}' is marked as 'hide' and cannot be accessed from other files.`, {
             node: useStatement,
             property: 'importedNames',
             index: i,
@@ -163,7 +163,7 @@ export class UseStatementValidator {
     return results
   }
 
-  /** isFilePrivateDeclaration returns true if the name is declared file-private in target docs. */
+  /** isFilePrivateDeclaration returns true if the name is declared hide-private in target docs. */
   private isFilePrivateDeclaration(name: string, targetUris: string[]): boolean {
     const uriSet = new Set(targetUris)
     for (const doc of this.documents.all) {
@@ -178,7 +178,7 @@ export class UseStatementValidator {
       for (const stmt of taoFile.statements) {
         if (
           AST.isModuleDeclaration(stmt)
-          && stmt.visibility === 'file'
+          && stmt.visibility === 'hide'
           && stmt.declaration.name === name
         ) {
           return true
