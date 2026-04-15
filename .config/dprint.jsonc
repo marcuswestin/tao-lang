@@ -11,6 +11,7 @@
     "**/node_modules",
     "**/*-lock.json",
     "**/_gen-*",
+    "**/_gen/**",
   ],
 
   "typescript": {

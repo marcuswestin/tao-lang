@@ -42,7 +42,9 @@ Also see Roadmap.
 ### NEXT - todo:
 
 - [x] Make "file" visibility into "hide".
-- [ ] _gen- -> ../_gen patch may have screwed up many different parts of the dev env. Search, confirm, fix.
+- [x] _gen- -> ../_gen patch may have screwed up many different parts of the dev env. Search, confirm, fix.
+  - Fixed: dprint `excludes` only had `**/_gen-*`, so plain `_gen/` (Expo `tao-app` output) was still formatted; added `**/_gen/**`. Swept repo for stale Expo paths — none found; eslint/gitignore/clean already covered `_gen/`.
+  - Optional later: exclude `_gen/tao-app/**` from `packages/expo-runtime/tsconfig.json` if TS server noise on generated files becomes annoying (watch import resolution vs `app/index.tsx`).
 - [x] just dev -> "IDE TextMate grammar merged" twice
 
 #### HIGH - MUST
