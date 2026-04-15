@@ -1,5 +1,10 @@
 import { Command } from '@commander-js/extra-typings'
-import { type CompileOutputFile, compileTao } from '@compiler'
+import {
+  appendSourceMappingUrlPragma,
+  type CompileOutputFile,
+  compileTao,
+  traceToEncodedSourceMapJson,
+} from '@compiler'
 import { FS, TaoError } from '@shared'
 import { Log } from '@shared/Log'
 import { throwUserInputRejectionError } from '@shared/TaoErrors'
@@ -94,9 +99,12 @@ export async function TaoSDK_compile(opts: TaoSDK_compileOpts): Promise<TaoSDK_c
   const emitFiles = planTaoSdkEmitFiles(result.files, result.entryRelativePath, outputPath)
   for (const f of emitFiles) {
     const path = getPath(outputPath, f.relativePath)
-    FS.writeFile(path, f.content)
     if (f.trace) {
-      FS.writeFile(path + '.trace', JSON.stringify(f.trace, null, 2))
+      const mapBasename = `${FS.basename(path)}.map`
+      FS.writeFile(path + '.map', traceToEncodedSourceMapJson({ outputAbsolutePath: path, trace: f.trace }))
+      FS.writeFile(path, appendSourceMappingUrlPragma(f.content, mapBasename))
+    } else {
+      FS.writeFile(path, f.content)
     }
   }
   const emitRoot = FS.dirname(outputPath)

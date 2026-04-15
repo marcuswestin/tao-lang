@@ -1,4 +1,4 @@
-import { FS } from '@shared'
+import { Assert, FS } from '@shared'
 import { Log } from '@shared/Log'
 import {
   getTaoError,
@@ -6,7 +6,6 @@ import {
   UnexpectedBehavior,
   UserInputRejection,
 } from '@shared/TaoErrors'
-import { assertNever } from '@shared/TypeSafety'
 import { bgWhiteBright, blackBright, bold, cyan, gray, red, yellow } from 'picocolors'
 
 /** print logs via `Log` and always appends the same line to `/tmp/hci.log` (useful for debugging CLI sessions). */
@@ -76,7 +75,7 @@ export const hci = {
           hci.reject(taoError)
           process.exit(1)
         default:
-          assertNever(taoError)
+          Assert.never(taoError)
       }
     }
   },
