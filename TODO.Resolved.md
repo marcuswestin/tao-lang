@@ -1,3 +1,5 @@
+**Archival log:** older sections may reference removed paths, commands, or tooling.
+
 #### Build & Dev Workflow Improvements (2025-12-18)
 
 - [x] Rename `gen-mise-tasks` → `mise-tasks-gen` for consistency across all files

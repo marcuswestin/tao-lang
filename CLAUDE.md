@@ -1,5 +1,7 @@
 ## Approach
 
+For `./just-agents`, testing, package layout, and repo policy, see **`AGENTS.md`**.
+
 - Think before acting. Read existing files before writing code.
 - Be concise in output but thorough in reasoning.
 - Prefer editing over rewriting whole files.

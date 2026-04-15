@@ -60,15 +60,15 @@ Agent instructions:
 
 **Authoritative paths** (edit these when improving agent guidance):
 
-| Area                  | Location                                          | Notes                                                                                                   |
-| --------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| Core agent text       | `AGENTS.md` (this file), `CLAUDE.md`              | Stacked in Cursor; keep commands/testing here.                                                          |
-| Enforced command gate | `.cursor/rules/running-commands.mdc`              | `alwaysApply: true` — keep tiny; duplicate only what must never be missed.                              |
-| Other Cursor rules    | `.cursor/rules/*.mdc`, `.cursor/rules/**/RULE.md` | Usually `alwaysApply: false` + `globs` so they load when relevant files are open.                       |
-| Slash commands        | `.cursor/commands/*.md`                           | Optional; repo workflows live in **skills** under `.cursor/skills/`.                                    |
-| Skills                | `.cursor/skills/**/SKILL.md`                      | User-attached or explicitly referenced; not auto-loaded for every message unless your client pins them. |
-| Hooks                 | `.cursor/hooks.json`                              | Repo automation around agent/IDE events.                                                                |
-| Human runner          | `Justfile`                                        | `just` recipes for people; agents use `./just-agents` only.                                             |
+| Area                  | Location                                          | Notes                                                                                                                             |
+| --------------------- | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Core agent text       | `AGENTS.md` (this file), `CLAUDE.md`              | Stacked in Cursor; commands, testing, and repo rules live in **`AGENTS.md`**; **`CLAUDE.md`** is short editor/workflow tone only. |
+| Enforced command gate | `.cursor/rules/running-commands.mdc`              | `alwaysApply: true` — keep tiny; duplicate only what must never be missed.                                                        |
+| Other Cursor rules    | `.cursor/rules/*.mdc`, `.cursor/rules/**/RULE.md` | Usually `alwaysApply: false` + `globs` so they load when relevant files are open.                                                 |
+| Slash commands        | `.cursor/commands/*.md`                           | Optional; repo workflows live in **skills** under `.cursor/skills/`.                                                              |
+| Skills                | `.cursor/skills/**/SKILL.md`                      | User-attached or explicitly referenced; not auto-loaded for every message unless your client pins them.                           |
+| Hooks                 | `.cursor/hooks.json`                              | Repo automation around agent/IDE events.                                                                                          |
+| Human runner          | `Justfile`                                        | `just` recipes for people; agents use `./just-agents` only.                                                                       |
 
 **Project skills (attach when relevant):** `tao-git-workflow`, `create-spec-file`, `create-project`, `implement-from-spec`, `implement-todo-batch`, `prep-feature-branch-merge`, `plan-next-from-todo`, `check-for-improvements`.
 
@@ -87,7 +87,7 @@ Misc configs and artifacts:
 
 Tao Lang Project Docs:
 
-- `Docs/`- Dev Log, Code examples, Roadmap, & more,
+- **`Docs/`** — Design, roadmap, features, example `.tao` files, etc
 
 ### Tao Lang implementation: packages/*
 
