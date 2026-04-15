@@ -8,6 +8,7 @@ module.exports = defineConfig([
     // Global ignores - must be in their own object with no other keys
     ignores: [
       '**/_gen-*/*',
+      '**/_gen/**',
     ],
   },
   {

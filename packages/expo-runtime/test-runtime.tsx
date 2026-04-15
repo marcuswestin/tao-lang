@@ -41,7 +41,7 @@ export function createExpoScenarioAdapter() {
       scenarioDir,
       scenarioName,
     }: { scenarioDir: string; scenarioName: string; scenario: CompiledTaoScenario }) {
-      const outputFileName = `app/_gen-runtime-tests/${compiledScenarioTaoAppBootstrapRelativePath(scenarioName)}`
+      const outputFileName = `_gen/_gen-runtime-tests/${compiledScenarioTaoAppBootstrapRelativePath(scenarioName)}`
       return compileTaoForExpoRuntime({
         path: FS.resolvePath(scenarioDir, 'app.tao'),
         stdLibRoot,
