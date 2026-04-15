@@ -1,4 +1,4 @@
-import { toStringAndTrace } from '@parser/generate'
+import { toStringAndTrace, type TraceRegion } from '@parser/generate'
 import { Assert, FS } from '@shared'
 import { getErrorAppString } from './codegen/app/app-gen-error'
 import { generateTypescriptReactNativeApp } from './codegen/app/app-gen-main'
@@ -8,7 +8,7 @@ import { ParseError } from './validation/parse-errors'
 export type CompileOutputFile = {
   relativePath: string
   content: string
-  trace?: any
+  trace?: TraceRegion
 }
 
 export type CompileResult =

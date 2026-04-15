@@ -3,8 +3,12 @@
   "private": true,
   "type": "module",
   "module": "tao-compiler.ts",
+  "dependencies": {
+    "@jridgewell/gen-mapping": "^0.3.13"
+  },
   "devDependencies": {
     "@chevrotain/types": "~11.1.2",
+    "@jridgewell/trace-mapping": "^0.3.31",
     "@types/bun": "latest",
     "typescript": "^5"
   }

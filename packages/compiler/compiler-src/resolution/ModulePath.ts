@@ -1,5 +1,5 @@
 import { FS } from '@shared'
-import { Assert } from '@shared/TaoErrors'
+import { Assert } from '@shared'
 
 export type ModulePath = string & { __brand: 'ModulePath' }
 

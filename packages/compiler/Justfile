@@ -7,7 +7,8 @@ watch-test *PATTERNS: _deps
     bun test . --watch --no-clear-screen --reporter=dot --test-name-pattern "{{ PATTERNS }}"
 
 build: _deps
-    bunx tsc
+    # `-b --force`: composite incremental can leave orphan `.tsbuildinfo` without `.d.ts` (TS6305 in ide-extension); force a consistent emit.
+    bunx tsc -b tsconfig.json --force
 
 
 watch-compiler: _deps

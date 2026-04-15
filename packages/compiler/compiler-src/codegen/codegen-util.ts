@@ -1,5 +1,5 @@
 import { AST, LGM } from '@parser'
-import { Assert } from '@shared/TaoErrors'
+import { Assert } from '@shared'
 
 import * as LangiumGen from '@parser/generate'
 import { Iterable, Stream } from '@shared'

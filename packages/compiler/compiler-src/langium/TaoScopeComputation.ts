@@ -1,7 +1,6 @@
 import { LGM as langium } from '@parser'
 import { AST } from '@parser/parser'
-import { Assert, throwUnexpectedBehaviorError } from '@shared/TaoErrors'
-import { Switch } from '@shared/TypeSafety'
+import { Assert, switch_safe } from '@shared'
 
 /** TaoScopeComputation builds exported and local symbol tables for Tao files.
  * - Cross-module use sees share exports; same-module sees module-visible names. */
@@ -60,7 +59,7 @@ export class TaoScopeComputation extends langium.DefaultScopeComputation {
       if (!AST.isScopeRelevantNode(node)) {
         continue
       }
-      Switch.type(node, {
+      switch_safe.type(node, {
         UseStatement: (n) => this.collectSymbolForScope(n, document, localSymbols),
         AppDeclaration: (n) => this.collectSymbolForScope(n, document, localSymbols),
         AssignmentDeclaration: (n) => this.collectSymbolForScope(n, document, localSymbols),
@@ -90,12 +89,9 @@ export class TaoScopeComputation extends langium.DefaultScopeComputation {
   /** getTaoFile returns the parse result as TaoFile or throws. */
   private getTaoFile(document: langium.LangiumDocument): AST.TaoFile {
     const value = document.parseResult.value
-    if (!AST.isTaoFile(value)) {
-      throwUnexpectedBehaviorError({
-        cause: new Error('LangiumDocument.parseResult.value should always be defined after parsing'),
-        logInfo: { documentUri: document.uri.toString() },
-      })
-    }
+    Assert.is(value, AST.isTaoFile, 'LangiumDocument.parseResult.value should always be a TaoFile', {
+      documentUri: document.uri.toString(),
+    })
     return value
   }
 

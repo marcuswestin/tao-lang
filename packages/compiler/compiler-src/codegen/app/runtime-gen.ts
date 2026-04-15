@@ -10,8 +10,7 @@ import {
 } from '@compiler/codegen/codegen-util'
 import * as LangiumGen from '@parser/generate'
 import { AST } from '@parser/parser'
-import { Stream } from '@shared'
-import { assertNever, Switch } from '@shared/TypeSafety'
+import { Assert, Stream, switch_safe } from '@shared'
 import { compileTODO } from '../codegen-util'
 
 export function compileTaoFile(taoFile: AST.TaoFile): Compiled {
@@ -31,7 +30,7 @@ class RuntimeGen {
   }
 
   Statement(statement: AST.Statement): Compiled {
-    return Switch.type(statement, {
+    return switch_safe.type(statement, {
       Injection: (n) => this.Injection(n),
       Debugger: (n) => this.Debugger(n),
       StateUpdate: (n) => this.StateUpdate(n),
@@ -46,7 +45,7 @@ class RuntimeGen {
   }
 
   Declaration(declaration: AST.Declaration): Compiled {
-    return Switch.type(declaration, {
+    return switch_safe.type(declaration, {
       AssignmentDeclaration: (n) => this.AssignmentDeclaration(n),
       AppDeclaration: (n) => this.AppDeclaration(n),
       ActionDeclaration: (n) => this.ActionDeclaration(n),
@@ -55,7 +54,7 @@ class RuntimeGen {
   }
 
   Expression(expression: AST.Expression): Compiled {
-    return Switch.type(expression, {
+    return switch_safe.type(expression, {
       StringLiteral: (node) => {
         return compileNode(node)`
           TaoRuntime.StringLiteral(${JSON.stringify(node.string)}).read()
@@ -76,7 +75,7 @@ class RuntimeGen {
   //////////////////////////
 
   AssignmentDeclaration(declaration: AST.AssignmentDeclaration): Compiled {
-    return Switch.property(declaration, 'type', {
+    return switch_safe.property(declaration, 'type', {
       alias: () => this.Declaration_alias(declaration),
       state: () => this.Declaration_state(declaration),
     })
@@ -195,7 +194,7 @@ class RuntimeGen {
   }
 
   view_renderNode(renderNode: AST.ViewRender | AST.Injection): Compiled {
-    return Switch.type(renderNode, {
+    return switch_safe.type(renderNode, {
       ViewRender: (stmt) => this.ViewRender(stmt),
       Injection: (stmt) => compileNode(stmt)`{${this.Injection(stmt)}}`,
     })
@@ -211,11 +210,11 @@ class RuntimeGen {
       const argumentList = this.ArgumentList(viewRender.argumentList)
       const scopeProp = this.viewScopeProp(viewDecl)
       if (!isBlockWithStatements(viewRender.block)) {
-        return compileNode(viewDecl)`
+        return compileNode(viewRender)`
           <${viewDecl.name}${scopeProp}${argumentList} />
         `
       } else {
-        return compileNode(viewDecl)`
+        return compileNode(viewRender)`
           <${viewDecl.name}${scopeProp}${argumentList}>
             ${compileNodeList(viewRender.block.statements, stmt => this.viewRenderBlockStatement(stmt))}
           </${viewDecl.name}>
@@ -279,7 +278,7 @@ class RuntimeGen {
     } else if (AST.isReferenceable(node)) {
       return this.useReferenceable(node)
     }
-    assertNever(node)
+    Assert.never(node)
   }
 
   useReference(node: AST.Reference<AST.Referenceable>): Compiled {
@@ -320,7 +319,7 @@ class RuntimeGen {
 
   Injection(injection: AST.Injection): Compiled {
     const trimmedTsCodeBlock = compileNodeProperty(injection, 'tsCodeBlock', trimTsFence)
-    return Switch.property(injection, 'type', {
+    return switch_safe.property(injection, 'type', {
       raw: () => (compileNode(injection)`
         ${trimmedTsCodeBlock}
       `),
@@ -333,7 +332,9 @@ class RuntimeGen {
   }
 
   Debugger(Debugger: AST.Debugger): Compiled {
-    return compileNode(Debugger)` debugger `
+    return compileNode(Debugger)`
+      debugger
+    `
   }
 
   // Helper functions

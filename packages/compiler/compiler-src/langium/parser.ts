@@ -1,9 +1,8 @@
 import { NodeFileSystem } from '@parser/node'
 import { AST, LGM } from '@parser/parser'
-import { FS } from '@shared'
+import { Assert, FS } from '@shared'
 import { createHash } from '@shared/crypto'
 import { throwUserInputRejectionError } from '@shared/TaoErrors'
-import { assertNever } from '@shared/TypeSafety'
 import { isTaoModuleImport, resolveModuleImportDirectory } from '../resolution/ModulePath'
 import { getParseError, ParseError } from '../validation/parse-errors'
 import { createTaoWorkspace, TaoWorkspace } from './tao-services'
@@ -211,6 +210,6 @@ function getValidationOptions(opts: ParseOptions): LGM.ValidationOptions | boole
     case 'linking':
       return { categories, stopAfterLinkingErrors: true }
     default:
-      assertNever(validateUpToStage)
+      Assert.never(validateUpToStage)
   }
 }
