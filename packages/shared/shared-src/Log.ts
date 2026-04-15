@@ -53,6 +53,22 @@ function dedentWrap() {
 function log(...args: unknown[]) {
   transport.log(...args)
 }
+
+/** verbose forwards to transport.log only when `TAO_DEV_VERBOSE=1`. */
+function verbose(...args: unknown[]) {
+  if (process.env['TAO_DEV_VERBOSE'] === '1') {
+    transport.log(...args)
+  }
+}
+
+/** verboseSuccess forwards to transport.success only when `TAO_DEV_VERBOSE=1`. */
+function verboseSuccess(message: string) {
+  if (process.env['TAO_DEV_VERBOSE'] === '1') {
+    transport.success(message)
+  }
+}
+
+const verboseWithSuccess = Object.assign(verbose, { success: verboseSuccess })
 /** debug forwards to transport.debug. */
 function debug(message: string, ...args: unknown[]) {
   transport.debug(message, ...args)
@@ -125,5 +141,6 @@ export const Log = Object.assign(
     instruct,
     reject,
     wrap,
+    verbose: verboseWithSuccess,
   },
 )
