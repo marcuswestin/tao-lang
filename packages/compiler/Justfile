@@ -4,16 +4,14 @@ test *PATTERNS: _deps
     bun test --reporter=dot --test-name-pattern "{{ PATTERNS }}"
 
 watch-test *PATTERNS: _deps
-    bun test . --watch --reporter=dot --test-name-pattern "{{ PATTERNS }}"
+    bun test . --watch --no-clear-screen --reporter=dot --test-name-pattern "{{ PATTERNS }}"
 
 build: _deps
-    just gen
     bunx tsc
 
 
 watch-compiler: _deps
     bun -e "import 'compiler-src/compiler-main'; console.log('Reload...'); " --watch --no-clear-screen
 
-_deps:
-    bun install
+_deps: _bun_deps
     just gen

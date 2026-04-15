@@ -19,8 +19,9 @@ run:
 
 build: build-package-and-install
 
+# Build and package. Skip if `TAO_SKIP_COMPILER_BUILD=1`
 build-package-and-install: _deps
-    just compiler build
+    just _skip_if_env_eq TAO_SKIP_COMPILER_BUILD 1 || just compiler build
     just package
     just install-extension
 
@@ -46,5 +47,4 @@ restart-cursor:
 check:
     tsc -b tsconfig.json
 
-_deps:
-    bun install
+_deps: _bun_deps

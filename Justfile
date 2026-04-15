@@ -55,7 +55,7 @@ theadless *FILTER: gen
 
 # Watch tests, but bail on first failure
 bail-watch *FILTER:
-    bun test --watch --bail --test-name-pattern '{{ FILTER }}'
+    bun test --watch --no-clear-screen --bail --test-name-pattern '{{ FILTER }}'
 
 # Run all tests, including slow ones
 test-all *FILTER:
@@ -95,7 +95,7 @@ check: build _check
 lint: _lint
 
 # List all lint rules
-lint-rules: _line_rules
+lint-rules: _lint_rules
 
 # Build commands
 ################
@@ -108,9 +108,9 @@ build:
 # Alias for build-all
 build-all: _build_all
 
-# Generate parser from grammar
+# Generate parser from grammar (skipped when `TAO_SKIP_GEN=1`)
 gen:
-    cd packages/parser && just build
+    just _skip_if_env_eq TAO_SKIP_GEN 1 || (cd packages/parser && just build)
 
 # Build and install the extension to cursor and vscode
 extension-build-package-and-install:

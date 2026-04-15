@@ -24,5 +24,8 @@ test *FILTER: _deps build
 watch *FILTER:
     bunx jest {{ JEST_WATCH_ARGS }} -t {{ FILTER }}
 
-_deps:
-    bun install
+_deps: _bun_deps
+
+lint:
+    bunx expo lint
+    bunx eslint
