@@ -116,16 +116,18 @@ gen:
 extension-build-package-and-install:
     cd packages/ide-extension && just build-package-and-install
 
-# Drop build outputs and local caches. Does not remove node_modules — use `clean-all` for that.
+# Drop build outputs and local caches. Does not remove node_modules — use `clean-full` for that.
 clean:
     rm -rf .builds
-    rm -rf packages/expo-runtime/.expo
-    find . -type d -name '_gen-*' -prune -exec rm -rf {} +
+    find . -type d -name '_gen*' -prune -exec rm -rf {} +
     find . -type f -name '*.tsbuildinfo' -delete
+    find . -type d -path '*/node_modules/.cache' -prune -exec rm -rf {} +
+    (cd packages/expo-runtime && just clean)
 
 # Like `clean`, plus all `node_modules` directories.
-clean-all: clean
+clean-full: clean
     find . -name node_modules -type d -prune -exec rm -rf {} +
+    (cd packages/expo-runtime && just clean-full)
 
 # Package command runners
 # #######################
