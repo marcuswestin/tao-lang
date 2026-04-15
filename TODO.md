@@ -41,9 +41,9 @@ Also see Roadmap.
 
 ### NEXT - todo:
 
-- [ ] Make "file" visibility into "hide".
+- [x] Make "file" visibility into "hide".
 - [ ] _gen- -> ../_gen patch may have screwed up many different parts of the dev env. Search, confirm, fix.
-- [ ] just dev -> "IDE TextMate grammar merged" twice
+- [x] just dev -> "IDE TextMate grammar merged" twice
 
 #### HIGH - MUST
 
