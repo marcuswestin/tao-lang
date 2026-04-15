@@ -6,6 +6,8 @@
       "name": "tao-expo-runtime",
       "dependencies": {
         "@expo/vector-icons": "^15.0.3",
+        "@jridgewell/sourcemap-codec": "^1.5.5",
+        "@jridgewell/trace-mapping": "^0.3.31",
         "@legendapp/state": "^3.0.0-beta.46",
         "@react-navigation/bottom-tabs": "^7.4.0",
         "@react-navigation/elements": "^2.6.3",
