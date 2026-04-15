@@ -49,11 +49,11 @@ Also see Roadmap.
 
 #### HIGH - MUST
 
-- [ ] Dedup code. DRY, move to shared, etc:
-  - [ ] expo-runtime: function compileTaoForExpoRuntime(opts: CompileOpts): CompileResult
-  - [ ] headless-test-runtime: export async function compileTaoForHeadlessRuntime(opts: CompileOpts)
-  - [ ] .. and their util functions
-  - [ ] and whatever else makes sense
+- [x] Dedup code. DRY, move to shared, etc:
+  - [x] expo-runtime: function compileTaoForExpoRuntime(opts: CompileOpts): CompileResult
+  - [x] headless-test-runtime: export async function compileTaoForHeadlessRuntime(opts: CompileOpts)
+  - [x] .. and their util functions
+  - [x] and whatever else makes sense
 
 - [ ] Improve testing
   - [ ] Add View Keys
@@ -95,12 +95,10 @@ Also see Roadmap.
     ```
 
 - [ ] Add ability to specify which app to dev-run.
-- [ ] Try implementing source maps.
-- [ ] Upgrade react native.
+- [x] Try implementing source maps.
+- [x] Upgrade react native.
 - [ ] Have ALL Node imports through a single shared import. Path, etc
 - [ ] Make sure filtered test running works for just and just-agents.
-- [ ] The two test-runtime*.tsx files are almost identical. Consolidate them.
-  - [ ] Simplify compiler test harness file ..
 - [ ] Require reference names to be uppercase?
 
 #### LOW
