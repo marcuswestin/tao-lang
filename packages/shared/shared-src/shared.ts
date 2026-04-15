@@ -3,5 +3,6 @@ export { FS }
 export { Log } from './Log'
 import * as TaoError from './TaoErrors'
 export { TaoError }
+export { Assert } from './Assert'
 export * from './Streams'
-export { Assert } from './TaoErrors'
+export { switch_safe } from './TypeSafety'

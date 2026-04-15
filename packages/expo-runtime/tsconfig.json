@@ -18,7 +18,6 @@
     "expo-env.d.ts"
   ],
   "exclude": [
-    "app/_gen-runtime-tests/**/*",
-    "app/_gen-tao-compiler/**/*"
+    "_gen/_gen-runtime-tests/**/*"
   ]
 }

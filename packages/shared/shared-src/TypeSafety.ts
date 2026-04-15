@@ -19,7 +19,7 @@ type PropertyValueHandlerMap<ItemT, PropertyName extends keyof ItemT, R> = ItemT
 
 /** switchType_Exhaustive dispatches on `item.$type`; TypeScript enforces a handler per discriminant. At runtime a missing
  * key still throws when invoked—keep handlers in sync with the AST union. */
-export function switchType_Exhaustive<
+function switchType_Exhaustive<
   ItemT extends { $type: PropertyKey },
   R,
 >(item: ItemT, handlers: ItemHandlerMap<ItemT, R>): R {
@@ -29,7 +29,7 @@ export function switchType_Exhaustive<
 
 /** switchProperty_Exhaustive dispatches on `item[property]` with an exhaustive map per possible value (including `undefined`
  * when the property is optional). Runtime values outside the map yield `undefined` handlers—callers should ensure coverage. */
-export function switchProperty_Exhaustive<
+function switchProperty_Exhaustive<
   ItemT extends {},
   PropertyName extends keyof ItemT,
   R,
@@ -40,7 +40,7 @@ export function switchProperty_Exhaustive<
 }
 
 /** switchBindItemType_Exhaustive is like `switchType_Exhaustive` but calls each handler with `bindThis` as `this`. */
-export function switchBindItemType_Exhaustive<
+function switchBindItemType_Exhaustive<
   ItemT extends { $type: PropertyKey },
   R,
 >(item: ItemT, bindThis: ThisType<ItemT>, handlers: ItemHandlerMap<ItemT, R>): R {
@@ -48,8 +48,9 @@ export function switchBindItemType_Exhaustive<
   return handlers[key].bind(bindThis)(item as Extract<ItemT, { $type: typeof key }>)
 }
 
-/** assertNever throws at runtime when reached; use as exhaustive switch default so missing cases are a type error.
- * - Example: `default: assertNever(expr)`. */
-export function assertNever<T extends never>(_arg: T): never {
-  throw new Error(`assertNever called`)
+/** switch_safe groups exhaustive switch helpers: `type` (on `$type`), `property` (on a field), and `bind` (type + bound `this`). */
+export const switch_safe = {
+  type: switchType_Exhaustive,
+  property: switchProperty_Exhaustive,
+  bind: switchBindItemType_Exhaustive,
 }

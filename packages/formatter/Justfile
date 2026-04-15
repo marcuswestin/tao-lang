@@ -5,5 +5,4 @@ test *PATTERNS: _deps
 
 build: _deps
 
-_deps:
-    bun install
+_deps: _bun_deps

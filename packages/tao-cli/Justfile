@@ -20,5 +20,4 @@ watch-lib OUTPUT_DIR:
 test *PATTERNS:
     bun test --reporter=dot {{ PATTERNS }}
 
-_deps:
-    bun install
+_deps: _bun_deps

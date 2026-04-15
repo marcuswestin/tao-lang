@@ -19,8 +19,8 @@ _unstage_changes:
 _prep_commit:
     echo "\n> Clean build artifacts..." && just clean
     echo "> Build everything..." && just build
-    echo "> Run code tests..." && just test-all
-    echo "> Run pre-commit checks..." && just check
+    echo "> Run code tests..." && TAO_SKIP_GEN=1 just test-all
+    echo "> Run pre-commit checks..." && just _check
     echo "> Make auto-fixable changes..." && just fix
     echo "\n> Pre-commit checks complete. Ready to commit.\n"
 
@@ -31,16 +31,20 @@ _post_commit_unstash:
 _ensure_repo_clean:
     if output=$(git status --porcelain) && [ -n "$output" ]; then exit 1; fi
 
+# One shell so `export TAO_DEPS_BATCHED=1` applies to every nested `just build` (skips per-package `bun install`).
 _build_all:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    export TAO_DEPS_BATCHED=1
     just _install_mise_deps
-    cd packages/shared && just build
-    cd packages/parser && just build
-    cd packages/formatter && just build
-    cd packages/compiler && just build
-    cd packages/tao-cli && just build
-    cd packages/headless-test-runtime && just build
-    cd packages/expo-runtime && just build
-    cd packages/ide-extension && just build-package-and-install
+    (cd packages/shared && just build)
+    (cd packages/parser && just build)
+    (cd packages/formatter && just build)
+    (cd packages/compiler && just build)
+    (cd packages/tao-cli && just build)
+    (cd packages/headless-test-runtime && just build)
+    (cd packages/expo-runtime && just build)
+    (cd packages/ide-extension && TAO_SKIP_COMPILER_BUILD=1 just build-package-and-install)
 
 _x_fix_file_associations:
     brew install duti --quiet

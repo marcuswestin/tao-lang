@@ -1,13 +1,8 @@
 import { FS } from '@shared'
 import { compiledScenarioTaoAppBootstrapRelativePath } from '@shared/TaoPaths'
-import {
-  attachPressVisibleText,
-  type CompiledTaoScenario,
-  type CompiledTaoScenarioAdapter,
-  loadCompiledTaoAppModuleFromPath,
-} from '@shared/testing'
+import { createCompiledTaoScenarioAdapter, renderCompiledTaoApp } from '@shared/testing'
 import * as RNTesting from '@testing-library/react-native'
-import type { ComponentType } from 'react'
+import { type ComponentType, createElement } from 'react'
 import {
   compileTaoForHeadlessRuntime,
   getHeadlessTestRuntimeDir,
@@ -31,32 +26,26 @@ type RenderCompiledAppResult = RNTesting.RenderResult & {
   pressVisibleText(text: string): void
 }
 
+const runtimeTestingDeps = {
+  cleanup: () => RNTesting.cleanup(),
+  render: (defaultExport: unknown) => RNTesting.render(createElement(defaultExport as ComponentType)),
+  fireEvent: RNTesting.fireEvent,
+}
+
 /** createHeadlessScenarioAdapter builds a `CompiledTaoScenarioAdapter` that compiles `${scenarioDir}/app.tao` into the stable
  * per-scenario path under `.builds/headless-test-runtime/_gen-runtime-tests/` (repo-relative, outside this package), renders via Testing Library, and runs RTL `cleanup` on adapter cleanup. */
 export function createHeadlessScenarioAdapter() {
-  const adapter: CompiledTaoScenarioAdapter = {
-    async compileScenario(
-      { scenarioDir, scenarioName }: { scenarioDir: string; scenarioName: string; scenario: CompiledTaoScenario },
-    ) {
-      const outputFileName = FS.relativePath(
+  return createCompiledTaoScenarioAdapter({
+    stdLibRoot,
+    computeOutputFileName: scenarioName =>
+      FS.relativePath(
         getHeadlessTestRuntimeDir(),
         FS.resolvePath(headlessScenarioCompileOutputRoot, compiledScenarioTaoAppBootstrapRelativePath(scenarioName)),
-      )
-      return compileTaoForHeadlessRuntime({
-        path: FS.resolvePath(scenarioDir, 'app.tao'),
-        stdLibRoot,
-        outputFileName,
-      })
-    },
-    renderCompiledApp({ outputPath }: { outputPath: string }) {
-      return renderCompiledHeadlessTaoApp(outputPath)
-    },
-    cleanup() {
-      RNTesting.cleanup()
-    },
-  }
-
-  return adapter
+      ),
+    compile: compileTaoForHeadlessRuntime,
+    render: outputPath => renderCompiledHeadlessTaoApp(outputPath),
+    cleanup: () => RNTesting.cleanup(),
+  })
 }
 
 /** renderCompiledHeadlessTaoApp `require`s the module at `outputPath` (default: shared stub `tao-app/app-bootstrap.tsx`), evicts that path
@@ -66,14 +55,5 @@ export function createHeadlessScenarioAdapter() {
 export function renderCompiledHeadlessTaoApp(
   outputPath = headlessDefaultCompiledAppBootstrapPath,
 ): RenderCompiledAppResult {
-  RNTesting.cleanup()
-  const compiledModule = loadCompiledTaoAppModuleFromPath(outputPath) as CompiledAppModule
-  const CompiledHeadlessTaoApp = compiledModule.default
-
-  const screen = RNTesting.render(<CompiledHeadlessTaoApp />)
-  return {
-    ...screen,
-    compiledModule,
-    ...attachPressVisibleText(screen, RNTesting.fireEvent),
-  }
+  return renderCompiledTaoApp(outputPath, runtimeTestingDeps) as RenderCompiledAppResult
 }

@@ -44,6 +44,37 @@ export type CompiledTaoScenarioAdapter = {
   cleanup(): Promise<void> | void
 }
 
+/** TaoScenarioAdapterCompileOpts passes `app.tao` path and output layout into a runtime compile helper. */
+export type TaoScenarioAdapterCompileOpts = {
+  path: string
+  stdLibRoot?: string
+  outputFileName: string
+}
+
+/** createCompiledTaoScenarioAdapter builds a {@link CompiledTaoScenarioAdapter} from per-runtime compile, render, and cleanup hooks. */
+export function createCompiledTaoScenarioAdapter(config: {
+  stdLibRoot: string
+  computeOutputFileName(scenarioName: string): string
+  compile(
+    opts: TaoScenarioAdapterCompileOpts,
+  ): Promise<CompiledTaoScenarioCompileResult> | CompiledTaoScenarioCompileResult
+  render(outputPath: string): Promise<CompiledTaoScenarioRenderResult> | CompiledTaoScenarioRenderResult
+  cleanup(): void | Promise<void>
+}): CompiledTaoScenarioAdapter {
+  return {
+    compileScenario({ scenarioDir, scenarioName }) {
+      const outputFileName = config.computeOutputFileName(scenarioName)
+      return config.compile({
+        path: FS.resolvePath(scenarioDir, 'app.tao'),
+        stdLibRoot: config.stdLibRoot,
+        outputFileName,
+      })
+    },
+    renderCompiledApp: ({ outputPath }) => config.render(outputPath),
+    cleanup: () => config.cleanup(),
+  }
+}
+
 const repoRootDir = FS.resolvePath(__dirname, '../../../..')
 const compiledTaoScenariosRootDir = FS.resolvePath(repoRootDir, 'Apps', 'Test Apps')
 

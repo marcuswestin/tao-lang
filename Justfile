@@ -55,7 +55,7 @@ theadless *FILTER: gen
 
 # Watch tests, but bail on first failure
 bail-watch *FILTER:
-    bun test --watch --bail --test-name-pattern '{{ FILTER }}'
+    bun test --watch --no-clear-screen --bail --test-name-pattern '{{ FILTER }}'
 
 # Run all tests, including slow ones
 test-all *FILTER:
@@ -95,7 +95,7 @@ check: build _check
 lint: _lint
 
 # List all lint rules
-lint-rules: _line_rules
+lint-rules: _lint_rules
 
 # Build commands
 ################
@@ -108,24 +108,26 @@ build:
 # Alias for build-all
 build-all: _build_all
 
-# Generate parser from grammar
+# Generate parser from grammar (skipped when `TAO_SKIP_GEN=1`)
 gen:
-    cd packages/parser && just build
+    just _skip_if_env_eq TAO_SKIP_GEN 1 || (cd packages/parser && just build)
 
 # Build and install the extension to cursor and vscode
 extension-build-package-and-install:
     cd packages/ide-extension && just build-package-and-install
 
-# Drop build outputs and local caches. Does not remove node_modules — use `clean-all` for that.
+# Drop build outputs and local caches. Does not remove node_modules — use `clean-full` for that.
 clean:
     rm -rf .builds
-    rm -rf packages/expo-runtime/.expo
-    find . -type d -name '_gen-*' -prune -exec rm -rf {} +
+    find . -type d -name '_gen*' -prune -exec rm -rf {} +
     find . -type f -name '*.tsbuildinfo' -delete
+    find . -type d -path '*/node_modules/.cache' -prune -exec rm -rf {} +
+    (cd packages/expo-runtime && just clean)
 
 # Like `clean`, plus all `node_modules` directories.
-clean-all: clean
+clean-full: clean
     find . -name node_modules -type d -prune -exec rm -rf {} +
+    (cd packages/expo-runtime && just clean-full)
 
 # Package command runners
 # #######################

@@ -1,3 +1,4 @@
 export * from './compiler-src/compiler-main'
 export * from './compiler-src/langium/langium-lsp'
 export * from './compiler-src/langium/tao-services'
+export * from './compiler-src/trace-to-source-map'

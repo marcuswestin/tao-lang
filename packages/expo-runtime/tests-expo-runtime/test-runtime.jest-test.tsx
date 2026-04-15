@@ -21,7 +21,7 @@ describe('runtime:', () => {
     const { needle, runtimeDir, taoPath } = makeNeedleApp()
     const repoRoot = FS.resolvePath(runtimeDir, '../..')
     const taoSdkModuleUrl = FS.pathToFileURL(FS.resolvePath(runtimeDir, '_gen-tao-lib/tao-cli-main.js')).href
-    const outputPath = FS.resolvePath(runtimeDir, 'app/_gen-tao-compiler/tao-app/app-bootstrap.tsx')
+    const outputPath = FS.resolvePath(runtimeDir, '_gen/tao-app/app-bootstrap.tsx')
 
     const command = runTaoSdkCompileBunSync({
       repoRoot,
@@ -29,7 +29,7 @@ describe('runtime:', () => {
       compileOpts: { path: taoPath, runtimeDir },
       optsEnvVar: TAO_SDK_COMPILE_OPTS_ENV_EXPO,
     })
-    throwIfTaoSdkCompileFailed(command, { outputPath, runtimeLabel: 'the Expo runtime', requireOutputFile: true })
+    throwIfTaoSdkCompileFailed(command, { outputPath, runtimeLabel: 'the Expo runtime' })
     expect(emitTreeContainsNeedle(FS.dirname(outputPath), needle)).toBe(true)
 
     await assertBootstrapRendersNeedle(needle, outputPath)
@@ -44,7 +44,7 @@ describe('runtime:', () => {
       cwd: FS.joinPath(__dirname, '../../..', 'packages/expo-runtime'),
     })
     expect(exitCode).toBe(0)
-    const bootstrapPath = FS.resolvePath(runtimeDir, `app/_gen-tao-compiler/tao-app/app-bootstrap.tsx`)
+    const bootstrapPath = FS.resolvePath(runtimeDir, `_gen/tao-app/app-bootstrap.tsx`)
 
     await assertBootstrapRendersNeedle(needle, bootstrapPath)
     FS.rmDirectory(FS.dirname(taoPath))

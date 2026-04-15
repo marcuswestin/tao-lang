@@ -1,8 +1,8 @@
 import "../shared/just/all-imports.just"
 
 build: _deps
-    bunx langium generate --mode=development
-    just q-dev gen-syntax-tmLanguage-files
+    #!{{ ZSH_INIT }}
+    just _skip_if_env_eq TAO_DEV_VERBOSE 1 || bunx langium generate --mode=development >/dev/null
+    just _skip_if_env_ne TAO_DEV_VERBOSE 1 || bunx langium generate --mode=development
 
-_deps:
-    bun install
+_deps: _bun_deps

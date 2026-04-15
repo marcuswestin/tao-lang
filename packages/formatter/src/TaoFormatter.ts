@@ -2,7 +2,7 @@ import { AST } from '@parser'
 import { AbstractFormatter, Formatting, FormattingRegion } from '@parser/lsp'
 import { NodePropName } from '@parser/parserASTExport'
 import { DocumentFormattingParams, TextEdit } from '@parser/vscode-languageserver'
-import { switchBindItemType_Exhaustive } from '@shared/TypeSafety'
+import { switch_safe } from '@shared'
 import extensivelyFormatInjectionBlocks from './injectionFormatter'
 
 const FORMAT_INJECTION_BLOCKS = true
@@ -26,7 +26,7 @@ export default class TaoFormatter extends AbstractFormatter {
 
   /** format dispatches to per-node formatters. */
   protected format(node: AST.TaoLangAstType[keyof AST.TaoLangAstType]): void {
-    return switchBindItemType_Exhaustive(node, this, {
+    return switch_safe.bind(node, this, {
       TaoFile: (n) => this.formatTaoFile(n),
       UseStatement: (n) => this.formatUseStatement(n),
       ModuleDeclaration: (n) => this.formatModuleDeclaration(n),

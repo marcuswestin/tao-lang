@@ -9,7 +9,7 @@ import { LGM as Langium } from '@parser'
 import { TaoFile } from '@parser/_gen-tao-parser/ast'
 import { NodeFileSystem } from '@parser/node'
 import { AST } from '@parser/parser'
-import { Assert } from '@shared/TaoErrors'
+import { Assert } from '@shared'
 import { wrap, Wrapped } from './AST-Wrapper'
 
 export { describe, expect, test } from 'bun:test'

@@ -41,26 +41,23 @@ Also see Roadmap.
 
 ### NEXT - todo:
 
-- Dev Env:
-  - [ ] Worktrees
-  - [ ] Claude code direct
-  - [ ] Try removing the just-agents restriction and see what development is like without it.
-  - [ ] Voice mode
-  - [ ] `just dev` warnings/errors/updates.
-  - [ ] export const SwitchSafe = { type: switchType_Exhaustive, ... }
+- [x] Make "file" visibility into "hide".
+- [x] _gen- -> ../_gen patch may have screwed up many different parts of the dev env. Search, confirm, fix.
+  - Fixed: dprint `excludes` only had `**/_gen-*`, so plain `_gen/` (Expo `tao-app` output) was still formatted; added `**/_gen/**`. Swept repo for stale Expo paths — none found; eslint/gitignore/clean already covered `_gen/`.
+  - Optional later: exclude `_gen/tao-app/**` from `packages/expo-runtime/tsconfig.json` if TS server noise on generated files becomes annoying (watch import resolution vs `app/index.tsx`).
+- [x] just dev -> "IDE TextMate grammar merged" twice
 
 #### HIGH - MUST
 
-- [ ] Dedup code. Move to @shared:
-  - function compileTaoForExpoRuntime(opts: CompileOpts): CompileResult
-  - export async function compileTaoForHeadlessRuntime(opts: CompileOpts)
-  - .. and they're util functions
+- [x] Dedup code. DRY, move to shared, etc:
+  - [x] expo-runtime: function compileTaoForExpoRuntime(opts: CompileOpts): CompileResult
+  - [x] headless-test-runtime: export async function compileTaoForHeadlessRuntime(opts: CompileOpts)
+  - [x] .. and their util functions
+  - [x] and whatever else makes sense
 
 - [ ] Improve testing
   - [ ] Add View Keys
   - [ ] Make test app less ugly. Black background, white text.
-- [x] Implement prototype-chaining based scope (See kitchen sink test scenario)
-  - [x] Get kitchen sink test passing: invocations need to have scoped dependencies passed in somehow ..
 - [ ] Objects/Items
 - [ ] Event & Handler Syntax
 - [ ] String operation: ADJACENCY CONCATENATION
@@ -73,13 +70,35 @@ Also see Roadmap.
 
 #### MEDIUM
 
+- Dev Env:
+  - [ ] Claude code direct
+  - [ ] Try removing the just-agents restriction and see what development is like without it.
+  - [ ] Voice mode
+  - [ ] Cleanup Justfile, which swelled up a bit with many multi-line recipes. Consider moving to q-dev for more stuff?
+  - [ ] Require shared declarations to be explained in some way (e.g text describing its functionality, intended use, and expected behavior)
+
+- [ ] Combine, or restructure, validators. (UseStatement and TaoLangValidator)
+- [ ] Map view render statements in the source to the DOM in Chrome DevTools. Maybe similar to React Native DevTools. Ideal would be to right-click on an element in the browser view, and then see the corresponding view render statement in the source code. (We may want to implement "view keys" to make this work - see below. A way for the developer to uniquely name views)
+- [ ] Module metadata: Add a way to add metadata to a module.
+- [ ] Duplicate declarations in a module should give an error.
+- [ ] Add "let" definitions?
+- [ ] Examine whitespace newline sensitivity necessary or not. `view TestView { Col \n Row }` should be valid, without `view TestView { Col { } Row }`
+  - OR, do we require rendering block for now? `view TestView { Col { } Row { } }`
+  - OR, do we require a comma? `view TestView { Col, Row }`, and
+    ```tao
+    view TestView {
+      Col,
+      Row {
+        Text "Hello, World!"
+      },
+    }
+    ```
+
 - [ ] Add ability to specify which app to dev-run.
-- [ ] Try implementing source maps.
-- [ ] Upgrade react native.
+- [x] Try implementing source maps.
+- [x] Upgrade react native.
 - [ ] Have ALL Node imports through a single shared import. Path, etc
 - [ ] Make sure filtered test running works for just and just-agents.
-- [ ] The two test-runtime*.tsx files are almost identical. Consolidate them.
-  - [ ] Simplify compiler test harness file ..
 - [ ] Require reference names to be uppercase?
 
 #### LOW
@@ -208,3 +227,25 @@ Also see Roadmap.
 - [x] Get kitchen sink build working and rendering
 - [x] Figure out how to test the ide extension in test-ide-extension.test.ts
 - [x] Improve Agents docs, rules, and commands.
+- [x] Write TODO tests for parsing `file`, `share` declarations.
+- [x] Add grammar for `file`, `share` declarations.
+- [x] Make tests non-todo, and ensure they pass.
+- Imports
+- [x] Add grammar for `use` imports with relative paths only:
+- [x] Add test harness functions for parsing multiple files.
+- [x] Write TODO tests for parsing `use` imports with multiple files.
+- [x] Make tests non-todo, and ensure they pass.
+- Resolution
+- [x] Write TODO tests for resolving `use` imports to the corresponding module files.
+- [x] Add TaoScopeComputation to export `share` declarations.
+- [x] Add TaoScopeProvider for resolving `use` imports.
+- [x] Make tests non-todo, and ensure they pass (11 pass, 3 todo for UseStatement validation).
+- [x] Add view arguments
+- [x] Fix shared module tsconfigs so that all can import each other
+- [x] BIIIIG lift: make grammar more permissive, and do more checking in validation. E.g: `view TestView { share let name = "Ro" }` should give an error message saying "share" can only be done at the top level, rather than a less clear parsing error message.
+- [x] "This activation event can be removed as VS Code generates these automatically from your package.json contribution declarations."
+  - This is for "activationEvents": ["onLanguage:tao"]
+- [x] `just dev` warnings/errors/updates.
+- [x] export const `Switch` (`type` / `property` / `bind`) wrapping the exhaustive switch helpers in `TypeSafety.ts`
+- [x] Implement prototype-chaining based scope (See kitchen sink test scenario)
+  - [x] Get kitchen sink test passing: invocations need to have scoped dependencies passed in somehow ..

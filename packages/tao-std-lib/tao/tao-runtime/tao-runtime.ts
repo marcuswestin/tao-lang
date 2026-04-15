@@ -55,11 +55,15 @@ class PrimitiveExpression<T> extends Expression<T> {
   }
 }
 
+function useViewState<T>(initialValue: T) {
+  const state$ = React.useMemo(() => observable(initialValue), [initialValue])
+  return useStore(state$)
+}
+
 export const TaoRuntime = new class TaoRuntime {
   // TODO: Confirm compiled Tao only passes stable `initialValue` (e.g. primitives); changing identity each render would recreate the observable.
   useViewState<T>(initialValue: T) {
-    const state$ = React.useMemo(() => observable(initialValue), [initialValue])
-    return useStore(state$)
+    return useViewState(initialValue)
   }
 
   TopLevelState<T>(initialValue: T) {

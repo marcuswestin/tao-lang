@@ -109,9 +109,11 @@ import * as RN from 'react-native'
 import * as React from 'react'
 import { AppUIView } from '${importPathFromBootstrapToEntry}'
 
+const _compiledTaoAppRootViewStyle = { flex: 1, backgroundColor: 'red' }
+
 export default function CompiledTaoApp() {
   return (
-    <RN.View style={{ flex: 1, backgroundColor: 'red' }}>
+    <RN.View style={_compiledTaoAppRootViewStyle}>
       <AppUIView />
     </RN.View>
   )

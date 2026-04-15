@@ -1,6 +1,6 @@
 import type { LGM as langium } from '@parser'
 import { AST } from '@parser/parser'
-import { assertNever } from '@shared/TypeSafety'
+import { Assert } from '@shared'
 import { makeValidater, type Reporter } from './ValidationReporter'
 
 /** validationMessages are the exact diagnostics for TaoFile and Block placement rules. */
@@ -76,7 +76,7 @@ function getBlockStatementContext(block: AST.Block): 'view' | 'action' | null {
   } else if (AST.isActionDeclaration(parent)) {
     return 'action'
   }
-  assertNever(parent)
+  Assert.never(parent)
 }
 
 /** validateDuplicateIdentifier reports when another binding in scope shares the same name. */

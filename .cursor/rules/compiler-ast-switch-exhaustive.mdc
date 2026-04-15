@@ -6,18 +6,18 @@ alwaysApply: false
 
 # AST dispatch: exhaustive switch vs chained `ast.is`
 
-When **dispatching on a node that can be one of several AST types**, favor **`switchType_Exhaustive` / `switch_Exhaustive` / `switchBindItemType_Exhaustive` ** (from `@shared/TypeSafety.ts`) together with **`ast.is<CollectionType>(node)`** where **`CollectionType`** is a Langium grammar type that is a **union** of exactly those alternatives.
+When **dispatching on a node that can be one of several AST types**, favor **`switch_safe.type` / `switch_safe.property` / `switch_safe.bind`** (from `@shared`, via the **`switch_safe`** object) together with **`ast.is<CollectionType>(node)`** where **`CollectionType`** is a Langium grammar type that is a **union** of exactly those alternatives.
 
 That pattern gives **exhaustive handlers** (compile-time) and a **single** `ast.is<...>(node)` guard instead of long `if (ast.isA) ... else if (ast.isB) ...` chains.
 
 ## Prefer (exhaustive switch + union guard)
 
 ```typescript
-import { switchType_Exhaustive } from '@shared/TypeSafety'
+import { switch_safe } from '@shared'
 import { AST } from '@parser'
 
 if (ast.isTopLevelStatement(node)) {
-  switchType_Exhaustive(node, {
+  switch_safe.type(node, {
     UseStatement: (n) => { /* n is UseStatement */ },
     TopLevelDeclaration: (n) => { /* n is TopLevelDeclaration */ },
     Injection: (n) => { /* n is Injection */ },

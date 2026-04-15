@@ -1,4 +1,4 @@
-file app SimpleTextRenderApp {
+hide app SimpleTextRenderApp {
   ui RootView
 }
 

@@ -1,6 +1,6 @@
 ---
 name: implement-todo-batch
-description: Reads a markdown TODO list, picks the next coherent batch of items (balanced size, chores-first, smallest tie-break), respects @file:line anchors by including all nested child bullets under that item, asks before architecture-changing work, implements that batch in the codebase, updates the TODO file, then stops. Use when the user points at TODO.md (or similar), cites a specific TODO line, wants the next chunk of todos done without endless continuation, or says implement / knock out / batch todos from a markdown list.
+description: Reads a markdown TODO list, picks the next coherent batch of items (balanced size, chores-first, smallest tie-break), respects @file:line anchors by including all nested child bullets under that item, asks before architecture-changing work, implements that batch in the codebase, updates the TODO file, then stops. Assumes other agents may edit the same tree concurrently—avoid clobbering their work. Use when the user points at TODO.md (or similar), cites a specific TODO line, wants the next chunk of todos done without endless continuation, or says implement / knock out / batch todos from a markdown list.
 ---
 
 # Implement TODO batch from markdown
@@ -10,6 +10,14 @@ Execute **one batch** of work from a markdown TODO file: choose items, implement
 If there are uncommitted changes from a previous batch, commit those first.
 
 ALWAYS alert the user with a notification signal when you need their input to proceed.
+
+## Concurrent agents (shared working tree)
+
+**Other agents or humans may be editing the same repo at the same time.** The tree can change between your reads and writes.
+
+- **Re-read before overwrite** — If a file may have been touched since you last read it (especially mid-batch or after a slow step), read it again; prefer **small, surgical edits** over replacing whole files from memory.
+- **Do not undo foreign work** — Avoid `git checkout`/restore/revert of paths you are not deliberately changing for this batch; avoid broad “clean slate” refactors that wipe edits you did not make. If you see unexpected diffs, conflicts, or content that does not match your plan, **stop and reconcile** (merge by hand, narrow scope, or ask the user)—do not force the tree back to your earlier mental snapshot.
+- **TODO.md** — When updating the list, **merge** with the current file (preserve others’ checkmarks and bullets) instead of rewriting from stale context.
 
 ## Inputs
 
@@ -30,7 +38,7 @@ Pick items that belong together in **one** session batch. If the user anchored a
 
 1. **Simple-first** — Prefer "laundry list" chores first: cleanups, renames, mechanical refactors, docs-only, config tweaks, low behavioral risk. Do these before larger features when both are candidates.
 2. **Smallest-first** — If several batches are valid, prefer the **smallest** candidate batch first (fewer items or less scope).
-3. **Small enough** — Don't proceed through a non-trivial mulit-setp TODO list of items without checking in with the user. E.g make multiple small cleanups rather just just one small one.
+3. **Small enough** — Don't proceed through a non-trivial multi-step TODO list of items without checking in with the user. E.g. make multiple small cleanups rather than just one small one.
 4. **Big enough** — Prefer a batch where the user can usually step away for **more than a minute** (meaningful work: several files, tests, or non-trivial logic).
 5. **Atomic-ish** — Prefer work where existing tests are **likely to stay green** while building. **Exception:** TDD items — add or adjust failing tests **first**, then implement until green.
 6. **TDD ordering** — If an item is explicitly test-first / TDD, order within the batch: failing test → implementation → green.
@@ -47,7 +55,7 @@ If the user is not available and the gate would block execution, default to **de
 
 ## Step 4: Implement (do not stop at planning)
 
-1. Do the work: edit code, configs, tests as needed. Follow project rules (`AGENTS.md`, `./just-agents`, etc.).
+1. Do the work: edit code, configs, tests as needed. Follow project rules (`AGENTS.md`, `./just-agents`, etc.). While implementing, stay aware of **Concurrent agents (shared working tree)** above.
 2. Run relevant checks/tests for touched areas before declaring done.
 3. Update the markdown TODO file: mark completed items done, adjust wording if scope shifted, add follow-ups as new bullets if discovered.
 
@@ -73,3 +81,4 @@ Keep the final message short:
 - Skipping the architecture ask when the batch rewrites boundaries, contracts, or data models.
 - Ignoring TDD order when the item is explicitly test-first.
 - Treating an anchored parent line as a single checkbox when nested bullets exist under it.
+- Blindly overwriting or reverting files that likely changed in another session without re-reading and reconciling.

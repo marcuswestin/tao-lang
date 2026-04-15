@@ -4,16 +4,15 @@ test *PATTERNS: _deps
     bun test --reporter=dot --test-name-pattern "{{ PATTERNS }}"
 
 watch-test *PATTERNS: _deps
-    bun test . --watch --reporter=dot --test-name-pattern "{{ PATTERNS }}"
+    bun test . --watch --no-clear-screen --reporter=dot --test-name-pattern "{{ PATTERNS }}"
 
 build: _deps
-    just gen
-    bunx tsc
+    # `-b --force`: composite incremental can leave orphan `.tsbuildinfo` without `.d.ts` (TS6305 in ide-extension); force a consistent emit.
+    bunx tsc -b tsconfig.json --force
 
 
 watch-compiler: _deps
     bun -e "import 'compiler-src/compiler-main'; console.log('Reload...'); " --watch --no-clear-screen
 
-_deps:
-    bun install
+_deps: _bun_deps
     just gen
