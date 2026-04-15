@@ -46,8 +46,9 @@ Also see Roadmap.
   - [ ] Claude code direct
   - [ ] Try removing the just-agents restriction and see what development is like without it.
   - [ ] Voice mode
-  - [ ] `just dev` warnings/errors/updates.
-  - [ ] export const SwitchSafe = { type: switchType_Exhaustive, ... }
+  - [x] `just dev` warnings/errors/updates.
+  - [x] export const `Switch` (`type` / `property` / `bind`) wrapping the exhaustive switch helpers in `TypeSafety.ts`
+  - [ ] Cleanup Justfile, which swelled up a bit with many multi-line recipes. Consider moving to q-dev for more stuff?
 
 #### HIGH - MUST
 
