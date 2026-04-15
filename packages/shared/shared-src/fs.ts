@@ -2,7 +2,7 @@ import * as nodeFs from 'node:fs'
 import * as nodeOs from 'node:os'
 import * as nodePath from 'node:path'
 import * as nodeUrl from 'node:url'
-import { Assert } from './TaoErrors'
+import { Assert } from './Assert'
 
 /** sep returns the OS path separator. */
 export const sep = nodePath.sep

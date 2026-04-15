@@ -10,13 +10,6 @@ type PropertyHandlerMapKey<ItemT, PropertyName extends keyof ItemT, R> = keyof P
   R
 >
 
-/** Safe exhaustive switch helpers */
-export const Switch = {
-  type: switchType_Exhaustive,
-  property: switchProperty_Exhaustive,
-  bind: switchBindItemType_Exhaustive,
-}
-
 // Maps each possible value of item[property] to a handler; enforces exhaustive handling.
 // Uses Exclude so undefined is not used as a mapped key (invalid in TS); optional undefined key added when property is optional.
 type PropertyValueHandlerMap<ItemT, PropertyName extends keyof ItemT, R> = ItemT[PropertyName] extends infer V ?
@@ -55,8 +48,9 @@ function switchBindItemType_Exhaustive<
   return handlers[key].bind(bindThis)(item as Extract<ItemT, { $type: typeof key }>)
 }
 
-/** assertNever throws at runtime when reached; use as exhaustive switch default so missing cases are a type error.
- * - Example: `default: assertNever(expr)`. */
-export function assertNever<T extends never>(_arg: T): never {
-  throw new Error(`assertNever called`)
+/** switch_safe groups exhaustive switch helpers: `type` (on `$type`), `property` (on a field), and `bind` (type + bound `this`). */
+export const switch_safe = {
+  type: switchType_Exhaustive,
+  property: switchProperty_Exhaustive,
+  bind: switchBindItemType_Exhaustive,
 }

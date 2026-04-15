@@ -57,8 +57,9 @@ _watch_grammar:
 _watch_test_apps:
     watchexec --restart --watch='Apps/Test Apps/' -- 'just gen'
 
-DEV_APP_PATH := "./Apps/Test Apps/Studio/app.tao"
+DEV_APP_PATH := "./Apps/DevApp/DevApp.tao"
 
+# DEV_APP_PATH := "./Apps/Test Apps/Studio/app.tao"
 # DEV_APP_PATH := "./Apps/Test Apps/Kitchen Sink/app.tao"
 
 _watch_app_build:
@@ -74,10 +75,11 @@ _watch_runtime_reload:
     set -euo pipefail
     cd packages/expo-runtime
     echo "[runtime_reload] Expo web: http://localhost:8081/"
-    EXPO_NO_CLEAR=true BROWSER="none" npx expo start --web --port 8081 # omit `start -c` for cache between restarts
+    EXPO_NO_CLEAR=true BROWSER="none" npx expo start -c --web --port 8081 # omit `start -c` for cache between restarts
 
 _watch_typecheck_extension:
-    cd packages/ide-extension && tsc -b tsconfig.json --watch --preserveWatchOutput
+    # One-shot build establishes composite outputs under `.builds/ts-packages/` before watch (avoids TS6305 after `just clean`).
+    cd packages/ide-extension && tsc -b tsconfig.json && tsc -b tsconfig.json --watch --preserveWatchOutput
 
 _watch_esbuild_extension:
     cd packages/ide-extension && node esbuild.config.ts --watch

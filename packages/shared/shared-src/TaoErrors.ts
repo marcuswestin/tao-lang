@@ -56,33 +56,7 @@ export function throwNotYetImplementedError(
   throw new NotYetImplementedError(ability, info, because_X_Y_and_Z)
 }
 
-/** Assert throws `UnexpectedBehaviorError` when `condition` is falsy, embedding `expectedConditionDescription`
- * and merging optional `logInfo` objects into the error’s diagnostic payload. */
-export function Assert<T>(
-  condition: T,
-  expectedConditionDescription: string,
-  ...logInfo: Record<string, unknown>[]
-): asserts condition is NonNullable<T> {
-  if (!condition) {
-    throw new UnexpectedBehaviorError({
-      humanMessage: `Expected: ${expectedConditionDescription}`,
-      cause: new Error('AssertError'),
-      logInfo: { condition: condition, info: logInfo },
-    })
-  }
-}
-
-/** Halt throws `UnexpectedBehaviorError` tagged as a deliberate halt (`HaltError` cause, optional message). */
-export function Halt(humanMessage?: string): never {
-  throw new UnexpectedBehaviorError({
-    humanMessage: humanMessage ?? 'Halt called',
-    cause: new Error('HaltError'),
-    logInfo: { humanMessage },
-  })
-}
-
-/** isTaoError returns true when error is a TaoError instance. */
-export function isTaoError(error: unknown): error is TaoError {
+function isTaoError(error: unknown): error is TaoError {
   return error instanceof BaseTaoError
 }
 
@@ -97,16 +71,6 @@ export function getTaoError(error: unknown, logInfo?: Record<string, unknown>): 
     cause: error,
     logInfo,
   })
-}
-
-/** isUserInputRejectionError returns true when error is UserInputRejectionError. */
-export function isUserInputRejectionError(error: unknown): error is UserInputRejectionError {
-  return error instanceof UserInputRejectionError
-}
-
-/** isUnexpectedBehaviorError returns true when error is UnexpectedBehaviorError. */
-export function isUnexpectedBehaviorError(error: unknown): error is UnexpectedBehaviorError {
-  return error instanceof UnexpectedBehaviorError
 }
 
 // Class Implementations
