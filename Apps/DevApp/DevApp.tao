@@ -1,4 +1,4 @@
-use Text, Button from @tao/ui
+use Text, Button, Box, Row from @tao/ui
 
 app TaoStudio {
     ui RootView
@@ -10,6 +10,22 @@ view RootView {
     Text value "DEV APP"
     Text value GlobalCount
     Button title "Click me", Action StartDebugger { }
+    Box {
+
+    // @Header Row {
+    //     Text value "Hello"
+    //     Text value "World"
+    // }
+
+    // @Body Row {
+    //     Text value "Hello"
+    //     Text value "World"
+    // }
+    // @Footer Row {
+    //     Text value "Hello"
+    //     Text value "World"
+    // }
+    }
 }
 
 action StartDebugger {
