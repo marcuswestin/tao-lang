@@ -2,7 +2,7 @@ import "./_shared-vars.just"
 
 _dev:
     #!{{ ZSH_INIT }}
-    open -a "Google Chrome" http://localhost:8081/ # expo url
+    open -a "Google Chrome" http://localhost:8081/
     while true; do
         just _prefix_strip_parallel "_watch_" \
             {{ _DEV_WATCH_RECIPES }} \
@@ -16,13 +16,13 @@ _DEV_WATCH_RECIPES := "_watch_grammar _watch_app_build _watch_runtime_reload \
 _watch_all_tests *PATTERNS:
     #!{{ ZSH_INIT }}
     while true; do
-        just concurrently-exec-named \
-            "shared" "cd packages/shared && bun test --watch --silent --reporter=dot {{ PATTERNS }}" \
-            "compiler" "cd packages/compiler && bun test --watch --silent --reporter=dot {{ PATTERNS }}" \
-            "formatter" "cd packages/formatter && bun test --watch --silent --reporter=dot {{ PATTERNS }}" \
-            "tao-cli" "cd packages/tao-cli && bun test --watch --silent --reporter=dot {{ PATTERNS }}" \
-            "headless runtime" "cd packages/headless-test-runtime && just watch {{ PATTERNS }}" \
-            "extension" "cd packages/ide-extension && bun test --watch --silent --reporter=dot {{ PATTERNS }}" \
+        just concurrently-exec-named-watch-tests \
+            "shared" "cd packages/shared && bun test --watch --no-clear-screen '{{ PATTERNS }}'" \
+            "compiler" "cd packages/compiler && bun test --watch --no-clear-screen '{{ PATTERNS }}'" \
+            "formatter" "cd packages/formatter && bun test --watch --no-clear-screen '{{ PATTERNS }}'" \
+            "tao-cli" "cd packages/tao-cli && bun test --watch --no-clear-screen '{{ PATTERNS }}'" \
+            "headless runtime" "cd packages/headless-test-runtime && just watch '{{ PATTERNS }}'" \
+            "extension" "cd packages/ide-extension && bun test --watch --no-clear-screen '{{ PATTERNS }}'" \
             "test apps" "just _watch_test_apps {{ PATTERNS }}" \
             "q Exit" "just _r_reloead_q_quit" || break;
             # "runtime" "cd packages/expo-runtime && just watch {{ PATTERNS }}" \
@@ -68,9 +68,13 @@ _watch_app_build:
             --std-lib-root "../tao-std-lib" \
             --verbose --watch
 
+# Run expo on port 8081
 _watch_runtime_reload:
-    cd packages/expo-runtime \
-        && EXPO_NO_CLEAR=true BROWSER="none" npx expo start -c --web # --ios
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cd packages/expo-runtime
+    echo "[runtime_reload] Expo web: http://localhost:8081/"
+    EXPO_NO_CLEAR=true BROWSER="none" npx expo start --web --port 8081 # omit `start -c` for cache between restarts
 
 _watch_typecheck_extension:
     cd packages/ide-extension && tsc -b tsconfig.json --watch --preserveWatchOutput

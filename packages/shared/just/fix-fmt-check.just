@@ -3,7 +3,7 @@ import "./_shared-vars.just"
 # Formatting and linting
 ########################
 
-OXLINT_CMD := "oxlint --type-aware"
+OXLINT_CMD := "oxlint --ignore-path .gitignore --type-aware --deny-warnings"
 
 _fmt:
     just _fmt_just
@@ -33,14 +33,19 @@ _fmt_newlines:
         {{ FMT_NEWLINE_SKIP_MISSING }} || {{ FMT_NEWLINE_SKIP_LINKS }} || {{ FMT_NEWLINE_PERL }}
     done
 
+# Run ts-autofix for a package and filters output
+[private]
+_ts_autofix_package PACKAGE:
+    (cd "packages/{{ PACKAGE }}" && ts-autofix fix --tsCliArgs --noUnusedLocals 2>&1 | grep -v 'Processing code fixes for')
+
 [no-quiet]
 _fix: _fmt
-    cd packages/compiler && ts-autofix fix --tsCliArgs --noUnusedLocals
-    cd packages/tao-cli && ts-autofix fix --tsCliArgs --noUnusedLocals
-    cd packages/shared && ts-autofix fix --tsCliArgs --noUnusedLocals
-    cd packages/headless-test-runtime && ts-autofix fix --tsCliArgs --noUnusedLocals
-    cd packages/ide-extension && ts-autofix fix --tsCliArgs --noUnusedLocals
-    cd packages/expo-runtime && ts-autofix fix --tsCliArgs --noUnusedLocals
+    just _ts_autofix_package compiler
+    just _ts_autofix_package tao-cli
+    just _ts_autofix_package shared
+    just _ts_autofix_package headless-test-runtime
+    just _ts_autofix_package ide-extension
+    just _ts_autofix_package expo-runtime
     cd packages/expo-runtime && bunx expo lint --fix
     cd packages/expo-runtime && bunx eslint --fix
     just _fmt # Run formatter again, for any changes made
@@ -56,11 +61,10 @@ _check:
     cd packages/headless-test-runtime && tsc --noEmit --noUnusedLocals
     cd packages/ide-extension && tsc --noEmit --noUnusedLocals
     cd packages/expo-runtime && tsc --noEmit --noUnusedLocals
-    cd packages/expo-runtime && bunx expo lint
-    cd packages/expo-runtime && bunx eslint
+    cd packages/expo-runtime && just lint
 
 _lint:
     {{ OXLINT_CMD }}
 
-_line_rules:
+_lint_rules:
     {{ OXLINT_CMD }} --rules
