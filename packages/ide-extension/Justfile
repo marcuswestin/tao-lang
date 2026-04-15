@@ -6,6 +6,7 @@ dev:
 run:
     echo
     echo "\tBuild and package extension..."
+    just merge-tm-language-files
     just package
     echo "\tInstall extension..."
     just uninstall-extension > /dev/null 2>&1 || true
@@ -19,9 +20,14 @@ run:
 
 build: build-package-and-install
 
+# Merge Langium-generated Tao tmLanguage with TS-block and markdown-embed fragments into `ide-syntaxes/_gen-syntaxes/`.
+merge-tm-language-files:
+    bun ../shared/scripts/q-dev.ts gen-syntax-tmLanguage-files
+
 # Build and package. Skip if `TAO_SKIP_COMPILER_BUILD=1`
 build-package-and-install: _deps
     just _skip_if_env_eq TAO_SKIP_COMPILER_BUILD 1 || just compiler build
+    just merge-tm-language-files
     just package
     just install-extension
 
