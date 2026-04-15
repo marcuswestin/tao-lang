@@ -10,6 +10,13 @@ type PropertyHandlerMapKey<ItemT, PropertyName extends keyof ItemT, R> = keyof P
   R
 >
 
+/** Safe exhaustive switch helpers */
+export const Switch = {
+  type: switchType_Exhaustive,
+  property: switchProperty_Exhaustive,
+  bind: switchBindItemType_Exhaustive,
+}
+
 // Maps each possible value of item[property] to a handler; enforces exhaustive handling.
 // Uses Exclude so undefined is not used as a mapped key (invalid in TS); optional undefined key added when property is optional.
 type PropertyValueHandlerMap<ItemT, PropertyName extends keyof ItemT, R> = ItemT[PropertyName] extends infer V ?
@@ -19,7 +26,7 @@ type PropertyValueHandlerMap<ItemT, PropertyName extends keyof ItemT, R> = ItemT
 
 /** switchType_Exhaustive dispatches on `item.$type`; TypeScript enforces a handler per discriminant. At runtime a missing
  * key still throws when invoked—keep handlers in sync with the AST union. */
-export function switchType_Exhaustive<
+function switchType_Exhaustive<
   ItemT extends { $type: PropertyKey },
   R,
 >(item: ItemT, handlers: ItemHandlerMap<ItemT, R>): R {
@@ -29,7 +36,7 @@ export function switchType_Exhaustive<
 
 /** switchProperty_Exhaustive dispatches on `item[property]` with an exhaustive map per possible value (including `undefined`
  * when the property is optional). Runtime values outside the map yield `undefined` handlers—callers should ensure coverage. */
-export function switchProperty_Exhaustive<
+function switchProperty_Exhaustive<
   ItemT extends {},
   PropertyName extends keyof ItemT,
   R,
@@ -40,7 +47,7 @@ export function switchProperty_Exhaustive<
 }
 
 /** switchBindItemType_Exhaustive is like `switchType_Exhaustive` but calls each handler with `bindThis` as `this`. */
-export function switchBindItemType_Exhaustive<
+function switchBindItemType_Exhaustive<
   ItemT extends { $type: PropertyKey },
   R,
 >(item: ItemT, bindThis: ThisType<ItemT>, handlers: ItemHandlerMap<ItemT, R>): R {
