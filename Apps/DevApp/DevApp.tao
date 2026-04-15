@@ -1,0 +1,19 @@
+use Text, Button from @tao/ui
+
+app TaoStudio {
+    ui RootView
+}
+
+state GlobalCount = 100
+
+view RootView {
+    Text value "DEV APP"
+    Text value GlobalCount
+    Button title "Click me", Action StartDebugger { }
+}
+
+action StartDebugger {
+    set GlobalCount += 1
+    debugger
+    set GlobalCount += 1
+}
