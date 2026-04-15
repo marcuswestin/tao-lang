@@ -5,8 +5,6 @@ description: When editing TypeScript class constructors or its properties, *alwa
 
 # TypeScript Parameter Properties
 
-When writing TypeScript classes, use **parameter properties** (access modifiers in constructor parameters) instead of manually assigning `this.x = x` in the constructor body.
-
 ## Preferred
 
 ```typescript

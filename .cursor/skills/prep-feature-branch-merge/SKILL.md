@@ -3,8 +3,9 @@ name: prep-feature-branch-merge
 description: >-
   Prepares a Tao Lang feature branch for merge into main: sync with main,
   prep-commit after merging main into the feature branch, review diffs and logs,
-  quality checklist, and completion summary under TODO Specs. Use when wrapping
-  a branch, before a big merge, or when the user asks to tidy up for merge.
+  quality checklist, and completion summary next to the spec folder (e.g. TODO
+  Specs or Docs/Dev Log). Use when wrapping a branch, before a big merge, or
+  when the user asks to tidy up for merge.
 ---
 
 # Prep feature branch for merge
@@ -41,11 +42,12 @@ Then verify:
 
 ## Completion summary
 
-Write the cleanup / merge plan and status into:
+Write the cleanup / merge plan and status into **`COMPLETION-SUMMARY.md` in the same directory as the feature spec** you are landing (the folder the user or branch work is anchored to). Examples:
 
-`TODO Specs/<spec-folder>/COMPLETION-SUMMARY.md`
+- `TODO Specs/<feature-folder>/COMPLETION-SUMMARY.md`
+- `Docs/Dev Log/<YYYY-MM-DD> - <Project Name>/COMPLETION-SUMMARY.md`
 
-(or the spec folder that matches this work). Include what was reviewed, what still needs doing, and **stop for user approval** before committing that summary if they want to edit it.
+Include what was reviewed, what still needs doing, and **stop for user approval** before committing that summary if they want to edit it.
 
 ## Merge handoff (squash merge)
 
