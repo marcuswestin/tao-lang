@@ -11,6 +11,8 @@ import { throwUserInputRejectionError } from '@shared/TaoErrors'
 import chokidar from 'chokidar'
 import { hci } from './hci-human-computer-interaction'
 
+const ENABLE_SOURCE_MAPS = false
+
 /** taoCliMain runs the Tao CLI via Commander (`process.argv`).
  * Today this registers only `compile`; see that command’s options for watch and paths. */
 export function taoCliMain() {
@@ -99,7 +101,7 @@ export async function TaoSDK_compile(opts: TaoSDK_compileOpts): Promise<TaoSDK_c
   const emitFiles = planTaoSdkEmitFiles(result.files, result.entryRelativePath, outputPath)
   for (const f of emitFiles) {
     const path = getPath(outputPath, f.relativePath)
-    if (f.trace) {
+    if (ENABLE_SOURCE_MAPS && f.trace) {
       const mapBasename = `${FS.basename(path)}.map`
       FS.writeFile(path + '.map', traceToEncodedSourceMapJson({ outputAbsolutePath: path, trace: f.trace }))
       FS.writeFile(path, appendSourceMappingUrlPragma(f.content, mapBasename))
