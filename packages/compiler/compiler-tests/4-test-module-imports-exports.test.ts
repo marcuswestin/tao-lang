@@ -80,7 +80,7 @@ describe('multi-file module parsing', () => {
         path: '/project/app.tao',
         code: `
           use PublicView from ./ui/views
-          hide app MyApp { ui MainView }
+          app MyApp { ui MainView }
           view MainView { }
         `,
       },

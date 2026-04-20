@@ -72,14 +72,12 @@ describe('module declaration visibility', () => {
     viewDecl.declaration.as_ViewDeclaration.expect('name').toBe('PublicView')
   })
 
-  test('parses hide app declaration', async () => {
+  test('parses bare app declaration (no visibility modifier)', async () => {
     const doc = await parseAST(`
-      hide app PrivateApp { ui MyView }
+      app PrivateApp { ui MyView }
       view MyView { }
     `)
-    const appDecl = doc.statements.first.as_ModuleDeclaration
-    appDecl.expect('visibility').toBe('hide')
-    appDecl.declaration.as_AppDeclaration.expect('name').toBe('PrivateApp')
+    doc.statements.first.as_AppDeclaration.expect('name').toBe('PrivateApp')
     const myView = doc.statements.second.as_ViewDeclaration
     myView.expect('name').toBe('MyView')
   })

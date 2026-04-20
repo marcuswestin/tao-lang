@@ -43,6 +43,8 @@ export default class TaoFormatter extends AbstractFormatter {
       ParameterDeclaration: (n) => this.formatParameterDeclaration(n),
       ParameterList: (n) => this.formatParameterList(n),
       AssignmentDeclaration: (n) => this.formatAssignmentDeclaration(n),
+      BinaryExpression: (n) => this.formatBinaryExpression(n),
+      UnaryExpression: (n) => this.formatUnaryExpression(n),
       NamedReference: (n) => this.formatNamedReference(n),
       NumberLiteral: (n) => this.formatNumberLiteral(n),
       StringLiteral: (n) => this.formatStringLiteral(n),
@@ -110,7 +112,7 @@ export default class TaoFormatter extends AbstractFormatter {
     const f = this.getNodeFormatter(node)
     f.keyword('set').append(Formatting.oneSpace())
     f.property('stateRef').append(Formatting.oneSpace())
-    f.property('op').append(Formatting.oneSpace())
+    f.property('operator').append(Formatting.oneSpace())
   }
 
   private formatViewRender(node: AST.ViewRender): void {
@@ -154,6 +156,19 @@ export default class TaoFormatter extends AbstractFormatter {
   }
 
   private formatNamedReference(_node: AST.NamedReference): void {
+  }
+
+  private formatBinaryExpression(node: AST.BinaryExpression): void {
+    const f = this.getNodeFormatter(node)
+    f.property('left')
+    f.property('op').surround(Formatting.oneSpace())
+    f.property('right')
+  }
+
+  private formatUnaryExpression(node: AST.UnaryExpression): void {
+    const f = this.getNodeFormatter(node)
+    f.property('op').append(Formatting.noSpace())
+    f.property('operand')
   }
 
   private formatInjection(node: AST.Injection): void {

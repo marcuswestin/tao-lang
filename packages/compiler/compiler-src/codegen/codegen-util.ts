@@ -89,7 +89,7 @@ function _compileNodeListProperty<
   compileListItemFn: CompileListItemFn<ItemT>,
   options: LangiumGen.JoinOptions<ItemT>,
 ): Compiled {
-  assert(Array.isArray(node[propertyName]), 'Property is not an array ')
+  Assert(Array.isArray(node[propertyName]), 'Property is not an array ')
   const property = node[propertyName] as PropVal
   return LangiumGen.joinTracedToNode<NodeT>(node, propertyName)(property, compileListItemFn, options)
 }
@@ -105,11 +105,17 @@ export function compileNode<T extends AST.Node>(
   return LangiumGen.expandTracedToNode(astNode, property)
 }
 
-/** assert throws if condition is false (internal compiler-codegen check). */
-function assert(condition: boolean, message: string): void {
-  if (!condition) {
-    throw new Error(message)
+/** compileInlineNodeList joins arbitrary iterable nodes with tracing to a composite generator node. */
+export function compileInlineNodeList<NodeT extends AST.Node>(
+  nodes: Iterable<NodeT> | Generator<NodeT, void, unknown> | Stream<NodeT>,
+  genListItemFn: (node: NodeT) => LangiumGen.Generated,
+): Compiled {
+  const compiledList = new LangiumGen.CompositeGeneratorNode()
+  for (const node of Iterable.from(nodes)) {
+    const compiledNode = LangiumGen.expandTracedToNode(node)`${genListItemFn(node)}`
+    compiledList.append(compiledNode)
   }
+  return compiledList
 }
 
 /** compileNodeList joins arbitrary iterable nodes with tracing to a composite generator node. */
@@ -123,6 +129,24 @@ export function compileNodeList<NodeT extends AST.Node>(
     compiledList.append(compiledNode).appendNewLineIfNotEmpty()
   }
   return compiledList
+}
+
+/** compileIndentedNodeList joins traced nodes like {@link compileNodeList} but wraps them in Langium {@link LangiumGen.IndentNode} so nested lines receive extra indentation in {@link LangiumGen.toString}. */
+export function compileIndentedNodeList<NodeT extends AST.Node>(
+  nodes: Iterable<NodeT> | Generator<NodeT, void, unknown> | Stream<NodeT> | undefined,
+  genListItemFn: (node: NodeT) => LangiumGen.Generated,
+): Compiled {
+  if (!nodes) {
+    return compileNoop()
+  }
+  return new LangiumGen.CompositeGeneratorNode().indent({
+    indentation: 0,
+    indentedChildren: (indented) => {
+      for (const node of Iterable.from(nodes)) {
+        indented.append(compileNode(node)`${genListItemFn(node)}`).appendNewLineIfNotEmpty()
+      }
+    },
+  })
 }
 
 /** compileNodePropertyRef resolves a reference property and emits code from the target. */

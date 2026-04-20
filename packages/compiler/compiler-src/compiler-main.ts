@@ -43,7 +43,7 @@ export async function compileTao(opts: CompileOpts): Promise<CompileResult> {
       code: getErrorAppString(parsed.errorReport),
     }
   }
-  Assert(parsed.taoFileAST, 'taoFileAST is defined', parsed)
+  Assert(parsed.taoFileAST, 'taoFileAST is defined', parsed as Record<string, unknown>)
   const entryAbsolutePath = FS.resolvePath(opts.file)
   const generated = generateTypescriptReactNativeApp(
     parsed.taoFileAST,
