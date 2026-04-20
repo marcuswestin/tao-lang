@@ -57,14 +57,9 @@ _watch_grammar:
 _watch_test_apps:
     watchexec --restart --watch='Apps/Test Apps/' -- 'just gen'
 
-DEV_APP_PATH := "./Apps/DevApp/DevApp.tao"
-
-# DEV_APP_PATH := "./Apps/Test Apps/Studio/app.tao"
-# DEV_APP_PATH := "./Apps/Test Apps/Kitchen Sink/app.tao"
-
 _watch_app_build:
     cd packages/tao-cli && bun run  --watch --no-clear-screen \
-        ./tao-cli.ts compile "`pwd`/../../{{ DEV_APP_PATH }}" \
+        ./tao-cli.ts compile "../../{{ env('TAO_DEV_APP') }}" \
             --runtime-dir "../expo-runtime" \
             --std-lib-root "../tao-std-lib" \
             --verbose --watch
@@ -75,7 +70,7 @@ _watch_runtime_reload:
     set -euo pipefail
     cd packages/expo-runtime
     echo "[runtime_reload] Expo web: http://localhost:8081/"
-    EXPO_NO_CLEAR=true BROWSER="none" npx expo start -c --web --port 8081 # omit `start -c` for cache between restarts
+    EXPO_NO_CLEAR=true BROWSER="none" npx expo start --clear --web --port 8081 # omit `start -c` for cache between restarts
 
 _watch_typecheck_extension:
     # One-shot build establishes composite outputs under `.builds/ts-packages/` before watch (avoids TS6305 after `just clean`).
