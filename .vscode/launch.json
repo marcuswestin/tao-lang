@@ -15,7 +15,7 @@
         "--disable-extensions",
         "--extensionDevelopmentPath=${workspaceFolder}/packages/ide-extension",
         "${workspaceFolder}/Apps",
-        "${workspaceFolder}/Apps/Test Apps/Kitchen Sink/app.tao"
+        "${workspaceFolder}/Apps/Test Apps/Kitchen Sink/Kitchen Sink.tao"
       ]
     }
   ]

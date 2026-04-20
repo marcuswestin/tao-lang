@@ -87,10 +87,6 @@ When landing a feature branch on **`main`** (or the repo’s default branch), un
 
 That skill **must not** stage or commit. When review is done and the user wants to land work, switch to this workflow.
 
-## Docs / spec commits
-
-After creating Dev Log specs (see `create-spec-file` / `create-project`), stage with `./just-agents shell git add` on the new paths, then commit with a `docs:` prefix message.
-
 ## Optional: sync backlog markdown (`TODO.md`)
 
 When the user wants backlog files updated after a work session (not during **`check-for-improvements`**, which must not touch the index):

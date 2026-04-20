@@ -16,6 +16,12 @@
 
 ---
 
+## Dev Notes:
+
+- For new features, always update validator and formatter with new tests, if applicable.
+
+---
+
 ## Misc Instructions:
 
 - **ONLY** delete files if you know it is appropriate, and can likely be restored by git checking it out back out before a commit is done.
