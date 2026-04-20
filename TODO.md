@@ -62,6 +62,7 @@ Also see Roadmap.
 
 #### MEDIUM
 
+- [ ] Cleanup runtime code and types. A lil scrappy as is.
 - Dev Env:
   - [ ] Claude code direct
   - [ ] Try removing the just-agents restriction and see what development is like without it.

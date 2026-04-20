@@ -147,13 +147,7 @@ function ViewState(
   return new MutableState(store$)
 }
 
-const OPERATOR_MAP = {
-  '=': (_a: any, b: any) => b,
-  '+=': (a: number, b: number) => a + b,
-  '-=': (a: number, b: number) => a - b,
-  '*=': (a: number, b: number) => a * b,
-  '/=': (a: number, b: number) => a / b,
-} as const
+type AssignmentOperator = '=' | '+=' | '-=' | '*=' | '/='
 
 class MutableState implements I.MutableState {
   constructor(
@@ -164,27 +158,19 @@ class MutableState implements I.MutableState {
     const val = this.store$.get()
     return new Value(val) as Value
   }
-  updateValue(operator: keyof typeof OPERATOR_MAP, value: I.Expression) {
+  updateValue(operator: AssignmentOperator, value: I.Expression) {
     const newValue = value.evaluate().jsValue
     if (operator === '=') {
       return this.store$.set(newValue)
     }
-    const operand = this.store$.peek()
-    if (typeof operand !== 'number' || typeof newValue !== 'number') {
-      throw new Error('Value must be a number')
-    }
-    switch (operator) {
-      case '+=':
-        return this.store$.set(operand + newValue)
-      case '-=':
-        return this.store$.set(operand - newValue)
-      case '*=':
-        return this.store$.set(operand * newValue)
-      case '/=':
-        return this.store$.set(operand / newValue)
-      default:
-        throw new Error(`Unsupported operator`)
-    }
+    const current = this.store$.peek()
+    Assert(typeof current === 'number' && typeof newValue === 'number', 'Compound assignment requires numeric operands')
+    this.store$.set(switch_Exhaustive(operator, {
+      '+=': () => current + newValue,
+      '-=': () => current - newValue,
+      '*=': () => current * newValue,
+      '/=': () => current / newValue,
+    }))
   }
   useReactiveHandle() {
     LegendAppStateReact.useSelector(this.store$)

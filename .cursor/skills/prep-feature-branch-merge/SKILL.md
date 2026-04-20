@@ -40,15 +40,6 @@ Then verify:
 - **Names:** clear, concise symbols for new APIs.
 - **Language features:** for Tao-facing changes, ensure validation, compilation, and tests (parse / validation / runtime) where applicable.
 
-## Completion summary
-
-Write the cleanup / merge plan and status into **`COMPLETION-SUMMARY.md` in the same directory as the feature spec** you are landing (the folder the user or branch work is anchored to). Examples:
-
-- `TODO Specs/<feature-folder>/COMPLETION-SUMMARY.md`
-- `Docs/Dev Log/<YYYY-MM-DD> - <Project Name>/COMPLETION-SUMMARY.md`
-
-Include what was reviewed, what still needs doing, and **stop for user approval** before committing that summary if they want to edit it.
-
 ## Merge handoff (squash merge)
 
 When the user is ready to land the branch on `main` (or the default base), follow **`tao-git-workflow`**: **squash merge** only, and the squash commit body must include **all** squashed commit lines (see that skill).
