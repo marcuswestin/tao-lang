@@ -29,5 +29,5 @@ view SubView {
 }
 
 view Text value string {
-    inject ```ts return <RN.Text>{props.value}</RN.Text> ```
+    inject ```ts return <RN.Text>{_ViewProps.value}</RN.Text> ```
 }

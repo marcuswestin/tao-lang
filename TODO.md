@@ -41,6 +41,8 @@ Also see Roadmap.
 
 ### NEXT - todo:
 
+- [ ] Inline actions. Search "TODO: Action literal"
+- [ ] Use https://github.com/TypeFox/langium-in-browser-codegen-example/blob/main/src/generator/generator-with-tracing.ts to redo codegen.
 - [x] Make "file" visibility into "hide".
 - [x] _gen- -> ../_gen patch may have screwed up many different parts of the dev env. Search, confirm, fix.
   - Fixed: dprint `excludes` only had `**/_gen-*`, so plain `_gen/` (Expo `tao-app` output) was still formatted; added `**/_gen/**`. Swept repo for stale Expo paths — none found; eslint/gitignore/clean already covered `_gen/`.
@@ -94,7 +96,7 @@ Also see Roadmap.
     }
     ```
 
-- [ ] Add ability to specify which app to dev-run.
+- [x] Add ability to specify which app to dev-run.
 - [x] Try implementing source maps.
 - [x] Upgrade react native.
 - [ ] Have ALL Node imports through a single shared import. Path, etc
