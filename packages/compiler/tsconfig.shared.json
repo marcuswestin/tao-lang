@@ -1,13 +1,10 @@
 {
   "extends": "../tsconfig.dev.json",
-
   "include": [
     "src/**/*.ts"
   ],
-
   "compilerOptions": {
     "rootDir": "src",
-
     // Bundler mode
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true
