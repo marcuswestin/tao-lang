@@ -73,7 +73,7 @@ function getBlockStatementContext(block: AST.Block): 'view' | 'action' | null {
   const parent = block.$container
   if (AST.isViewDeclaration(parent) || AST.isViewRender(parent)) {
     return 'view'
-  } else if (AST.isActionDeclaration(parent)) {
+  } else if (AST.isActionDeclaration(parent) || AST.isActionExpression(parent)) {
     return 'action'
   }
   Assert.never(parent)

@@ -103,6 +103,29 @@ describe('statement placement validation:', () => {
     expect(report.getHumanErrorMessages().some(m => m.includes(validationMessages.actionBody))).toBe(true)
   })
 
+  test('view render in inline action expression body fails validation', async () => {
+    const report = await parseASTWithErrors(`
+      view Text value string { }
+      view Btn title string, Action any { }
+      view V {
+        Btn title "x", Action action {
+          Text value "bad"
+        }
+      }
+    `)
+    expect(report.getHumanErrorMessages().some(m => m.includes(validationMessages.actionBody))).toBe(true)
+  })
+
+  test('state update in inline action expression is allowed (same as named action body)', async () => {
+    await parseTaoFully(`
+      view B title string, Action any { }
+      view V {
+        state s = 0
+        B title "b", Action action { set s = 1 }
+      }
+    `)
+  })
+
   test('state update in action body is allowed (not in view body)', async () => {
     await parseTaoFully(`
       view V {

@@ -252,6 +252,13 @@ describe('Formatter', () => {
           inject \`\`\`ts void 0\`\`\`
       }
     `)
+  testFormatter('view render with inline action argument')
+    .format(`view V {Btn title "a", Action action {}}`)
+    .equals(`
+      view V {
+          Btn title "a", Action action { }
+      }
+    `)
   testFormatter('Advanced formatting')
     .format(`
       app MyApp {

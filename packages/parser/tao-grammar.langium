@@ -115,8 +115,11 @@ Multiplication infers Expression:
 UnaryExpression infers Expression:
     ({infer UnaryExpression} op='-' operand=PrimaryExpression) | PrimaryExpression;
 
+// Inline action for arguments, e.g. `Button title "Go", Action action { set n = 1 }`
+ActionExpression: 'action' name=ID? block=Block;
+
 PrimaryExpression infers Expression:
-    '(' Expression ')' | StringLiteral | NumberLiteral | NamedReference;
+    '(' Expression ')' | StringLiteral | NumberLiteral | ActionExpression | NamedReference;
 
 StringLiteral:
     string=STRING;

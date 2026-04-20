@@ -49,6 +49,7 @@ export default class TaoFormatter extends AbstractFormatter {
       NumberLiteral: (n) => this.formatNumberLiteral(n),
       StringLiteral: (n) => this.formatStringLiteral(n),
       StateUpdate: (n) => this.formatStateUpdate(n),
+      ActionExpression: (n) => this.formatActionExpression(n),
     })
   }
 
@@ -95,8 +96,21 @@ export default class TaoFormatter extends AbstractFormatter {
   }
 
   private formatActionDeclaration(node: AST.ActionDeclaration): void {
-    this._spaceAroundName(node)
-    this._spaceAfterProperty(node, 'parameterList')
+    this.formatAction(node)
+  }
+
+  private formatActionExpression(node: AST.ActionExpression): void {
+    this.formatAction(node)
+  }
+
+  private formatAction(node: AST.ActionExpression | AST.ActionDeclaration): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('action').append(Formatting.oneSpace())
+    this._spaceAfterProperty(node, 'name')
+    if (AST.isActionDeclaration(node)) {
+      this._spaceAfterProperty(node, 'parameterList')
+    }
+    this._spaceBeforeProperty(node, 'block')
   }
 
   private formatModuleDeclaration(node: AST.ModuleDeclaration): void {

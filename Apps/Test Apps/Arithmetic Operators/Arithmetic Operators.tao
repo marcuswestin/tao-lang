@@ -18,7 +18,10 @@ view RootView {
     alias DoubleGlobal = GlobalCount * 2
     Row {
         alias DoubleLocal = LocalCount * 2
-        Button title "Increment", Action Increment
+        Button title "Increment", Action action {
+            set GlobalCount = GlobalCount + 1
+            set LocalCount = LocalCount * 10
+        }
         Text value "GlobalCount: "
         Text value GlobalCount
         Text value "DoubleGlobal: "
@@ -27,9 +30,5 @@ view RootView {
         Text value LocalCount
         Text value "DoubleLocal: "
         Text value DoubleLocal
-    }
-    action Increment {
-        set GlobalCount = GlobalCount + 1
-        set LocalCount = LocalCount * 10
     }
 }

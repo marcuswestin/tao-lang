@@ -8,8 +8,8 @@ import {
   compileNodeProperty,
   compileNodePropertyRef,
   compileNoop,
+  CompositeGeneratorNode,
 } from '@compiler/codegen/codegen-util'
-import * as LangiumGen from '@parser/generate'
 import { AST } from '@parser/parser'
 import { Assert, Iterable as _Iterable, Stream, switch_safe } from '@shared'
 import { compileTODO } from '../codegen-util'
@@ -64,7 +64,7 @@ class RuntimeGen {
       },
       UnaryExpression: (node) => {
         const operand = this.Expression(node.operand)
-        return compileNode(node)`TR.UnaryOperation(${node.op}, ${operand})`
+        return compileNode(node)`TR.UnaryOperation('${node.op}', ${operand})`
       },
       StringLiteral: (node) => {
         return compileNode(node)`TR.Literal('${node.string}')`
@@ -75,7 +75,7 @@ class RuntimeGen {
       NamedReference: (node) => {
         return compileNode(node)`_Scope.${node.referenceName.$refText}`
       },
-      // TODO: Action literal
+      ActionExpression: (node) => this.ActionExpression(node),
     })
   }
 
@@ -127,17 +127,24 @@ class RuntimeGen {
   // Actions
   //////////
 
+  /** ActionExpression compiles an inline `action` expression (e.g. a view argument) the same way as a block body action. */
+  ActionExpression(node: AST.ActionExpression): Compiled {
+    return this.actionLiteral(node, node.name)
+  }
+
   ActionDeclaration(declaration: AST.ActionDeclaration): Compiled {
     const scopedName = this.scopedName(declaration)
-    if (!isBlockWithStatements(declaration.block)) {
-      return compileNode(declaration)`
-        ${scopedName} = TR.Action(function ${declaration.name}() {})
-      `
-    }
-    const scopedBlock = this.Block(declaration.block)
     return compileNode(declaration)`
-      ${scopedName} = TR.Action(function ${declaration.name}() ${scopedBlock})
-    `
+        ${scopedName} = ${this.actionLiteral(declaration, declaration.name)}
+      `
+  }
+
+  actionLiteral(node: AST.ActionExpression | AST.ActionDeclaration, name: string | undefined): Compiled {
+    const nameStr = name ? ` ${name}` : ''
+    if (!isBlockWithStatements(node.block)) {
+      return compileNode(node)`TR.Action(function${nameStr}() {})`
+    }
+    return compileNode(node)`TR.Action(function${nameStr}() ${this.Block(node.block)})`
   }
 
   Declaration_state(declaration: AST.AssignmentDeclaration): Compiled {
@@ -232,7 +239,7 @@ class RuntimeGen {
 
   /** ViewParameterList emits the view's properties destructuring with the implicit _taoScope prop. */
   ViewParameterList(_parameterList: AST.ParameterList | undefined): Compiled {
-    return new LangiumGen.CompositeGeneratorNode('_ViewProps: any')
+    return new CompositeGeneratorNode('_ViewProps: any')
   }
 
   ViewRender(viewRender: AST.ViewRender): Compiled {

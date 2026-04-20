@@ -55,6 +55,26 @@ describe('parse:', () => {
     expect(action.unwrap().parameterList?.parameters.length).toBe(1)
     expect(action.unwrap().block.statements.length).toBe(1)
   })
+
+  test('parses inline action expression in view call argument', async () => {
+    const doc = await parseAST(`
+      view Btn title string, Action any { }
+      view V {
+        state n = 0
+        Btn title "Go", Action action onPress { }
+      }
+    `)
+    const viewV = doc.statements.second.as_ViewDeclaration
+    const render = viewV.block.statements.last.as_ViewRender
+    expect(render.unwrap().$type).toBe('ViewRender')
+    const actionArg = render.argumentList?.arguments[1]!
+    expect(actionArg.name).toBe('Action')
+    const val = actionArg.value
+    expect(AST.isActionExpression(val)).toBe(true)
+    if (AST.isActionExpression(val)) {
+      expect(val.name).toBe('onPress')
+    }
+  })
 })
 
 describe('module declaration visibility', () => {
