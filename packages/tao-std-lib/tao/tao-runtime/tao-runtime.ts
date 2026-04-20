@@ -1,109 +1,282 @@
-import { observable } from '@legendapp/state'
-import React from 'react'
-import { OperatorMap } from './runtime-operators'
-import { useStore } from './runtime-store'
+import * as LegendAppState from '@legendapp/state'
+import * as LegendAppStateReact from '@legendapp/state/react'
 
-type AnyFn = (...args: any[]) => any
+import { Assert, switch_Exhaustive } from './runtime-utils'
+import { Views } from './Views'
 
-interface ExpressionI<T> {
-  read(): T
-  useState(scope?: TaoScope): StateUseI<T>
-}
-interface StateUseI<T> {
-  read(): T
-}
+export namespace I {
+  // Internal types
+  /////////////////
 
-interface WritableStateUseI<T> extends StateUseI<T> {
-  update(fn: (val: T) => T): void
-}
+  export type JSAtomValue = string | number | boolean
+  export type Name = string // & { __name: true }
+  export type Rendered = React.ReactNode
 
-type TaoScope = Record<string, any>
-
-abstract class Expression<T> implements ExpressionI<T> {
-  constructor(protected value: T) {
+  export type Store = {
+    snapshotValue(): Value
+    set(value: Value): void
   }
 
-  read() {
-    return this.value
+  // External types
+  /////////////////
+
+  export type Scope = Record<string, any>
+
+  export interface Expression {
+    evaluate(): Value
+    useReactiveHandle(): Expression
   }
-  useState(_scope?: TaoScope) {
+
+  export interface Reference<I> {
+    resolve(): I
+  }
+
+  export interface ImmutableExpression extends Expression {
+  }
+  export interface MutableState extends Expression {
+    updateValue(operator: string, value: I.Expression): void
+  }
+}
+
+// TAO RUNTIME
+//////////////
+
+export const TR: _TaoRuntime = {
+  // Scoping
+  BlockScope,
+  Declare,
+
+  // Atom Value Expressions
+  Literal,
+  AppState,
+  ViewState,
+
+  // Compound Expressions
+  Alias,
+  BinaryOperation,
+  UnaryOperation,
+
+  // Invocable Expressions
+  Action,
+
+  // Views. TODO: Move this to @tao/ui
+  Views,
+} as const
+
+export type _TaoRuntime = {
+  BlockScope: typeof BlockScope
+  Declare: typeof Declare
+
+  Literal: typeof Literal
+  AppState: typeof AppState
+  ViewState: typeof ViewState
+
+  Alias: typeof Alias
+  BinaryOperation: typeof BinaryOperation
+  UnaryOperation: typeof UnaryOperation
+
+  Action: typeof Action
+
+  Views: typeof Views
+}
+
+// SCOPES & Runtime safety
+//////////////////////////
+
+function BlockScope<ScopeT extends I.Scope, ReturnT>(parentScope: ScopeT, fn: (scope: ScopeT) => ReturnT) {
+  const _Scope = Object.create(parentScope ?? Object.prototype) as ScopeT
+  return fn(_Scope)
+}
+
+/**
+ * Declare asserts that `scope` now has the properties of `declarations` as well
+ * Usage:
+ *   const a = { a: 1 }
+ *   Declare(a, { b: 2 })
+ *   a.b // now typed as number
+ */
+function Declare<
+  ScopeT extends I.Scope,
+  Decls extends object,
+>(_Scope: ScopeT): asserts _Scope is ScopeT & Decls {
+  // Runtime no-op; type assertion only
+}
+
+// Atom Value Expressions
+/////////////////////////
+
+class Value {
+  readonly $type: string = 'Value'
+
+  constructor(
+    readonly jsValue: I.JSAtomValue,
+  ) {}
+  render(): I.Rendered {
+    return this.jsValue
+  }
+}
+
+function Literal(value: I.JSAtomValue) {
+  return new LiteralExpression(value)
+}
+
+class LiteralExpression extends Value implements I.ImmutableExpression {
+  override readonly $type = 'LiteralExpression'
+
+  evaluate(): Value {
+    return new Value(this.jsValue) as Value
+  }
+  useReactiveHandle(): I.Expression {
     return this
   }
 }
 
-/** TaoAction wraps an action function. useState(scope) returns a scope-bound handle
- * so that .read() yields a closure that passes the caller's scope at invocation time. */
-class TaoAction {
-  constructor(private fn: AnyFn) {}
+function AppState(
+  initialValue: I.ImmutableExpression,
+): I.MutableState {
+  const initialValueT = initialValue.evaluate().jsValue
+  const store$ = LegendAppState.observable(initialValueT)
+  return new MutableState(store$)
+}
 
-  read() {
-    return this.fn
+function ViewState(
+  initialValue: I.ImmutableExpression,
+): I.MutableState {
+  const initialValueT = initialValue.evaluate().jsValue
+  const store$ = LegendAppStateReact.useObservable(initialValueT)
+  return new MutableState(store$)
+}
+
+type AssignmentOperator = '=' | '+=' | '-=' | '*=' | '/='
+
+class MutableState implements I.MutableState {
+  constructor(
+    private store$: LegendAppState.ObservablePrimitive<I.JSAtomValue>,
+  ) {}
+
+  evaluate(): Value {
+    const val = this.store$.get()
+    return new Value(val) as Value
   }
-
-  useState(scope?: TaoScope) {
-    if (scope) {
-      const fn = this.fn
-      return { read: () => (...args: any[]) => fn(scope, ...args) }
+  updateValue(operator: AssignmentOperator, value: I.Expression) {
+    const newValue = value.evaluate().jsValue
+    if (operator === '=') {
+      return this.store$.set(newValue)
     }
+    const current = this.store$.peek()
+    Assert(typeof current === 'number' && typeof newValue === 'number', 'Compound assignment requires numeric operands')
+    this.store$.set(switch_Exhaustive(operator, {
+      '+=': () => current + newValue,
+      '-=': () => current - newValue,
+      '*=': () => current * newValue,
+      '/=': () => current / newValue,
+    }))
+  }
+  useReactiveHandle() {
+    LegendAppStateReact.useSelector(this.store$)
     return this
   }
 }
 
-class PrimitiveExpression<T> extends Expression<T> {
-  override read() {
-    return this.value
-  }
+// Compound Expressions
+///////////////////////
+
+function Alias(value: I.Expression) {
+  return value
 }
 
-function useViewState<T>(initialValue: T) {
-  const state$ = React.useMemo(() => observable(initialValue), [initialValue])
-  return useStore(state$)
+type BinaryOperators = '+' | '-' | '*' | '/'
+
+/** UnaryOperation builds a unary numeric expression (currently `-` only). */
+function UnaryOperation(op: string, operand: I.Expression): I.Expression {
+  return new UnaryOperationClass(op, operand)
 }
 
-export const TaoRuntime = new class TaoRuntime {
-  // TODO: Confirm compiled Tao only passes stable `initialValue` (e.g. primitives); changing identity each render would recreate the observable.
-  useViewState<T>(initialValue: T) {
-    return useViewState(initialValue)
-  }
+class UnaryOperationClass implements I.Expression {
+  readonly $type = 'UnaryOperation'
 
-  TopLevelState<T>(initialValue: T) {
-    const state$ = observable(initialValue)
-    return useStore(state$)
-  }
+  constructor(
+    readonly op: string,
+    readonly operand: I.Expression,
+  ) {}
 
-  /** pushScope returns a new scope that prototypally inherits from `parent` scope. */
-  pushScope(parent: TaoScope): TaoScope {
-    return Object.create(parent ?? Object.prototype) as TaoScope
-  }
-
-  useExpression<T>(expression: Expression<T>) {
-    return expression
-  }
-
-  StringLiteral(value: string) {
-    return new PrimitiveExpression(value)
-  }
-
-  NumberLiteral(value: number) {
-    return new PrimitiveExpression(value)
-  }
-
-  Function(func: (...args: any[]) => any) {
-    return func
-  }
-
-  Alias<T>(value: ExpressionI<T>) {
-    return value
-  }
-
-  Action(action: AnyFn) {
-    return new TaoAction(action)
-  }
-
-  /** updateState applies =, +=, or -= to a StateUse-backed cell. */
-  updateState<T>(stateRef: WritableStateUseI<T>, op: string, operand: T) {
-    stateRef.update((curr) => {
-      return OperatorMap[op as keyof typeof OperatorMap]<T>(curr, operand) as T
+  evaluate(): Value {
+    const value = this.operand.evaluate().jsValue
+    Assert(typeof value === 'number')
+    return switch_Exhaustive(this.op, {
+      '-': () => new Value(-value),
     })
   }
-}()
+
+  useReactiveHandle(): I.Expression {
+    return this
+  }
+}
+
+function BinaryOperation<
+  LeftT extends I.Expression,
+  RightT extends I.Expression,
+>(left: LeftT, operator: BinaryOperators, right: RightT): I.Expression {
+  return new BinaryOperationClass(left, operator, right)
+}
+
+class BinaryOperationClass<
+  LeftT extends I.Expression,
+  RightT extends I.Expression,
+> implements I.Expression {
+  readonly $type = 'BinaryOperation'
+
+  constructor(
+    readonly left: LeftT,
+    readonly operator: BinaryOperators,
+    readonly right: RightT,
+  ) {}
+  evaluate(): Value {
+    const leftJSValue = this.left.evaluate().jsValue as number
+    const rightJSValue = this.right.evaluate().jsValue as number
+
+    const leftType = typeof leftJSValue
+    const rightType = typeof rightJSValue
+
+    if (this.operator === '+') {
+      Assert(
+        (leftType === 'string' || rightType === 'string')
+          || (leftType === 'number' && rightType === 'number'),
+      )
+    } else {
+      Assert(leftType === 'number' && rightType === 'number')
+    }
+
+    return switch_Exhaustive(this.operator, {
+      '+': () => new Value(leftJSValue + rightJSValue),
+      '*': () => new Value(leftJSValue * rightJSValue),
+      '-': () => new Value(leftJSValue - rightJSValue),
+      '/': () => new Value(leftJSValue / rightJSValue),
+    })
+  }
+
+  useReactiveHandle(): I.Expression {
+    return this
+  }
+}
+
+// INVOCABLES
+/////////////
+
+function Action(fn: () => void) {
+  return new Invocable<void>(fn)
+}
+
+class Invocable<ReturnType> {
+  readonly $type = 'Invocable'
+
+  constructor(
+    readonly fn: () => ReturnType,
+  ) {}
+  invoke(): ReturnType {
+    return this.fn()
+  }
+  useReactiveHandle() {
+    return this
+  }
+}

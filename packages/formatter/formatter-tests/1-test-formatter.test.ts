@@ -37,40 +37,40 @@ describe('Formatter', () => {
   testFormatter('Whitespace prefix removal')
     .format(`
 
-    hide app MyApp {}
+    app MyApp {}
     `)
     .equals(`
-    hide app MyApp { }
+    app MyApp { }
     `)
 
   testFormatter('Postfix whitespace remove and newline insertion')
     .format(`
-    hide app MyApp {}
+    app MyApp {}
     `)
     .equals(`
-    hide app MyApp { }
+    app MyApp { }
     `)
   testFormatter('empty body')
-    .format(`hide app foo {}`)
+    .format(`app foo {}`)
     .equals(`
-        hide app foo { }
+        app foo { }
     `)
   testFormatter('empty app')
-    .format(`hide app MyApp {}`)
+    .format(`app MyApp {}`)
     .equals(`
-        hide app MyApp { }
+        app MyApp { }
     `)
   testFormatter('app with single ui')
-    .format(`hide app MyApp {ui MyView}`)
+    .format(`app MyApp {ui MyView}`)
     .equals(`
-      hide app MyApp {
+      app MyApp {
           ui MyView
       }
     `)
   testFormatter('app with multiple ui statements')
-    .format(`hide app MyApp {ui View1 ui View2}`)
+    .format(`app MyApp {ui View1 ui View2}`)
     .equals(`
-      hide app MyApp {
+      app MyApp {
           ui View1
           ui View2
       }
@@ -136,9 +136,9 @@ describe('Formatter', () => {
       }
     `)
   testFormatter('top level declarations separated')
-    .format(`hide app MyApp {}view MyView {}`)
+    .format(`app MyApp {}view MyView {}`)
     .equals(`
-      hide app MyApp { }
+      app MyApp { }
 
       view MyView { }
     `)
@@ -165,25 +165,25 @@ describe('Formatter', () => {
     `)
   testFormatter('comment preservation')
     .format(`
-      hide app MyApp {
+      app MyApp {
       // comment
       ui MyView}
     `)
     .equals(`
-      hide app MyApp {
+      app MyApp {
           // comment
           ui MyView
       }
     `)
   testFormatter('multiple comments')
     .format(`
-      hide app MyApp {
+      app MyApp {
       // one
       // two
       ui MyView}
     `)
     .equals(`
-      hide app MyApp {
+      app MyApp {
           // one
           // two
           ui MyView
@@ -252,16 +252,23 @@ describe('Formatter', () => {
           inject \`\`\`ts void 0\`\`\`
       }
     `)
+  testFormatter('view render with inline action argument')
+    .format(`view V {Btn title "a", Action action {}}`)
+    .equals(`
+      view V {
+          Btn title "a", Action action { }
+      }
+    `)
   testFormatter('Advanced formatting')
     .format(`
-      hide app MyApp {
+      app MyApp {
       // comment
       ui MyView }
 
       view MyView { Child {} }
     `)
     .equals(`
-      hide app MyApp {
+      app MyApp {
           // comment
           ui MyView
       }
@@ -386,11 +393,11 @@ describe('formatter edge cases', () => {
 
   testFormatter('app with view reference')
     .format(`
-      hide app MyApp{ui MainView}
+      app MyApp{ui MainView}
       view MainView{}
     `)
     .equals(`
-      hide app MyApp {
+      app MyApp {
           ui MainView
       }
 
@@ -399,17 +406,17 @@ describe('formatter edge cases', () => {
 
   testFormatter('multiple apps in file')
     .format(`
-        hide app App1{ui View1}
-        hide app App2{ui View2}
+        app App1{ui View1}
+        app App2{ui View2}
         view View1{}
         view View2{}
       `)
     .equals(`
-        hide app App1 {
+        app App1 {
             ui View1
         }
 
-        hide app App2 {
+        app App2 {
             ui View2
         }
 
@@ -477,6 +484,22 @@ describe('alias statement formatting', () => {
           Container {
               alias n = 42
           }
+      }
+    `)
+
+  testFormatter('alias with binary expression')
+    .format(`view MyView { alias sum=1+2 }`)
+    .equals(`
+      view MyView {
+          alias sum = 1 + 2
+      }
+    `)
+
+  testFormatter('alias with unary minus')
+    .format(`view MyView { alias n=-5 }`)
+    .equals(`
+      view MyView {
+          alias n = -5
       }
     `)
 

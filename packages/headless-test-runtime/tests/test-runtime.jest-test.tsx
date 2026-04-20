@@ -35,7 +35,7 @@ describe('headless runtime', () => {
     const repoRoot = FS.resolvePath(__dirname, '../../..')
     const cliEntryPath = FS.resolvePath(repoRoot, 'packages/tao-cli/tao-cli.ts')
     const runtimeDir = getHeadlessTestRuntimeDir()
-    const taoPath = FS.resolvePath(getCompiledTaoScenariosRootDir(), 'Simple test render', 'app.tao')
+    const taoPath = FS.resolvePath(getCompiledTaoScenariosRootDir(), 'Simple test render', 'Simple test render.tao')
     const args = [cliEntryPath, 'compile', taoPath, '--runtime-dir', runtimeDir]
     const command = spawnSync(
       'bun',

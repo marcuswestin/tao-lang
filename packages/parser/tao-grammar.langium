@@ -11,6 +11,7 @@ Statement: Declaration | ModuleDeclaration | UseStatement | Debugger | Injection
 ///////////////
 
 type Referenceable = Declaration | ParameterDeclaration;
+type ReactiveBinding = NamedReference | StateUpdate;
 
 type ScopeRelevantNode = UseStatement | Declaration | AppDeclaration | ParameterDeclaration;
 
@@ -75,9 +76,10 @@ type RenderNode = ViewRender | Injection;
 // Action-only statements
 /////////////////////////
 
-StateUpdateOperator returns string: '+=' | '-=' | '=';
+StateUpdateOperator returns string: '=' | '+=' | '-=' | '*=' | '/='
+;
 StateUpdate:
-    'set' stateRef=[Referenceable:ID] op=StateUpdateOperator value=Expression;
+    'set' stateRef=[Referenceable:ID] operator=StateUpdateOperator value=Expression;
 
 type LiveStateBinding = StateUpdate;
 
@@ -102,7 +104,22 @@ Argument:
 ////////////////////
 
 Expression:
-    StringLiteral | NumberLiteral |  NamedReference;
+    Addition;
+
+Addition infers Expression:
+    Multiplication ({infer BinaryExpression.left=current} op=('+' | '-') right=Multiplication)*;
+
+Multiplication infers Expression:
+    UnaryExpression ({infer BinaryExpression.left=current} op=('*' | '/') right=UnaryExpression)*;
+
+UnaryExpression infers Expression:
+    ({infer UnaryExpression} op='-' operand=PrimaryExpression) | PrimaryExpression;
+
+// Inline action for arguments, e.g. `Button title "Go", Action action { set n = 1 }`
+ActionExpression: 'action' name=ID? block=Block;
+
+PrimaryExpression infers Expression:
+    '(' Expression ')' | StringLiteral | NumberLiteral | ActionExpression | NamedReference;
 
 StringLiteral:
     string=STRING;
@@ -118,11 +135,11 @@ NamedReference:
 ////////////////////////////
 
 hidden terminal WS: /\s+/;
+// Block/line comments before other terminals so `/*` is not split into `/` and `*` (operator keywords).
+hidden terminal ML_COMMENT: /\/\*[\s\S]*?\*\//;
+hidden terminal SL_COMMENT: /\/\/[^\n\r]*/;
 terminal ID: /[_a-zA-Z][\w_]*/;
 terminal STRING: /"(\\.|[^"\\])*"/; // <- Only double quotes.
 // If we want to allow single quotes -> /"(\\.|[^"\\])*"|'(\\.|[^'\\])*'/;
 
 terminal NUMBER returns number: /[0-9]+/;
-
-hidden terminal ML_COMMENT: /\/\*[\s\S]*?\*\//;
-hidden terminal SL_COMMENT: /\/\/[^\n\r]*/;

@@ -45,7 +45,7 @@ export function regenerateAllHeadlessScenarioOutputs() {
       FS.resolvePath(headlessScenarioCompileOutputRoot, compiledScenarioTaoAppBootstrapRelativePath(scenarioName)),
     )
     compileTaoForHeadlessRuntime({
-      path: FS.resolvePath(scenarioDir, 'app.tao'),
+      path: FS.resolvePath(scenarioDir, `${scenarioName}.tao`),
       stdLibRoot,
       outputFileName,
     })

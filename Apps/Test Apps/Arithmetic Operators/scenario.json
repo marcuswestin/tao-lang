@@ -1,0 +1,10 @@
+{
+  "steps": [
+    { "assertVisibleText": "Hello" },
+    { "assertVisibleText": "Ro" },
+    { "assertVisibleText": "DoubleLocal: " },
+    { "assertVisibleText": "200" },
+    { "pressVisibleText": "Increment" },
+    { "assertVisibleText": "2000" }
+  ]
+}

@@ -9,20 +9,19 @@ state GlobalCount = 100
 view RootView {
     Text value "Hello World"
     CountView { }
-    CountView { }
     Text value "Global Count: " { }
     Button title GlobalCount, Action GlobalIncrementAction { }
 }
 
 view CountView {
     state LocalCount = 200
-    Text value LocalCount { }
+    Text value "Local Count:" { }
     Button title LocalCount, Action LocalIncrementAction { }
     action LocalIncrementAction {
         set LocalCount += 1
         set GlobalCount += 1
     }
-    state SubCount = 0
+    state SubCount = 300
     action SubIncrementAction {
         set SubCount += 1
         set LocalCount += 1
@@ -33,8 +32,6 @@ view CountView {
         Button title SubCount, Action SubIncrementAction { }
     }
     SubCountView { }
-    SubCountView { }
-    action EmptyAction { }
 }
 
 action GlobalIncrementAction {

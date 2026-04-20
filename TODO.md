@@ -30,7 +30,8 @@ Also see Roadmap.
 - [x] State
 - [x] Actions
 - [x] Runtime Scope
-- [ ] Operators +,-,*,/,%,(),.,->
+- [x] Operators +, -, *, /, %, ( )
+- [ ] Member / pipeline: ., ->
 - [ ] Type System
 - [ ] Objects/Items, Arrays/Lists, and Tuples/Pairs
 - [ ] Event & Handler Syntax
@@ -41,19 +42,10 @@ Also see Roadmap.
 
 ### NEXT - todo:
 
-- [x] Make "file" visibility into "hide".
-- [x] _gen- -> ../_gen patch may have screwed up many different parts of the dev env. Search, confirm, fix.
-  - Fixed: dprint `excludes` only had `**/_gen-*`, so plain `_gen/` (Expo `tao-app` output) was still formatted; added `**/_gen/**`. Swept repo for stale Expo paths — none found; eslint/gitignore/clean already covered `_gen/`.
-  - Optional later: exclude `_gen/tao-app/**` from `packages/expo-runtime/tsconfig.json` if TS server noise on generated files becomes annoying (watch import resolution vs `app/index.tsx`).
-- [x] just dev -> "IDE TextMate grammar merged" twice
+- [x] Inline actions. (expression: `action` optionalName `{` action-body `}` — e.g. `Button title "Go", Action action { ... }`)
+- [x] Use https://github.com/TypeFox/langium-in-browser-codegen-example/blob/main/src/generator/generator-with-tracing.ts to redo codegen. (Tao already used `expandTracedToNode` / `toStringAndTrace`; aligned expression codegen with the example: `traceToNode` for op / literals / `referenceName` per Langium; implemented `ActionExpression` emit + formatter dispatch.)
 
 #### HIGH - MUST
-
-- [x] Dedup code. DRY, move to shared, etc:
-  - [x] expo-runtime: function compileTaoForExpoRuntime(opts: CompileOpts): CompileResult
-  - [x] headless-test-runtime: export async function compileTaoForHeadlessRuntime(opts: CompileOpts)
-  - [x] .. and their util functions
-  - [x] and whatever else makes sense
 
 - [ ] Improve testing
   - [ ] Add View Keys
@@ -70,6 +62,7 @@ Also see Roadmap.
 
 #### MEDIUM
 
+- [ ] Cleanup runtime code and types. A lil scrappy as is.
 - Dev Env:
   - [ ] Claude code direct
   - [ ] Try removing the just-agents restriction and see what development is like without it.
@@ -94,9 +87,6 @@ Also see Roadmap.
     }
     ```
 
-- [ ] Add ability to specify which app to dev-run.
-- [x] Try implementing source maps.
-- [x] Upgrade react native.
 - [ ] Have ALL Node imports through a single shared import. Path, etc
 - [ ] Make sure filtered test running works for just and just-agents.
 - [ ] Require reference names to be uppercase?
@@ -249,3 +239,16 @@ Also see Roadmap.
 - [x] export const `Switch` (`type` / `property` / `bind`) wrapping the exhaustive switch helpers in `TypeSafety.ts`
 - [x] Implement prototype-chaining based scope (See kitchen sink test scenario)
   - [x] Get kitchen sink test passing: invocations need to have scoped dependencies passed in somehow ..
+- [x] Make "file" visibility into "hide".
+- [x] _gen- -> ../_gen patch may have screwed up many different parts of the dev env. Search, confirm, fix.
+  - Fixed: dprint `excludes` only had `**/_gen-*`, so plain `_gen/` (Expo `tao-app` output) was still formatted; added `**/_gen/**`. Swept repo for stale Expo paths — none found; eslint/gitignore/clean already covered `_gen/`.
+  - Optional later: exclude `_gen/tao-app/**` from `packages/expo-runtime/tsconfig.json` if TS server noise on generated files becomes annoying (watch import resolution vs `app/index.tsx`).
+- [x] just dev -> "IDE TextMate grammar merged" twice
+- [x] Dedup code. DRY, move to shared, etc:
+  - [x] expo-runtime: function compileTaoForExpoRuntime(opts: CompileOpts): CompileResult
+  - [x] headless-test-runtime: export async function compileTaoForHeadlessRuntime(opts: CompileOpts)
+  - [x] .. and their util functions
+  - [x] and whatever else makes sense
+- [x] Add ability to specify which app to dev-run.
+- [x] Try implementing source maps.
+- [x] Upgrade react native.

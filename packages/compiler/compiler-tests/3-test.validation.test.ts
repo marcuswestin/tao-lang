@@ -17,7 +17,7 @@ describe('parse:', () => {
         app KitchenSink { ui RootView }
         view RootView { Text value "${needle}" {} }
         view Text value string {
-            inject \`\`\`ts return <RN.Text>{props.value}</RN.Text> \`\`\`
+            inject \`\`\`ts return <RN.Text>{_ViewProps.value}</RN.Text> \`\`\`
         }
     `
     const result = await parseTaoFully(code)
@@ -103,6 +103,40 @@ describe('statement placement validation:', () => {
     expect(report.getHumanErrorMessages().some(m => m.includes(validationMessages.actionBody))).toBe(true)
   })
 
+  test('view render in inline action expression body fails validation', async () => {
+    const report = await parseASTWithErrors(`
+      view Text value string { }
+      view Btn title string, Action any { }
+      view V {
+        Btn title "x", Action action {
+          Text value "bad"
+        }
+      }
+    `)
+    expect(report.getHumanErrorMessages().some(m => m.includes(validationMessages.actionBody))).toBe(true)
+  })
+
+  test('state update in inline action expression is allowed (same as named action body)', async () => {
+    await parseTaoFully(`
+      view B title string, Action any { }
+      view V {
+        state s = 0
+        B title "b", Action action { set s = 1 }
+      }
+    `)
+  })
+
+  test('state update in action body is allowed (not in view body)', async () => {
+    await parseTaoFully(`
+      view V {
+        state s = 1
+        action A {
+          set s = 2
+        }
+      }
+    `)
+  })
+
   test('app declaration in view body fails validation', async () => {
     const report = await parseASTWithErrors(`
       view V {
@@ -111,6 +145,81 @@ describe('statement placement validation:', () => {
       }
     `)
     expect(report.getHumanErrorMessages().some(m => m.includes(validationMessages.viewBody))).toBe(true)
+  })
+})
+
+describe('state update RHS edge cases (parse + validate):', () => {
+  test('set file-level state from file-level alias (=)', async () => {
+    await parseTaoFully(`
+      state a = 10
+      alias b = 20
+      view V {
+        action CopyAliasToState {
+          set a = b
+        }
+      }
+    `)
+  })
+
+  test('set file-level state from another file-level state with expression', async () => {
+    await parseTaoFully(`
+      state a = 1
+      state b = 2
+      view V {
+        action Combine {
+          set b = a + 3
+        }
+      }
+    `)
+  })
+
+  test('set view state from file-level state and alias in expression', async () => {
+    await parseTaoFully(`
+      state fileN = 100
+      alias offset = 7
+      view V {
+        state localN = 0
+        action InitFromFileAndAlias {
+          set localN = fileN + offset
+        }
+      }
+    `)
+  })
+
+  test('set file-level state from view state (=)', async () => {
+    await parseTaoFully(`
+      state fileS = 0
+      view V {
+        state localS = 5
+        action PushUp {
+          set fileS = localS
+        }
+      }
+    `)
+  })
+
+  test('set with += using another state on RHS', async () => {
+    await parseTaoFully(`
+      state base = 3
+      state acc = 10
+      view V {
+        action AddBase {
+          set acc += base
+        }
+      }
+    `)
+  })
+
+  test('unary minus in RHS expression', async () => {
+    await parseTaoFully(`
+      state a = 5
+      state b = 0
+      view V {
+        action T {
+          set b = -a + 10
+        }
+      }
+    `)
   })
 })
 
@@ -157,7 +266,7 @@ describe('compile errors:', () => {
     const multi = await parseMultipleFiles([
       {
         path: '/project/app.tao',
-        code: `hide app CompileErrorApp {
+        code: `app CompileErrorApp {
     ui MissingView
 }
 `,

@@ -6,7 +6,7 @@ import { makeValidater, type Reporter } from './ValidationReporter'
 /** validationMessages are the exact diagnostics for TaoFile and Block placement rules. */
 export const validationMessages = {
   viewBody: 'Only view/alias/state/action/inject statements are allowed in a view body.',
-  actionBody: 'Only state/action/inject/set statements are allowed in an action body.',
+  actionBody: 'Only state/action/inject and set (state update) statements are allowed in an action body.',
   topLevel: 'Only alias/state/view/action/inject/use statements are allowed at file level.',
 } as const
 
@@ -73,7 +73,7 @@ function getBlockStatementContext(block: AST.Block): 'view' | 'action' | null {
   const parent = block.$container
   if (AST.isViewDeclaration(parent) || AST.isViewRender(parent)) {
     return 'view'
-  } else if (AST.isActionDeclaration(parent)) {
+  } else if (AST.isActionDeclaration(parent) || AST.isActionExpression(parent)) {
     return 'action'
   }
   Assert.never(parent)

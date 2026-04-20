@@ -48,9 +48,23 @@ function switchBindItemType_Exhaustive<
   return handlers[key].bind(bindThis)(item as Extract<ItemT, { $type: typeof key }>)
 }
 
+/** switch_Exhaustive returns `handlers[value](value)` for a discriminated `value` with exhaustive `handlers` keys. */
+function switch_Exhaustive<T extends string | number | symbol, ResultT>(
+  value: T,
+  handlers: { [K in T]: (value: K) => ResultT },
+): ResultT {
+  return handlers[value](value)
+}
+
+export type switch_safe = typeof switch_Exhaustive & {
+  type: typeof switchType_Exhaustive
+  property: typeof switchProperty_Exhaustive
+  bind: typeof switchBindItemType_Exhaustive
+}
+
 /** switch_safe groups exhaustive switch helpers: `type` (on `$type`), `property` (on a field), and `bind` (type + bound `this`). */
-export const switch_safe = {
+export const switch_safe = Object.assign(switch_Exhaustive, {
   type: switchType_Exhaustive,
   property: switchProperty_Exhaustive,
   bind: switchBindItemType_Exhaustive,
-}
+})

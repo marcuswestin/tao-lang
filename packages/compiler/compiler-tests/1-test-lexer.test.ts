@@ -1,3 +1,5 @@
+import { TaoParser } from '@compiler/langium/parser'
+import { Assert } from '@shared'
 import { describe, lexTokens, lexTokensWithErrors, test } from './test-utils/test-harness'
 
 describe('Lexer', () => {
@@ -57,7 +59,15 @@ describe('Lexer', () => {
     })
 
     test('unclosed multi-line comment', async () => {
-      await lexTokensWithErrors(`/* comment without end`, '/')
+      // With `/` and `*` as operator keywords, `/*` may tokenize as two tokens; rejection happens at parse time.
+      const { errorReport } = await TaoParser.parseString(`/* comment without end`, {
+        stdLibRoot: '',
+        validateUpToStage: 'parsing',
+      })
+      Assert(
+        errorReport.hasError(),
+        `Expected parse pipeline to report an error, got: ${errorReport.getHumanErrorMessage()}`,
+      )
     })
 
     test('unclosed ts code block', async () => {

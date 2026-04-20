@@ -1,16 +1,17 @@
 import {
   Compiled,
+  compileIndentedNodeList,
+  compileInlineNodeList,
   compileNode,
   compileNodeList,
   compileNodeListProperty,
-  compileNodeListPropertyOptional,
   compileNodeProperty,
   compileNodePropertyRef,
   compileNoop,
+  CompositeGeneratorNode,
 } from '@compiler/codegen/codegen-util'
-import * as LangiumGen from '@parser/generate'
 import { AST } from '@parser/parser'
-import { Assert, Stream, switch_safe } from '@shared'
+import { Assert, Iterable as _Iterable, Stream, switch_safe } from '@shared'
 import { compileTODO } from '../codegen-util'
 
 export function compileTaoFile(taoFile: AST.TaoFile): Compiled {
@@ -53,21 +54,28 @@ class RuntimeGen {
     })
   }
 
+  /** Expression compiles a Tao expression to JS. `render` subscribes during React render, `peek` reads synchronously (actions, file init). */
   Expression(expression: AST.Expression): Compiled {
     return switch_safe.type(expression, {
+      BinaryExpression: (node) => {
+        const left = this.Expression(node.left)
+        const right = this.Expression(node.right)
+        return compileNode(node)`TR.BinaryOperation(${left}, '${node.op}', ${right})`
+      },
+      UnaryExpression: (node) => {
+        const operand = this.Expression(node.operand)
+        return compileNode(node)`TR.UnaryOperation('${node.op}', ${operand})`
+      },
       StringLiteral: (node) => {
-        return compileNode(node)`
-          TaoRuntime.StringLiteral(${JSON.stringify(node.string)}).read()
-        `
+        return compileNode(node)`TR.Literal('${node.string}')`
       },
       NumberLiteral: (node) => {
-        return compileNode(node)`
-          TaoRuntime.NumberLiteral(${JSON.stringify(node.number)}).read()
-        `
+        return compileNode(node)`TR.Literal(${node.number})`
       },
       NamedReference: (node) => {
-        return compileNode(node)`${this.scopedName(node)}.read()`
+        return compileNode(node)`_Scope.${node.referenceName.$refText}`
       },
+      ActionExpression: (node) => this.ActionExpression(node),
     })
   }
 
@@ -84,7 +92,7 @@ class RuntimeGen {
   Declaration_alias(declaration: AST.AssignmentDeclaration): Compiled {
     const value = this.Expression(declaration.value)
     return compileNode(declaration)`
-      ${this.scopedName(declaration)} = TaoRuntime.Alias(${value});
+      ${this.scopedName(declaration)} = TR.Alias(${value})
     `
   }
 
@@ -119,17 +127,24 @@ class RuntimeGen {
   // Actions
   //////////
 
+  /** ActionExpression compiles an inline `action` expression (e.g. a view argument) the same way as a block body action. */
+  ActionExpression(node: AST.ActionExpression): Compiled {
+    return this.actionLiteral(node, node.name)
+  }
+
   ActionDeclaration(declaration: AST.ActionDeclaration): Compiled {
     const scopedName = this.scopedName(declaration)
-    if (!isBlockWithStatements(declaration.block)) {
-      return compileNode(declaration)`
-        ${scopedName} = TaoRuntime.Action(function ${declaration.name}(_Scope: any) {})
-      `
-    }
-    const scopedBlock = this.Block(declaration.block)
     return compileNode(declaration)`
-      ${scopedName} = TaoRuntime.Action(function ${declaration.name}(_Scope: any)${scopedBlock})
-    `
+        ${scopedName} = ${this.actionLiteral(declaration, declaration.name)}
+      `
+  }
+
+  actionLiteral(node: AST.ActionExpression | AST.ActionDeclaration, name: string | undefined): Compiled {
+    const nameStr = name ? ` ${name}` : ''
+    if (!isBlockWithStatements(node.block)) {
+      return compileNode(node)`TR.Action(function${nameStr}() {})`
+    }
+    return compileNode(node)`TR.Action(function${nameStr}() ${this.Block(node.block)})`
   }
 
   Declaration_state(declaration: AST.AssignmentDeclaration): Compiled {
@@ -137,72 +152,94 @@ class RuntimeGen {
     const value = this.Expression(declaration.value)
     return AST.isTaoFile(declaration.$container)
       ? compileNode(declaration)`
-        ${name} = TaoRuntime.TopLevelState(${value});
+        ${name} = TR.AppState(${value})
       `
       : compileNode(declaration)`
-        ${name} = TaoRuntime.useViewState(${value});
+        ${name} = TR.ViewState(${value})
       `
   }
 
   StateUpdate(update: AST.StateUpdate): Compiled {
-    const op = compileNodeProperty(update, 'op')
+    const operator = compileNodeProperty(update, 'operator')
     const value = this.Expression(update.value)
     return compileNode(update)`
-      TaoRuntime.updateState(${this.scopedName(update.stateRef)}, '${op}', ${value})
+      _Scope.${update.stateRef.ref!.name}.updateValue('${operator}', ${value})
     `
   }
 
   // Views
   ////////
 
-  ViewDeclaration(declaration: AST.ViewDeclaration): Compiled {
-    const block = declaration.block
-    const declarations = this.streamTree(block)
-      .filterIs(AST.isDeclaration)
-    const useBindingRefs = this.streamTree(block)
-      .filterIs(AST.isNamedReference)
-    const liveStateBindings = this.streamTree(block)
-      .filterIs(AST.isLiveStateBinding)
-    const renderNodes = this.streamTree(block)
+  ViewDeclaration(viewDeclaration: AST.ViewDeclaration): Compiled {
+    const { block, name, parameterList } = viewDeclaration
+
+    const declarations = this.streamAllDescendantsOf(block)
+      .filterIs(AST.isDeclaration).toArray()
+
+    const bindings = this.streamAllDescendantsOf(block)
+      .filterIs(AST.isReactiveBinding)
+      .filter(isMutableStateReference)
+      .map(reactiveBindingToReferenceable)
+      .unique()
+
+    const renderNodes = this.streamBlockStatements(block)
       .filterIs(AST.isRenderNode)
 
+    const params = this.ViewParameterList(parameterList)
+
     return this.scoped(() =>
-      compileNode(declaration)`
-        function ${declaration.name}(${this.ViewParameterList(declaration.parameterList)}) {
-          ${this.pushScopeDeclaration(declaration.block)}
-          ${compileNodeList(declarations, declaration => this.Declaration(declaration))}
-          ${compileNodeList(useBindingRefs, ref => this.view_useBinding(ref))}
-          ${compileNodeList(liveStateBindings, binding => this.view_liveStateBinding(binding))}
-          return <>
-            ${compileNodeList(renderNodes, renderNode => this.view_renderNode(renderNode))}
-          </>
-        }
+      compileNode(viewDeclaration)`
+        const ${name} = TR.BlockScope(_Scope, (_Scope) => {
+          return function ${name}_View(${params}) {
+            ${this.typeDeclarations(viewDeclaration, declarations)}
+            ${compileNodeList(declarations, declaration => this.Declaration(declaration))}
+            ${compileNodeList(bindings, decl => this.reactiveBinding(decl))}
+            return <>
+              ${compileNodeList(renderNodes, renderNode => this.renderNode(renderNode))}
+            </>
+          }
+        })
       `
     )
   }
 
-  view_liveStateBinding(binding: AST.LiveStateBinding): Compiled {
-    const state = binding.stateRef
-    const declName = this.declarationName(state.ref!)
-    return compileNode(binding)`${this.scopedName(state)} = ${declName}.useState(_Scope)`
-  }
-
-  view_useBinding(ref: AST.NamedReference): Compiled {
-    return compileNode(ref)`
-      ${this.useReference(ref.referenceName)} = ${this.declarationName(ref.referenceName.ref!)}.useState(_Scope)
+  typeDeclarations(viewDeclaration: AST.ViewDeclaration, declarations: AST.Declaration[]): Compiled {
+    return compileNode(viewDeclaration)`
+      TR.Declare<typeof _Scope, {
+        ${compileIndentedNodeList(declarations, declaration => this.typeDeclaration(declaration))}
+      }>(_Scope)
     `
   }
 
-  view_renderNode(renderNode: AST.ViewRender | AST.Injection): Compiled {
+  typeDeclaration(declaration: AST.Declaration): Compiled {
+    const runtimeType = this.runtimeTypes[declaration.type]
+    return compileNode(declaration)`
+      ${declaration.name}: ReturnType<_TaoRuntime['${runtimeType}']>
+    `
+  }
+
+  runtimeTypes = {
+    alias: 'Alias',
+    state: 'AppState',
+    action: 'Action',
+    view: 'ViewState',
+    app: '<unsupported in runtimeTypes>',
+  } as const
+
+  reactiveBinding(decl: AST.Referenceable): Compiled {
+    return compileNode(decl)`_Scope.${decl.name}.useReactiveHandle()`
+  }
+
+  renderNode(renderNode: AST.ViewRender | AST.Injection): Compiled {
     return switch_safe.type(renderNode, {
       ViewRender: (stmt) => this.ViewRender(stmt),
-      Injection: (stmt) => compileNode(stmt)`{${this.Injection(stmt)}}`,
+      Injection: (stmt) => compileNode(stmt)`{ ${this.Injection(stmt)} }`,
     })
   }
 
-  /** ViewParameterList emits the view's props destructuring with the implicit _taoScope prop. */
+  /** ViewParameterList emits the view's properties destructuring with the implicit _taoScope prop. */
   ViewParameterList(_parameterList: AST.ParameterList | undefined): Compiled {
-    return new LangiumGen.CompositeGeneratorNode('{ _taoScope, ...props }: any')
+    return new CompositeGeneratorNode('_ViewProps: any')
   }
 
   ViewRender(viewRender: AST.ViewRender): Compiled {
@@ -211,11 +248,11 @@ class RuntimeGen {
       const scopeProp = this.viewScopeProp(viewDecl)
       if (!isBlockWithStatements(viewRender.block)) {
         return compileNode(viewRender)`
-          <${viewDecl.name}${scopeProp}${argumentList} />
+          <${viewDecl.name}${scopeProp} ${argumentList}/>
         `
       } else {
         return compileNode(viewRender)`
-          <${viewDecl.name}${scopeProp}${argumentList}>
+          <${viewDecl.name}${scopeProp} ${argumentList}>
             ${compileNodeList(viewRender.block.statements, stmt => this.viewRenderBlockStatement(stmt))}
           </${viewDecl.name}>
         `
@@ -226,7 +263,13 @@ class RuntimeGen {
   viewRenderBlockStatement(stmt: AST.Statement): Compiled {
     if (AST.isDeclaration(stmt)) {
       // Declarations are hoisted in views, so ignore it here
-      return compileNode(stmt)`/* ${stmt.name} = ${stmt.type} */`
+      return compileNoop()
+    }
+    if (AST.isViewRender(stmt)) {
+      return this.renderNode(stmt)
+    }
+    if (AST.isInjection(stmt)) {
+      return compileNode(stmt)`{${this.Injection(stmt)}}`
     }
     return this.Statement(stmt)
   }
@@ -234,11 +277,11 @@ class RuntimeGen {
   // Scope
   ////////
 
-  private declScope = '_fileScope'
+  private declScope = '_Scope'
 
   taoFileScope(taoFile: AST.TaoFile): Compiled {
     return compileNode(taoFile)`
-      const _fileScope: Record<string, any> = {}
+      const _Scope: Record<string, any> = {}
     `
   }
 
@@ -246,7 +289,7 @@ class RuntimeGen {
     if (!isNestedDeclaration(declaration)) {
       return compileNoop()
     }
-    return compileNode(declaration)` _taoScope={_Scope}`
+    return compileNode(declaration)` _ViewScope={_Scope}`
   }
 
   scoped(fn: () => Compiled): Compiled {
@@ -255,12 +298,6 @@ class RuntimeGen {
     const compiled = fn()
     this.declScope = prevScope
     return compiled
-  }
-
-  pushScopeDeclaration(block: AST.Block): Compiled {
-    return compileNode(block)`
-      const _Scope = TaoRuntime.pushScope(_taoScope ?? _fileScope)
-    `
   }
 
   // TODO: Ro: "I don't fully understand this function.
@@ -287,7 +324,7 @@ class RuntimeGen {
 
   useReferenceable(node: AST.Referenceable): Compiled {
     const name = compileNodeProperty(node, 'name')
-    return compileNode(node)`${this.declScope}.${name}_use`
+    return compileNode(node)`${this.declScope}.${name}`
   }
 
   declarationName(node: AST.Node & { name: string }): Compiled {
@@ -310,10 +347,13 @@ class RuntimeGen {
   }
 
   ArgumentList(argumentList?: AST.ArgumentList): Compiled | undefined {
-    return compileNodeListPropertyOptional(argumentList, 'arguments', argument => {
+    if (!argumentList) {
+      return compileNoop()
+    }
+    return compileInlineNodeList(argumentList.arguments, argument => {
       return compileNode(argument)`
-        /**/${argument.name} = {${this.Expression(argument.value)}}
-      `
+        ${argument.name}={${this.Expression(argument.value)}}
+      `.append(' ')
     })
   }
 
@@ -342,9 +382,13 @@ class RuntimeGen {
 
   // AST Tree traversal
 
-  streamTree(node: AST.Node): Stream<AST.Node> {
+  private streamAllDescendantsOf(node: AST.Node): Stream<AST.Node> {
     const iterator = AST.Utils.streamAllContents(node).iterator()
     return Stream.fromIterator(iterator)
+  }
+
+  private streamBlockStatements(block: AST.Block): Stream<AST.Statement> {
+    return Stream.fromArray(block.statements)
   }
 }
 
@@ -367,4 +411,15 @@ function isNestedDeclaration(decl: AST.Declaration): boolean {
 function trimTsFence(content: string) {
   const fenced = content.replace(/^```ts/g, '\n/* ```ts */\n').replace(/ *```$/g, '\n/* ``` */')
   return fenced.replace('```ts\n\n', '```ts\n').replace('\n\n/* ``` */', '\n/* ``` */')
+}
+
+function isMutableStateReference(node: AST.ReactiveBinding): boolean {
+  return AST.isStateUpdate(node) || (AST.isNamedReference(node) && node.referenceName.ref?.type === 'state')
+}
+
+function reactiveBindingToReferenceable(node: AST.ReactiveBinding): AST.Referenceable {
+  return switch_safe.type(node, {
+    NamedReference: (n) => n.referenceName.ref!,
+    StateUpdate: (n) => n.stateRef.ref!,
+  }) as AST.Referenceable
 }

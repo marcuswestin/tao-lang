@@ -55,6 +55,26 @@ describe('parse:', () => {
     expect(action.unwrap().parameterList?.parameters.length).toBe(1)
     expect(action.unwrap().block.statements.length).toBe(1)
   })
+
+  test('parses inline action expression in view call argument', async () => {
+    const doc = await parseAST(`
+      view Btn title string, Action any { }
+      view V {
+        state n = 0
+        Btn title "Go", Action action onPress { }
+      }
+    `)
+    const viewV = doc.statements.second.as_ViewDeclaration
+    const render = viewV.block.statements.last.as_ViewRender
+    expect(render.unwrap().$type).toBe('ViewRender')
+    const actionArg = render.argumentList?.arguments[1]!
+    expect(actionArg.name).toBe('Action')
+    const val = actionArg.value
+    expect(AST.isActionExpression(val)).toBe(true)
+    if (AST.isActionExpression(val)) {
+      expect(val.name).toBe('onPress')
+    }
+  })
 })
 
 describe('module declaration visibility', () => {
@@ -72,14 +92,12 @@ describe('module declaration visibility', () => {
     viewDecl.declaration.as_ViewDeclaration.expect('name').toBe('PublicView')
   })
 
-  test('parses hide app declaration', async () => {
+  test('parses bare app declaration (no visibility modifier)', async () => {
     const doc = await parseAST(`
-      hide app PrivateApp { ui MyView }
+      app PrivateApp { ui MyView }
       view MyView { }
     `)
-    const appDecl = doc.statements.first.as_ModuleDeclaration
-    appDecl.expect('visibility').toBe('hide')
-    appDecl.declaration.as_AppDeclaration.expect('name').toBe('PrivateApp')
+    doc.statements.first.as_AppDeclaration.expect('name').toBe('PrivateApp')
     const myView = doc.statements.second.as_ViewDeclaration
     myView.expect('name').toBe('MyView')
   })

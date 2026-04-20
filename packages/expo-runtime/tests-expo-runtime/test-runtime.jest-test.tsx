@@ -40,7 +40,6 @@ describe('runtime:', () => {
     const { needle, runtimeDir, taoPath } = makeNeedleApp()
     // `just tao` runs `_tao`, which does `pushd ../tao-cli`; cwd must be `packages/*` (not repo root).
     const exitCode = await _cmd('just', ['tao', 'compile', taoPath, '--runtime-dir', runtimeDir], {
-      // cwd: FS.resolvePath(__dirname, '..'), ???
       cwd: FS.joinPath(__dirname, '../../..', 'packages/expo-runtime'),
     })
     expect(exitCode).toBe(0)
@@ -77,18 +76,22 @@ function emitTreeContainsNeedle(rootDir: string, needle: string): boolean {
 function makeNeedleApp() {
   const needle = Math.random().toString(36).substring(2, 15)
   const runtimeDir = FS.resolvePath(__dirname, '..')
-  const code = `app KitchenSink { ui RootView }
+  const code = `
+    app KitchenSink { ui RootView }
 
     view RootView {
-      Text value "${needle}" {}
+      alias TextValue = "${needle}"
+      Text value TextValue {}
     }
 
     view Text value string {
-        inject \`\`\`ts return <RN.Text>{props.value}</RN.Text> \`\`\`
+        inject \`\`\`ts
+          return TR.Views.Text({ children: [_ViewProps.value.evaluate().jsValue] })
+        \`\`\`
     }
   `
   const dir = FS.mkTmpDir(FS.joinPath(FS.tmpdir(), 'tao-expo-test-'))
-  const taoPath = FS.joinPath(dir, 'app.tao')
+  const taoPath = FS.joinPath(dir, 'NeedleApp.tao')
   FS.writeFile(taoPath, code)
   return { needle, runtimeDir, taoPath }
 }

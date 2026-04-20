@@ -26,8 +26,11 @@ setup: _setup_git_repo
 # Development
 #############
 
-# Run all components in watch mode
-dev: build _dev
+DEV_APP := "./Apps/Test Apps/Kitchen Sink/Kitchen Sink.tao"
+
+# Run all components in watch mode.
+@dev: build
+    export TAO_DEV_APP="{{ DEV_APP }}" && just _dev
 
 # Run full battery of checks and builds to prepare for commit.
 prep-commit: _prep_commit

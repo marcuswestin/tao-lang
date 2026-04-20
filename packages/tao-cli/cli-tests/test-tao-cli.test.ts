@@ -26,7 +26,7 @@ describe('cli:', () => {
   })
 
   test('compile file with use statement', async () => {
-    const appPath = FS.resolvePath(__dirname, '../../../Apps/Test Apps/Kitchen Sink/app.tao')
+    const appPath = FS.resolvePath(__dirname, '../../../Apps/Test Apps/Kitchen Sink/Kitchen Sink.tao')
     const res = await compileFile(appPath)
     expect(res.files.length).toBeGreaterThan(0)
   })
@@ -40,7 +40,7 @@ function getRandomUI() {
     view RootView { Text value "${needle}" {} }
 
     view Text value string {
-        inject \`\`\`ts return <RN.Text>{props.value}</RN.Text> \`\`\`
+        inject \`\`\`ts return <RN.Text>{_ViewProps.value}</RN.Text> \`\`\`
     }
   `
   return { code, needle }

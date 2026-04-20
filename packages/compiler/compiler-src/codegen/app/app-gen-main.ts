@@ -81,9 +81,7 @@ function compileOneTaoFileModule(
   const importBase = '../'.repeat(dirCount - 1)
 
   result.append(compileNode(taoFile)`
-    // @ts-nocheck
-    import * as RN from 'react-native'
-    import { TaoRuntime } from '${importBase}use/@tao/tao-runtime/tao-runtime'
+    import { _TaoRuntime, TR } from '${importBase}use/@tao/tao-runtime/tao-runtime'
     ${importHeader}// ${taoFile.$document!.uri}
   `)
   const body = compileTaoFile(taoFile)
@@ -109,7 +107,7 @@ import * as RN from 'react-native'
 import * as React from 'react'
 import { AppUIView } from '${importPathFromBootstrapToEntry}'
 
-const _compiledTaoAppRootViewStyle = { flex: 1, backgroundColor: 'red' }
+const _compiledTaoAppRootViewStyle = { flex: 1, backgroundColor: 'black' }
 
 export default function CompiledTaoApp() {
   return (
