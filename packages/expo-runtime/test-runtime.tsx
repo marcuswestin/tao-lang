@@ -37,7 +37,7 @@ export function createExpoScenarioAdapter() {
   })
 }
 
-/** compileTaoForExpoRuntime compiles a scenario's app.tao into its expo runtime test output directory. */
+/** compileTaoForExpoRuntime compiles a scenario's ${scenarioName}.tao into its expo runtime test output directory. */
 function compileTaoForExpoRuntime(opts: TaoScenarioAdapterCompileOpts): TaoSdkRuntimeCompileResult {
   const outputPath = FS.resolvePath(runtimeDir, opts.outputFileName)
   return compileTaoSdkWithBunSync({

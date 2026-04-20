@@ -32,7 +32,7 @@ const runtimeTestingDeps = {
   fireEvent: RNTesting.fireEvent,
 }
 
-/** createHeadlessScenarioAdapter builds a `CompiledTaoScenarioAdapter` that compiles `${scenarioDir}/app.tao` into the stable
+/** createHeadlessScenarioAdapter builds a `CompiledTaoScenarioAdapter` that compiles `${scenarioDir}/${scenarioName}.tao` into the stable
  * per-scenario path under `.builds/headless-test-runtime/_gen-runtime-tests/` (repo-relative, outside this package), renders via Testing Library, and runs RTL `cleanup` on adapter cleanup. */
 export function createHeadlessScenarioAdapter() {
   return createCompiledTaoScenarioAdapter({
