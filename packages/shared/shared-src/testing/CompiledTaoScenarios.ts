@@ -44,7 +44,7 @@ export type CompiledTaoScenarioAdapter = {
   cleanup(): Promise<void> | void
 }
 
-/** TaoScenarioAdapterCompileOpts passes `app.tao` path and output layout into a runtime compile helper. */
+/** TaoScenarioAdapterCompileOpts passes `${scenarioName}.tao` path and output layout into a runtime compile helper. */
 export type TaoScenarioAdapterCompileOpts = {
   path: string
   stdLibRoot?: string
@@ -65,7 +65,7 @@ export function createCompiledTaoScenarioAdapter(config: {
     compileScenario({ scenarioDir, scenarioName }) {
       const outputFileName = config.computeOutputFileName(scenarioName)
       return config.compile({
-        path: FS.resolvePath(scenarioDir, 'app.tao'),
+        path: FS.resolvePath(scenarioDir, `${scenarioName}.tao`),
         stdLibRoot: config.stdLibRoot,
         outputFileName,
       })

@@ -9,6 +9,7 @@ export type Stream<a> = { [__Stream_brand]: true } & {
   filterIs: <b extends a>(p: (a: a) => a is b) => Stream<b>
   map: <b>(f: (a: a) => b) => Stream<b>
   toIterable: () => Iterable<a>
+  unique: () => Stream<a>
 }
 
 export type Collection<a> = Iterable<a> | Generator<a, void, unknown> | Stream<a>
@@ -38,7 +39,20 @@ function fromIterator<a>(itt: Iterator<a>): Stream<a> {
     filterIs: <b extends a>(p: (a: a) => a is b) => fromIterator(filter(itt, p)) as Stream<b>,
     map: <b>(f: (a: a) => b) => fromIterator(map(itt, f)),
     toIterable: () => to_iterable(itt),
+    unique: () => fromIterator(unique(itt)),
   }
+}
+
+/** unique returns items from `itt` omitting later values already seen (Set identity). */
+function unique<a>(itt: Iterator<a>): Iterator<a> {
+  const seen = new Set<a>()
+  return filter(itt, (value) => {
+    if (seen.has(value)) {
+      return false
+    }
+    seen.add(value)
+    return true
+  })
 }
 
 function isStream<a>(itt: Collection<a>): itt is Stream<a> {
