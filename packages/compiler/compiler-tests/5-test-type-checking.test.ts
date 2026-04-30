@@ -1,4 +1,10 @@
 import {
+  expectDuplicateIdentifier,
+  expectHumanMessagesContain,
+  expectSomeHumanMessageSatisfies,
+  expectTypeAssignabilityError,
+} from './test-utils/diagnostics'
+import {
   describe,
   expect,
   parseASTWithErrors,
@@ -58,7 +64,7 @@ describe('type checking — type declarations:', () => {
       type FirstName is number
       view V { }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes("Duplicate identifier 'FirstName'"))).toBe(true)
+    expectDuplicateIdentifier(report, 'FirstName')
   })
 })
 
@@ -198,7 +204,7 @@ describe('type checking — operators and string templates:', () => {
       alias Bad = "x" + 1
       view V { }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes('+'))).toBe(true)
+    expectHumanMessagesContain(report, '+')
   })
 
   test('text repetition requires text on the left and number on the right', async () => {
@@ -211,7 +217,7 @@ describe('type checking — operators and string templates:', () => {
       alias Bad = 3 * "ha"
       view V { }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes('*'))).toBe(true)
+    expectHumanMessagesContain(report, '*')
   })
 
   test('string template interpolation accepts number operand', async () => {
@@ -229,12 +235,12 @@ describe('type checking — operators and string templates:', () => {
     const report = await parseASTWithErrors(
       ['action H { }', 'alias S = "x ${action { }}"', 'view V { }'].join('\n'),
     )
-    expect(report.getHumanErrorMessages().some(m => m.includes('interpolation'))).toBe(true)
+    expectHumanMessagesContain(report, 'interpolation')
   })
 
   test('string template interpolation rejects bare action name reference', async () => {
     const report = await parseASTWithErrors(['action H { }', 'alias S = "x ${H}"', 'view V { }'].join('\n'))
-    expect(report.getHumanErrorMessages().some(m => m.includes('interpolation'))).toBe(true)
+    expectHumanMessagesContain(report, 'interpolation')
   })
 
   test('unary minus requires number operand', async () => {
@@ -242,7 +248,7 @@ describe('type checking — operators and string templates:', () => {
       alias Bad = -"x"
       view V { }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes('Unary'))).toBe(true)
+    expectHumanMessagesContain(report, 'Unary')
   })
 
   test('typed literal rejects interpolation (must be constant literal)', async () => {
@@ -251,9 +257,10 @@ describe('type checking — operators and string templates:', () => {
     const report = await parseASTWithErrors(
       ['type FirstName is text', 'state N = 1', 'alias Bad = FirstName "Hi ${N}"', 'view V { }'].join('\n'),
     )
-    expect(
-      report.getHumanErrorMessages().some(m => m.includes('Typed literal') && m.includes('interpolation')),
-    ).toBe(true)
+    expectSomeHumanMessageSatisfies(
+      report,
+      m => m.includes('Typed literal') && m.includes('interpolation'),
+    )
   })
 })
 
@@ -291,7 +298,7 @@ describe('type checking — struct/item types:', () => {
         Show "nope"
       }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes('does not match any unbound parameter'))).toBe(true)
+    expectHumanMessagesContain(report, 'does not match any unbound parameter')
   })
 
   test('view parameter typed by a struct rejects a different nominal struct argument', async () => {
@@ -303,9 +310,7 @@ describe('type checking — struct/item types:', () => {
         ShowPerson Pet { Name "Cat", Age 4 }
       }
     `)
-    expect(
-      report.getHumanErrorMessages().some(m => m.includes('does not match any unbound parameter')),
-    ).toBe(true)
+    expectHumanMessagesContain(report, 'does not match any unbound parameter')
   })
 
   test('member access on struct-typed alias yields the declared field type', async () => {
@@ -363,9 +368,10 @@ describe('type checking — struct/item types:', () => {
         ShowJob Job { Title "Builder" }
       }
     `)
-    expect(
-      report.getHumanErrorMessages().some(m => m.includes("Field 'WrongName'") && m.includes("type 'Person.Job'")),
-    ).toBe(true)
+    expectSomeHumanMessageSatisfies(
+      report,
+      m => m.includes("Field 'WrongName'") && m.includes("type 'Person.Job'"),
+    )
   })
 
   test('member access on Person.Job parameter rejects field-type mismatch in view argument', async () => {
@@ -380,9 +386,7 @@ describe('type checking — struct/item types:', () => {
         ShowJob Job { Title "Builder" }
       }
     `)
-    expect(
-      report.getHumanErrorMessages().some(m => m.includes('does not match any unbound parameter')),
-    ).toBe(true)
+    expectHumanMessagesContain(report, 'does not match any unbound parameter')
   })
 
   test('member access on struct-typed alias rejects field-type mismatch in view argument', async () => {
@@ -394,7 +398,7 @@ describe('type checking — struct/item types:', () => {
         ShowText Ro.Age
       }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes('does not match any unbound parameter'))).toBe(true)
+    expectHumanMessagesContain(report, 'does not match any unbound parameter')
   })
 
   test('struct type declared then used through a parameter renders without errors', async () => {
@@ -439,9 +443,7 @@ describe('type checking — argument binding (views):', () => {
         Btn 42
       }
     `)
-    expect(
-      report.getHumanErrorMessages().some(m => m.includes('does not match any unbound parameter')),
-    ).toBe(true)
+    expectHumanMessagesContain(report, 'does not match any unbound parameter')
   })
 
   test('two same-type params with nominal-typed arguments validate', async () => {
@@ -464,7 +466,7 @@ describe('type checking — argument binding (views):', () => {
         Pair Left "L", Left "R"
       }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes('does not match any unbound parameter'))).toBe(true)
+    expectHumanMessagesContain(report, 'does not match any unbound parameter')
   })
 
   test('arity mismatch — missing argument — is reported', async () => {
@@ -474,9 +476,7 @@ describe('type checking — argument binding (views):', () => {
         Btn "Go"
       }
     `)
-    expect(
-      report.getHumanErrorMessages().some(m => m.includes('Missing argument') && m.includes('A')),
-    ).toBe(true)
+    expectSomeHumanMessageSatisfies(report, m => m.includes('Missing argument') && m.includes('A'))
   })
 
   test('arity mismatch — extra argument — is reported', async () => {
@@ -487,9 +487,7 @@ describe('type checking — argument binding (views):', () => {
         Btn "Go", H
       }
     `)
-    expect(
-      report.getHumanErrorMessages().some(m => m.includes('does not match any unbound parameter')),
-    ).toBe(true)
+    expectHumanMessagesContain(report, 'does not match any unbound parameter')
   })
 
   test('extra argument of same type is rejected', async () => {
@@ -499,7 +497,7 @@ describe('type checking — argument binding (views):', () => {
         Btn "A", "B"
       }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes('does not match any unbound parameter'))).toBe(true)
+    expectHumanMessagesContain(report, 'does not match any unbound parameter')
   })
 })
 
@@ -530,9 +528,7 @@ describe('type checking — argument binding (actions):', () => {
         do BumpAction "hi"
       }
     `)
-    expect(
-      report.getHumanErrorMessages().some(m => m.includes('does not match any unbound parameter')),
-    ).toBe(true)
+    expectHumanMessagesContain(report, 'does not match any unbound parameter')
   })
 
   test('ambiguous argument under collision (two params of the same type) is a hard error', async () => {
@@ -542,9 +538,7 @@ describe('type checking — argument binding (actions):', () => {
         do LogPair "a"
       }
     `)
-    expect(
-      report.getHumanErrorMessages().some(m => m.includes('matches multiple unbound parameters')),
-    ).toBe(true)
+    expectHumanMessagesContain(report, 'matches multiple unbound parameters')
   })
 
   test('do <Action> with type-matched arguments validates when types are distinct', async () => {
@@ -573,7 +567,7 @@ describe('type checking — argument binding (actions):', () => {
         do LogEvent "x", H
       }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes('does not match any unbound parameter'))).toBe(true)
+    expectHumanMessagesContain(report, 'does not match any unbound parameter')
   })
 
   test('do <Action> reports type mismatch on resolved binding', async () => {
@@ -583,9 +577,7 @@ describe('type checking — argument binding (actions):', () => {
         do LogEvent 42
       }
     `)
-    expect(
-      report.getHumanErrorMessages().some(m => m.includes('does not match any unbound parameter')),
-    ).toBe(true)
+    expectHumanMessagesContain(report, 'does not match any unbound parameter')
   })
 
   test('do referencing a non-action declaration is rejected', async () => {
@@ -595,7 +587,7 @@ describe('type checking — argument binding (actions):', () => {
         do SomeView
       }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes('do') && m.includes('action'))).toBe(true)
+    expectSomeHumanMessageSatisfies(report, m => m.includes('do') && m.includes('action'))
   })
 
   test('do <Action> reports missing argument', async () => {
@@ -605,7 +597,7 @@ describe('type checking — argument binding (actions):', () => {
         do LogEvent "x"
       }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes('Missing argument') && m.includes('L'))).toBe(true)
+    expectSomeHumanMessageSatisfies(report, m => m.includes('Missing argument') && m.includes('L'))
   })
 })
 
@@ -615,21 +607,21 @@ describe('type checking — uppercase name enforcement:', () => {
       alias foo = 1
       view V { }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes("'foo'") && m.includes('uppercase'))).toBe(true)
+    expectSomeHumanMessageSatisfies(report, m => m.includes("'foo'") && m.includes('uppercase'))
   })
 
   test('lowercase view name fails validation', async () => {
     const report = await parseASTWithErrors(`
       view myView { }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes("'myView'") && m.includes('uppercase'))).toBe(true)
+    expectSomeHumanMessageSatisfies(report, m => m.includes("'myView'") && m.includes('uppercase'))
   })
 
   test('lowercase parameter name fails validation', async () => {
     const report = await parseASTWithErrors(`
       view V name text { }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes("'name'") && m.includes('uppercase'))).toBe(true)
+    expectSomeHumanMessageSatisfies(report, m => m.includes("'name'") && m.includes('uppercase'))
   })
 
   test('uppercase names pass validation', async () => {
@@ -690,9 +682,7 @@ describe('type checking — local parameter types (Phase 1):', () => {
         Badge Title 42
       }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes('not assignable') || m.includes('does not match'))).toBe(
-      true,
-    )
+    expectTypeAssignabilityError(report)
   })
 })
 
@@ -718,9 +708,7 @@ describe('type checking — dot-local parameter types (Phase 2):', () => {
         Badge .Title 123
       }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes('not assignable') || m.includes('does not match'))).toBe(
-      true,
-    )
+    expectTypeAssignabilityError(report)
   })
 
   test('dot-local struct-based `.Person { Name "Ro" }` type-checks', async () => {
@@ -772,9 +760,7 @@ describe('type checking — action local parameter types (Phase 3):', () => {
       }
       view V { }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes('not assignable') || m.includes('does not match'))).toBe(
-      true,
-    )
+    expectTypeAssignabilityError(report)
   })
 
   test('qualified outside-argument alias S = Bump.Step 3 has type Bump.Step', async () => {

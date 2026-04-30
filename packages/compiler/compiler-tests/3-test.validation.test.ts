@@ -1,6 +1,11 @@
 import { TaoParser } from '@compiler/langium/parser'
 import { validationMessages } from '@compiler/validation/tao-lang-validator'
 import {
+  expectDuplicateIdentifier,
+  expectHumanMessagesContain,
+  expectSomeHumanMessageSatisfies,
+} from './test-utils/diagnostics'
+import {
   describe,
   expect,
   parseASTWithErrors,
@@ -9,7 +14,7 @@ import {
   test,
 } from './test-utils/test-harness'
 
-describe('parse:', () => {
+describe('validation — integration smoke (full pipeline):', () => {
   test('stub test', () => expect(true).toBe(true))
 
   test('needle test', async () => {
@@ -42,7 +47,7 @@ describe('parse:', () => {
         alias X = 1
       }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes("Duplicate identifier 'X'"))).toBe(true)
+    expectDuplicateIdentifier(report, 'X')
   })
 })
 
@@ -54,7 +59,7 @@ describe('statement placement validation:', () => {
         set S = 2
       }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes(validationMessages.viewBody))).toBe(true)
+    expectHumanMessagesContain(report, validationMessages.viewBody)
   })
 
   test('use statement in view body fails validation', async () => {
@@ -63,7 +68,7 @@ describe('statement placement validation:', () => {
         use X from a/b
       }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes(validationMessages.viewBody))).toBe(true)
+    expectHumanMessagesContain(report, validationMessages.viewBody)
   })
 
   test('view render at file level fails validation', async () => {
@@ -71,7 +76,7 @@ describe('statement placement validation:', () => {
       view Text Value text { }
       Text "hi"
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes(validationMessages.topLevel))).toBe(true)
+    expectHumanMessagesContain(report, validationMessages.topLevel)
   })
 
   test('state update at file level fails validation', async () => {
@@ -79,7 +84,7 @@ describe('statement placement validation:', () => {
       state X = 1
       set X = 2
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes(validationMessages.topLevel))).toBe(true)
+    expectHumanMessagesContain(report, validationMessages.topLevel)
   })
 
   test('module declaration in view body fails validation', async () => {
@@ -88,7 +93,7 @@ describe('statement placement validation:', () => {
         hide view Inner { }
       }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes(validationMessages.viewBody))).toBe(true)
+    expectHumanMessagesContain(report, validationMessages.viewBody)
   })
 
   test('view render in action body fails validation', async () => {
@@ -100,7 +105,7 @@ describe('statement placement validation:', () => {
         }
       }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes(validationMessages.actionBody))).toBe(true)
+    expectHumanMessagesContain(report, validationMessages.actionBody)
   })
 
   test('view render in inline action expression body fails validation', async () => {
@@ -113,7 +118,7 @@ describe('statement placement validation:', () => {
         }
       }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes(validationMessages.actionBody))).toBe(true)
+    expectHumanMessagesContain(report, validationMessages.actionBody)
   })
 
   test('state update in inline action expression is allowed (same as named action body)', async () => {
@@ -144,7 +149,7 @@ describe('statement placement validation:', () => {
         app A { ui X }
       }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes(validationMessages.viewBody))).toBe(true)
+    expectHumanMessagesContain(report, validationMessages.viewBody)
   })
 
   test('action render (do …) inside an action body is allowed', async () => {
@@ -163,7 +168,7 @@ describe('statement placement validation:', () => {
       action A { }
       do A
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes(validationMessages.topLevel))).toBe(true)
+    expectHumanMessagesContain(report, validationMessages.topLevel)
   })
 
   test('action render (do …) in a view body fails validation', async () => {
@@ -173,7 +178,7 @@ describe('statement placement validation:', () => {
         do A
       }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes(validationMessages.viewBody))).toBe(true)
+    expectHumanMessagesContain(report, validationMessages.viewBody)
   })
 
   test('action render targeting a view declaration fails validation', async () => {
@@ -185,7 +190,7 @@ describe('statement placement validation:', () => {
         }
       }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes("'do'") && m.includes('view'))).toBe(true)
+    expectSomeHumanMessageSatisfies(report, m => m.includes("'do'") && m.includes('view'))
   })
 })
 
@@ -270,7 +275,7 @@ describe('parameter declaration validation:', () => {
       view V X text, X text {
       }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes("Duplicate identifier 'X'"))).toBe(true)
+    expectDuplicateIdentifier(report, 'X')
   })
 
   test('duplicate parameter names in an action parameter list fail validation', async () => {
@@ -281,7 +286,7 @@ describe('parameter declaration validation:', () => {
         }
       }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes("Duplicate identifier 'X'"))).toBe(true)
+    expectDuplicateIdentifier(report, 'X')
   })
 
   test('parameter name same as nested view declaration in body fails validation', async () => {
@@ -291,7 +296,7 @@ describe('parameter declaration validation:', () => {
         }
       }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes("Duplicate identifier 'X'"))).toBe(true)
+    expectDuplicateIdentifier(report, 'X')
   })
 
   test('distinct parameter names in one view validate', async () => {
@@ -349,7 +354,7 @@ describe('objects and nested state updates:', () => {
         alias O = { x 1, x 2 }
       }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes("Duplicate object property 'x'"))).toBe(true)
+    expectHumanMessagesContain(report, "Duplicate object property 'x'")
   })
 
   test('set on alias target fails validation', async () => {
@@ -361,12 +366,10 @@ describe('objects and nested state updates:', () => {
         }
       }
     `)
-    expect(
-      report.getHumanErrorMessages().some(m =>
-        m.includes("'set' can only target a state binding") && m.includes('alias')
-      ),
+    expectSomeHumanMessageSatisfies(
+      report,
+      m => m.includes("'set' can only target a state binding") && m.includes('alias'),
     )
-      .toBe(true)
   })
 
   test('set on view parameter fails validation', async () => {
@@ -377,12 +380,10 @@ describe('objects and nested state updates:', () => {
         }
       }
     `)
-    expect(
-      report.getHumanErrorMessages().some(m =>
-        m.includes("'set' can only target a state binding") && m.includes('parameter')
-      ),
+    expectSomeHumanMessageSatisfies(
+      report,
+      m => m.includes("'set' can only target a state binding") && m.includes('parameter'),
     )
-      .toBe(true)
   })
 
   test('object alias, member access, string concat, and deep set path validate', async () => {
@@ -427,8 +428,7 @@ describe('objects and nested state updates:', () => {
         Text O
       }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes('does not match any unbound parameter')))
-      .toBe(true)
+    expectHumanMessagesContain(report, 'does not match any unbound parameter')
   })
 
   test('Text value with object-shaped state fails validation', async () => {
@@ -439,8 +439,7 @@ describe('objects and nested state updates:', () => {
         Text Cat
       }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes('does not match any unbound parameter')))
-      .toBe(true)
+    expectHumanMessagesContain(report, 'does not match any unbound parameter')
   })
 
   test('string literal plus object-shaped alias fails validation', async () => {
@@ -451,8 +450,7 @@ describe('objects and nested state updates:', () => {
         Text "a" + O
       }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes(validationMessages.objectNotAllowedInPlusOperator)))
-      .toBe(true)
+    expectHumanMessagesContain(report, validationMessages.objectNotAllowedInPlusOperator)
   })
 
   test('object-shaped alias on left of + (non-string right) fails validation', async () => {
@@ -464,8 +462,7 @@ describe('objects and nested state updates:', () => {
         Text O + N
       }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes(validationMessages.objectNotAllowedInPlusOperator)))
-      .toBe(true)
+    expectHumanMessagesContain(report, validationMessages.objectNotAllowedInPlusOperator)
   })
 
   test('object-shaped alias on right of + (non-string left) fails validation', async () => {
@@ -477,8 +474,7 @@ describe('objects and nested state updates:', () => {
         Text N + O
       }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes(validationMessages.objectNotAllowedInPlusOperator)))
-      .toBe(true)
+    expectHumanMessagesContain(report, validationMessages.objectNotAllowedInPlusOperator)
   })
 
   test('object-shaped value on a non-Text view render argument fails validation', async () => {
@@ -489,8 +485,7 @@ describe('objects and nested state updates:', () => {
         Foo O
       }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes('does not match any unbound parameter')))
-      .toBe(true)
+    expectHumanMessagesContain(report, 'does not match any unbound parameter')
   })
 
   test('member access to unknown property on state object fails validation', async () => {
@@ -501,7 +496,7 @@ describe('objects and nested state updates:', () => {
         Text Cat.missing { }
       }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes("Property 'missing' does not exist"))).toBe(true)
+    expectHumanMessagesContain(report, "Property 'missing' does not exist")
   })
 
   test('member access to unknown property on alias object fails validation', async () => {
@@ -512,7 +507,7 @@ describe('objects and nested state updates:', () => {
         Text O.b { }
       }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes("Property 'b' does not exist"))).toBe(true)
+    expectHumanMessagesContain(report, "Property 'b' does not exist")
   })
 
   test('member access on scalar alias fails validation', async () => {
@@ -523,7 +518,7 @@ describe('objects and nested state updates:', () => {
         Text A.x { }
       }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes("Cannot access property 'x'"))).toBe(true)
+    expectHumanMessagesContain(report, "Cannot access property 'x'")
   })
 
   test('member access on scalar state fails validation', async () => {
@@ -534,7 +529,7 @@ describe('objects and nested state updates:', () => {
         Text S.x { }
       }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes("Cannot access property 'x'"))).toBe(true)
+    expectHumanMessagesContain(report, "Cannot access property 'x'")
   })
 
   test('deep member access descending into scalar field fails validation', async () => {
@@ -545,7 +540,7 @@ describe('objects and nested state updates:', () => {
         Text Cat.age.nope { }
       }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes("Cannot access property 'nope'"))).toBe(true)
+    expectHumanMessagesContain(report, "Cannot access property 'nope'")
   })
 
   test('set target on unknown nested property fails validation', async () => {
@@ -555,7 +550,7 @@ describe('objects and nested state updates:', () => {
         action A { set Cat.human.missing = "x" }
       }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes("Property 'missing' does not exist"))).toBe(true)
+    expectHumanMessagesContain(report, "Property 'missing' does not exist")
   })
 
   test('set target on scalar state with .prop fails validation', async () => {
@@ -565,7 +560,7 @@ describe('objects and nested state updates:', () => {
         action A { set S.x = 2 }
       }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes("Cannot access property 'x'"))).toBe(true)
+    expectHumanMessagesContain(report, "Cannot access property 'x'")
   })
 
   test('set target descending through a scalar mid-segment fails validation', async () => {
@@ -575,7 +570,7 @@ describe('objects and nested state updates:', () => {
         action A { set S.a.b = 2 }
       }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes("Cannot access property 'b'"))).toBe(true)
+    expectHumanMessagesContain(report, "Cannot access property 'b'")
   })
 
   test('member access to missing terminal segment on a nested object fails validation', async () => {
@@ -586,7 +581,7 @@ describe('objects and nested state updates:', () => {
         Text O.a.missing { }
       }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes("Property 'missing' does not exist"))).toBe(true)
+    expectHumanMessagesContain(report, "Property 'missing' does not exist")
   })
 })
 
@@ -612,9 +607,10 @@ describe('struct/item type validation:', () => {
       alias Bad = Person { Name "Ro", Age 40, Extra "oops" }
       view V { }
     `)
-    expect(
-      report.getHumanErrorMessages().some(m => m.includes("Field 'Extra'") && m.includes("type 'Person'")),
-    ).toBe(true)
+    expectSomeHumanMessageSatisfies(
+      report,
+      m => m.includes("Field 'Extra'") && m.includes("type 'Person'"),
+    )
   })
 
   test('typed struct literal missing a field fails validation', async () => {
@@ -623,9 +619,10 @@ describe('struct/item type validation:', () => {
       alias Bad = Person { Name "Ro" }
       view V { }
     `)
-    expect(
-      report.getHumanErrorMessages().some(m => m.includes("Missing field 'Age'") && m.includes("type 'Person'")),
-    ).toBe(true)
+    expectSomeHumanMessageSatisfies(
+      report,
+      m => m.includes("Missing field 'Age'") && m.includes("type 'Person'"),
+    )
   })
 
   test('typed struct literal with wrong field shape (object where primitive expected) fails validation', async () => {
@@ -634,8 +631,10 @@ describe('struct/item type validation:', () => {
       alias Bad = Person { Name "Ro", Age { Inner 1 } }
       view V { }
     `)
-    const messages = report.getHumanErrorMessages()
-    expect(messages.some(m => m.includes("Field 'Person.Age'") && m.includes('number literal'))).toBe(true)
+    expectSomeHumanMessageSatisfies(
+      report,
+      m => m.includes("Field 'Person.Age'") && m.includes('number literal'),
+    )
   })
 
   test('nested typed struct literal with unknown inner field fails validation', async () => {
@@ -644,9 +643,10 @@ describe('struct/item type validation:', () => {
       alias Bad = Person { Name "Ro", Job { Wrong "x" } }
       view V { }
     `)
-    expect(
-      report.getHumanErrorMessages().some(m => m.includes("Field 'Wrong'") && m.includes("type 'Person.Job'")),
-    ).toBe(true)
+    expectSomeHumanMessageSatisfies(
+      report,
+      m => m.includes("Field 'Wrong'") && m.includes("type 'Person.Job'"),
+    )
   })
 
   test('nested typed struct literal missing inner field fails validation', async () => {
@@ -655,9 +655,10 @@ describe('struct/item type validation:', () => {
       alias Bad = Person { Name "Ro", Job { Title "Builder" } }
       view V { }
     `)
-    expect(
-      report.getHumanErrorMessages().some(m => m.includes("Missing field 'Salary'") && m.includes("type 'Person.Job'")),
-    ).toBe(true)
+    expectSomeHumanMessageSatisfies(
+      report,
+      m => m.includes("Missing field 'Salary'") && m.includes("type 'Person.Job'"),
+    )
   })
 
   test('nested typed struct literal with wrong inner field shape (object where primitive expected) fails validation', async () => {
@@ -666,9 +667,10 @@ describe('struct/item type validation:', () => {
       alias Bad = Person { Name "Ro", Job { Title { Nope 1 } } }
       view V { }
     `)
-    expect(
-      report.getHumanErrorMessages().some(m => m.includes("Field 'Person.Job.Title'") && m.includes('text literal')),
-    ).toBe(true)
+    expectSomeHumanMessageSatisfies(
+      report,
+      m => m.includes("Field 'Person.Job.Title'") && m.includes('text literal'),
+    )
   })
 
   test('typed struct literal with primitive value where struct expected fails validation', async () => {
@@ -677,9 +679,7 @@ describe('struct/item type validation:', () => {
       alias Bad = Person "hello"
       view V { }
     `)
-    expect(
-      report.getHumanErrorMessages().some(m => m.includes('Person') && m.includes('struct literal')),
-    ).toBe(true)
+    expectSomeHumanMessageSatisfies(report, m => m.includes('Person') && m.includes('struct literal'))
   })
 
   test('struct type declaration with duplicate field name fails validation', async () => {
@@ -687,7 +687,7 @@ describe('struct/item type validation:', () => {
       type Person is { Name text, Name number }
       view V { }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes("Duplicate struct field 'Name'"))).toBe(true)
+    expectHumanMessagesContain(report, "Duplicate struct field 'Name'")
   })
 
   test('struct field with lowercase name fails validation', async () => {
@@ -695,7 +695,7 @@ describe('struct/item type validation:', () => {
       type Person is { name text }
       view V { }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes("'name'") && m.includes('uppercase'))).toBe(true)
+    expectSomeHumanMessageSatisfies(report, m => m.includes("'name'") && m.includes('uppercase'))
   })
 
   test('member access on typed struct alias resolves declared field', async () => {
@@ -718,7 +718,7 @@ describe('struct/item type validation:', () => {
         Text Ro.Missing
       }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes("Property 'Missing'"))).toBe(true)
+    expectHumanMessagesContain(report, "Property 'Missing'")
   })
 
   test('nested type reference Person.Job validates against declared nested struct', async () => {
@@ -733,7 +733,7 @@ describe('struct/item type validation:', () => {
       type Person is { Name text }
       view ShowJob J Person.Missing { }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes('Person') && m.includes('Missing'))).toBe(true)
+    expectSomeHumanMessageSatisfies(report, m => m.includes('Person') && m.includes('Missing'))
   })
 
   test('member access on struct-typed parameter rejects unknown field', async () => {
@@ -745,9 +745,10 @@ describe('struct/item type validation:', () => {
       }
       view V { }
     `)
-    expect(
-      report.getHumanErrorMessages().some(m => m.includes("Field 'Missing'") && m.includes("type 'Person'")),
-    ).toBe(true)
+    expectSomeHumanMessageSatisfies(
+      report,
+      m => m.includes("Field 'Missing'") && m.includes("type 'Person'"),
+    )
   })
 
   test('member access on Person.Job parameter rejects unknown nested field', async () => {
@@ -759,9 +760,10 @@ describe('struct/item type validation:', () => {
       }
       view V { }
     `)
-    expect(
-      report.getHumanErrorMessages().some(m => m.includes("Field 'NotAField'") && m.includes("type 'Person.Job'")),
-    ).toBe(true)
+    expectSomeHumanMessageSatisfies(
+      report,
+      m => m.includes("Field 'NotAField'") && m.includes("type 'Person.Job'"),
+    )
   })
 
   test('member access on primitive-typed parameter rejects any property', async () => {
@@ -772,7 +774,7 @@ describe('struct/item type validation:', () => {
       }
       view V { }
     `)
-    expect(report.getHumanErrorMessages().some(m => m.includes('Too') && m.includes('not an object'))).toBe(true)
+    expectSomeHumanMessageSatisfies(report, m => m.includes('Too') && m.includes('not an object'))
   })
 
   test('unresolved view ref does not spuriously report object-in-view-arg for struct literal', async () => {
@@ -861,9 +863,10 @@ describe('dot-local type ref validation (Phase 2):', () => {
       alias X = .Title "x"
       view V { }
     `)
-    expect(
-      report.getHumanErrorMessages().some(m => m.includes("'.Title'") && m.includes('argument position')),
-    ).toBe(true)
+    expectSomeHumanMessageSatisfies(
+      report,
+      m => m.includes("'.Title'") && m.includes('argument position'),
+    )
   })
 
   test('.Subtitle errors when callee has no such local type', async () => {
@@ -873,9 +876,7 @@ describe('dot-local type ref validation (Phase 2):', () => {
         Badge .Subtitle "x"
       }
     `)
-    expect(
-      report.getHumanErrorMessages().some(m => m.includes("'.Subtitle'") && m.includes('Badge')),
-    ).toBe(true)
+    expectSomeHumanMessageSatisfies(report, m => m.includes("'.Subtitle'") && m.includes('Badge'))
   })
 
   test('.Subtitle errors even if global Subtitle type exists (no fallback)', async () => {
@@ -886,9 +887,7 @@ describe('dot-local type ref validation (Phase 2):', () => {
         Badge .Subtitle "x"
       }
     `)
-    expect(
-      report.getHumanErrorMessages().some(m => m.includes("'.Subtitle'") && m.includes('Badge')),
-    ).toBe(true)
+    expectSomeHumanMessageSatisfies(report, m => m.includes("'.Subtitle'") && m.includes('Badge'))
   })
 
   test('.Person struct literal validates fields', async () => {
@@ -911,9 +910,7 @@ describe('dot-local type ref validation (Phase 2):', () => {
         Profile .Person { Name "Ro", Age 30 }
       }
     `)
-    expect(
-      report.getHumanErrorMessages().some(m => m.includes('Age') && m.includes('does not exist')),
-    ).toBe(true)
+    expectSomeHumanMessageSatisfies(report, m => m.includes('Age') && m.includes('does not exist'))
   })
 
   test('.Person struct literal rejects missing field', async () => {
@@ -924,9 +921,7 @@ describe('dot-local type ref validation (Phase 2):', () => {
         Profile .Person { Name "Ro" }
       }
     `)
-    expect(
-      report.getHumanErrorMessages().some(m => m.includes('Age') && m.includes('Missing')),
-    ).toBe(true)
+    expectSomeHumanMessageSatisfies(report, m => m.includes('Age') && m.includes('Missing'))
   })
 
   test('Badge .Title "x" does not emit ambiguity warning', async () => {
@@ -984,9 +979,7 @@ describe('action local parameter types (Phase 3):', () => {
       }
       view V { }
     `)
-    expect(
-      report.getHumanErrorMessages().some(m => m.includes("'.Amount'") && m.includes('Bump')),
-    ).toBe(true)
+    expectSomeHumanMessageSatisfies(report, m => m.includes("'.Amount'") && m.includes('Bump'))
   })
 
   test('.Step outside argument context still errors', async () => {
@@ -995,9 +988,10 @@ describe('action local parameter types (Phase 3):', () => {
       alias X = .Step 3
       view V { }
     `)
-    expect(
-      report.getHumanErrorMessages().some(m => m.includes("'.Step'") && m.includes('argument position')),
-    ).toBe(true)
+    expectSomeHumanMessageSatisfies(
+      report,
+      m => m.includes("'.Step'") && m.includes('argument position'),
+    )
   })
 
   test('ambiguity warning for bare constructor in action call', async () => {
@@ -1048,9 +1042,7 @@ describe('action local parameter types (Phase 3):', () => {
       }
       view V { }
     `)
-    expect(
-      report.getHumanErrorMessages().some(m => m.includes("'.Amount'") && m.includes('Bump')),
-    ).toBe(true)
+    expectSomeHumanMessageSatisfies(report, m => m.includes("'.Amount'") && m.includes('Bump'))
   })
 
   test('all three call forms pass validation', async () => {
@@ -1074,8 +1066,6 @@ describe('action local parameter types (Phase 3):', () => {
       action Bump Step is number { }
       view V { }
     `)
-    expect(
-      report.getHumanErrorMessages().some(m => m.includes('Duplicate') && m.includes('Bump')),
-    ).toBe(true)
+    expectSomeHumanMessageSatisfies(report, m => m.includes('Duplicate') && m.includes('Bump'))
   })
 })

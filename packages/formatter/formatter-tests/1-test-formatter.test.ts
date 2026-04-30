@@ -1,6 +1,11 @@
 import { Formatter } from '@formatter/FormatterSDK'
 import { FS } from '@shared'
 import { describe, expect, test } from 'bun:test'
+import {
+  SNIPPET_ACTION_BUMP_AND_USE_DOT_STEP_FORMATTED,
+  SNIPPET_ACTION_BUMP_AND_USE_DOT_STEP_RAW,
+  SNIPPET_ACTION_BUMP_STEP_NUMBER,
+} from '../../compiler/compiler-tests/fixtures/snippets'
 import { dedent, testFormatter, visualize } from './formatter-test-utils'
 
 describe('Formatter', () => {
@@ -746,14 +751,14 @@ describe('Formatter — action local parameter types (Phase 3):', () => {
   test('formats action with Step is number correctly', () => {
     testFormatter(
       `action   Bump   Step    is   number { }`,
-      `action Bump Step is number { }`,
+      SNIPPET_ACTION_BUMP_STEP_NUMBER,
     )
   })
 
   test('formats do Bump .Step 3 preserving dot shorthand', () => {
     testFormatter(
-      `action Bump Step is number { } action Use { do Bump .Step 3 }`,
-      `action Bump Step is number { }\n\naction Use {\n  do Bump .Step 3\n}`,
+      SNIPPET_ACTION_BUMP_AND_USE_DOT_STEP_RAW,
+      SNIPPET_ACTION_BUMP_AND_USE_DOT_STEP_FORMATTED,
     )
   })
 })

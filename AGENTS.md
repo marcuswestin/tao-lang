@@ -75,7 +75,7 @@ Tao Lang Project Docs:
 ## Code layout
 
 - `packages/parser/` - Langium grammar and generated AST for Tao Lang
-- `packages/compiler/` - Validator and compiler (using Langium)
+- `packages/compiler/` - Validator and compiler (using Langium); see [`packages/compiler/README.md`](packages/compiler/README.md) for `compiler-src/` layout and why the compiler `tsconfig` includes formatter sources.
 - `packages/tao-cli/` - Tao CLI: `tao <...>`
 - `packages/tao-std-lib/` - Standard library: e.g `use tao/ui Col, Row, Text`
 - `packages/ide-extension/` - Tao Lang VSCode/Cursor Extension
@@ -99,6 +99,16 @@ Examples:
 - Test files are named `<name>.test.ts`
 - Run recipe in a package: `./just-agents <package> <command> <args>`
   - e.g `./just-agents expo-runtime test`
+
+### `gen`, `TAO_SKIP_GEN`, and `prep-commit`
+
+- Root **`just test`** (human `Justfile`) runs **`just gen`** first, then Bun tests and downstream harnesses (see root `Justfile` `test` recipe). Agents usually invoke **`./just-agents test`**, which forwards to that flow.
+- **`prep-commit`** (`packages/shared/just/dev-cmds.just` `_prep_commit`) runs **`just clean`**, **`just build`** (which includes parser generation), then **`TAO_SKIP_GEN=1 just test`** so the test pass does not regenerate the parser again immediately after a full build.
+- **`packages/compiler/Justfile`** `_deps` runs **`just gen`** before compiler **`test`** / **`build`** for stale-grammar safety; use **`TAO_SKIP_GEN=1`** in the environment when you intentionally want to skip regeneration in that package (inner-loop optimization only).
+
+### Headless runtime watch
+
+- **`packages/headless-test-runtime/just watch`** runs Jest alongside **`watchexec`** on `../compiler`; on compiler changes it runs **`bun scripts/regenerate-headless-test-apps.ts`** and touches **`tests/jest-watch-compiler-hook.ts`** so Jest picks up new outputs. See comments in [`packages/headless-test-runtime/scripts/regenerate-headless-test-apps.ts`](packages/headless-test-runtime/scripts/regenerate-headless-test-apps.ts).
 
 ### Conventions
 

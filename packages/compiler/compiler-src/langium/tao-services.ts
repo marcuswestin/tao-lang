@@ -190,7 +190,9 @@ export function createTaoWorkspace(
     void TaoModule.shared.workspace.ConfigurationProvider.initialized({})
   }
 
-  // TODO: Is there a difference between sharedTaoModule and TaoModule.shared?
+  // `sharedTaoModule` is the Langium shared injector from `createDefaultSharedModule`; `TaoModule.shared` is the
+  // same shared service bundle attached to the language module (`createDefaultModule({ shared: sharedTaoModule })`).
+  // Two names, one object graph — not duplicate state.
   return new TaoWorkspace(
     sharedTaoModule,
     TaoModule.shared.workspace.LangiumDocuments,

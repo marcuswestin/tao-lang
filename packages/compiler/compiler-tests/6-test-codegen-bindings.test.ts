@@ -6,6 +6,11 @@
 import { compileTao } from '@compiler/compiler-main'
 import { FS } from '@shared'
 import { describe, expect, test } from 'bun:test'
+import {
+  SNIPPET_MINIMAL_BUMP_APP_BARE_STEP,
+  SNIPPET_MINIMAL_BUMP_APP_DOT_LOCAL_STEP,
+  SNIPPET_MINIMAL_BUMP_APP_QUALIFIED_STEP,
+} from './fixtures/snippets'
 
 /** writeAndCompile materializes `code` to a tmp file, runs the compiler, and returns the concatenated text of every emitted module so substring assertions can target the resolved-prop / resolved-key emission. */
 async function writeAndCompile(code: string): Promise<string> {
@@ -78,24 +83,9 @@ describe('codegen — call-site argument bindings:', () => {
 
 describe('codegen — action local parameter types (Phase 3):', () => {
   test('all three forms emit equivalent Step prop key', async () => {
-    const outBare = await writeAndCompile(`
-      app A { ui V }
-      state Counter = 0
-      action Bump Step is number { set Counter += Step }
-      view V { action Use { do Bump Step 1 } }
-    `)
-    const outQualified = await writeAndCompile(`
-      app A { ui V }
-      state Counter = 0
-      action Bump Step is number { set Counter += Step }
-      view V { action Use { do Bump Bump.Step 2 } }
-    `)
-    const outDotLocal = await writeAndCompile(`
-      app A { ui V }
-      state Counter = 0
-      action Bump Step is number { set Counter += Step }
-      view V { action Use { do Bump .Step 3 } }
-    `)
+    const outBare = await writeAndCompile(SNIPPET_MINIMAL_BUMP_APP_BARE_STEP)
+    const outQualified = await writeAndCompile(SNIPPET_MINIMAL_BUMP_APP_QUALIFIED_STEP)
+    const outDotLocal = await writeAndCompile(SNIPPET_MINIMAL_BUMP_APP_DOT_LOCAL_STEP)
     expect(outBare).toMatch(/Bump\.invoke\(\{[\s\S]*Step:/)
     expect(outQualified).toMatch(/Bump\.invoke\(\{[\s\S]*Step:/)
     expect(outDotLocal).toMatch(/Bump\.invoke\(\{[\s\S]*Step:/)

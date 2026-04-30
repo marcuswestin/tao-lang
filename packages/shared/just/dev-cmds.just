@@ -17,6 +17,9 @@ _unstage_changes:
     echo "> Abort successful."
 
 _prep_commit:
+    # Order: clean+build ensures a cold tree; tests skip regen (`TAO_SKIP_GEN=1`) because build already ran `gen`;
+    # `_check` runs lint/typecheck; `fix` runs last so autofixers (fmt, eslint, ts-autofix) can repair anything
+    # `_check` reported without leaving the tree in a "red" state for the human commit step.
     echo "\n> Clean build artifacts..." && just clean
     echo "> Build everything..." && just build
     echo "> Run code tests..." && TAO_SKIP_GEN=1 just test
