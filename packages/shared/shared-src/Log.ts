@@ -12,7 +12,7 @@ type Transport = {
   success: (message: string) => void
   instruct: (message: string) => void
   reject: (message: string) => void
-} // TODO
+}
 
 let transport: Transport = {
   log: console.log,

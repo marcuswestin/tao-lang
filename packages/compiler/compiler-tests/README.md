@@ -10,7 +10,7 @@ These tests exercise the Tao pipeline (lex → parse → link → validate → t
 | Parsing / AST         | CST shape, grammar, `parseAST` / `Wrapped` | [`2-test-parser-*.test.ts`](.) — split from the former monolithic parser suite (see below)                                     |
 | Linking / scope       | Cross-refs, scopes                         | `2-test-parser-scope-resolution.test.ts`, parts of parser suite                                                                |
 | Modules               | Imports, exports, `share`, multi-file      | [`4-test-module-imports-exports.test.ts`](4-test-module-imports-exports.test.ts)                                               |
-| Structural validation | Placement rules, `validationMessages`      | [`3-test.validation.test.ts`](3-test.validation.test.ts)                                                                       |
+| Structural validation | Placement rules, `validationMessages`      | [`3-test-validation.test.ts`](3-test-validation.test.ts)                                                                       |
 | Type system (Typir)   | Assignability, inference, call sites       | [`5-test-type-checking.test.ts`](5-test-type-checking.test.ts)                                                                 |
 | Codegen               | Emitted TS/TSX shape                       | [`6-test-codegen-bindings.test.ts`](6-test-codegen-bindings.test.ts)                                                           |
 | Source maps / LSP     | Traces, definitions                        | [`trace-to-source-map.test.ts`](trace-to-source-map.test.ts), [`TaoDefinitionProvider.test.ts`](TaoDefinitionProvider.test.ts) |
@@ -45,7 +45,7 @@ The former monolithic `2-test-parser.test.ts` was split by `describe` block so e
 | ----- | ------------------------------------------------ | ------------------------------------------ | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
 | 1     | Callable local parameter types (`Title is text`) | `localSuperType` on `ParameterDeclaration` | Structural + Typir                                                    | Formatter spacing for `is text`                                                         |
 | 2     | Dot-local typed literals (`.Title "x"`)          | `DotLocalTypeRef`                          | Placement + assignability                                             | Preserve dot shorthand                                                                  |
-| 3     | Action-local params + `do Bump .Step`            | Same as 1–2 under `action`                 | [`3-test.validation.test.ts`](3-test.validation.test.ts) Phase blocks | [`6-test-codegen-bindings.test.ts`](6-test-codegen-bindings.test.ts), formatter Phase 3 |
+| 3     | Action-local params + `do Bump .Step`            | Same as 1–2 under `action`                 | [`3-test-validation.test.ts`](3-test-validation.test.ts) Phase blocks | [`6-test-codegen-bindings.test.ts`](6-test-codegen-bindings.test.ts), formatter Phase 3 |
 
 ## Test utilities
 

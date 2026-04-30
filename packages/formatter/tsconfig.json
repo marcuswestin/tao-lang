@@ -10,7 +10,7 @@
   },
   "include": [
     "formatter.ts",
-    "src/**/*",
+    "formatter-src/**/*",
     "formatter-tests/**/*",
     "../parser/src/parser.ts",
     "../parser/src/**/*",

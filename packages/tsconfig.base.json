@@ -28,7 +28,7 @@
         "./compiler/compiler-src/*"
       ],
       "@formatter/*": [
-        "./formatter/src/*"
+        "./formatter/formatter-src/*"
       ],
       "@parser": [
         "./parser/src/parser.ts"

@@ -3,6 +3,7 @@
 // MIT Licensed: https://raw.githubusercontent.com/WimJongeneel/ts-lazy-collections/refs/heads/master/package.json
 // From commit hash: https://github.com/WimJongeneel/ts-lazy-collections/commit/87d121860656fff570278bcca2afe269540f9c29
 
+/** Stream is a branded lazy collection with chainable filter/map/unique and terminal `toArray`/`toIterable`. */
 export type Stream<a> = { [__Stream_brand]: true } & {
   toArray: () => a[]
   filter: (p: (a: a) => boolean) => Stream<a>
@@ -12,8 +13,10 @@ export type Stream<a> = { [__Stream_brand]: true } & {
   unique: () => Stream<a>
 }
 
+/** Collection is any iterable, generator, or Stream — the input type accepted by `Stream.toIterable`. */
 export type Collection<a> = Iterable<a> | Generator<a, void, unknown> | Stream<a>
 
+/** Stream provides factory methods (`fromArray`, `fromFunction`, `fromRange`, `fromIterator`) and `toIterable` for lazy iteration. */
 export const Stream = {
   fromArray: <a>(a: a[]) => fromIterator(from_array(a)),
   fromFunction: <a>(f: (i: number, last: a | undefined) => a) => fromIterator(from_function(f)),
@@ -22,6 +25,7 @@ export const Stream = {
   toIterable: <a>(itt: Collection<a>) => Iterable.from(itt),
 }
 
+/** Iterable converts any `Collection` (iterable, generator, or Stream) to a plain `Iterable`. */
 export const Iterable = {
   from: <a>(itt: Collection<a>): Iterable<a> => isStream(itt) ? itt.toIterable() : itt,
 }

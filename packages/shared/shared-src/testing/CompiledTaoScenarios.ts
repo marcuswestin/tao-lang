@@ -1,25 +1,30 @@
 import * as FS from '../fs'
 
+/** CompiledTaoScenarioStep is one assertion or interaction within a compiled Tao scenario run. */
 export type CompiledTaoScenarioStep =
   | { type: 'assertVisibleText'; text: string }
   | { type: 'pressVisibleText'; text: string }
 
+/** CompiledTaoScenario is a parsed `scenario.json` — steps to run, plus an optional skip flag. */
 export type CompiledTaoScenario = {
   /** When truthy, shared scenario tests skip this folder: `true`, missing file, or a string reason for `test.todo`. */
   skip: boolean | string
   steps: CompiledTaoScenarioStep[]
 }
 
+/** DiscoveredCompiledTaoScenario pairs a scenario directory with its loaded config (or undefined when `scenario.json` is missing). */
 export type DiscoveredCompiledTaoScenario = {
   scenarioDir: string
   scenario: CompiledTaoScenario | undefined
   skip: boolean | string
 }
 
+/** CompiledTaoScenarioCompileResult carries the filesystem path to the compiled output. */
 export type CompiledTaoScenarioCompileResult = {
   outputPath: string
 }
 
+/** CompiledTaoScenarioRenderResult is the screen interface (Testing Library subset) returned after rendering the compiled app. */
 export type CompiledTaoScenarioRenderResult = {
   getByText(text: string): unknown
   /** When present (e.g. RTL screen), duplicate visible text matches `assertVisibleText` without throwing. */
@@ -30,6 +35,7 @@ export type CompiledTaoScenarioRenderResult = {
   pressVisibleText(text: string): void
 }
 
+/** CompiledTaoScenarioAdapter abstracts compile/render/cleanup so scenario tests work across Expo and headless runtimes. */
 export type CompiledTaoScenarioAdapter = {
   compileScenario(args: {
     scenarioDir: string
