@@ -737,3 +737,141 @@ describe('standard library imports (use @tao/...)', () => {
     expect(errors.errorCount()).toBe(0)
   })
 })
+
+describe('type imports via use statement', () => {
+  test('same-module type import resolves NamedTypeRef and TypedLiteralExpression', async () => {
+    const result = await parseMultipleFiles([
+      {
+        path: '/project/types/person.tao',
+        code: `type Person is text`,
+      },
+      {
+        path: '/project/types/views.tao',
+        code: `
+          use Person
+          view Greet P Person { }
+          view Show {
+            Greet Person "Ro"
+          }
+        `,
+      },
+    ])
+    const errors = result.getErrors()
+    expect(errors.errorCount()).toBe(0)
+  })
+
+  test('cross-module share type can be imported and used as parameter type and typed struct literal', async () => {
+    const result = await parseMultipleFiles([
+      {
+        path: '/project/types/person.tao',
+        code: `share type Person is { Name text }`,
+      },
+      {
+        path: '/project/app.tao',
+        code: `
+          use Person from ./types
+          view Greet P Person { }
+          view Main {
+            Greet Person { Name "Ro" }
+          }
+        `,
+      },
+    ])
+    const errors = result.getErrors()
+    expect(errors.errorCount()).toBe(0)
+  })
+
+  test('cross-module type without share cannot be imported', async () => {
+    const result = await parseMultipleFiles([
+      {
+        path: '/project/types/person.tao',
+        code: `type Person is text`,
+      },
+      {
+        path: '/project/app.tao',
+        code: `
+          use Person from ./types
+          view Greet P Person { }
+        `,
+      },
+    ])
+    const errors = result.getErrors()
+    expect(errors.errorCount()).toBeGreaterThanOrEqual(1)
+    expect(errors.getHumanErrorMessage()).toContain('Person')
+    expect(errors.getHumanErrorMessage()).toContain(`marked with 'share'`)
+  })
+
+  test('cross-module hide type cannot be imported', async () => {
+    const result = await parseMultipleFiles([
+      {
+        path: '/project/types/person.tao',
+        code: `hide type Person is text`,
+      },
+      {
+        path: '/project/app.tao',
+        code: `
+          use Person from ./types
+          view Greet P Person { }
+        `,
+      },
+    ])
+    const errors = result.getErrors()
+    expect(errors.errorCount()).toBeGreaterThanOrEqual(1)
+    expect(errors.getHumanErrorMessage()).toContain('Person')
+  })
+
+  test('cross-module type reference without use statement is not visible', async () => {
+    const result = await parseMultipleFiles([
+      {
+        path: '/project/types/person.tao',
+        code: `share type Person is text`,
+      },
+      {
+        path: '/project/app.tao',
+        code: `
+          view Greet P Person { }
+        `,
+      },
+    ])
+    const errors = result.getErrors()
+    expect(errors.errorCount()).toBeGreaterThanOrEqual(1)
+    expect(errors.getHumanErrorMessage()).toContain('Person')
+  })
+
+  test('same-module type without use statement is not visible from another file', async () => {
+    const result = await parseMultipleFiles([
+      {
+        path: '/project/types/person.tao',
+        code: `type Person is text`,
+      },
+      {
+        path: '/project/types/views.tao',
+        code: `
+          view Greet P Person { }
+        `,
+      },
+    ])
+    const errors = result.getErrors()
+    expect(errors.errorCount()).toBeGreaterThanOrEqual(1)
+    expect(errors.getHumanErrorMessage()).toContain('Person')
+  })
+
+  test('typed struct literal type reference resolves via cross-module use', async () => {
+    const result = await parseMultipleFiles([
+      {
+        path: '/project/types/person.tao',
+        code: `share type Person is { Name text }`,
+      },
+      {
+        path: '/project/app.tao',
+        code: `
+          use Person from ./types
+          state Ro = Person { Name "Ro" }
+          view Main { }
+        `,
+      },
+    ])
+    const errors = result.getErrors()
+    expect(errors.errorCount()).toBe(0)
+  })
+})

@@ -35,9 +35,9 @@ export default class TaoFormatter extends AbstractFormatter {
       ViewDeclaration: (n) => this.formatViewDeclaration(n),
       ActionDeclaration: (n) => this.formatActionDeclaration(n),
       ViewRender: (n) => this.formatViewRender(n),
+      ActionRender: (n) => this.formatActionRender(n),
       Block: (n) => this.formatBlock(n),
       ArgumentList: (n) => this.formatArgumentList(n),
-      Argument: (n) => this.formatArgument(n),
       Injection: (n) => this.formatInjection(n),
       Debugger: (n) => this.formatDebugger(n),
       ParameterDeclaration: (n) => this.formatParameterDeclaration(n),
@@ -45,12 +45,62 @@ export default class TaoFormatter extends AbstractFormatter {
       AssignmentDeclaration: (n) => this.formatAssignmentDeclaration(n),
       BinaryExpression: (n) => this.formatBinaryExpression(n),
       UnaryExpression: (n) => this.formatUnaryExpression(n),
-      NamedReference: (n) => this.formatNamedReference(n),
       NumberLiteral: (n) => this.formatNumberLiteral(n),
-      StringLiteral: (n) => this.formatStringLiteral(n),
+      StringTemplateExpression: (n) => this.formatStringTemplateExpression(n),
+      StringTemplateSegment: (n) => this.formatStringTemplateSegment(n),
       StateUpdate: (n) => this.formatStateUpdate(n),
       ActionExpression: (n) => this.formatActionExpression(n),
+      ObjectLiteral: (n) => this.formatObjectLiteral(n),
+      ObjectProperty: (n) => this.formatObjectProperty(n),
+      MemberAccessExpression: (n) => this.formatMemberAccessExpression(n),
+      TypeDeclaration: (n) => this.formatTypeDeclaration(n),
+      TypedLiteralExpression: (n) => this.formatTypedLiteralExpression(n),
+      StructTypeExpression: (n) => this.formatStructTypeExpression(n),
+      StructFieldDeclaration: (n) => this.formatStructFieldDeclaration(n),
+      PrimitiveTypeRef: (n) => this.formatPrimitiveTypeRef(n),
+      NamedTypeRef: (n) => this.formatNamedTypeRef(n),
+      DotLocalTypeRef: (n) => this.formatDotLocalTypeRef(n),
     })
+  }
+
+  private formatTypeDeclaration(node: AST.TypeDeclaration): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('type').append(Formatting.oneSpace())
+    f.property('name').surround(Formatting.oneSpace())
+    f.keyword('is').append(Formatting.oneSpace())
+  }
+
+  private formatTypedLiteralExpression(node: AST.TypedLiteralExpression): void {
+    const f = this.getNodeFormatter(node)
+    f.property('type').append(Formatting.oneSpace())
+  }
+
+  private formatStructTypeExpression(node: AST.StructTypeExpression): void {
+    const f = this.getNodeFormatter(node)
+    this._indentBlock(node, 'fields')
+    this._spaceBetweenCommaSeperatedItems(node)
+    for (const field of node.fields) {
+      f.node(field).prepend(Formatting.indent())
+    }
+  }
+
+  private formatStructFieldDeclaration(node: AST.StructFieldDeclaration): void {
+    const f = this.getNodeFormatter(node)
+    f.property('name').append(Formatting.oneSpace())
+  }
+
+  private formatPrimitiveTypeRef(_node: AST.PrimitiveTypeRef): void {
+    // No spacing rules; the primitive keyword is a single token.
+  }
+
+  private formatNamedTypeRef(node: AST.NamedTypeRef): void {
+    const f = this.getNodeFormatter(node)
+    f.keywords('.').prepend(Formatting.noSpace()).append(Formatting.noSpace())
+  }
+
+  private formatDotLocalTypeRef(node: AST.DotLocalTypeRef): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('.').append(Formatting.noSpace())
   }
 
   private formatTaoFile(node: AST.TaoFile): void {
@@ -96,20 +146,14 @@ export default class TaoFormatter extends AbstractFormatter {
   }
 
   private formatActionDeclaration(node: AST.ActionDeclaration): void {
-    this.formatAction(node)
-  }
-
-  private formatActionExpression(node: AST.ActionExpression): void {
-    this.formatAction(node)
-  }
-
-  private formatAction(node: AST.ActionExpression | AST.ActionDeclaration): void {
     const f = this.getNodeFormatter(node)
     f.keyword('action').append(Formatting.oneSpace())
     this._spaceAfterProperty(node, 'name')
-    if (AST.isActionDeclaration(node)) {
-      this._spaceAfterProperty(node, 'parameterList')
-    }
+    this._spaceAfterProperty(node, 'parameterList')
+    this._spaceBeforeProperty(node, 'block')
+  }
+
+  private formatActionExpression(node: AST.ActionExpression): void {
     this._spaceBeforeProperty(node, 'block')
   }
 
@@ -125,7 +169,7 @@ export default class TaoFormatter extends AbstractFormatter {
   private formatStateUpdate(node: AST.StateUpdate): void {
     const f = this.getNodeFormatter(node)
     f.keyword('set').append(Formatting.oneSpace())
-    f.property('stateRef').append(Formatting.oneSpace())
+    f.property('target')
     f.property('operator').append(Formatting.oneSpace())
   }
 
@@ -136,14 +180,15 @@ export default class TaoFormatter extends AbstractFormatter {
     }
   }
 
-  private formatArgumentList(node: AST.ArgumentList): void {
-    this._spaceBetweenCommaSeperatedItems(node)
+  private formatActionRender(node: AST.ActionRender): void {
+    this._spaceBeforeProperty(node, 'argumentList')
+    if (node.block) {
+      this._spaceBeforeProperty(node, 'block')
+    }
   }
 
-  private formatArgument(node: AST.Argument): void {
-    const f = this.getNodeFormatter(node)
-    // Space between name and value: "name "hello""
-    f.property('name').append(Formatting.oneSpace())
+  private formatArgumentList(node: AST.ArgumentList): void {
+    this._spaceBetweenCommaSeperatedItems(node)
   }
 
   private formatParameterList(node: AST.ParameterList): void {
@@ -152,24 +197,39 @@ export default class TaoFormatter extends AbstractFormatter {
   }
 
   private formatParameterDeclaration(node: AST.ParameterDeclaration): void {
-    this._spaceAfterProperty(node, 'name')
+    if (node.localSuperType !== undefined) {
+      const f = this.getNodeFormatter(node)
+      f.property('name').append(Formatting.oneSpace())
+      f.keyword('is').surround(Formatting.oneSpace())
+    } else if (node.type !== undefined) {
+      this._spaceAfterProperty(node, 'name')
+    }
   }
 
   private formatNumberLiteral(_node: AST.NumberLiteral): void {
     // No formatting for number literals
   }
 
-  private formatStringLiteral(_node: AST.StringLiteral): void {
-    // No formatting for string literals
+  private formatStringTemplateExpression(node: AST.StringTemplateExpression): void {
+    const f = this.getNodeFormatter(node)
+    for (const seg of node.segments) {
+      f.node(seg)
+    }
+  }
+
+  private formatStringTemplateSegment(node: AST.StringTemplateSegment): void {
+    const f = this.getNodeFormatter(node)
+    if (node.expression !== undefined) {
+      f.property('expression').surround(Formatting.oneSpace())
+    }
   }
 
   private formatAssignmentDeclaration(node: AST.AssignmentDeclaration): void {
     const f = this.getNodeFormatter(node)
     f.keyword(node.type).append(Formatting.oneSpace())
+    f.property('name').append(Formatting.oneSpace())
     f.keyword('=').surround(Formatting.oneSpace())
-  }
-
-  private formatNamedReference(_node: AST.NamedReference): void {
+    f.property('value')
   }
 
   private formatBinaryExpression(node: AST.BinaryExpression): void {
@@ -183,6 +243,30 @@ export default class TaoFormatter extends AbstractFormatter {
     const f = this.getNodeFormatter(node)
     f.property('op').append(Formatting.noSpace())
     f.property('operand')
+  }
+
+  private formatObjectLiteral(node: AST.ObjectLiteral): void {
+    const f = this.getNodeFormatter(node)
+    this._indentBlock(node, 'properties')
+    this._spaceBetweenCommaSeperatedItems(node)
+    for (const property of node.properties) {
+      f.node(property).prepend(Formatting.indent())
+    }
+  }
+
+  private formatObjectProperty(node: AST.ObjectProperty): void {
+    const f = this.getNodeFormatter(node)
+    f.property('name').append(Formatting.oneSpace())
+    f.property('value')
+  }
+
+  private formatMemberAccessExpression(node: AST.MemberAccessExpression): void {
+    const f = this.getNodeFormatter(node)
+    f.property('root')
+    f.keywords('.').prepend(Formatting.noSpace()).append(Formatting.noSpace())
+    for (const segment of node.properties) {
+      f.keyword(segment).prepend(Formatting.noSpace())
+    }
   }
 
   private formatInjection(node: AST.Injection): void {

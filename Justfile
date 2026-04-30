@@ -29,7 +29,7 @@ setup: _setup_git_repo
 DEV_APP := "./Apps/Test Apps/Kitchen Sink/Kitchen Sink.tao"
 
 # Run all components in watch mode.
-@dev: build
+@dev:
     export TAO_DEV_APP="{{ DEV_APP }}" && just _dev
 
 # Run full battery of checks and builds to prepare for commit.
@@ -52,6 +52,7 @@ ensure-repo-clean: _ensure_repo_clean
 test *FILTER: gen
     bun test --reporter=dot --test-name-pattern '{{ FILTER }}'
     just headless-test-runtime test '{{ FILTER }}'
+    cd packages/expo-runtime && just test '{{ FILTER }}'
 
 theadless *FILTER: gen
     just headless-test-runtime test '{{ FILTER }}'
@@ -59,11 +60,6 @@ theadless *FILTER: gen
 # Watch tests, but bail on first failure
 bail-watch *FILTER:
     bun test --watch --no-clear-screen --bail --test-name-pattern '{{ FILTER }}'
-
-# Run all tests, including slow ones
-test-all *FILTER:
-    just test '{{ FILTER }}'
-    cd packages/expo-runtime && just test '{{ FILTER }}'
 
 # Watch all tests
 watch *FILTER:
@@ -81,7 +77,7 @@ deps:
         # If package.json exists, install dependencies
         if [ -f packages/$package/package.json ]; then
             echo "Installing dependencies for $package..."
-            pushd packages/$package && bun install && popd
+            pushd packages/$package && bun install --silent && popd
         fi
     done
 
@@ -108,12 +104,9 @@ lint-rules: _lint_rules
 build:
     just _build_all
 
-# Alias for build-all
-build-all: _build_all
-
 # Generate parser from grammar (skipped when `TAO_SKIP_GEN=1`)
 gen:
-    just _skip_if_env_eq TAO_SKIP_GEN 1 || (cd packages/parser && just build)
+    just _skip_if_env_eq TAO_SKIP_GEN 1 || (cd packages/parser && just gen)
 
 # Build and install the extension to cursor and vscode
 extension-build-package-and-install:
@@ -134,6 +127,9 @@ clean-full: clean
 
 # Package command runners
 # #######################
+
+parser *ARGS:
+    cd {{ justfile_dir() }}/packages/parser && just {{ ARGS }}
 
 compiler *ARGS:
     cd {{ justfile_dir() }}/packages/compiler && just {{ ARGS }}
@@ -157,9 +153,8 @@ cli *ARGS:
     cd {{ justfile_dir() }}/packages/tao-cli && just {{ ARGS }}
 
 # Build and run Tao CLI with given arguments
-[no-cd]
 tao *ARGS:
-    just _tao {{ ARGS }}
+    cd {{ justfile_dir() }} && just _tao {{ ARGS }}
 
 [no-cd]
 q-dev *ARGS:

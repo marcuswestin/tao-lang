@@ -51,7 +51,16 @@ describe('Lexer', () => {
     })
 
     test('unclosed double-quoted string', async () => {
-      await lexTokensWithErrors(`"hello`, '"')
+      // With the multi-mode lexer, an unterminated `"…` stays inside `string` mode at EOF without emitting a
+      // lexer diagnostic (Chevrotain limitation). The parser still rejects it because `STRING_END` is missing.
+      const { errorReport } = await TaoParser.parseString(`alias X = "hello`, {
+        stdLibRoot: '',
+        validateUpToStage: 'parsing',
+      })
+      Assert(
+        errorReport.hasError(),
+        `Expected parse pipeline to report an error, got: ${errorReport.getHumanErrorMessage()}`,
+      )
     })
 
     test('unclosed single-quoted string', async () => {

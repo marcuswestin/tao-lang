@@ -1,7 +1,28 @@
-import { createTaoWorkspace } from '@compiler/langium/tao-services'
-import { LGM as Langium } from '@parser'
-import { NodeFileSystem } from '@parser/node'
+import { Formatter } from '@formatter/FormatterSDK'
 import { expect, test } from 'bun:test'
+
+export const dedent = Formatter.dedent
+
+/** reindentExpectedFromFourSpaceTab maps each line’s leading spaces from 4-space steps to 3-space steps (relative to the block’s minimum indent) so legacy expectations match tabSize 3. */
+function reindentExpectedFromFourSpaceTab(dedented: string): string {
+  const lines = dedented.split('\n')
+  const nonempty = lines.filter(line => line.trim() !== '')
+  if (nonempty.length === 0) {
+    return dedented
+  }
+  const m = Math.min(...nonempty.map(line => line.match(/^\s*/)?.[0].length ?? 0))
+  return lines
+    .map(line => {
+      if (line.trim() === '') {
+        return line
+      }
+      const lead = line.match(/^\s*/)?.[0].length ?? 0
+      const rel = lead - m
+      const newRel = rel === 0 ? 0 : Math.ceil((rel * 3) / 4)
+      return `${' '.repeat(m + newRel)}${line.trimStart()}`
+    })
+    .join('\n')
+}
 
 export function shouldFormat(code: string, expected: string) {
   return async () => {
@@ -24,69 +45,22 @@ export function testFormatter(feature: string) {
 }
 
 export async function testFormatCode(code: string, expectedFormattedCode: string, numberOfTimes: number = 1) {
-  let rawFormattedCode = await formatCode(code)
+  let rawFormattedCode = await Formatter.formatCode(code, { tabSize: 3 })
   for (let i = 0; i < numberOfTimes; i++) {
-    rawFormattedCode = await formatCode(rawFormattedCode)
+    rawFormattedCode = await Formatter.formatCode(rawFormattedCode, { tabSize: 3 })
   }
 
   // TODO: Ensuring TaoFile ends in Newline is not working. Remove trimEnd() from both and Fix this!
-  const formattedCode = dedent(rawFormattedCode).trimEnd()
-  expectedFormattedCode = dedent(expectedFormattedCode).trimStart().trimEnd()
+  const formattedCode = Formatter.dedent(rawFormattedCode).trimEnd()
+  expectedFormattedCode = reindentExpectedFromFourSpaceTab(
+    Formatter.dedent(expectedFormattedCode).trimStart().trimEnd(),
+  )
 
-  // expect(formattedCode).toBe(expectedFormattedCode)
   if (formattedCode === expectedFormattedCode) {
     expect(formattedCode).toBe(expectedFormattedCode)
   } else {
     expect(visualize(formattedCode)).toBe(visualize(expectedFormattedCode))
   }
-}
-
-export async function formatCode(code: string) {
-  const workspace = createTaoWorkspace(NodeFileSystem)
-
-  const uri = Langium.URI.parse('tao-string://v0/test.tao')
-  const document = workspace.createDocumentFromString(code, uri)
-
-  workspace.addDocument(document)
-  await workspace.buildDocument(document)
-
-  const edits = await workspace.formatDocument(document, {
-    textDocument: { uri: document.uri.toString() },
-    options: {
-      insertSpaces: true,
-      tabSize: 4,
-      trimFinalNewlines: true,
-      insertFinalNewline: true,
-    },
-  })
-
-  // console.log('edits', JSON.stringify(edits, null, 2))
-
-  return Langium.TextDocument.applyEdits(document.textDocument, edits)
-}
-
-/** dedent takes a string, computes the shortest leading whitespace among non-empty lines,
- * and returns a new string where every non-empty line has that prefix removed.
- * Whitespace-only lines are replaced with no indentation (empty line). */
-export function dedent(text: string): string {
-  const lines = text.split('\n')
-
-  // Find the shortest leading whitespace in non-empty lines
-  const shortestPrefix = Math.min(
-    ...lines
-      .filter(line => line.trim() !== '')
-      .map(line => line.match(/^\s*/)?.[0].length ?? 0),
-  )
-
-  const resultLines = lines.map(line => {
-    if (line.trim() !== '') {
-      return line.slice(shortestPrefix)
-    }
-    // Whitespace-only lines get no indentation
-    return ''
-  })
-
-  return resultLines.join('\n')
 }
 
 // Helper: Replaces invisible characters with visible symbols

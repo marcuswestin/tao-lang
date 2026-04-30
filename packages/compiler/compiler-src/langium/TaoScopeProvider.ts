@@ -5,6 +5,22 @@ import {
   isSameModuleImport,
   resolveModulePathToUris,
 } from '../resolution/ModuleResolution'
+import { createSyntheticTypeDeclaration, getSyntheticTypeDeclaration } from '../tao-type-shapes'
+import type { CalleeDeclaration } from '../typing/tao-argument-bindings'
+import { isCallableDeclaration } from '../typing/tao-argument-bindings'
+import { findEnclosingArgumentContext } from '../typing/tao-local-parameter-types'
+
+/** moduleScopedRefRules lists reference `property` keys whose callee/type ref is resolved from the module
+ * plus `use` imports (same pattern as `getModuleScopedDeclarations`). */
+const moduleScopedRefRules: readonly {
+  readonly property: string
+  readonly isContainer: (node: AST.Node) => boolean
+}[] = [
+  { property: 'view', isContainer: AST.isViewRender },
+  { property: 'action', isContainer: AST.isActionRender },
+  { property: 'ui', isContainer: AST.isAppStatement },
+  { property: 'ref', isContainer: AST.isNamedTypeRef },
+]
 
 /** TaoScopeProvider resolves reference scopes using module and use-statement rules. */
 export class TaoScopeProvider extends langium.DefaultScopeProvider {
@@ -17,20 +33,130 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
 
   /** getScope returns available symbols for the given reference context. */
   override getScope(context: langium.ReferenceInfo): langium.Scope {
-    if (context.property === 'view' && AST.isViewRender(context.container)) {
-      return this.getModuleScopedDeclarations(context)
+    const container = context.container as AST.Node
+    for (const rule of moduleScopedRefRules) {
+      if (context.property === rule.property && rule.isContainer(container)) {
+        if (context.property === 'ref' && AST.isNamedTypeRef(container)) {
+          return this.getNamedTypeRefScope(context, container)
+        }
+        return this.getModuleScopedDeclarations(context)
+      }
     }
 
-    if (context.property === 'ui' && AST.isAppStatement(context.container)) {
-      return this.getModuleScopedDeclarations(context)
-    }
-
-    if (context.property === 'referenceName' && AST.isNamedReference(context.container)) {
+    if (context.property === 'root' && AST.isMemberAccessExpression(context.container)) {
       const document = langium.AstUtils.getDocument(context.container)
       return this.createScope(this.getLocalScope(context, document))
     }
 
     return super.getScope(context)
+  }
+
+  /** getNamedTypeRefScope handles NamedTypeRef resolution with support for local parameter types.
+   * - For bare names in argument context: adds callee-local parameter synthetic TypeDeclarations to scope.
+   * - For qualified names (`Badge.Title`): adds callable-owner synthetic TypeDeclarations so `Badge` resolves. */
+  private getNamedTypeRefScope(context: langium.ReferenceInfo, namedRef: AST.NamedTypeRef): langium.Scope {
+    const baseScope = this.getModuleScopedDeclarations(context)
+    const typedLiteral = namedRef.$container
+    if (!AST.isTypedLiteralExpression(typedLiteral)) {
+      return baseScope
+    }
+
+    let document: langium.LangiumDocument
+    try {
+      document = langium.AstUtils.getDocument(namedRef)
+    } catch {
+      return baseScope
+    }
+
+    const extraDescriptions: AST.NodeDescription[] = []
+
+    if (namedRef.segments.length > 0) {
+      this.addCallableOwnerDescriptions(document, extraDescriptions)
+    }
+
+    const argCtx = findEnclosingArgumentContext(typedLiteral)
+    if (argCtx && namedRef.segments.length === 0) {
+      this.addCalleeLocalTypeDescriptions(argCtx.callee, document, extraDescriptions)
+    }
+
+    if (extraDescriptions.length === 0) {
+      return baseScope
+    }
+    return this.createScope(extraDescriptions, baseScope)
+  }
+
+  /** addCallableOwnerDescriptions adds synthetic TypeDeclaration descriptions for callable declarations
+   * (views and actions) that own local parameter types, so that `Badge` in `Badge.Title` can resolve via NamedTypeRef.ref. */
+  private addCallableOwnerDescriptions(
+    document: langium.LangiumDocument,
+    out: AST.NodeDescription[],
+  ): void {
+    const taoFile = document.parseResult.value
+    if (!AST.isTaoFile(taoFile)) {
+      return
+    }
+    for (const stmt of taoFile.statements) {
+      const decl = AST.isModuleDeclaration(stmt) ? stmt.declaration : stmt
+      if (!isCallableDeclaration(decl)) {
+        continue
+      }
+      const hasLocalTypes = decl.parameterList?.parameters.some(p => p.localSuperType) ?? false
+      if (!hasLocalTypes) {
+        continue
+      }
+      const synth = this.getCallableOwnerSyntheticType(decl)
+      if (synth) {
+        out.push(this.descriptions.createDescription(synth, decl.name, document))
+      }
+    }
+  }
+
+  /** addCalleeLocalTypeDescriptions adds synthetic TypeDeclaration descriptions for a callee's local
+   * parameter types so that unqualified constructor heads resolve in argument context. */
+  private addCalleeLocalTypeDescriptions(
+    callee: AST.ViewDeclaration | AST.ActionDeclaration,
+    document: langium.LangiumDocument,
+    out: AST.NodeDescription[],
+  ): void {
+    const params = callee.parameterList?.parameters ?? []
+    for (const p of params) {
+      if (!p.localSuperType) {
+        continue
+      }
+      const synth = getSyntheticTypeDeclaration(p)
+      if (synth) {
+        out.push(this.descriptions.createDescription(synth, p.name, document))
+      }
+    }
+  }
+
+  private callableOwnerSyntheticTypes = new WeakMap<CalleeDeclaration, AST.TypeDeclaration>()
+
+  /** getCallableOwnerSyntheticType returns a stable synthetic TypeDeclaration for a callable declaration
+   * (view or action) that owns local parameter types. Used so that `Badge` in `Badge.Title` can resolve
+   * via NamedTypeRef.ref. Owner synthetics are path owners for qualified lookup only — their `base` must
+   * not affect local type fingerprinting. */
+  private getCallableOwnerSyntheticType(callable: CalleeDeclaration): AST.TypeDeclaration | undefined {
+    const cached = this.callableOwnerSyntheticTypes.get(callable)
+    if (cached) {
+      return cached
+    }
+
+    const firstLocalParam = callable.parameterList?.parameters.find(p => p.localSuperType)
+    if (!firstLocalParam?.localSuperType) {
+      return undefined
+    }
+
+    const synthetic = createSyntheticTypeDeclaration({
+      name: callable.name,
+      base: firstLocalParam.localSuperType as AST.TypeExpression,
+      container: callable.$container,
+      cstNode: callable.$cstNode,
+      anchorNode: callable,
+    })
+
+    this.callableOwnerSyntheticTypes.set(callable, synthetic)
+    return synthetic
   }
 
   /** getModuleScopedDeclarations merges local symbols with use-imported symbols. */

@@ -1,9 +1,9 @@
 use Text from @tao/ui
 
 app TaoStudio {
-    ui RootView
+   ui RootView
 }
 
 view RootView {
-    Text value "Hello World"
+   Text "Hello World"
 }

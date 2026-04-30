@@ -27,7 +27,6 @@
     ]
   },
   "exclude": [
-    "**/node_modules/**/*",
-    "src/_gen-tao-compiler/test-*-app-output.tsx"
+    "**/node_modules/**/*"
   ]
 }

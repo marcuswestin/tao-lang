@@ -4,7 +4,9 @@
   "type": "module",
   "module": "tao-compiler.ts",
   "dependencies": {
-    "@jridgewell/gen-mapping": "^0.3.13"
+    "@jridgewell/gen-mapping": "^0.3.13",
+    "typir": "~0.3.3",
+    "typir-langium": "~0.3.3"
   },
   "devDependencies": {
     "@chevrotain/types": "~11.1.2",

@@ -1,0 +1,34 @@
+use Text, Col, Button from @tao/ui
+
+/** Nominal alias over a primitive. */
+
+type Label is text
+
+/** Struct with nested anonymous struct shape (see `Person.Job`). */
+
+type Person is {
+   Name text,
+   Age number,
+   Job {
+      Title text
+   }
+}
+
+share view TypeMatching {
+   state Hero = Person {
+      Name "Ada",
+      Age 36,
+      Job {
+         Title "Engineer"
+      }
+   }
+   Col {
+      Text "Language: types & typed literals"
+      Text "${ Hero.Name } — ${ Hero.Job.Title } (${ Hero.Age })"
+      Button "Promote Job", action {
+         set Hero.Job.Title = "Principal engineer"
+      } { }
+      Text "Label-typed literal:"
+      Text Label "typed nominal text"
+   }
+}

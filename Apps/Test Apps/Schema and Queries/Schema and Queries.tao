@@ -1,0 +1,118 @@
+use Text from @tao/ui
+
+app SchemaAndQueries {
+   ui RootView
+}
+
+view RootView {
+   Text "Hello, world!" { }
+}
+
+
+data TODOs {
+  source InstantDB {
+    appId "your-instantdb-app-id"
+  }
+
+  entity User {
+    email text unique indexed
+    name text optional
+  }
+
+  entity Todo {
+    text text default ""
+    isCompleted boolean default false
+    owner User indexed
+  }
+}
+
+query AllTodos {
+  TODOs.Todo
+}
+
+query TodosForUser Owner User {
+  TODOs.Todo where owner is Owner
+}
+
+mutation AddTodo Owner User, TodoText text {
+  TODOs.Todo.create {
+    text TodoText
+    owner Owner
+    isCompleted false
+  }
+}
+
+mutation ToggleTodo TodoItem Todo {
+  TODOs.Todo.update TodoItem {
+    isCompleted not TodoItem.isCompleted
+  }
+}
+
+mutation DeleteTodo TodoItem Todo {
+  TODOs.Todo.delete TodoItem
+}
+
+state CurrentUser optional User
+
+
+
+view TodoApp {
+   if (!CurrentUser) {
+      LoginForm {
+        on login -> {
+          CurrentUser = User
+        }
+      }
+   } else {
+      Col {
+         Text "Todos"
+         NewTodoForm CurrentUser
+         TodoList TodosForUser CurrentUser
+      }
+  }
+}
+
+view NewTodoForm Owner User {
+  state TodoText text = ""
+
+  Row {
+    TextInput TodoText
+
+    Button "Add" {
+      AddTodo Owner TodoText
+      TodoText = ""
+    }
+  }
+}
+
+view TodoList Todos Loadable<Todo[]> {
+  guard Todos loading {
+    Text "Loading todos..."
+  }
+
+  guard Todos error {
+    Text "Could not load todos."
+  }
+
+  guard Todos ready TodoItems {
+    Col {
+      For TodoItem in TodoItems {
+        TodoRow TodoItem
+      }
+    }
+  }
+}
+
+view TodoRow TodoItem Todo {
+  Row {
+    Checkbox TodoItem.isCompleted {
+      ToggleTodo TodoItem
+    }
+
+    Text TodoItem.text
+
+    Button "Delete" {
+      DeleteTodo TodoItem
+    }
+  }
+}

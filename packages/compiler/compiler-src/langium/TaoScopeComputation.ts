@@ -35,10 +35,18 @@ export class TaoScopeComputation extends langium.DefaultScopeComputation {
         return null
       }
       const declaration = statement.declaration
-      return this.descriptions.createDescription(declaration, declaration.name, document)
+      const name = this.nameProvider.getName(declaration)
+      if (!name) {
+        return null
+      }
+      return this.descriptions.createDescription(declaration, name, document)
     }
     if (AST.isDeclaration(statement)) {
-      return this.descriptions.createDescription(statement, statement.name, document)
+      const name = this.nameProvider.getName(statement)
+      if (!name) {
+        return null
+      }
+      return this.descriptions.createDescription(statement, name, document)
     }
     return null
   }
@@ -65,6 +73,7 @@ export class TaoScopeComputation extends langium.DefaultScopeComputation {
         AssignmentDeclaration: (n) => this.collectSymbolForScope(n, document, localSymbols),
         ViewDeclaration: (n) => this.collectSymbolForScope(n, document, localSymbols),
         ActionDeclaration: (n) => this.collectSymbolForScope(n, document, localSymbols),
+        TypeDeclaration: (n) => this.collectSymbolForScope(n, document, localSymbols),
         ParameterDeclaration: (n) => this.collectParameterSymbolForScope(n, document, localSymbols),
       })
     }

@@ -10,9 +10,13 @@ import {
   compileNoop,
   CompositeGeneratorNode,
 } from '@compiler/codegen/codegen-util'
+import { parameterName } from '@compiler/tao-type-shapes'
+import { resolveArgumentBindings } from '@compiler/typing/tao-argument-bindings'
 import { AST } from '@parser/parser'
-import { Assert, Iterable as _Iterable, Stream, switch_safe } from '@shared'
+import { Iterable as _Iterable, Stream, switch_safe } from '@shared'
+import { throwUnexpectedBehaviorError } from '@shared/TaoErrors'
 import { compileTODO } from '../codegen-util'
+import { decodeTaoTemplateTextChunk } from '../tao-template-text-chunk'
 
 export function compileTaoFile(taoFile: AST.TaoFile): Compiled {
   return new RuntimeGen().TaoFile(taoFile)
@@ -42,6 +46,8 @@ class RuntimeGen {
       ViewDeclaration: (n) => this.ViewDeclaration(n),
       ActionDeclaration: (n) => this.ActionDeclaration(n),
       ViewRender: (n) => this.ViewRender(n),
+      ActionRender: (n) => this.ActionRender(n),
+      TypeDeclaration: (n) => this.TypeDeclaration(n),
     })
   }
 
@@ -51,7 +57,37 @@ class RuntimeGen {
       AppDeclaration: (n) => this.AppDeclaration(n),
       ActionDeclaration: (n) => this.ActionDeclaration(n),
       ViewDeclaration: (n) => this.ViewDeclaration(n),
+      TypeDeclaration: (n) => this.TypeDeclaration(n),
     })
+  }
+
+  /** TypeDeclaration emits nothing at runtime — nominal types are a compile-time construct only. */
+  TypeDeclaration(node: AST.TypeDeclaration): Compiled {
+    return compileNode(node)``
+  }
+
+  /** objectLiteralRuntime emits `TR.Object({ … })` for a Tao object literal (shared by expressions, assignments, nested properties, and `${…}` holes). */
+  private objectLiteralRuntime(node: AST.ObjectLiteral): Compiled {
+    return compileNode(node)`TR.Object({
+      ${compileIndentedNodeList(node.properties, prop => this.ObjectProperty(prop))}
+    })`
+  }
+
+  /** templateInterpolatedExpr compiles a `${…}` expression hole (`Expression` or nested `ObjectLiteral`). */
+  private templateInterpolatedExpr(node: AST.Expression | AST.ObjectLiteral): Compiled {
+    if (AST.isObjectLiteral(node)) {
+      return this.objectLiteralRuntime(node)
+    }
+    return this.Expression(node)
+  }
+
+  /** assignmentDeclarationValue compiles `alias` / `state` RHS, which may be a bare `ObjectLiteral` (not an `Expression`). */
+  private assignmentDeclarationValue(declaration: AST.AssignmentDeclaration): Compiled {
+    const v = declaration.value
+    if (AST.isObjectLiteral(v)) {
+      return this.objectLiteralRuntime(v)
+    }
+    return this.Expression(v)
   }
 
   /** Expression compiles a Tao expression to JS. `render` subscribes during React render, `peek` reads synchronously (actions, file init). */
@@ -66,17 +102,74 @@ class RuntimeGen {
         const operand = this.Expression(node.operand)
         return compileNode(node)`TR.UnaryOperation('${node.op}', ${operand})`
       },
-      StringLiteral: (node) => {
-        return compileNode(node)`TR.Literal('${node.string}')`
-      },
       NumberLiteral: (node) => {
         return compileNode(node)`TR.Literal(${node.number})`
       },
-      NamedReference: (node) => {
-        return compileNode(node)`_Scope.${node.referenceName.$refText}`
-      },
+      StringTemplateExpression: (node) => this.StringTemplateExpression(node),
+      MemberAccessExpression: (node) => this.MemberAccessExpression(node),
       ActionExpression: (node) => this.ActionExpression(node),
+      TypedLiteralExpression: (node) => {
+        const v = node.value
+        if (AST.isObjectLiteral(v)) {
+          return this.objectLiteralRuntime(v)
+        }
+        return this.Expression(v)
+      },
     })
+  }
+
+  /** StringTemplateExpression compiles `"…${…}…"` to `TR.StringTemplate`. Trivial pure-text templates collapse to `TR.Literal` for cheaper emission. */
+  StringTemplateExpression(node: AST.StringTemplateExpression): Compiled {
+    if (node.segments.length === 0) {
+      return compileNode(node)`TR.Literal("")`
+    }
+    if (node.segments.length === 1) {
+      const only = node.segments[0]!
+      if (only.text !== undefined && only.expression === undefined) {
+        const decoded = decodeTaoTemplateTextChunk(only.text)
+        return compileNode(node)`TR.Literal(${JSON.stringify(decoded)})`
+      }
+    }
+    return compileNode(node)`TR.StringTemplate([
+      ${compileIndentedNodeList(node.segments, seg => this.StringTemplatePart(seg))}
+    ])`
+  }
+
+  /** StringTemplatePart emits one `TR.StringTemplate` array element (either literal text or an interpolated expression).
+   * The grammar (`text=TEMPLATE_TEXT | INTERP_START expression=(ObjectLiteral | Expression) '}'`) guarantees exactly one of `text` /
+   * `expression` is set; `throwUnexpectedBehaviorError` below locks that invariant to surface any future grammar drift. */
+  StringTemplatePart(seg: AST.StringTemplateSegment): Compiled {
+    if (seg.expression !== undefined && seg.text === undefined) {
+      const expr = this.templateInterpolatedExpr(seg.expression)
+      return compileNode(seg)`{ kind: 'expr', expr: ${expr} },`
+    }
+    if (seg.text !== undefined && seg.expression === undefined) {
+      const decoded = decodeTaoTemplateTextChunk(seg.text)
+      return compileNode(seg)`{ kind: 'text', value: ${JSON.stringify(decoded)} },`
+    }
+    throwUnexpectedBehaviorError({
+      humanMessage: 'StringTemplateSegment must have exactly one of `text` or `expression` set (grammar invariant).',
+      cause: new Error('CodegenInvariantError'),
+    })
+  }
+
+  /** MemberAccessExpression compiles `Name` or `Name.a.b.c` against the current scope. Bare names (empty path) resolve directly; chains wrap with `TR.MemberAccess`. */
+  MemberAccessExpression(node: AST.MemberAccessExpression): Compiled {
+    const rootExpr = compileNode(node)`_Scope.${node.root.$refText}`
+    if (node.properties.length === 0) {
+      return rootExpr
+    }
+    const pathList = node.properties.map(p => `'${p}'`).join(', ')
+    return compileNode(node)`TR.MemberAccess(${rootExpr}, [${pathList}])`
+  }
+
+  ObjectProperty(property: AST.ObjectProperty): Compiled {
+    const val = AST.isObjectLiteral(property.value)
+      ? this.objectLiteralRuntime(property.value)
+      : this.Expression(property.value)
+    return compileNode(property)`
+      ${property.name}: ${val},
+    `
   }
 
   // Expression Declarations
@@ -90,7 +183,7 @@ class RuntimeGen {
   }
 
   Declaration_alias(declaration: AST.AssignmentDeclaration): Compiled {
-    const value = this.Expression(declaration.value)
+    const value = this.assignmentDeclarationValue(declaration)
     return compileNode(declaration)`
       ${this.scopedName(declaration)} = TR.Alias(${value})
     `
@@ -127,9 +220,9 @@ class RuntimeGen {
   // Actions
   //////////
 
-  /** ActionExpression compiles an inline `action` expression (e.g. a view argument) the same way as a block body action. */
+  /** ActionExpression compiles an inline anonymous `action` expression (e.g. a view argument) the same way as a block body action. */
   ActionExpression(node: AST.ActionExpression): Compiled {
-    return this.actionLiteral(node, node.name)
+    return this.actionLiteral(node, undefined)
   }
 
   ActionDeclaration(declaration: AST.ActionDeclaration): Compiled {
@@ -139,17 +232,100 @@ class RuntimeGen {
       `
   }
 
+  /** actionLiteral emits the runtime form for `action Name P1 t1, P2 t2 { … }` and `action { … }` literals.
+   * Parameterized actions take a `_ActionProps` bag at invocation time and inject those values as own
+   * properties of a fresh `BlockScope`, so member access inside the body (`_Scope.<ParamName>`) resolves to
+   * the caller-supplied value while `set X = …` continues to write to the enclosing scope through prototype
+   * lookup. The `_ActionProps` bag is a record of evaluated `TR.Expression` values; the codegen-side
+   * resolver in `tao-argument-bindings.ts` keys it on the resolved parameter name. */
   actionLiteral(node: AST.ActionExpression | AST.ActionDeclaration, name: string | undefined): Compiled {
     const nameStr = name ? ` ${name}` : ''
+    const params = AST.isActionDeclaration(node) ? (node.parameterList?.parameters ?? []) : []
+    const propsArg = params.length > 0 ? '_ActionProps' : ''
     if (!isBlockWithStatements(node.block)) {
-      return compileNode(node)`TR.Action(function${nameStr}() {})`
+      return compileNode(node)`TR.Action(function${nameStr}(${propsArg}) {})`
     }
-    return compileNode(node)`TR.Action(function${nameStr}() ${this.Block(node.block)})`
+    if (params.length === 0) {
+      return compileNode(node)`TR.Action(function${nameStr}() ${this.Block(node.block)})`
+    }
+    return compileNode(node)`TR.Action(function${nameStr}(_ActionProps) {
+      ${this.actionParameterizedBlock(node.block, params)}
+    })`
+  }
+
+  /** actionParameterizedBlock emits the body of a parameterized action: a fresh `BlockScope` whose own
+   * properties are the action's parameters bound from the invocation `_ActionProps` bag. */
+  private actionParameterizedBlock(
+    block: AST.Block,
+    params: readonly AST.ParameterDeclaration[],
+  ): Compiled {
+    const paramBindings = compileNodeList(params, p =>
+      compileNode(p)`
+        _Scope.${parameterName(p)} = _ActionProps.${parameterName(p)}
+      `)
+
+    return this.scoped(() =>
+      compileNode(block)`
+      TR.BlockScope(_Scope, (_Scope) => {
+        ${paramBindings}
+        ${compileNodeList(block.statements, stmt => this.Statement(stmt))}
+      })`
+    )
+  }
+
+  /** ActionRender compiles `do TargetAction Param1 v1, …` to `_Scope.<Name>.invoke({ … })`, optionally followed
+   * by a nested `block` of action statements (same scope as the invocation). Argument-binding maps each
+   * `Argument` to the callee `ParameterDeclaration` so the props object uses resolved parameter names. */
+  ActionRender(node: AST.ActionRender): Compiled {
+    return compileNodePropertyRef(node, 'action', actionDecl => {
+      if (!AST.isActionDeclaration(actionDecl)) {
+        throwUnexpectedBehaviorError({
+          humanMessage: 'ActionRender callee must resolve to an action declaration after validation.',
+          cause: new Error('CodegenInvariantError'),
+        })
+      }
+      const propsBag = this.actionRenderPropsBag(node, actionDecl)
+      const invoke = compileNode(node)`_Scope.${actionDecl.name}.invoke(${propsBag})`
+      if (!isBlockWithStatements(node.block)) {
+        return invoke
+      }
+      return compileNode(node)`
+        ${invoke}
+        ${this.Block(node.block)}
+      `
+    })
+  }
+
+  /** actionRenderPropsBag emits `{ ParamName: <expr>, … }` keyed by resolved parameter names, or `{}` when
+   * the callee has no parameters. Bindings come from the shared resolver. Args without a binding are
+   * validation errors already and are skipped here to keep the emission well-formed. */
+  private actionRenderPropsBag(
+    node: AST.ActionRender,
+    actionDecl: AST.ActionDeclaration,
+  ): Compiled {
+    const args = node.argumentList?.arguments ?? []
+    if (args.length === 0) {
+      return compileNode(node)`{}`
+    }
+    const bindings = resolveArgumentBindings(actionDecl, node.argumentList).bindings
+    return compileNode(node)`{
+      ${
+      compileIndentedNodeList(args, arg => {
+        const param = bindings.get(arg)
+        if (param === undefined) {
+          return compileNoop()
+        }
+        return compileNode(arg)`
+          ${parameterName(param)}: ${this.Expression(arg)},
+        `
+      })
+    }
+    }`
   }
 
   Declaration_state(declaration: AST.AssignmentDeclaration): Compiled {
     const name = this.scopedName(declaration)
-    const value = this.Expression(declaration.value)
+    const value = this.assignmentDeclarationValue(declaration)
     return AST.isTaoFile(declaration.$container)
       ? compileNode(declaration)`
         ${name} = TR.AppState(${value})
@@ -162,8 +338,10 @@ class RuntimeGen {
   StateUpdate(update: AST.StateUpdate): Compiled {
     const operator = compileNodeProperty(update, 'operator')
     const value = this.Expression(update.value)
+    const name = update.target.root.ref!.name
+    const propertyPath = `[${update.target.properties.map(s => `'${s}'`).join(', ')}]`
     return compileNode(update)`
-      _Scope.${update.stateRef.ref!.name}.updateValue('${operator}', ${value})
+      _Scope.${name}.updateValue('${operator}', ${value}, ${propertyPath})
     `
   }
 
@@ -173,13 +351,16 @@ class RuntimeGen {
   ViewDeclaration(viewDeclaration: AST.ViewDeclaration): Compiled {
     const { block, name, parameterList } = viewDeclaration
 
+    // TypeDeclarations are compile-time-only (no runtime binding); exclude them from scope emission.
     const declarations = this.streamAllDescendantsOf(block)
-      .filterIs(AST.isDeclaration).toArray()
+      .filterIs(AST.isRuntimeDeclaration)
+      .toArray()
 
     const bindings = this.streamAllDescendantsOf(block)
-      .filterIs(AST.isReactiveBinding)
-      .filter(isMutableStateReference)
-      .map(reactiveBindingToReferenceable)
+      .filterIs(AST.isMemberAccessExpression)
+      .map(ma => ma.root.ref)
+      .filterIs(AST.isAssignmentDeclaration)
+      .filter(decl => decl.type === 'state')
       .unique()
 
     const renderNodes = this.streamBlockStatements(block)
@@ -203,7 +384,8 @@ class RuntimeGen {
     )
   }
 
-  typeDeclarations(viewDeclaration: AST.ViewDeclaration, declarations: AST.Declaration[]): Compiled {
+  // `TypeDeclaration`s are compile-time-only and don't participate in the runtime `_Scope`, so they're filtered out upstream.
+  typeDeclarations(viewDeclaration: AST.ViewDeclaration, declarations: AST.RuntimeDeclaration[]): Compiled {
     return compileNode(viewDeclaration)`
       TR.Declare<typeof _Scope, {
         ${compileIndentedNodeList(declarations, declaration => this.typeDeclaration(declaration))}
@@ -211,7 +393,7 @@ class RuntimeGen {
     `
   }
 
-  typeDeclaration(declaration: AST.Declaration): Compiled {
+  typeDeclaration(declaration: AST.RuntimeDeclaration): Compiled {
     const runtimeType = this.runtimeTypes[declaration.type]
     return compileNode(declaration)`
       ${declaration.name}: ReturnType<_TaoRuntime['${runtimeType}']>
@@ -244,7 +426,13 @@ class RuntimeGen {
 
   ViewRender(viewRender: AST.ViewRender): Compiled {
     return compileNodePropertyRef(viewRender, 'view', viewDecl => {
-      const argumentList = this.ArgumentList(viewRender.argumentList)
+      if (!AST.isViewDeclaration(viewDecl)) {
+        throwUnexpectedBehaviorError({
+          humanMessage: 'ViewRender callee must resolve to a view declaration after validation.',
+          cause: new Error('CodegenInvariantError'),
+        })
+      }
+      const argumentList = this.viewRenderArgumentList(viewRender, viewDecl)
       const scopeProp = this.viewScopeProp(viewDecl)
       if (!isBlockWithStatements(viewRender.block)) {
         return compileNode(viewRender)`
@@ -300,35 +488,10 @@ class RuntimeGen {
     return compiled
   }
 
-  // TODO: Ro: "I don't fully understand this function.
-  // Are all the different reference types necessary?
-  // Should we simplify the grammar and eliminate some?"
-  scopedName(
-    node: (AST.Declaration) | (AST.NamedReference) | (AST.Referenceable | AST.Reference<AST.Referenceable>),
-  ): Compiled {
-    if (AST.isDeclaration(node)) {
-      return this.declarationName(node)
-    } else if (AST.isReference(node)) {
-      return this.useReference(node)
-    } else if (AST.isNamedReference(node)) {
-      return this.useReference(node.referenceName)
-    } else if (AST.isReferenceable(node)) {
-      return this.useReferenceable(node)
-    }
-    Assert.never(node)
-  }
-
-  useReference(node: AST.Reference<AST.Referenceable>): Compiled {
-    return this.useReferenceable(node.ref!)
-  }
-
-  useReferenceable(node: AST.Referenceable): Compiled {
+  /** scopedName emits `${declScope}.${name}` for a declaration, tracing the generated name token to its source node. */
+  scopedName(node: AST.Declaration): Compiled {
     const name = compileNodeProperty(node, 'name')
     return compileNode(node)`${this.declScope}.${name}`
-  }
-
-  declarationName(node: AST.Node & { name: string }): Compiled {
-    return compileNode(node)`${this.declScope}.${node.name}`
   }
 
   // Shared statements
@@ -346,13 +509,22 @@ class RuntimeGen {
     )
   }
 
-  ArgumentList(argumentList?: AST.ArgumentList): Compiled | undefined {
-    if (!argumentList) {
+  /** viewRenderArgumentList emits JSX props for a `ViewRender`'s arguments using the resolver's bindings.
+   * Each prop key is the resolved parameter name. Args without a binding (validation errors) are dropped
+   * from emission to keep the JSX well-formed. */
+  viewRenderArgumentList(viewRender: AST.ViewRender, viewDecl: AST.ViewDeclaration): Compiled {
+    if (!viewRender.argumentList) {
       return compileNoop()
     }
-    return compileInlineNodeList(argumentList.arguments, argument => {
+    const args = viewRender.argumentList.arguments
+    const bindings = resolveArgumentBindings(viewDecl, viewRender.argumentList).bindings
+    return compileInlineNodeList(args, argument => {
+      const resolvedParam = bindings.get(argument)
+      if (resolvedParam === undefined) {
+        return compileNoop()
+      }
       return compileNode(argument)`
-        ${argument.name}={${this.Expression(argument.value)}}
+        ${parameterName(resolvedParam)}={${this.Expression(argument)}}
       `.append(' ')
     })
   }
@@ -411,15 +583,4 @@ function isNestedDeclaration(decl: AST.Declaration): boolean {
 function trimTsFence(content: string) {
   const fenced = content.replace(/^```ts/g, '\n/* ```ts */\n').replace(/ *```$/g, '\n/* ``` */')
   return fenced.replace('```ts\n\n', '```ts\n').replace('\n\n/* ``` */', '\n/* ``` */')
-}
-
-function isMutableStateReference(node: AST.ReactiveBinding): boolean {
-  return AST.isStateUpdate(node) || (AST.isNamedReference(node) && node.referenceName.ref?.type === 'state')
-}
-
-function reactiveBindingToReferenceable(node: AST.ReactiveBinding): AST.Referenceable {
-  return switch_safe.type(node, {
-    NamedReference: (n) => n.referenceName.ref!,
-    StateUpdate: (n) => n.stateRef.ref!,
-  }) as AST.Referenceable
 }

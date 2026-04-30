@@ -1,4 +1,4 @@
-// In clean state, the generated app files are missing.
+// TODO: REMOVE? Ignore since in clean state, the generated app files are missing.
 // @ts-ignore
 import CompiledTaoApp from '../_gen/tao-app/app-bootstrap'
 

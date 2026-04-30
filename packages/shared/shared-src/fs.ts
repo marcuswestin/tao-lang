@@ -114,37 +114,51 @@ export const copyDirectory = (src: string, dest: string) => {
   nodeFs.cpSync(src, dest, { recursive: true })
 }
 
-type StreamFilesOptions = {
+type WalkOptions = {
   includeDirectories?: boolean
   includeHidden?: boolean
   includeOnlyExtensions?: readonly string[]
 }
 
-/** streamFilesIn recursively yields file paths under dirPath with optional filters.
- * @yields absolute file paths (and optionally directories). */
-export async function* streamFilesIn(dirPath: string, opts: StreamFilesOptions = {}): AsyncGenerator<string> {
-  const { includeDirectories = false, includeHidden = false, includeOnlyExtensions = [] } = opts
+function shouldYield(path: string, opts: WalkOptions) {
+  const { includeHidden = false, includeOnlyExtensions = undefined } = opts
+  const name = basename(path)
+  if (!includeHidden && name.startsWith('.')) {
+    return false
+  }
+  if (includeOnlyExtensions && !includeOnlyExtensions.includes(extname(name))) {
+    return false
+  }
+  return true
+}
 
-  for (const entry of readDir(dirPath)) {
-    const fullPath = nodePath.join(dirPath, entry)
+function shouldWalk(path: string, opts: WalkOptions) {
+  if (basename(path).startsWith('.') && !opts.includeHidden) {
+    return false
+  }
+  return isDirectory(path)
+}
 
-    if (!includeHidden && entry.startsWith('.')) {
-      continue
-    } else if (isDirectory(fullPath)) {
-      if (includeDirectories) {
-        yield fullPath
-      }
-      for await (const file of streamFilesIn(fullPath, opts)) {
-        yield file
-      }
-      continue
-    } else if (includeOnlyExtensions.length > 0) {
-      if (!includeOnlyExtensions.includes(nodePath.extname(entry))) {
-        continue
-      }
-    } else {
+/** walk recursively yields all files under `path`. If `path` is a file, yields that file when filters allow.
+ * @yields file paths (resolved to absolute when `path` is a single file). */
+export async function* walk(relativePath: string, opts: WalkOptions = {}): AsyncGenerator<string> {
+  const fullPath = resolvePath(relativePath)
+  if (shouldYield(fullPath, opts)) {
+    yield fullPath
+  }
+  yield* walkDirectoryEntries(fullPath, opts)
+}
+
+async function* walkDirectoryEntries(path: string, opts: WalkOptions = {}): AsyncGenerator<string> {
+  if (!shouldWalk(path, opts)) {
+    return
+  }
+  for (const entry of readDir(path)) {
+    const fullPath = joinPath(path, entry)
+    if (shouldYield(fullPath, opts)) {
       yield fullPath
     }
+    yield* walkDirectoryEntries(fullPath, opts)
   }
 }
 
@@ -158,4 +172,11 @@ function tryWithDefault<Fn extends (...args: unknown[]) => unknown, TResult exte
   } catch {
     return defaultValue
   }
+}
+
+/** move renames a file or directory, creating the destination parent directory first. */
+export function move(fromPath: string, toPath: string): void {
+  // Ensure base path of target exists, or create it
+  mkdir(dirname(toPath))
+  nodeFs.renameSync(resolvePath(fromPath), resolvePath(toPath))
 }

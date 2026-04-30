@@ -18,7 +18,9 @@
 
 ## Dev Notes:
 
-- For new features, always update validator and formatter with new tests, if applicable.
+- **IMPORTANT**: For new features:
+  - Always update validator and formatter with new tests if applicable.
+  - Always feature the new functionality in at least one "Apps/Test Apps/..." app.
 
 ---
 
@@ -46,7 +48,7 @@
 
 ## Documentation:
 
-- **ALWAYS** jsdoc all TS functions, in the form: `/** <fn name> <verb> <desc> */`, e.g `/** getUserById returns the user with the given id */`.
+- **ALWAYS** jsdoc all exported/shared TS functions, in the form: `/** <fn name> <verb> <desc> */`, e.g `/** getUserById returns the user with the given id */`.
 - **USUALLY** jsdoc on a single line, unless more is appropriate: `/** <fn name> <verb> <desc> */`.
 - **ALWAYS** start multiline jsdoc lines right after `/**` without a newline; and end with `*/` right at the end of the last line, without a newline before it.
 - **SOMETIMES** jsdoc additional details with list items when appropriate: `/** <fn name> <verb> <desc>\n * - ...\n * - ...\n */`.
@@ -64,38 +66,13 @@ Agent instructions:
 
 ## Cursor: rules, commands, skills
 
-**Authoritative paths** (edit these when improving agent guidance):
-
-| Area                  | Location                                          | Notes                                                                                                                             |
-| --------------------- | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| Core agent text       | `AGENTS.md` (this file), `CLAUDE.md`              | Stacked in Cursor; commands, testing, and repo rules live in **`AGENTS.md`**; **`CLAUDE.md`** is short editor/workflow tone only. |
-| Enforced command gate | `.cursor/rules/running-commands.mdc`              | `alwaysApply: true` — keep tiny; duplicate only what must never be missed.                                                        |
-| Other Cursor rules    | `.cursor/rules/*.mdc`, `.cursor/rules/**/RULE.md` | Usually `alwaysApply: false` + `globs` so they load when relevant files are open.                                                 |
-| Slash commands        | `.cursor/commands/*.md`                           | Optional; repo workflows live in **skills** under `.cursor/skills/`.                                                              |
-| Skills                | `.cursor/skills/**/SKILL.md`                      | User-attached or explicitly referenced; not auto-loaded for every message unless your client pins them.                           |
-| Hooks                 | `.cursor/hooks.json`                              | Repo automation around agent/IDE events.                                                                                          |
-| Human runner          | `Justfile`                                        | `just` recipes for people; agents use `./just-agents` only.                                                                       |
-
-**Project skills (attach when relevant):** `tao-git-workflow`, `create-spec-file`, `create-project`, `implement-from-spec`, `implement-todo-batch`, `prep-feature-branch-merge`, `plan-next-from-todo`, `check-for-improvements`.
-
-**What tends to sit in context vs on-demand**
-
-- **Every relevant turn:** `running-commands.mdc` (`alwaysApply: true`), plus project instructions that include `AGENTS.md` / `CLAUDE.md` when the editor loads them.
-- **When editing matching paths:** rules with `globs` (e.g. Bun, compiler AST, formatter).
-- **On demand:** skills you attach in chat (e.g. `tao-git-workflow`, `implement-from-spec`), optional `.cursor/commands/*`, MCP tools you call.
-
 Misc configs and artifacts:
-
-- `.builds/` - build artifacts
-- `.config/` - configs for tools
-- `.cursor/` + `.vscode/` - IDE configs
-- `.*` - config files required in project root. Symlinked to `.config/*`
 
 Tao Lang Project Docs:
 
 - **`Docs/`** — Design, roadmap, features, example `.tao` files, etc
 
-### Tao Lang implementation: packages/*
+## Code layout
 
 - `packages/parser/` - Langium grammar and generated AST for Tao Lang
 - `packages/compiler/` - Validator and compiler (using Langium)
@@ -105,14 +82,25 @@ Tao Lang Project Docs:
 - `packages/expo-runtime/` - Tao App runtime: Expo react native harness for compiled Tao apps
 - `packages/shared/` - Code shared across all packages. TypeScript modules, internal scripts, etc
 
-To run a command in a package, use `./just-agents <package> <command> <args>`
+- `.builds/` - build artifacts
+- `.config/` - configs for tools
+- `.cursor/` + `.vscode/` - IDE configs
+- `.*` - config files required in project root. Symlinked to `.config/*`
+
+To run a command in a package, use `./just-agents <package> <command> <args>`.
 Examples:
 
 - Run `test` in `packages/expo-runtime`: `./just-agents expo-runtime test`
 - Run `build` in `packages/compiler`: `./just-agents compiler build`
 
-### Testing:
+## Testing:
 
 - Run tests: `./just-agents test`, `./just-agents test <test name filter>`
-  - Run ALL tests, including slow ones: `./just-agents test-all <test name filter>`
 - Test files are named `<name>.test.ts`
+- Run recipe in a package: `./just-agents <package> <command> <args>`
+  - e.g `./just-agents expo-runtime test`
+
+### Conventions
+
+- **ALWAYS** use `@shared/*` abstractions over node/Bun functionality
+  - e.g `@shared/fs` - except when @shared is not available.

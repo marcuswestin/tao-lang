@@ -1,3 +1,5 @@
+import { Formatter } from '@formatter/FormatterSDK'
+import { FS } from '@shared'
 import { describe, expect, test } from 'bun:test'
 import { dedent, testFormatter, visualize } from './formatter-test-utils'
 
@@ -103,27 +105,27 @@ describe('Formatter', () => {
       }
     `)
   testFormatter('view with parameter')
-    .format(`view Text value string {}`)
+    .format(`view Text value text {}`)
     .equals(`
-        view Text value string { }
+        view Text value text { }
     `)
   testFormatter('view with multiple parameters')
-    .format(`view Text value string, count number {}`)
+    .format(`view Text value text, count number {}`)
     .equals(`
-        view Text value string, count number { }
+        view Text value text, count number { }
     `)
   testFormatter('view render with args')
-    .format(`view MyView {Text value "hello" {}}`)
+    .format(`view MyView {Text "hello" {}}`)
     .equals(`
       view MyView {
-          Text value "hello" { }
+          Text "hello" { }
       }
     `)
   testFormatter('view render with multiple args')
-    .format(`view MyView {Text value "hello", count 42 {}}`)
+    .format(`view MyView {Text "hello", 42 {}}`)
     .equals(`
       view MyView {
-          Text value "hello", count 42 { }
+          Text "hello", 42 { }
       }
     `)
   testFormatter('view render with body')
@@ -143,17 +145,17 @@ describe('Formatter', () => {
       view MyView { }
     `)
   testFormatter('string literal spacing')
-    .format(`view MyView {Text value"hello"{}}`)
+    .format(`view MyView {Text "hello"{}}`)
     .equals(`
       view MyView {
-          Text value "hello" { }
+          Text "hello" { }
       }
     `)
   testFormatter('number literal spacing')
-    .format(`view MyView {Text count 42{}}`)
+    .format(`view MyView {Text 42{}}`)
     .equals(`
       view MyView {
-          Text count 42 { }
+          Text 42 { }
       }
     `)
   testFormatter('empty body with space')
@@ -195,22 +197,22 @@ describe('Formatter', () => {
         view MyView { }
     `)
   testFormatter('view with named parameter')
-    .format(`view MyView value string {}`)
+    .format(`view MyView value text {}`)
     .equals(`
-        view MyView value string { }
+        view MyView value text { }
     `)
   testFormatter('argument key value spacing')
-    .format(`view MyView {Text value"test"{}}`)
+    .format(`view MyView {Text "test"{}}`)
     .equals(`
       view MyView {
-          Text value "test" { }
+          Text "test" { }
       }
     `)
   testFormatter('multiple arguments spacing')
-    .format(`view MyView {Text value "hello",count 42{}}`)
+    .format(`view MyView {Text "hello",42{}}`)
     .equals(`
       view MyView {
-          Text value "hello", count 42 { }
+          Text "hello", 42 { }
       }
     `)
   testFormatter('deep nesting')
@@ -246,17 +248,17 @@ describe('Formatter', () => {
       }
     `)
   testFormatter('action with parameter and inject body')
-    .format(`action A msg string {inject \`\`\`ts void 0\`\`\`}`)
+    .format(`action A msg text {inject \`\`\`ts void 0\`\`\`}`)
     .equals(`
-      action A msg string {
+      action A msg text {
           inject \`\`\`ts void 0\`\`\`
       }
     `)
   testFormatter('view render with inline action argument')
-    .format(`view V {Btn title "a", Action action {}}`)
+    .format(`view V {Btn Title "a", action {}}`)
     .equals(`
       view V {
-          Btn title "a", Action action { }
+          Btn Title "a", action { }
       }
     `)
   testFormatter('Advanced formatting')
@@ -504,10 +506,254 @@ describe('alias statement formatting', () => {
     `)
 
   testFormatter('identifier reference in argument')
-    .format(`view MyView {Text value msg{}}`)
+    .format(`view MyView {Text msg{}}`)
     .equals(`
       view MyView {
-          Text value msg { }
+          Text msg { }
       }
     `)
+
+  testFormatter('object literal in alias')
+    .format(`view V { alias O = { x 1, y 2 } }`)
+    .equals(`
+      view V {
+          alias O = {
+              x 1,
+              y 2
+          }
+      }
+    `)
+
+  testFormatter('object literal with trailing comma')
+    .format(`view V { alias O = { x 1, y 2, } }`)
+    .equals(`
+      view V {
+          alias O = {
+              x 1,
+              y 2,
+          }
+      }
+    `)
+
+  testFormatter('member access in view argument')
+    .format(`view T value text { } view V { alias O = { x 1 } T O.x { } }`)
+    .equals(`
+      view T value text { }
+
+      view V {
+          alias O = {
+              x 1
+          }
+          T O.x { }
+      }
+    `)
+
+  testFormatter('nested set in action')
+    .format(`view V { state S = { a 1 } action A { set S.a = 2 } }`)
+    .equals(`
+      view V {
+          state S = {
+              a 1
+          }
+          action A {
+              set S.a = 2
+          }
+      }
+    `)
+
+  testFormatter('nested object literal in alias')
+    .format(`view V { alias A = { a { b { c 1 } } } }`)
+    .equals(`
+      view V {
+          alias A = {
+              a {
+                  b {
+                      c 1
+                  }
+              }
+          }
+      }
+    `)
+
+  testFormatter('nested object literal in state with comma-separated properties')
+    .format(dedent(`
+      view Main {
+          state Pet = {
+              name "cat", age 0, owner {
+              name "Ro", address {
+              city "NYC"
+          }
+          }
+          }
+          Col { }
+      }
+    `))
+    .equals(`
+      view Main {
+          state Pet = {
+              name "cat",
+              age 0,
+              owner {
+                  name "Ro",
+                  address {
+                      city "NYC"
+                  }
+              }
+          }
+          Col { }
+      }
+    `)
+
+  testFormatter('chained member access')
+    .format(`view T value text { } view V { alias A = { x 1 } T A.x.y { } }`)
+    .equals(`
+      view T value text { }
+
+      view V {
+          alias A = {
+              x 1
+          }
+          T A.x.y { }
+      }
+    `)
+
+  testFormatter('set with three-level path')
+    .format(`view V { state S = { x 1 } action A { set S.x.y.z = 3 } }`)
+    .equals(`
+      view V {
+          state S = {
+              x 1
+          }
+          action A {
+              set S.x.y.z = 3
+          }
+      }
+    `)
+
+  testFormatter('flat struct type declaration')
+    .format(`type Person is {Name text,Age number}`)
+    .equals(`
+      type Person is {
+          Name text,
+          Age number
+      }
+    `)
+
+  testFormatter('struct type declaration with nested struct field')
+    .format(`type Person is {Name text,Job {Title text}}`)
+    .equals(`
+      type Person is {
+          Name text,
+          Job {
+              Title text
+          }
+      }
+    `)
+
+  testFormatter('typed struct literal')
+    .format(`type Person is { Name text, Age number } view V { alias Ro = Person {Name "Ro",Age 40} }`)
+    .equals(`
+      type Person is {
+          Name text,
+          Age number
+      }
+
+      view V {
+          alias Ro = Person {
+              Name "Ro",
+              Age 40
+          }
+      }
+    `)
+
+  testFormatter('parameter typed by named struct')
+    .format(`type Person is { Name text } view Profile P Person {}`)
+    .equals(`
+      type Person is {
+          Name text
+      }
+
+      view Profile P Person { }
+    `)
+
+  testFormatter('nested type reference Person.Job in parameter position')
+    .format(`type Person is { Name text, Job { Title text } } view ShowJob J Person.Job {}`)
+    .equals(`
+      type Person is {
+          Name text,
+          Job {
+              Title text
+          }
+      }
+
+      view ShowJob J Person.Job { }
+    `)
+})
+
+describe('Formatter: real-app fixtures', () => {
+  test('Objects and State.tao is a fixed point of the formatter', async () => {
+    const fixture = FS.resolvePath(import.meta.dir, '../../../Apps/Test Apps/Objects and State/Objects and State.tao')
+    const source = FS.readTextFile(fixture)
+    const formatted = await Formatter.formatCode(source, { tabSize: 3 })
+    if (formatted !== source) {
+      expect(visualize(formatted)).toBe(visualize(source))
+    } else {
+      expect(formatted).toBe(source)
+    }
+  })
+})
+
+describe('Formatter — local parameter types:', () => {
+  test('formats view with Title is text correctly', () => {
+    testFormatter(
+      `view   Badge   Title    is   text { }`,
+      `view Badge Title is text { }`,
+    )
+  })
+
+  test('formats view with multiple local types', () => {
+    testFormatter(
+      `view   Button   Title  is  text ,  Action  is  action { }`,
+      `view Button Title is text, Action is action { }`,
+    )
+  })
+
+  test('formats mixed local and explicit params', () => {
+    testFormatter(
+      `view  Card   Title   is   text ,   Size   number { }`,
+      `view Card Title is text, Size number { }`,
+    )
+  })
+})
+
+describe('Formatter — dot-local type ref (Phase 2):', () => {
+  test('formats Badge .Title "x" preserving dot shorthand', () => {
+    testFormatter(
+      `view Badge Title is text { } view Root { Badge .Title "x" }`,
+      `view Badge Title is text { }\n\nview Root {\n  Badge .Title "x"\n}`,
+    )
+  })
+
+  test('formats multiple dot-local args', () => {
+    testFormatter(
+      `view Badge Title is text, Subtitle is text { } view Root { Badge .Title "x", .Subtitle "y" }`,
+      `view Badge Title is text, Subtitle is text { }\n\nview Root {\n  Badge .Title "x", .Subtitle "y"\n}`,
+    )
+  })
+})
+
+describe('Formatter — action local parameter types (Phase 3):', () => {
+  test('formats action with Step is number correctly', () => {
+    testFormatter(
+      `action   Bump   Step    is   number { }`,
+      `action Bump Step is number { }`,
+    )
+  })
+
+  test('formats do Bump .Step 3 preserving dot shorthand', () => {
+    testFormatter(
+      `action Bump Step is number { } action Use { do Bump .Step 3 }`,
+      `action Bump Step is number { }\n\naction Use {\n  do Bump .Step 3\n}`,
+    )
+  })
 })

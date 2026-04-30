@@ -32,10 +32,6 @@ prep-commit:
 test *NAME:
     just {{ MAIN_JUSTFILE }} test '{{ NAME }}'
 
-# Test all packages, including slow ones
-test-all *NAME:
-    just {{ MAIN_JUSTFILE }} test-all '{{ NAME }}'
-
 # Checks: Lint all code
 lint:
     just {{ MAIN_JUSTFILE }} lint

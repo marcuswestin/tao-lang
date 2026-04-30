@@ -1,0 +1,107 @@
+use Text, Col, Button, Number from @tao/ui
+
+app LocalParamTypesApp {
+   ui RootView
+}
+
+// --- Single local param type ---
+
+view Badge Title is text {
+   inject ```ts
+      const tao_text = _ViewProps.Title.evaluate()
+      return TR.Views.Text({ children: [tao_text.jsValue] })
+   ```
+}
+
+// --- Multiple local param types ---
+
+view Labeled Label is text, Content is text {
+   inject ```ts
+      const label = _ViewProps.Label.evaluate()
+      const content = _ViewProps.Content.evaluate()
+      return TR.Views.Text({ children: [label.jsValue + ": " + content.jsValue] })
+   ```
+}
+
+// --- Mix of local types and explicit types ---
+
+view Counter Label is text, Count number {
+   inject ```ts
+      const label = _ViewProps.Label.evaluate()
+      const count = _ViewProps.Count.evaluate()
+      return TR.Views.Text({ children: [label.jsValue + " = " + String(count.jsValue)] })
+   ```
+}
+
+// --- Mix of local types and primitive types ---
+
+view Btn Title is text, OnPress action {
+   inject ```ts
+      return TR.Views.Button({
+         title: _ViewProps.Title.evaluate().jsValue.toString(),
+         onPress: () => _ViewProps.OnPress.invoke({})
+      })
+   ```
+}
+
+// --- View with existing global type + local type (no clash) ---
+
+type Subtitle is text
+
+view Banner Heading is text, Subtitle {
+   inject ```ts
+      const heading = _ViewProps.Heading.evaluate()
+      const subtitle = _ViewProps.Subtitle.evaluate()
+      return TR.Views.Text({ children: [heading.jsValue + " / " + subtitle.jsValue] })
+   ```
+}
+
+// --- Action with local parameter type (Phase 3) ---
+
+state BumpCounter = 0
+
+action Bump Step is number {
+   set BumpCounter += Step
+}
+
+action UseBump {
+   do Bump Step 1
+   do Bump Bump.Step 2
+   do Bump .Step 3
+}
+
+// --- Root view exercising all call-site forms ---
+
+state ClickCount = 0
+
+view RootView {
+   Col {
+      // Three equivalent forms for local parameter types:
+      Badge Title "Hello"
+      Badge Badge.Title "World"
+      Badge .Title "Phase 2"
+
+      // Dot-local with multiple args
+      Labeled .Label "Name", .Content "Tao"
+
+      // Mixed: local type + explicit primitive
+      Counter Label "Score", 42
+
+      // Mix: local type + primitive action type
+      Btn .Title "Click me", action {
+         set ClickCount += 1
+      }
+
+      // Global shorthand type still works alongside local types
+      Banner Heading "Welcome", Subtitle "to Tao"
+
+      // Click count display
+      Number ClickCount
+
+      // Action local param types (Phase 3): bump counter via action
+      Btn .Title "Bump +1", action {
+         do Bump .Step 1
+      }
+      Number BumpCounter
+   }
+}

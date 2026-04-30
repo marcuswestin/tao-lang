@@ -1,29 +1,48 @@
-use KnifeBlock, RootView from ./counter
-use FridgeView
-use Col, Row, Text, Box, Button from @tao/ui
+/** One app that pulls every major Tao language feature into scrollable sections (see subfolders). */
+
+use Text, Col, Row, Button, Number from @tao/ui
+use StateDemo, ScopesDemo, StructsDemo, ExpressionsDemo, TypeMatching, ObjectsDemo, ActionsDemo, LocalParamsDemo, NestedViewsDemo from ./Language
+use Divider from ./Common
+
+alias KitchenSinkVersion = "demo bundle"
+
+state FileLevelDemoCounter = 0
 
 app KitchenSink {
-    ui AppView
+   ui AppView
+}
+
+action BumpFileLevelDemo {
+   set FileLevelDemoCounter += 1
 }
 
 view AppView {
-    Text value "Hello Kitchen Sink" { }
-    HandlerTestView { }
-    RootView { }
-}
-
-view HandlerTestView {
-    Button Action EmptyAction, title "Test" { }
-}
-
-action EmptyAction {
-    inject ```ts console.log('Test') ```
-}
-
-view LoginForm {
-// @PasswordInput TextInput { }
-// @UsernameInput TextInput { }
-// Button "Login" action {
-//     loginUser username @UsernameInput.value, password @PasswordInput.value
-// }
+   Text "Kitchen Sink"
+   Text "Exercises types, state, scopes, objects, structs, expressions, actions, local param types, nested views, inject, and cross-folder `use`."
+   Text "${ KitchenSinkVersion } · file-level state below"
+   Col {
+      Row {
+         Text "File-level counter:"
+         Number FileLevelDemoCounter
+         Button "Top-level action", BumpFileLevelDemo { }
+      }
+      Divider { }
+      TypeMatching { }
+      Divider { }
+      StateDemo { }
+      Divider { }
+      ScopesDemo { }
+      Divider { }
+      ObjectsDemo { }
+      Divider { }
+      StructsDemo { }
+      Divider { }
+      ExpressionsDemo { }
+      Divider { }
+      ActionsDemo { }
+      Divider { }
+      LocalParamsDemo { }
+      Divider { }
+      NestedViewsDemo { }
+   }
 }

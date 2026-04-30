@@ -1,7 +1,7 @@
-use Text, Row, Button from @tao/ui
+use Text, Number, Row, Button from @tao/ui
 
 app ArithmeticOperatorsApp {
-    ui RootView
+   ui RootView
 }
 
 state GlobalCount = 0
@@ -9,26 +9,26 @@ state GlobalCount = 0
 alias Name = "Ro"
 
 view RootView {
-    state LocalCount = 100
-    alias Greeting = "Hello"
-    Row {
-        Text value Greeting
-        Text value Name
-    }
-    alias DoubleGlobal = GlobalCount * 2
-    Row {
-        alias DoubleLocal = LocalCount * 2
-        Button title "Increment", Action action {
-            set GlobalCount = GlobalCount + 1
-            set LocalCount = LocalCount * 10
-        }
-        Text value "GlobalCount: "
-        Text value GlobalCount
-        Text value "DoubleGlobal: "
-        Text value DoubleGlobal
-        Text value "LocalCount: "
-        Text value LocalCount
-        Text value "DoubleLocal: "
-        Text value DoubleLocal
-    }
+   state LocalCount = 100
+   alias Greeting = "Hello"
+   Row {
+      Text Greeting
+      Text Name
+   }
+   alias DoubleGlobal = GlobalCount * 2
+   Row {
+      alias DoubleLocal = LocalCount * 2
+      Button "Increment", action {
+         set GlobalCount = GlobalCount + 1
+         set LocalCount = LocalCount * 10
+      }
+      Text "GlobalCount: "
+      Number GlobalCount
+      Text "DoubleGlobal: "
+      Number DoubleGlobal
+      Text "LocalCount: "
+      Number LocalCount
+      Text "DoubleLocal: "
+      Number DoubleLocal
+   }
 }

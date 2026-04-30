@@ -7,23 +7,9 @@ description: Review all current uncommitted changes, identify concrete improveme
 
 Analyze all uncommitted changes, propose concrete improvements, and execute approved ones.
 
-## Workflow
+## Step 1: Analysis
 
-### Step 1: Gather Current Changes
-
-Run these commands to understand the full scope of changes:
-
-```
-./just-agents shell git status
-./just-agents shell git diff
-./just-agents shell git diff --cached
-```
-
-Collect the list of all modified, staged, and untracked files.
-
-### Step 2: Analyze Changes
-
-For each changed file, read the full file and its diff. Evaluate for:
+Look at the full diff of staged/unstaged changes, and analyse them for improvement:
 
 - **Bugs & correctness** — logic errors, edge cases, off-by-one, null/undefined risks
 - **Code quality** — naming, duplication, unnecessary complexity, dead code
@@ -34,7 +20,7 @@ For each changed file, read the full file and its diff. Evaluate for:
 
 Skip trivia. Only flag improvements that meaningfully improve correctness, clarity, or maintainability.
 
-### Step 3: Present Improvement Plan
+## Step 2: Propose Improvements
 
 Present findings as a numbered list. For each item include:
 
@@ -52,7 +38,7 @@ Example:
 
 Group related improvements together. Order by importance (bugs first, then quality, then style).
 
-### Step 4: Ask for Approval
+### Step 3: Review and Ask for Approval
 
 Use the AskQuestion tool to let the user choose how to proceed:
 
@@ -62,20 +48,21 @@ Use the AskQuestion tool to let the user choose how to proceed:
 
 If the user chooses "modifications", ask follow-up questions to clarify which items to keep, skip, or adjust.
 
-### Step 5: Execute Approved Improvements
+### Step 4: Execute Approved Improvements
 
-Apply only the approved changes. After editing each file:
+Apply only the approved changes, and make sure to fix any linter errors or failing tests.
 
 1. Check for linter errors with ReadLints
 2. Fix any introduced errors before moving to the next file
 
 Do **not** commit. The user decides when to commit. For staging and commits afterward, use **`tao-git-workflow`**.
 
-Do **not** stage changes: never run `git add` (or equivalent) as part of this workflow. Leave all edits **unstaged** in the working tree so the user can review and stage themselves.
+Do **not** stage any changes.
+
+Do **not** commit.
 
 ## Notes
 
-- **No staging:** This skill must not modify the Git index (`git add`, `git restore --staged`, etc.). Only working-tree edits are allowed after approval.
-- Focus on the _diff_, not the entire file — unless surrounding context reveals an issue.
+- Focus on the _diff_, not the entire file — unless surrounding context reveals something relevant.
 - When in doubt about whether something is an improvement, include it but note it as low priority.
-- If there are no meaningful improvements to suggest, say so clearly and don't invent busywork.
+- **IMPORTANT:** Be diligent; but if there are no meaningful improvements to suggest, say so clearly and don't invent busywork.

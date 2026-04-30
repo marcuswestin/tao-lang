@@ -19,7 +19,7 @@ describe('TaoDefinitionProvider', () => {
         { path: '/project/app.tao', code: 'use Text from @tao/ui\nview MyView { }' },
         {
           path: '/tao-std-lib/tao/ui/Views.tao',
-          code: 'share view Text value string { inject ```ts return null ``` }',
+          code: 'share view Text Text text { inject ```ts return null ``` }',
         },
       ],
       { stdLibRoot: '/tao-std-lib' },

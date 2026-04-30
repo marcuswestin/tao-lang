@@ -4,7 +4,9 @@ import * as LSP from '@parser/lsp'
 import { validator } from '@compiler/validation/tao-lang-validator'
 import { UseStatementValidator } from '@compiler/validation/UseStatementValidator'
 import TaoFormatter from '@formatter/TaoFormatter'
-import { AST } from '@parser/parser'
+import { AST, TaoTokenBuilder } from '@parser/parser'
+import { createTypirLangiumServices, initializeLangiumTypirServices } from 'typir-langium'
+import { TaoTypeSystem, type TaoTypirServices } from '../typing/tao-type-system'
 import { TaoDefinitionProvider } from './TaoDefinitionProvider'
 import { TaoScopeComputation } from './TaoScopeComputation'
 import { TaoScopeProvider } from './TaoScopeProvider'
@@ -34,8 +36,14 @@ export class TaoWorkspace {
     private readonly documentFactory: langium.LangiumDocumentFactory,
     private readonly formatter: LSP.Formatter & TaoFormatter,
     private readonly definitionProvider: LSP.DefinitionProvider,
+    private readonly typir: TaoTypirServices,
     private readonly stdLibRoot?: string,
   ) {
+  }
+
+  /** getTypir returns the Tao Typir service graph (primitives, inference, validation). Exposed primarily for tests and debugging. */
+  getTypir(): TaoTypirServices {
+    return this.typir
   }
 
   private readonly seenFilePaths = new Set<string>()
@@ -144,14 +152,23 @@ export function createTaoWorkspace(
         Formatter: () => new TaoFormatter(),
         DefinitionProvider: (services: LSP.LangiumServices) => new TaoDefinitionProvider(services, config.stdLibRoot),
       },
+      parser: {
+        // TaoTokenBuilder returns a Chevrotain multi-mode lexer for native string-template parsing
+        // (default / string / interp modes). See `tao-token-builder.ts`.
+        TokenBuilder: () => new TaoTokenBuilder(),
+      },
       references: {
         ScopeComputation: (services: langium.LangiumCoreServices) => new TaoScopeComputation(services),
         ScopeProvider: (services: langium.LangiumCoreServices) => new TaoScopeProvider(services, config.stdLibRoot),
       },
+      // Typir services are built per-language so they share the Langium document lifecycle; `initializeLangiumTypirServices` must run once after `ServiceRegistry.register`.
+      typir: () => createTypirLangiumServices(sharedTaoModule, AST.reflection, new TaoTypeSystem(), {}),
     },
   )
 
   TaoModule.shared.ServiceRegistry.register(TaoModule)
+
+  initializeLangiumTypirServices(TaoModule, TaoModule.typir)
 
   // Validation registration
   const useStatementValidator = new UseStatementValidator(
@@ -160,14 +177,11 @@ export function createTaoWorkspace(
     config.stdLibRoot,
   )
 
+  // Spread `validator` so every Langium check stays registered (avoids drift vs hand-picked keys); override
+  // `UseStatement` with the module-resolution-aware implementation until it is merged into `validator`.
   TaoModule.validation.ValidationRegistry.register<AST.TaoLangAstType>({
-    // TODO: Use validator instead of separate class
+    ...validator,
     UseStatement: useStatementValidator.checkUseStatement.bind(useStatementValidator),
-    TaoFile: validator.TaoFile,
-    Block: validator.Block,
-    AppDeclaration: validator.AppDeclaration,
-    Declaration: validator.Declaration,
-    ParameterDeclaration: validator.ParameterDeclaration,
   })
 
   if (!context.connection) {
@@ -185,6 +199,7 @@ export function createTaoWorkspace(
     TaoModule.shared.workspace.LangiumDocumentFactory,
     TaoModule.lsp.Formatter,
     TaoModule.lsp.DefinitionProvider,
+    TaoModule.typir,
     config.stdLibRoot,
   )
 }

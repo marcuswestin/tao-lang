@@ -1,35 +1,34 @@
-use Text, Button, Box, Row from @tao/ui
+use Text, Number, Button, Box, Row from @tao/ui
 
 app TaoStudio {
-    ui RootView
+   ui RootView
 }
 
 state GlobalCount = 100
 
 view RootView {
-    Text value "DEV APP"
-    Text value GlobalCount
-    Button title "Click me", Action StartDebugger { }
-    Box {
+   Text "DEV APP"
+   Number GlobalCount
+   Button "Click me", StartDebugger { }
+   Box {
 
-    // @Header Row {
-    //     Text value "Hello"
-    //     Text value "World"
-    // }
+   // @Header Row {
+   //     Text "Hello"
+   //     Text "World"
+   // }
 
-    // @Body Row {
-    //     Text value "Hello"
-    //     Text value "World"
-    // }
-    // @Footer Row {
-    //     Text value "Hello"
-    //     Text value "World"
-    // }
+   // @Body Row {
+   //     Text "Hello"
+   //     Text "World"
+   // }
+   // @Footer Row {
+   //     Text "Hello"
+   //     Text "World"
+   // }
     }
 }
 
 action StartDebugger {
-    set GlobalCount += 1
-    debugger
-    set GlobalCount += 1
+   set GlobalCount += 1
+   set GlobalCount += 1
 }

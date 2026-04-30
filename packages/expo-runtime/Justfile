@@ -12,7 +12,7 @@ release-prep: _deps build test
     npx expo prebuild
 
 run: _deps
-    BROWSER="none" bunx expo start -c --web --ios
+    BROWSER="none" bunx expo start --web --ios
 
 clean:
     rm -rf .expo
@@ -20,8 +20,7 @@ clean:
     find . -maxdepth 1 -name '.metro-health-check*' -delete
 
 clean-full: clean
-    rm -rf node_modules
-    rm -rf ios android
+    rm -rf ./node_modules ./ios ./android
     rm -rf ~/.expo
     watchman watch-del {{ justfile_directory() }}/../.. && watchman watch-project '{{ justfile_directory() }}'/../..
 

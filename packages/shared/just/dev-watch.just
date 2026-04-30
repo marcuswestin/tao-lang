@@ -2,7 +2,10 @@ import "./_shared-vars.just"
 
 _dev:
     #!{{ ZSH_INIT }}
-    open -a "Google Chrome" http://localhost:8081/
+    just deps gen
+    echo "compile"
+    just _compile_dev_app
+    echo "start dev loops"
     while true; do
         just _prefix_strip_parallel "_watch_" \
             {{ _DEV_WATCH_RECIPES }} \
@@ -58,11 +61,16 @@ _watch_test_apps:
     watchexec --restart --watch='Apps/Test Apps/' -- 'just gen'
 
 _watch_app_build:
-    cd packages/tao-cli && bun run  --watch --no-clear-screen \
+    just _compile_dev_app "--watch"
+
+_compile_dev_app WATCH="":
+    cd packages/tao-cli && bun run --no-clear-screen \
+        {{ WATCH }} \
         ./tao-cli.ts compile "../../{{ env('TAO_DEV_APP') }}" \
+            {{ WATCH }} \
             --runtime-dir "../expo-runtime" \
             --std-lib-root "../tao-std-lib" \
-            --verbose --watch
+            --verbose
 
 # Run expo on port 8081
 _watch_runtime_reload:
@@ -70,7 +78,7 @@ _watch_runtime_reload:
     set -euo pipefail
     cd packages/expo-runtime
     echo "[runtime_reload] Expo web: http://localhost:8081/"
-    EXPO_NO_CLEAR=true BROWSER="none" npx expo start --clear --web --port 8081 # omit `start -c` for cache between restarts
+    npx expo start --web --port 8081
 
 _watch_typecheck_extension:
     # One-shot build establishes composite outputs under `.builds/ts-packages/` before watch (avoids TS6305 after `just clean`).

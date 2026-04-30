@@ -23,6 +23,7 @@ type TraceRegionWithRegions = TraceRegion & {
 
 // ---------------------------------------------------------------------------
 // Pipeline: traceToEncodedSourceMapJson
+// Full stack (compiler trace → per-module .map → Metro bundle rewrite): Docs/Projects/SourceMapping.md
 // ---------------------------------------------------------------------------
 
 /** traceToEncodedSourceMapJson builds a Source Map v3 JSON string from a Langium `TraceRegion` tree. */

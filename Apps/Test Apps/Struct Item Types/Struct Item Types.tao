@@ -1,0 +1,31 @@
+use Col, Text, Button from @tao/ui
+
+app StructItemTypesApp {
+   ui Main
+}
+
+type Person is {
+   Name text,
+   Age number,
+   Job {
+      Title text
+   }
+}
+
+view Main {
+   state Ro = Person {
+      Name "Ro",
+      Age 40,
+      Job {
+         Title "Builder"
+      }
+   }
+   Col {
+      Text Ro.Name { }
+      Text Ro.Job.Title { }
+      Text "${ Ro.Name } is ${ Ro.Age } and works as ${ Ro.Job.Title }" { }
+      Button "promote", action {
+         set Ro.Job.Title = "Architect"
+      } { }
+   }
+}

@@ -3,8 +3,8 @@ import "./_shared-vars.just"
 [no-cd]
 [positional-arguments]
 _tao *ARGS:
-    cd "../../packages/tao-cli" && just build
-    ../../.builds/tao-cli "$@"
+    cd "{{ justfile_dir() }}/packages/tao-cli" && just build
+    {{ justfile_dir() }}/.builds/tao-cli "$@"
 
 _stash_unstaged_changes:
     echo "> Stashing non-staged changes..." && git stash --keep-index --include-untracked
@@ -19,7 +19,7 @@ _unstage_changes:
 _prep_commit:
     echo "\n> Clean build artifacts..." && just clean
     echo "> Build everything..." && just build
-    echo "> Run code tests..." && TAO_SKIP_GEN=1 just test-all
+    echo "> Run code tests..." && TAO_SKIP_GEN=1 just test
     echo "> Run pre-commit checks..." && just _check
     echo "> Make auto-fixable changes..." && just fix
     echo "\n> Pre-commit checks complete. Ready to commit.\n"

@@ -2,9 +2,11 @@
 
 ## Data Description
 
-Data is described with declarative schemas that describe entities (like Person, Post, and Comment), their relationships (e.g a Person's friends, a Post's author, a Post's Comments, a Comment's Author, and so on), and where to fetch it.
+Data is described with **declarative schemas** (entities, relationships, and where they are fetched), separate from UI. Views consume **typed** values produced by queries; async behavior is explicit (e.g. `Loadable`-shaped results in the intended design).
 
-Tao then takes care of fetching required data, updating the app when someone changes data, and allowing for simple manipulation of the data:
+**Authoritative design (current preferred + alternatives + prior art + runtime notes):** see **[Query Design - Preferred.md](Projects/Data%20Schema%20and%20Queries/Query%20Design%20-%20Preferred.md)** in _Projects/Data Schema and Queries_, with **[Query Design - Alternatives.md](Projects/Data%20Schema%20and%20Queries/Query%20Design%20-%20Alternatives.md)** for forks not duplicated in the preferred doc.
+
+The sketch below is **historical / illustrative** only (older `model` / `Text` shape); it does **not** match the preferred `Tasks Task` / `X is Y` schema style in the linked project docs.
 
 ```tao
 data MyBlog {
@@ -78,7 +80,7 @@ view UserPosts {
     Col [pad thin] {
         List User.posts {
             render Post {
-            
+
         }
     }
 

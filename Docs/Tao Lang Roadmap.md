@@ -8,6 +8,8 @@
 - [ ] Functions
 - [ ] Control statements - if/else,
 
+Design notes for the type system live under **`Docs/Projects/Type System/`** — start with [Type Design - Preferred](Projects/Type%20System/Type%20Design%20-%20Preferred.md) and [Type Design - Alternatives](Projects/Type%20System/Type%20Design%20-%20Alternatives.md); staged implementation in [Type Implementation - Execution plan](Projects/Type%20System/Type%20Implementation%20-%20Execution%20plan.md); long-form language surface in [Language surface - Type System Design](Projects/Type%20System/Language%20surface%20-%20Type%20System%20Design.md) (moved from _Tao Language Design_).
+
 ## Relationship to LLMs
 
 - [ ] Instructions for LLMs to use Tao Lang
@@ -23,8 +25,8 @@
 - [ ] Data sources
 - [ ] Authentication & Authorization
 - [ ] Composite expressions
-  - [ ] Arithmetic
-  - [ ] String interpolation
+  - [x] Arithmetic — `+` / `-` / `*` / `/` with strict type rules (text+text, number+number, text*number); see [Type Implementation - Execution plan](Projects/Type%20System/Type%20Implementation%20-%20Execution%20plan.md) (Stage 1) and compiler tests
+  - [x] String interpolation — `"…${Expression}…"` via multi-mode lexer + `StringTemplateExpression`; holes must be text / number / boolean
   - [ ] Objects, Arrays and Tuples
     - "Thing"s/"Item"s/"Object"s w properties/fields/attributes/characteristics; Lists; Pairs
       - I think I like Item.
@@ -81,21 +83,6 @@ Project: ` /create-project Lets create a project for "Basic Functions":
   - Or; Named _and_ type?
     - Eg: `List { renderItem: post BlogPost, index { Text post.title } }`
       - post is matched by type BogPost; index is matched by name
-
-### Type system
-
-- [ ] Make work inside vscode extension
-- [ ] Design Type system
-  - Declaring named types
-  - Function types
-  - Matching function arguments by type
-  - Matching switch statements by type
-    - `if item is BlogPost -> Text item.title is Person person -> Text person.name`
-    - `if item is BlogPost: Text item.title \n  is Person person: Text person.name`
-  - Matching statements by type
-- [ ] Parse type definitions
-- [ ] Design and implement generics
-- [ ] Type checker
 
 ### Misc tooling
 

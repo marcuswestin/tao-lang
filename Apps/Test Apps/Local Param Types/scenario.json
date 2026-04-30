@@ -1,0 +1,15 @@
+{
+  "skip": false,
+  "steps": [
+    { "assertVisibleText": "Hello" },
+    { "assertVisibleText": "World" },
+    { "assertVisibleText": "Phase 2" },
+    { "assertVisibleText": "Name: Tao" },
+    { "assertVisibleText": "Score = 42" },
+    { "assertVisibleText": "Click me" },
+    { "assertVisibleText": "Welcome / to Tao" },
+    { "assertVisibleText": "0" },
+    { "pressVisibleText": "Click me" },
+    { "assertVisibleText": "1" }
+  ]
+}

@@ -1,0 +1,23 @@
+use Text, Button, Col from @tao/ui
+
+share view ObjectsDemo {
+   state Box = {
+      label "tao",
+      qty 1,
+      meta {
+         note "nested object state"
+      }
+   }
+   Col {
+      Text "Objects: literals, member paths, string templates"
+      Text Box.label { }
+      Text Box.meta.note { }
+      Text "${ Box.label } × ${ Box.qty }" { }
+      Button "relabeled", action {
+         set Box.label = "Tao Lang"
+      } { }
+      Button "more", action {
+         set Box.qty = Box.qty + 1
+      } { }
+   }
+}

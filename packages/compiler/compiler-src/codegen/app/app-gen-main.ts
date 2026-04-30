@@ -111,9 +111,9 @@ const _compiledTaoAppRootViewStyle = { flex: 1, backgroundColor: 'black' }
 
 export default function CompiledTaoApp() {
   return (
-    <RN.View style={_compiledTaoAppRootViewStyle}>
+    <RN.ScrollView style={_compiledTaoAppRootViewStyle}>
       <AppUIView />
-    </RN.View>
+    </RN.ScrollView>
   )
 }
 `)

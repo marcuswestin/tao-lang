@@ -1,6 +1,6 @@
 # Source maps — remaining work
 
-This doc lists **what is left to do**. For what already ships (compiler maps, bundle rewrite middleware, segment remapping, tests), see [SourceMapping.md](SourceMapping.md).
+This doc lists **what is left to do**.
 
 **Constraint (unchanged):** Chrome uses the **single** final source map for the bundle, not chained maps.
 

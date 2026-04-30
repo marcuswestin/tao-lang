@@ -11,6 +11,7 @@ _fmt:
     dprint fmt 1> /dev/null 2>&1
     {{ MISE_CMD }} fmt 1> /dev/null 2>&1
     {{ OXLINT_CMD }} --fix 1> /dev/null 2>&1
+    just tao fmt ./Apps/
     just _fmt_newlines
 
 _fmt_just:

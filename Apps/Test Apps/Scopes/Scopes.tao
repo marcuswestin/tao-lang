@@ -1,45 +1,37 @@
 use Text, Button, Row, Col from @tao/ui
 
 app ScopesApp {
-    ui RootView
+   ui RootView
 }
 
-state fileState = 100
+state FileState = 100
 
 action FileAction {
-    set fileState += 1
+   set FileState += 1
 }
 
 view RootView {
-    state viewState = 200
-
-    Button title fileState, Action FileAction { }
-    Button title viewState, Action ViewAction { }
-
-    action ViewAction {
-        set viewState += 1
-    }
-
-    Row {
-        state innerState = 300
-
-        Button title innerState, Action InnerAction { }
-
-        action InnerAction {
-            set innerState += 1
-            set fileState += 1
-        }
-
-        Col {
-            state deepState = 400
-
-            Button title deepState, Action DeepAction { }
-
-            action DeepAction {
-                set deepState += 1
-                set innerState += 1
-                set fileState += 1
-            }
-        }
-    }
+   state ViewState = 200
+   Button "${ FileState }", FileAction { }
+   Button "${ ViewState }", ViewAction { }
+   action ViewAction {
+      set ViewState += 1
+   }
+   Row {
+      state InnerState = 300
+      Button "${ InnerState }", InnerAction { }
+      action InnerAction {
+         set InnerState += 1
+         set FileState += 1
+      }
+      Col {
+         state DeepState = 400
+         Button "${ DeepState }", DeepAction { }
+         action DeepAction {
+            set DeepState += 1
+            set InnerState += 1
+            set FileState += 1
+         }
+      }
+   }
 }

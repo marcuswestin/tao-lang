@@ -31,5 +31,5 @@ function FlexView<P extends RN.ViewProps>(
   RNViewComponent: React.ComponentType<P>,
   baseStyles: RN.ViewStyle,
 ) {
-  return View(viewDisplayName, RNViewComponent, [{ flex: 1 }, baseStyles])
+  return View(viewDisplayName, RNViewComponent, [baseStyles /* ,{ flex: 1 } */])
 }

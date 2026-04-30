@@ -1,0 +1,103 @@
+// TARGET-ONLY FICTION — pipeline variant. See ../README.md.
+
+data MeetupData {
+  source InstantDB {
+    appId "example-app-id"
+  }
+
+  type EventTitle is text
+
+  Events Event {
+    Title is EventTitle
+    StartsAt is instant
+    Host is Person
+    Rsvps [Rsvp]
+  }
+
+  People Person {
+    Name is text
+    HostedEvents [Event]
+    Rsvps [Rsvp]
+  }
+
+  Rsvps Rsvp {
+    Guest is Person
+    ForEvent is Event
+    Status is RsvpStatus default maybe
+  }
+
+  type RsvpStatus is enum going maybe no
+}
+
+// Named parameterized query — stable identity includes Host + steps
+query MeetupData get Events for Host Person as HostedEvents
+  > where Host is Host
+  > order StartsAt asc
+
+query MeetupData get Rsvps for ForEvent Event as EventRsvps
+  > where ForEvent is ForEvent
+
+mutation CreateEvent Host Person, Title EventTitle, StartsAt instant {
+  MeetupData.Events.create {
+    Title Title
+    StartsAt StartsAt
+    Host Host
+  }
+}
+
+mutation SetRsvpStatus RsvpItem Rsvp, NewStatus RsvpStatus {
+  MeetupData.Rsvps.update RsvpItem {
+    Status NewStatus
+  }
+}
+
+mutation DeleteEvent EventItem Event {
+  MeetupData.Events.delete EventItem
+}
+
+// session-shaped name for expressions in queries (sketch)
+session {
+  CurrentUser Person
+}
+
+view EventDashboard HostedEvents Loadable<Event[]> {
+  guard HostedEvents loading {
+    Text "Loading your events…"
+  }
+  guard HostedEvents error Err {
+    Text "Could not load events."
+  }
+  guard HostedEvents ready Rows {
+    Col {
+      For Ev in Rows {
+        EventRow Ev
+      }
+    }
+  }
+}
+
+view EventRow Ev Event {
+  Row {
+    Text Ev.Title
+    Text "starts"
+    Text Ev.StartsAt
+    Button "RSVP list" {
+      RsvpPanel Ev
+    }
+  }
+}
+
+view RsvpPanel Ev Event {
+  query MeetupData get Rsvps for ForEvent Event as List
+    > where ForEvent is Ev
+  RsvpList List
+}
+
+view RsvpList Rows Loadable<Rsvp[]> {
+  guard Rows loading { Text "…" }
+  guard Rows ready Items {
+    For R in Items {
+      Text "${R.Guest.Name}: ${R.Status}"
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "steps": [
+    { "assertVisibleText": "Ro" },
+    { "assertVisibleText": "Builder" },
+    { "assertVisibleText": "Ro is 40 and works as Builder" },
+    { "pressVisibleText": "promote" },
+    { "assertVisibleText": "Architect" },
+    { "assertVisibleText": "Ro is 40 and works as Architect" }
+  ]
+}

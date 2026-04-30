@@ -1,0 +1,42 @@
+use Text, Button, Row, Col, Number from @tao/ui
+
+state SharedOuter = 0
+
+share view ScopesDemo {
+   state ViewOnly = 0
+   Col {
+      Text "Scopes: nested state reaches file state"
+      Row {
+         Text "Outer (file):"
+         Number SharedOuter
+         Text "View:"
+         Number ViewOnly
+      }
+      Button "Outer++", OuterAction { }
+      Row {
+         state Inner = 0
+         Text "Inner:"
+         Number Inner
+         Button "Inner++", InnerAction { }
+         action InnerAction {
+            set Inner += 1
+            set SharedOuter += 1
+         }
+         Col {
+            state Deep = 0
+            Text "Deep:"
+            Number Deep
+            Button "Deep++", DeepAction { }
+            action DeepAction {
+               set Deep += 1
+               set Inner += 1
+               set SharedOuter += 1
+            }
+         }
+      }
+      action OuterAction {
+         set ViewOnly += 1
+         set SharedOuter += 1
+      }
+   }
+}

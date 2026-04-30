@@ -1,0 +1,20 @@
+use Text, Button, Col from @tao/ui
+
+type Item is {
+   Sku text,
+   Price number
+}
+
+share view StructsDemo {
+   state CartItem = Item {
+      Sku "SKU-1",
+      Price 9
+   }
+   Col {
+      Text "Struct item types (`type … is { … }` + typed literals)"
+      Text "${ CartItem.Sku } @ ${ CartItem.Price }"
+      Button "discount", action {
+         set CartItem.Price = CartItem.Price - 1
+      } { }
+   }
+}

@@ -102,7 +102,7 @@ async function addAllStdLibFiles(workspace: TaoWorkspace) {
   if (!workspace.hasStdLib()) {
     return
   }
-  const taoFilesStream = FS.streamFilesIn(workspace.getStdLibRoot()!, {
+  const taoFilesStream = FS.walk(workspace.getStdLibRoot()!, {
     includeOnlyExtensions: workspace.getFileExtensions(),
   })
   for await (const filePath of taoFilesStream) {
@@ -193,20 +193,21 @@ function toLangiumFileURI(absolutePath: string): LGM.URI {
   return LGM.URI.parse(`file://${absolutePath}`, STRICT_URIs)
 }
 
-/** getValidationOptions maps ParseOptions to Langium validation flags. */
+/** getValidationOptions maps ParseOptions to Langium validation flags. `validateUpToStage` names the last stage to
+ * perform: `'lexing'` and `'parsing'` skip validation entirely (they're used by parse-only tests that don't care
+ * about type-check diagnostics); `'linking'` and `'all'` run validation (Langium's `stopAfterLinkingErrors` causes
+ * `'linking'` to bail out if linker errors are reported). */
 function getValidationOptions(opts: ParseOptions): LGM.ValidationOptions | boolean {
   const categories = opts.skipSlowValidation ? ['fast'] : undefined
   const validateUpToStage = opts.validateUpToStage ?? 'all'
 
   switch (validateUpToStage) {
     case 'none':
+    case 'lexing':
+    case 'parsing':
       return false
     case 'all':
       return true
-    case 'lexing':
-      return { categories, stopAfterLexingErrors: true }
-    case 'parsing':
-      return { categories, stopAfterParsingErrors: true }
     case 'linking':
       return { categories, stopAfterLinkingErrors: true }
     default:

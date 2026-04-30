@@ -1,0 +1,17 @@
+// TARGET-ONLY FICTION — not valid Tao. See README.md.
+
+use Data from ./variants/DataPipeline
+
+app MeetupLite {
+  ui RootView
+}
+
+view RootView {
+  // queryKey intent: [MeetupData, Events, hostId, pipeline hash]
+  query MeetupData get Events for Host Person as MyHostedEvents
+    > where Host is CurrentUser
+    > order StartsAt asc
+    > take 20
+
+  EventDashboard MyHostedEvents
+}

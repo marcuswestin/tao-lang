@@ -1,0 +1,19 @@
+// TARGET-ONLY FICTION — block-query alternative for same domain. See ../README.md.
+// Compare: Query Design - Alternatives.md #query-flow-pipeline-vs-block
+
+data MeetupData {
+  source InstantDB {
+    appId "example-app-id"
+  }
+  // ... same entities as DataPipeline.tao (omitted duplicate for sketch)
+}
+
+// Illustrative block form — semantics TBD; may desugar to same IR as pipeline
+query MeetupData get Events for Host Person as HostedEvents {
+  where Host is Host
+  order StartsAt asc
+}
+
+session {
+  CurrentUser Person
+}

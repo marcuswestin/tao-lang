@@ -1,0 +1,28 @@
+use Text, Button, Row, Col, Number from @tao/ui
+
+state GlobalN = 2
+
+share view ExpressionsDemo {
+   state LocalN = 10
+   alias Greeting = "Hello"
+   alias Name = "Tao"
+   Row {
+      Text Greeting
+      Text Name
+   }
+   alias TwiceGlobal = GlobalN * 2
+   Row {
+      alias TwiceLocal = LocalN * 2
+      Text "Aliases & arithmetic"
+      Number GlobalN
+      Text "×2 global →"
+      Number TwiceGlobal
+      Number LocalN
+      Text "×2 local →"
+      Number TwiceLocal
+      Button "tick", action {
+         set GlobalN = GlobalN + 1
+         set LocalN = LocalN + 5
+      } { }
+   }
+}

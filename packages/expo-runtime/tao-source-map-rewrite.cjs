@@ -1,5 +1,9 @@
 'use strict'
 
+// Tao source-map pipeline: this file rewrites **bundle** v3 JSON maps so DevTools sees `.tao` originals.
+// Compiler-side Langium trace → v3 lives in packages/compiler (traceToSourceMapJson). Overview:
+// Docs/Projects/SourceMapping.md
+
 const fs = require('fs')
 const path = require('path')
 const { fileURLToPath } = require('node:url')

@@ -31,9 +31,11 @@ Also see Roadmap.
 - [x] Actions
 - [x] Runtime Scope
 - [x] Operators +, -, *, /, %, ( )
+- [ ] Schemas and Queries
 - [ ] Member / pipeline: ., ->
-- [ ] Type System
-- [ ] Objects/Items, Arrays/Lists, and Tuples/Pairs
+- [x] Type System
+- [x] Objects/Items
+- [ ] Arrays/Lists, and Tuples/Pairs
 - [ ] Event & Handler Syntax
 - [ ] Functions
 - [ ] Layout System
@@ -42,10 +44,81 @@ Also see Roadmap.
 
 ### NEXT - todo:
 
+- [ ] Schemas and Queries
+  - [ ] Spec: [Query Design - Preferred.md](Docs/Projects/Data%20Schema%20and%20Queries/Query%20Design%20-%20Preferred.md), [Query Design - Alternatives.md](Docs/Projects/Data%20Schema%20and%20Queries/Query%20Design%20-%20Alternatives.md), [Prior Art - Query Languages.md](Docs/Projects/Data%20Schema%20and%20Queries/Prior%20Art%20-%20Query%20Languages.md), [Runtime - TanStack Query and InstantDB.md](Docs/Projects/Data%20Schema%20and%20Queries/Runtime%20-%20TanStack%20Query%20and%20InstantDB.md); target fictions: [Example App - Target](Docs/Projects/Data%20Schema%20and%20Queries/Example%20App%20-%20Target/README.md)
+  - [ ] Align [Tao Language Design.md](Docs/Tao%20Language%20Design.md) Data Description with preferred schema as grammar converges
+  - [ ] Implementation
+    - [ ] Schema
+    - [ ] Runtime interface
+    - [ ] One provider
+
+### Jumble...
+
+- [ ] Combine with Tao Lang Roadmap.md
+- [x] Sometimes `just dev` requires `just test` to work.
+- [ ] Greatly simplify testing harnesses and code -- move from huge files with each test taking many lines (e.g parseMultipleFiles) to smaller files with each test taking fewer lines. Ex:
+
+```ts
+test('<batch name, e.g "use statement parsing">')
+  .parseError("feature name, e.g 'use statement parsing'")
+    .parseFile('path/to/file.tao')`use PublicView from ./ui/views`
+    .parseFile('path/to/file.tao')`view MyView { PublicView }`
+  .parse("import multiple declarations from same module")
+    .parseFile(...)`...`
+  .runHeadless()
+test('...')
+```
+
+- [ ] Tell AGENTS.md who they are, and what matters
+  - They are industry defining, and care deeply about quality. It _must be beautiful inside_
+  - Oversees quality
+  - TAO DEVELOPER ERGONOMICS **MATTERS**. Hundreds of thousands of engineers, and tens of thousands of designers, will depend on the readability and expressability of THIS LANGUAGE.
+- [ ] Move parser tests into its package?
+- [ ] Remove unused imports.
+  - Is rewrite actually possible?
+  - If yes, there are other ones we want to do as well.
+  - Most likely this is another compilation target, that compiles a tao AST into a new Tao file.
+- [ ] Split up validator into multple files. For example, split out all current type checking validation into its own file.
+- [ ] Allow for currying actions: `action UpBy Count number { ... }` and `Button UpBy 2 -> { }` or something like that. Do we solve it with `on`?
+  - `Button "Count 2", on press -> UpBy 2`
+  - `Button on press UpBy.2 "Count 2"`
+  - `Button UpBy.2 "Count 2"`
+  - `Button "Count 2", -> UpBy 2`
+    - This could work. Invocations are `do ...`, -> is shorthand for on ___ ACTION+ARGS;
+    - Are ARGS evaluated at registration time, or at event time?
+      - At event time. E.g `Input Password; LogIn -> Login Password`.
+      - To have at registration time: `Alert "Value was ${read Name}, is ${Name}"`
+        - This is not intuitive or obvious .. Don't think I like it.
+- [ ] Remove `+` string concatenation, until it's clear that it's wanted when developing.
+- [ ] Review, improve, SIMPLIFY, plan tao-type-system.ts
+- [ ] Objects
+- [ ] Move all AST checks downstream from validator into validator. Only leave things like Assert that ts-typecheck disambiguate. Otherwise assume that all AST checking needed has already been done by the time we get there.
+  - [x] Object-shape checks for `+` and view render arguments moved upstream: validator rejects object-shaped operands / args; runtime `+` and `Value.render` now trust the contract and keep only `Assert`s (dropped `taoStringify`).
 - [x] Inline actions. (expression: `action` optionalName `{` action-body `}` — e.g. `Button title "Go", Action action { ... }`)
 - [x] Use https://github.com/TypeFox/langium-in-browser-codegen-example/blob/main/src/generator/generator-with-tracing.ts to redo codegen. (Tao already used `expandTracedToNode` / `toStringAndTrace`; aligned expression codegen with the example: `traceToNode` for op / literals / `referenceName` per Langium; implemented `ActionExpression` emit + formatter dispatch.)
 
 #### HIGH - MUST
+
+- [ ] Upgrade packages: expo@54.0.33 - expected version: ~54.0.34; expo-linking@8.0.11 - expected version: ~8.0.12; expo-web-browser@15.0.10 - expected version: ~15.0.11
+- [ ] This should be a type error:
+
+```tao
+type Title is text
+
+view RootView {
+  Number Value Counter
+  Col {
+    Button Title, Action UpBy3 // <- Title is not a value
+  }
+}
+```
+
+- [ ] This should _not_ be a type error:
+
+```tao
+type Title is text
+alias Title "Up by 3" // <-
+```
 
 - [ ] Improve testing
   - [ ] Add View Keys
@@ -59,6 +132,14 @@ Also see Roadmap.
 - [ ] String operation: INTERPOLATION
   - "Hello, {name}!"
   - "A block starts with \{ and {"ends"} with \}."
+- [ ] State access render performance:
+  - [ ] Research
+    - https://legendapp.com/open-source/state/v2/react/react-introduction/
+    - https://legendapp.com/open-source/state/v2/react/react-api/
+    - https://legendapp.com/open-source/state/v2/react/fine-grained-reactivity/
+    - https://legendapp.com/open-source/state/v2/react/helpers-and-hooks/
+  - [ ] Implement
+  - [ ] Add debug build with tracing: - https://legendapp.com/open-source/state/v2/react/tracing/
 
 #### MEDIUM
 
@@ -252,3 +333,6 @@ Also see Roadmap.
 - [x] Add ability to specify which app to dev-run.
 - [x] Try implementing source maps.
 - [x] Upgrade react native.
+
+```
+```

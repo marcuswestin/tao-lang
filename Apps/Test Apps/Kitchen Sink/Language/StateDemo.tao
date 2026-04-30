@@ -1,0 +1,26 @@
+use Text, Button, Row, Col, Number from @tao/ui
+
+state FileLevelCounter = 0
+
+share view StateDemo {
+   state ViewCounter = 0
+   Col {
+      Text "State & actions (file-level + view-level)"
+      Row {
+         Text "File:"
+         Number FileLevelCounter
+         Button "+1", BumpFile { }
+      }
+      Row {
+         Text "View:"
+         Number ViewCounter
+         Button "+1", BumpView { }
+      }
+      action BumpFile {
+         set FileLevelCounter += 1
+      }
+      action BumpView {
+         set ViewCounter += 1
+      }
+   }
+}

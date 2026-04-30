@@ -1,0 +1,73 @@
+use Text, Col, Button, Number from @tao/ui
+
+view Badge Title is text {
+   inject ```ts
+      const tao_text = _ViewProps.Title.evaluate()
+      return TR.Views.Text({ children: [tao_text.jsValue] })
+   ```
+}
+
+view Labeled Label is text, Content is text {
+   inject ```ts
+      const label = _ViewProps.Label.evaluate()
+      const content = _ViewProps.Content.evaluate()
+      return TR.Views.Text({ children: [label.jsValue + ": " + content.jsValue] })
+   ```
+}
+
+view Counter Label is text, Count number {
+   inject ```ts
+      const label = _ViewProps.Label.evaluate()
+      const count = _ViewProps.Count.evaluate()
+      return TR.Views.Text({ children: [label.jsValue + " = " + String(count.jsValue)] })
+   ```
+}
+
+view Btn Title is text, OnPress action {
+   inject ```ts
+      return TR.Views.Button({
+         title: _ViewProps.Title.evaluate().jsValue.toString(),
+         onPress: () => _ViewProps.OnPress.invoke({}),
+      })
+   ```
+}
+
+type Subtitle is text
+
+view Banner Heading is text, Subtitle {
+   inject ```ts
+      const heading = _ViewProps.Heading.evaluate()
+      const subtitle = _ViewProps.Subtitle.evaluate()
+      return TR.Views.Text({ children: [heading.jsValue + " / " + subtitle.jsValue] })
+   ```
+}
+
+state BumpCounter = 0
+
+action Bump Step is number {
+   set BumpCounter += Step
+}
+
+state ClickCount = 0
+
+/** View-local parameter types (`Name is text`), dot-local literals, action `do` with local param types. */
+
+share view LocalParamsDemo {
+   Col {
+      Text "Local parameter types (views + actions)"
+      Badge Title "Hello"
+      Badge Badge.Title "World"
+      Badge .Title "Dot-local"
+      Labeled .Label "Name", .Content "Tao"
+      Counter Label "Score", 42
+      Btn .Title "Click", action {
+         set ClickCount += 1
+      }
+      Banner Heading "Welcome", Subtitle "Kitchen Sink"
+      Number ClickCount
+      Btn .Title "Bump +1", action {
+         do Bump .Step 1
+      }
+      Number BumpCounter
+   }
+}

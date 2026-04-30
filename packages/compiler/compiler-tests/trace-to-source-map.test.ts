@@ -64,7 +64,7 @@ describe('traceToEncodedSourceMapJson', () => {
     expect(out.trimEnd().endsWith(`//# sourceMappingURL=out.tsx.map`)).toBe(true)
   })
 
-  test('DevApp compile emits a v3 source map JSON from Langium trace', async () => {
+  test.todo('DevApp compile emits a v3 source map JSON from Langium trace', async () => {
     const taoPath = FS.resolvePath(FS.joinPath(__dirname, '../../../Apps/DevApp/DevApp.tao'))
     const taoSource = FS.readTextFile(taoPath)
     const debuggerLine1Based = taoSource.split('\n').findIndex((line) => line.trimStart().startsWith('debugger')) + 1

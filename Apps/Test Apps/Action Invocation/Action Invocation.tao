@@ -1,0 +1,40 @@
+use Number, Col, Button from @tao/ui
+
+app ActionInvocationApp {
+   ui RootView
+}
+
+state Counter = 100
+
+alias ButtonTitle = "Up by 3"
+
+type Title is text
+
+view FancyButton Title, Action action { }
+
+view Root {
+   FancyButton Title "test", action { }
+}
+
+view RootView {
+   Number Counter
+   Col {
+      Button ButtonTitle, UpBy3
+      Button "Down by 1", DownBy1
+      Button "Up by 3", UpBy3 { }
+      Button "Down by 2", DownBy2
+   }
+   action UpBy3 {
+      do BumpAction 3
+   }
+   action DownBy1 {
+      do BumpAction -1
+   }
+   alias TwoDown = -2
+   action DownBy2 {
+      do BumpAction TwoDown
+   }
+   action BumpAction Step number {
+      set Counter += Step
+   }
+}

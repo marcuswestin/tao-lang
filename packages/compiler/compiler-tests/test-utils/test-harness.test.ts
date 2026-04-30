@@ -9,8 +9,8 @@ describe('lexTokensWithErrors', () => {
   })
 
   test('passes when expected character is in error message', async () => {
-    // Unclosed string produces an error that involves the quote character
-    await lexTokensWithErrors(`"unclosed`, '"')
+    // Unclosed TS injection fence produces a lexer error involving the backtick character.
+    await lexTokensWithErrors('```ts\nconst x = 1', '`')
   })
 
   test('fails when expected character is not in any error', () => {

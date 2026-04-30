@@ -1,0 +1,14 @@
+{
+  "skip": false,
+  "steps": [
+    { "assertVisibleText": "100" },
+    { "pressVisibleText": "Up by 3" },
+    { "assertVisibleText": "103" },
+    { "pressVisibleText": "Up by 3" },
+    { "assertVisibleText": "106" },
+    { "pressVisibleText": "Down by 1" },
+    { "assertVisibleText": "105" },
+    { "pressVisibleText": "Down by 2" },
+    { "assertVisibleText": "103" }
+  ]
+}

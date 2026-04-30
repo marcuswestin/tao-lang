@@ -1,0 +1,36 @@
+use Col, Text, Button from @tao/ui
+
+app ObjectsApp {
+   ui Main
+}
+
+view Main {
+   state Pet = {
+      name "cat",
+      age 0,
+      owner {
+         name "Ro",
+         address {
+            city "NYC"
+         }
+      }
+   }
+   Col {
+      Text Pet.name { }
+      Text Pet.owner.name { }
+      Text Pet.owner.address.city { }
+      Text "${ Pet.name } age ${ Pet.age } by ${ Pet.owner.name } in ${ Pet.owner.address.city }" { }
+      Button "rename", action {
+         set Pet.name = "dog"
+      } { }
+      Button "grow", action {
+         set Pet.age = Pet.age + 1
+      } { }
+      Button "new-owner", action {
+         set Pet.owner.name = "Max"
+      } { }
+      Button "move", action {
+         set Pet.owner.address.city = "LA"
+      } { }
+   }
+}

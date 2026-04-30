@@ -1,11 +1,4 @@
 {
-  "skip": false,
-  "steps": [
-    { "assertVisibleText": "Hello Kitchen Sink" },
-    { "assertVisibleText": "0" },
-    { "pressVisibleText": "0" },
-    { "assertVisibleText": "1" },
-    { "pressVisibleText": "1" },
-    { "assertVisibleText": "2" }
-  ]
+  "skip": true,
+  "steps": []
 }

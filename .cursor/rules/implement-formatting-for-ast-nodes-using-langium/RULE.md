@@ -35,7 +35,7 @@ import { TextEdit } from 'vscode-languageserver'
 
 export class TaoLangFormatter extends AbstractFormatter {
   // Store user settings (default to 4 spaces)
-  protected options: FormattingOptions = { tabSize: 4, insertSpaces: true }
+  protected options: FormattingOptions = { tabSize: 3, insertSpaces: true }
 
   // 1. Capture Options at the Entry Point
   public override formatDocument(document: LangiumDocument, options: FormattingOptions): TextEdit[] {

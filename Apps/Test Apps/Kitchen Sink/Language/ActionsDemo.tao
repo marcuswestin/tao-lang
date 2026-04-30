@@ -1,0 +1,26 @@
+use Text, Button, Col, Number from @tao/ui
+
+state Tally = 0
+
+share view ActionsDemo {
+   Col {
+      Text "Action invocation: `do Callee …` + parameters"
+      Number Tally
+      Button "+3", Up3 { }
+      Button "-1", Down1 { }
+      Button "-2 (alias arg)", Down2 { }
+   }
+   action Up3 {
+      do AddN 3
+   }
+   action Down1 {
+      do AddN -1
+   }
+   alias DeltaDown = -2
+   action Down2 {
+      do AddN DeltaDown
+   }
+   action AddN Step number {
+      set Tally += Step
+   }
+}

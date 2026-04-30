@@ -1,0 +1,26 @@
+use Text, Button, Col from @tao/ui
+
+/** Child view declared inside parent view block (same pattern as Studio test app). */
+
+share view NestedViewsDemo {
+   OuterCard { }
+}
+
+view OuterCard {
+   state OuterN = 0
+   Text "Nested views"
+   Button "Outer ${ OuterN }", OuterInc { }
+   action OuterInc {
+      set OuterN += 1
+   }
+   state InnerN = 0
+   action InnerInc {
+      set InnerN += 1
+      set OuterN += 1
+   }
+   view InnerCard {
+      Text "Inner card"
+      Button "Inner ${ InnerN } (also +outer)", InnerInc { }
+   }
+   InnerCard { }
+}

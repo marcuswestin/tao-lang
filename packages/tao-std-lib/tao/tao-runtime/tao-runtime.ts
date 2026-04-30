@@ -9,6 +9,9 @@ export namespace I {
   /////////////////
 
   export type JSAtomValue = string | number | boolean
+  /** JSObjectValue is a plain object tree used for Tao object literals and object state. */
+  export type JSObjectValue = { [k: string]: JSValue }
+  export type JSValue = JSAtomValue | JSObjectValue
   export type Name = string // & { __name: true }
   export type Rendered = React.ReactNode
 
@@ -34,7 +37,7 @@ export namespace I {
   export interface ImmutableExpression extends Expression {
   }
   export interface MutableState extends Expression {
-    updateValue(operator: string, value: I.Expression): void
+    updateValue(operator: string, value: I.Expression, propertyPath?: readonly string[]): void
   }
 }
 
@@ -54,6 +57,9 @@ export const TR: _TaoRuntime = {
   // Compound Expressions
   Alias,
   BinaryOperation,
+  MemberAccess,
+  Object: TaoObject,
+  StringTemplate,
   UnaryOperation,
 
   // Invocable Expressions
@@ -73,6 +79,9 @@ export type _TaoRuntime = {
 
   Alias: typeof Alias
   BinaryOperation: typeof BinaryOperation
+  MemberAccess: typeof MemberAccess
+  Object: typeof TaoObject
+  StringTemplate: typeof StringTemplate
   UnaryOperation: typeof UnaryOperation
 
   Action: typeof Action
@@ -109,14 +118,15 @@ class Value {
   readonly $type: string = 'Value'
 
   constructor(
-    readonly jsValue: I.JSAtomValue,
+    readonly jsValue: I.JSValue,
   ) {}
   render(): I.Rendered {
-    return this.jsValue
+    Assert(typeof this.jsValue !== 'object', 'Object-shaped values cannot be rendered (validator should reject).')
+    return String(this.jsValue)
   }
 }
 
-function Literal(value: I.JSAtomValue) {
+function Literal(value: I.JSValue) {
   return new LiteralExpression(value)
 }
 
@@ -131,11 +141,52 @@ class LiteralExpression extends Value implements I.ImmutableExpression {
   }
 }
 
+type StringTemplatePart =
+  | { readonly kind: 'text'; readonly value: string }
+  | { readonly kind: 'expr'; readonly expr: I.Expression }
+
+/** StringTemplate concatenates literal text with evaluated primitive interpolation holes. */
+function StringTemplate(parts: readonly StringTemplatePart[]) {
+  return new StringTemplateExpression(parts)
+}
+
+class StringTemplateExpression implements I.Expression {
+  readonly $type = 'StringTemplateExpression'
+
+  constructor(readonly parts: readonly StringTemplatePart[]) {}
+
+  evaluate(): Value {
+    let s = ''
+    for (const p of this.parts) {
+      if (p.kind === 'text') {
+        s += p.value
+      } else {
+        const v = p.expr.evaluate().jsValue
+        Assert(
+          typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean',
+          'Template interpolation must be a primitive (string/number/boolean) value (validator should reject).',
+        )
+        s += String(v)
+      }
+    }
+    return new Value(s)
+  }
+
+  useReactiveHandle(): I.Expression {
+    for (const p of this.parts) {
+      if (p.kind === 'expr') {
+        p.expr.useReactiveHandle()
+      }
+    }
+    return this
+  }
+}
+
 function AppState(
   initialValue: I.ImmutableExpression,
 ): I.MutableState {
   const initialValueT = initialValue.evaluate().jsValue
-  const store$ = LegendAppState.observable(initialValueT)
+  const store$ = LegendAppState.observable(initialValueT) as LegendAppState.Observable<I.JSValue>
   return new MutableState(store$)
 }
 
@@ -143,34 +194,51 @@ function ViewState(
   initialValue: I.ImmutableExpression,
 ): I.MutableState {
   const initialValueT = initialValue.evaluate().jsValue
-  const store$ = LegendAppStateReact.useObservable(initialValueT)
+  const store$ = LegendAppStateReact.useObservable(initialValueT) as LegendAppState.Observable<I.JSValue>
   return new MutableState(store$)
 }
 
 type AssignmentOperator = '=' | '+=' | '-=' | '*=' | '/='
+type CompoundAssignmentOperator = '+=' | '-=' | '*=' | '/='
+
+/** compoundNumberResult applies a compound assignment operator to two numbers. */
+function compoundNumberResult(operator: CompoundAssignmentOperator, current: number, newValue: number): number {
+  return switch_Exhaustive(operator, {
+    '+=': (_op) => current + newValue,
+    '-=': (_op) => current - newValue,
+    '*=': (_op) => current * newValue,
+    '/=': (_op) => current / newValue,
+  })
+}
 
 class MutableState implements I.MutableState {
   constructor(
-    private store$: LegendAppState.ObservablePrimitive<I.JSAtomValue>,
+    private store$: LegendAppState.Observable<I.JSValue>,
   ) {}
 
+  /** observableAt returns the Legend observable at nested propertyPath (each key indexes nested observables). Validator guarantees the path exists on the state's static shape. */
+  observableAt(propertyPath: readonly string[]): LegendAppState.ObservableParam {
+    let target$ = this.store$ as LegendAppState.ObservableParam
+    for (const key of propertyPath) {
+      target$ = (target$ as unknown as Record<string, LegendAppState.ObservableParam>)[key]!
+    }
+    return target$
+  }
+
   evaluate(): Value {
-    const val = this.store$.get()
+    const val = this.store$.get() as I.JSValue
     return new Value(val) as Value
   }
-  updateValue(operator: AssignmentOperator, value: I.Expression) {
+  updateValue(operator: AssignmentOperator, value: I.Expression, propertyPath: readonly string[] = []) {
+    const target$ = this.observableAt(propertyPath)
     const newValue = value.evaluate().jsValue
     if (operator === '=') {
-      return this.store$.set(newValue)
+      target$.set(newValue)
+      return
     }
-    const current = this.store$.peek()
+    const current = target$.peek() as I.JSValue
     Assert(typeof current === 'number' && typeof newValue === 'number', 'Compound assignment requires numeric operands')
-    this.store$.set(switch_Exhaustive(operator, {
-      '+=': () => current + newValue,
-      '-=': () => current - newValue,
-      '*=': () => current * newValue,
-      '/=': () => current / newValue,
-    }))
+    target$.set(compoundNumberResult(operator, current, newValue))
   }
   useReactiveHandle() {
     LegendAppStateReact.useSelector(this.store$)
@@ -189,10 +257,10 @@ type BinaryOperators = '+' | '-' | '*' | '/'
 
 /** UnaryOperation builds a unary numeric expression (currently `-` only). */
 function UnaryOperation(op: string, operand: I.Expression): I.Expression {
-  return new UnaryOperationClass(op, operand)
+  return new UnaryOperationExpression(op, operand)
 }
 
-class UnaryOperationClass implements I.Expression {
+class UnaryOperationExpression implements I.Expression {
   readonly $type = 'UnaryOperation'
 
   constructor(
@@ -209,6 +277,7 @@ class UnaryOperationClass implements I.Expression {
   }
 
   useReactiveHandle(): I.Expression {
+    this.operand.useReactiveHandle()
     return this
   }
 }
@@ -217,10 +286,10 @@ function BinaryOperation<
   LeftT extends I.Expression,
   RightT extends I.Expression,
 >(left: LeftT, operator: BinaryOperators, right: RightT): I.Expression {
-  return new BinaryOperationClass(left, operator, right)
+  return new BinaryOperationExpression(left, operator, right)
 }
 
-class BinaryOperationClass<
+class BinaryOperationExpression<
   LeftT extends I.Expression,
   RightT extends I.Expression,
 > implements I.Expression {
@@ -232,30 +301,97 @@ class BinaryOperationClass<
     readonly right: RightT,
   ) {}
   evaluate(): Value {
-    const leftJSValue = this.left.evaluate().jsValue as number
-    const rightJSValue = this.right.evaluate().jsValue as number
-
+    const leftJSValue = this.left.evaluate().jsValue
+    const rightJSValue = this.right.evaluate().jsValue
     const leftType = typeof leftJSValue
     const rightType = typeof rightJSValue
 
-    if (this.operator === '+') {
-      Assert(
-        (leftType === 'string' || rightType === 'string')
-          || (leftType === 'number' && rightType === 'number'),
-      )
-    } else {
-      Assert(leftType === 'number' && rightType === 'number')
-    }
+    Assert(leftType !== 'object' && rightType !== 'object', 'Object-shaped operands are not allowed.')
 
     return switch_Exhaustive(this.operator, {
-      '+': () => new Value(leftJSValue + rightJSValue),
-      '*': () => new Value(leftJSValue * rightJSValue),
-      '-': () => new Value(leftJSValue - rightJSValue),
-      '/': () => new Value(leftJSValue / rightJSValue),
+      '+': () => {
+        if (leftType === 'string' && rightType === 'string') {
+          return new Value((leftJSValue as string) + (rightJSValue as string))
+        }
+        Assert(leftType === 'number' && rightType === 'number', '`+` requires text + text or number + number')
+        return new Value((leftJSValue as number) + (rightJSValue as number))
+      },
+      '*': () => {
+        if (leftType === 'string' && rightType === 'number') {
+          return new Value((leftJSValue as string).repeat(Number(rightJSValue as number)))
+        }
+        Assert(leftType === 'number' && rightType === 'number', '`*` requires number * number or text * number')
+        return new Value((leftJSValue as number) * (rightJSValue as number))
+      },
+      '-': () => {
+        Assert(leftType === 'number' && rightType === 'number', '`-` requires number - number')
+        return new Value((leftJSValue as number) - (rightJSValue as number))
+      },
+      '/': () => {
+        Assert(leftType === 'number' && rightType === 'number', '`/` requires number / number')
+        return new Value((leftJSValue as number) / (rightJSValue as number))
+      },
     })
   }
 
   useReactiveHandle(): I.Expression {
+    this.left.useReactiveHandle()
+    this.right.useReactiveHandle()
+    return this
+  }
+}
+
+/** TaoObject builds a plain object value from property name to sub-expressions. */
+function TaoObject(properties: Record<string, I.Expression>) {
+  return new ObjectExpression(properties)
+}
+
+class ObjectExpression implements I.Expression {
+  readonly $type = 'ObjectExpression'
+  constructor(readonly properties: Record<string, I.Expression>) {}
+  evaluate(): Value {
+    const out: I.JSObjectValue = {}
+    for (const [k, expr] of Object.entries(this.properties)) {
+      out[k] = expr.evaluate().jsValue
+    }
+    return new Value(out)
+  }
+  useReactiveHandle(): I.Expression {
+    return this
+  }
+}
+
+/** MemberAccess reads a nested `path` of properties off `root`. The path is flat (codegen emits the full chain in one call); empty paths are not produced by the compiler. */
+function MemberAccess(root: I.Expression, path: readonly string[]) {
+  return new MemberAccessExpression(root, path)
+}
+
+class MemberAccessExpression implements I.Expression {
+  constructor(
+    readonly root: I.Expression,
+    readonly path: readonly string[],
+  ) {}
+  evaluate(): Value {
+    if (this.root instanceof MutableState) {
+      const leaf$ = this.root.observableAt(this.path) as LegendAppState.Observable<I.JSValue>
+      return new Value(leaf$.peek() as I.JSValue)
+    }
+    if (this.path.length === 0) {
+      return new Value(this.root.evaluate().jsValue)
+    }
+    let current: I.JSValue = this.root.evaluate().jsValue
+    for (const key of this.path) {
+      const object = current as I.JSObjectValue
+      current = object[key]!
+    }
+    return new Value(current)
+  }
+  useReactiveHandle(): I.Expression {
+    if (this.root instanceof MutableState) {
+      LegendAppStateReact.useSelector(this.root.observableAt(this.path))
+    } else {
+      this.root.useReactiveHandle()
+    }
     return this
   }
 }
@@ -263,7 +399,12 @@ class BinaryOperationClass<
 // INVOCABLES
 /////////////
 
-function Action(fn: () => void) {
+/** ActionProps is the bag of evaluated `TR.Expression` values that an action invocation passes for the
+ * callee's parameters. The compiler's argument-binding resolver keys this record on the resolved parameter
+ * name (after by-type matching), so the action body can read `_ActionProps.<ParamName>` directly. */
+export type ActionProps = Record<string, I.Expression>
+
+function Action(fn: (props: ActionProps) => void) {
   return new Invocable<void>(fn)
 }
 
@@ -271,10 +412,12 @@ class Invocable<ReturnType> {
   readonly $type = 'Invocable'
 
   constructor(
-    readonly fn: () => ReturnType,
+    readonly fn: (props: ActionProps) => ReturnType,
   ) {}
-  invoke(): ReturnType {
-    return this.fn()
+  /** invoke runs the action's body. `props` carries the per-parameter expressions resolved by the call site
+   * (see `ActionRender` codegen); paramless actions ignore the argument. */
+  invoke(props: ActionProps): ReturnType {
+    return this.fn(props)
   }
   useReactiveHandle() {
     return this

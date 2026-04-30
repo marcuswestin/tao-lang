@@ -67,7 +67,7 @@ describe('Format Injections', () => {
     .equals(`
       inject \`\`\`ts
           function foo() {
-              const a = 1;
+               const a = 1;
       \`\`\`
     `)
   testFormatter('inject formatting 3')
@@ -79,7 +79,7 @@ describe('Format Injections', () => {
     `)
     .equals(`
       inject \`\`\`ts
-              return a
+               return a
           }
       \`\`\`
     `)
@@ -93,7 +93,7 @@ describe('Format Injections', () => {
     .equals(`
       inject \`\`\`ts
           function foo() {
-              const a = 1;
+               const a = 1;
       \`\`\`
     `)
   testFormatter('inject formatting 5')

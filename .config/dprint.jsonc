@@ -1,19 +1,16 @@
 // This file is symlinked from <repo root>/.dprint.jsonc, in order
 // for vscode to be able to reference this config for formatting.
 // Ideally, dprint would allow for vscode settings to specify its config file.
-
 {
   "useTabs": false,
   "indentWidth": 2,
   "lineWidth": 120,
-
   "excludes": [
     "**/node_modules",
     "**/*-lock.json",
     "**/_gen-*",
     "**/_gen/**",
   ],
-
   "typescript": {
     "semiColons": "asi",
     "quoteStyle": "preferSingle",
@@ -34,7 +31,6 @@
   "malva": {},
   "markup": {},
   "yaml": {},
-
   "plugins": [
     "https://plugins.dprint.dev/typescript-0.95.12.wasm",
     "https://plugins.dprint.dev/json-0.21.0.wasm",

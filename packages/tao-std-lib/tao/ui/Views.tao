@@ -16,18 +16,25 @@ share view Row {
   ```
 }
 
-share view Text value any {
+share view Text Value text {
   inject ```ts
-    const text = _ViewProps.value.evaluate()
-    return TR.Views.Text({ children: [text.jsValue] })
+    const tao_text = _ViewProps.Value.evaluate()
+    return TR.Views.Text({ children: [tao_text.jsValue] })
   ```
 }
 
-share view Button title any, Action any {
+share view Number Value number {
+  inject ```ts
+    const tao_number = _ViewProps.Value.evaluate()
+    return TR.Views.Text({ children: [String(tao_number.jsValue)] })
+  ```
+}
+
+share view Button Title text, Action action {
   inject ```ts
     return TR.Views.Button({
-      title: _ViewProps.title.evaluate().jsValue.toString(),
-      onPress: _ViewProps.Action.fn
+      title: _ViewProps.Title.evaluate().jsValue.toString(),
+      onPress: () => _ViewProps.Action.invoke({})
     })
   ```
 }

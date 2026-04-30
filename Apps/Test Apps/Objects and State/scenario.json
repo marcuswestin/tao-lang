@@ -1,0 +1,19 @@
+{
+  "steps": [
+    { "assertVisibleText": "cat" },
+    { "assertVisibleText": "Ro" },
+    { "assertVisibleText": "NYC" },
+    { "assertVisibleText": "cat age 0 by Ro in NYC" },
+    { "pressVisibleText": "rename" },
+    { "assertVisibleText": "dog" },
+    { "assertVisibleText": "dog age 0 by Ro in NYC" },
+    { "pressVisibleText": "grow" },
+    { "assertVisibleText": "dog age 1 by Ro in NYC" },
+    { "pressVisibleText": "new-owner" },
+    { "assertVisibleText": "Max" },
+    { "assertVisibleText": "dog age 1 by Max in NYC" },
+    { "pressVisibleText": "move" },
+    { "assertVisibleText": "LA" },
+    { "assertVisibleText": "dog age 1 by Max in LA" }
+  ]
+}

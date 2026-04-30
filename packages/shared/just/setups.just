@@ -29,12 +29,12 @@ _update_dev_env:
     {{ MISE_CMD }} self-update --yes
     just _install_mise_deps
     {{ MISE_CMD }} doctor
-    just build-all
+    just build
 
 _setup_git_repo:
     {{ MISE_CMD }} trust --quiet --yes
     {{ MISE_CMD }} install
-    just build-all
+    just deps gen build
 
 MISE_VERSION_DEF := "MISE_VERSION=v2026.3.5"
 
