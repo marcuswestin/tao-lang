@@ -10,13 +10,12 @@
   },
   "include": [
     "formatter.ts",
-    "src/**/*",
+    "formatter-src/**/*",
     "formatter-tests/**/*",
     "../parser/src/parser.ts",
     "../parser/src/**/*",
     "../shared/shared-src/**/*",
     "../compiler/tao-compiler.ts",
-    "../compiler/compiler-src/**/*",
-    "../compiler/compiler-tests/fixtures/**/*.ts"
+    "../compiler/compiler-src/**/*"
   ]
 }

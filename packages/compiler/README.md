@@ -10,7 +10,7 @@ Validator, Typir-backed type checker, codegen, and Langium services for Tao Lang
 
 ## Why does `tsconfig.json` include the formatter?
 
-[`tsconfig.json`](tsconfig.json) lists `../formatter/formatter.ts` and `../formatter/src/**/*` under `include` so this **composite** project typechecks the formatter together with the compiler. Both depend on the same Langium/parser surface; building them in one TypeScript project avoids circular package references and keeps a single place for `tsc -b` until formatter is split into its own composite boundary with explicit project references.
+[`tsconfig.json`](tsconfig.json) lists `../formatter/formatter.ts` and `../formatter/formatter-src/**/*` under `include` so this **composite** project typechecks the formatter together with the compiler. Both depend on the same Langium/parser surface; building them in one TypeScript project avoids circular package references and keeps a single place for `tsc -b` until formatter is split into its own composite boundary with explicit project references.
 
 ## Regenerating the parser
 

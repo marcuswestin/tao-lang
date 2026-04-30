@@ -88,6 +88,7 @@ export const mkdir = (path: string) => {
   nodeFs.mkdirSync(path, { recursive: true })
 }
 
+/** mkTmpDir creates a temporary directory with the given prefix and returns its path. */
 export const mkTmpDir = (dir: string): string => nodeFs.mkdtempSync(dir)
 
 /** tmpdir returns the OS default directory for temporary files. */

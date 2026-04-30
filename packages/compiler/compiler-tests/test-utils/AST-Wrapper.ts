@@ -4,7 +4,7 @@ import { expect } from './test-harness'
 // Exported
 ///////////
 
-// wrap creates a proxy-based wrapper enabling type-safe AST traversal
+/** wrap returns a proxy-based wrapper enabling type-safe AST traversal for test assertions. */
 export function wrap<T extends AST.Node>(node: T): Wrapped<T> {
   const methods = {
     expect(key: string) {

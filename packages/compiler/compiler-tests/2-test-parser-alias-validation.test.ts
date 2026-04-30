@@ -1,3 +1,4 @@
+import { expectDuplicateIdentifier, expectHumanMessagesContain } from './test-utils/diagnostics'
 import { describe, expect, parseASTWithErrors, resolveReferences, test } from './test-utils/test-harness'
 
 describe('alias validation', () => {
@@ -8,7 +9,7 @@ describe('alias validation', () => {
         alias X = 2
       }
     `)
-    expect(errors.getHumanErrorMessage()).toContain("Duplicate identifier 'X'")
+    expectDuplicateIdentifier(errors, 'X')
   })
 
   test('no error for same alias name in different scopes', async () => {
@@ -31,7 +32,7 @@ describe('alias validation', () => {
         Text Unknown
       }
     `)
-    expect(errors.getHumanErrorMessage()).toContain('Could not resolve reference')
+    expectHumanMessagesContain(errors, 'Could not resolve reference')
   })
 
   test('warning when alias shadows a view parameter', async () => {
@@ -40,6 +41,6 @@ describe('alias validation', () => {
         alias Label = "shadowed"
       }
     `)
-    expect(errors.getHumanErrorMessage()).toContain("Duplicate identifier 'Label'")
+    expectDuplicateIdentifier(errors, 'Label')
   })
 })

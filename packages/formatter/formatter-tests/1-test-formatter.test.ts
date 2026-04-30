@@ -1,16 +1,90 @@
 import { Formatter } from '@formatter/FormatterSDK'
 import { FS } from '@shared'
-import { describe, expect, test } from 'bun:test'
 import {
   SNIPPET_ACTION_BUMP_AND_USE_DOT_STEP_FORMATTED,
   SNIPPET_ACTION_BUMP_AND_USE_DOT_STEP_RAW,
   SNIPPET_ACTION_BUMP_STEP_NUMBER,
-} from '../../compiler/compiler-tests/fixtures/snippets'
+} from '@shared/testing/tao-snippets'
+import { describe, expect, test } from 'bun:test'
 import { dedent, testFormatter, visualize } from './formatter-test-utils'
 
-describe('Formatter', () => {
-  test('stub test', () => expect(true).toBe(true))
+type FormatterCase = { title: string; raw: string; expected: string }
 
+/** runFormatterCases registers one testFormatter round-trip per uniform `{ title, raw, expected }` row. */
+function runFormatterCases(cases: FormatterCase[]): void {
+  for (const { title, raw, expected } of cases) {
+    testFormatter(title).format(raw).equals(expected)
+  }
+}
+
+const formatterUseStatementCases: FormatterCase[] = [
+  {
+    title: 'use statement newline',
+    raw: `
+      use Button from ./ui/views
+      view MyView {}
+    `,
+    expected: `
+      use Button from ./ui/views
+
+      view MyView { }
+    `,
+  },
+  {
+    title: 'consecutive use statements',
+    raw: `
+      use KnifeBlock from ./counter
+      use FridgeView
+      view MyView {}
+    `,
+    expected: `
+      use KnifeBlock from ./counter
+      use FridgeView
+
+      view MyView { }
+    `,
+  },
+  {
+    title: 'consecutive same-module use statements',
+    raw: `
+      use Button
+      use Label
+      view MyView {}
+    `,
+    expected: `
+      use Button
+      use Label
+
+      view MyView { }
+    `,
+  },
+]
+
+const formatterUseImportSpacingCases: FormatterCase[] = [
+  {
+    title: 'use with multiple imports normalizes spacing',
+    raw: `use Row ,   Col`,
+    expected: `
+      use Row, Col
+    `,
+  },
+  {
+    title: 'use with multiple imports no spaces',
+    raw: `use Row,Col,Text`,
+    expected: `
+      use Row, Col, Text
+    `,
+  },
+  {
+    title: 'use with multiple imports and from path',
+    raw: `use Row ,   Col from @tao/ui`,
+    expected: `
+      use Row, Col from @tao/ui
+    `,
+  },
+]
+
+describe('Formatter', () => {
   test('dedent', () => {
     expect(visualize(dedent(``))).toBe(visualize(``))
   })
@@ -285,60 +359,8 @@ describe('Formatter', () => {
       }
     `)
 
-  testFormatter('use statement newline')
-    .format(`
-      use Button from ./ui/views
-      view MyView {}
-    `)
-    .equals(`
-      use Button from ./ui/views
-
-      view MyView { }
-    `)
-
-  testFormatter('consecutive use statements')
-    .format(`
-      use KnifeBlock from ./counter
-      use FridgeView
-      view MyView {}
-    `)
-    .equals(`
-      use KnifeBlock from ./counter
-      use FridgeView
-
-      view MyView { }
-    `)
-
-  testFormatter('consecutive same-module use statements')
-    .format(`
-      use Button
-      use Label
-      view MyView {}
-    `)
-    .equals(`
-      use Button
-      use Label
-
-      view MyView { }
-    `)
-
-  testFormatter('use with multiple imports normalizes spacing')
-    .format(`use Row ,   Col`)
-    .equals(`
-      use Row, Col
-    `)
-
-  testFormatter('use with multiple imports no spaces')
-    .format(`use Row,Col,Text`)
-    .equals(`
-      use Row, Col, Text
-    `)
-
-  testFormatter('use with multiple imports and from path')
-    .format(`use Row ,   Col from @tao/ui`)
-    .equals(`
-      use Row, Col from @tao/ui
-    `)
+  runFormatterCases(formatterUseStatementCases)
+  runFormatterCases(formatterUseImportSpacingCases)
 })
 
 describe('formatter edge cases', () => {
@@ -709,56 +731,35 @@ describe('Formatter: real-app fixtures', () => {
 })
 
 describe('Formatter — local parameter types:', () => {
-  test('formats view with Title is text correctly', () => {
-    testFormatter(
-      `view   Badge   Title    is   text { }`,
-      `view Badge Title is text { }`,
-    )
-  })
+  testFormatter('formats view with Title is text correctly')
+    .format(`view   Badge   Title    is   text { }`)
+    .equals(`view Badge Title is text { }`)
 
-  test('formats view with multiple local types', () => {
-    testFormatter(
-      `view   Button   Title  is  text ,  Action  is  action { }`,
-      `view Button Title is text, Action is action { }`,
-    )
-  })
+  testFormatter('formats view with multiple local types')
+    .format(`view   Button   Title  is  text ,  Action  is  action { }`)
+    .equals(`view Button Title is text, Action is action { }`)
 
-  test('formats mixed local and explicit params', () => {
-    testFormatter(
-      `view  Card   Title   is   text ,   Size   number { }`,
-      `view Card Title is text, Size number { }`,
-    )
-  })
+  testFormatter('formats mixed local and explicit params')
+    .format(`view  Card   Title   is   text ,   Size   number { }`)
+    .equals(`view Card Title is text, Size   number { }`)
 })
 
 describe('Formatter — dot-local type ref (Phase 2):', () => {
-  test('formats Badge .Title "x" preserving dot shorthand', () => {
-    testFormatter(
-      `view Badge Title is text { } view Root { Badge .Title "x" }`,
-      `view Badge Title is text { }\n\nview Root {\n  Badge .Title "x"\n}`,
-    )
-  })
+  testFormatter('formats Badge .Title "x" preserving dot shorthand')
+    .format(`view Badge Title is text { } view Root { Badge .Title "x" }`)
+    .equals(`view Badge Title is text { }\n\nview Root {\n   Badge .Title "x"\n}`)
 
-  test('formats multiple dot-local args', () => {
-    testFormatter(
-      `view Badge Title is text, Subtitle is text { } view Root { Badge .Title "x", .Subtitle "y" }`,
-      `view Badge Title is text, Subtitle is text { }\n\nview Root {\n  Badge .Title "x", .Subtitle "y"\n}`,
-    )
-  })
+  testFormatter('formats multiple dot-local args')
+    .format(`view Badge Title is text, Subtitle is text { } view Root { Badge .Title "x", .Subtitle "y" }`)
+    .equals(`view Badge Title is text, Subtitle is text { }\n\nview Root {\n   Badge .Title "x", .Subtitle "y"\n}`)
 })
 
 describe('Formatter — action local parameter types (Phase 3):', () => {
-  test('formats action with Step is number correctly', () => {
-    testFormatter(
-      `action   Bump   Step    is   number { }`,
-      SNIPPET_ACTION_BUMP_STEP_NUMBER,
-    )
-  })
+  testFormatter('formats action with Step is number correctly')
+    .format(`action   Bump   Step    is   number { }`)
+    .equals(SNIPPET_ACTION_BUMP_STEP_NUMBER)
 
-  test('formats do Bump .Step 3 preserving dot shorthand', () => {
-    testFormatter(
-      SNIPPET_ACTION_BUMP_AND_USE_DOT_STEP_RAW,
-      SNIPPET_ACTION_BUMP_AND_USE_DOT_STEP_FORMATTED,
-    )
-  })
+  testFormatter('formats do Bump .Step 3 preserving dot shorthand')
+    .format(SNIPPET_ACTION_BUMP_AND_USE_DOT_STEP_RAW)
+    .equals(SNIPPET_ACTION_BUMP_AND_USE_DOT_STEP_FORMATTED)
 })

@@ -76,16 +76,37 @@ Tao Lang Project Docs:
 
 - `packages/parser/` - Langium grammar and generated AST for Tao Lang
 - `packages/compiler/` - Validator and compiler (using Langium); see [`packages/compiler/README.md`](packages/compiler/README.md) for `compiler-src/` layout and why the compiler `tsconfig` includes formatter sources.
+- `packages/formatter/` - Tao source code formatter
 - `packages/tao-cli/` - Tao CLI: `tao <...>`
 - `packages/tao-std-lib/` - Standard library: e.g `use tao/ui Col, Row, Text`
 - `packages/ide-extension/` - Tao Lang VSCode/Cursor Extension
 - `packages/expo-runtime/` - Tao App runtime: Expo react native harness for compiled Tao apps
+- `packages/headless-test-runtime/` - Headless RN test harness for compiled Tao apps
 - `packages/shared/` - Code shared across all packages. TypeScript modules, internal scripts, etc
 
 - `.builds/` - build artifacts
 - `.config/` - configs for tools
 - `.cursor/` + `.vscode/` - IDE configs
 - `.*` - config files required in project root. Symlinked to `.config/*`
+
+### Package structure conventions
+
+Every package follows these naming rules:
+
+- **Source:** `<pkg>-src/` (e.g. `compiler-src/`, `cli-src/`, `formatter-src/`, `shared-src/`, `extension-src/`).
+  - Exception: `parser` uses `src/` because Langium CLI generates into `src/_gen-tao-parser/`.
+  - Exception: `tao-std-lib` uses `tao/` to mirror `use tao/...` import paths.
+  - Exception: `headless-test-runtime` uses `src/` (single-file package, trivial scope).
+- **Tests:** `<pkg>-tests/` (e.g. `compiler-tests/`, `cli-tests/`, `formatter-tests/`, `extension-tests/`).
+  - Exception: `expo-runtime` uses `tests-expo-runtime/` to avoid Expo auto-discovery conflicts.
+  - Exception: `headless-test-runtime` uses `tests/` (single test file).
+- **Generated output:** `_gen-*` prefix (e.g. `_gen-tao-parser/`, `_gen-ide-extension/`, `_gen-syntaxes/`).
+- **Entry file:** at package root, named after the package (e.g. `tao-compiler.ts`, `tao-cli.ts`, `formatter.ts`).
+- **Test file naming:**
+  - Compiler/formatter: `<N>-test-<topic>.test.ts` (numbered by pipeline stage).
+  - Other packages: `test-<package>.test.ts` (single or few files).
+  - Jest runtime tests: `*.jest-test.ts(x)` (prevents Bun `*.test.ts` collision).
+- **README:** every package has a `README.md` with: purpose, layout, entry point, how to test.
 
 To run a command in a package, use `./just-agents <package> <command> <args>`.
 Examples:

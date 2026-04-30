@@ -1,3 +1,4 @@
+/** TAO_EXT is the file extension for Tao source files. */
 export const TAO_EXT = '.tao'
 
 /** sanitizeCompiledScenarioOutputSegment returns a filesystem-safe lowercase slug for scenario names (e.g. compiled test app dirs). */

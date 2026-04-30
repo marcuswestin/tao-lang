@@ -16,6 +16,6 @@
     "../parser/src/parser.ts",
     "../parser/src/**/*",
     "../formatter/formatter.ts",
-    "../formatter/src/**/*"
+    "../formatter/formatter-src/**/*"
   ]
 }

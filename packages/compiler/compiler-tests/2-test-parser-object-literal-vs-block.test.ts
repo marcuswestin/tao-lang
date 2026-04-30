@@ -1,4 +1,5 @@
 import { AST } from '@parser/parser'
+import { expectHasHumanErrors } from './test-utils/diagnostics'
 import { describe, expect, parseAST, parseASTWithErrors, test } from './test-utils/test-harness'
 
 describe('ObjectLiteral vs Block grammar invariant', () => {
@@ -81,7 +82,7 @@ describe('ObjectLiteral vs Block grammar invariant', () => {
         x 1
       }
     `)
-    expect(errors.getHumanErrorMessages().join('\n').length).toBeGreaterThan(0)
+    expectHasHumanErrors(errors)
   })
 
   test('object-literal-shaped content in an inline action body does not parse as an ObjectLiteral', async () => {
@@ -91,6 +92,6 @@ describe('ObjectLiteral vs Block grammar invariant', () => {
         Btn "t", action { x 1 }
       }
     `)
-    expect(errors.getHumanErrorMessages().join('\n').length).toBeGreaterThan(0)
+    expectHasHumanErrors(errors)
   })
 })

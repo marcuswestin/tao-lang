@@ -1,4 +1,9 @@
 import {
+  expectHumanErrorCount,
+  expectHumanErrorCountAtLeast,
+  expectHumanMessagesContain,
+} from './test-utils/diagnostics'
+import {
   describe,
   expect,
   parseAST,
@@ -109,7 +114,7 @@ describe('cross-module import resolution (use statement)', () => {
     ])
     // Should have no errors - Button is resolved from the import
     const errors = result.getErrors()
-    expect(errors.errorCount()).toBe(0)
+    expectHumanErrorCount(errors, 0)
   })
 
   test('error when importing non-existent declaration', async () => {
@@ -127,8 +132,8 @@ describe('cross-module import resolution (use statement)', () => {
       },
     ])
     const errors = result.getErrors()
-    expect(errors.errorCount()).toBe(1)
-    expect(errors.getHumanErrorMessage()).toContain('NonExistent')
+    expectHumanErrorCount(errors, 1)
+    expectHumanMessagesContain(errors, 'NonExistent')
   })
 
   test('error when importing non-shared declaration from another module', async () => {
@@ -146,8 +151,8 @@ describe('cross-module import resolution (use statement)', () => {
       },
     ])
     const errors = result.getErrors()
-    expect(errors.errorCount()).toBe(1)
-    expect(errors.getHumanErrorMessage()).toContain('InternalView')
+    expectHumanErrorCount(errors, 1)
+    expectHumanMessagesContain(errors, 'InternalView')
   })
 
   test('error when importing hide-private declaration', async () => {
@@ -165,8 +170,8 @@ describe('cross-module import resolution (use statement)', () => {
       },
     ])
     const errors = result.getErrors()
-    expect(errors.errorCount()).toBe(1)
-    expect(errors.getHumanErrorMessage()).toContain('PrivateView')
+    expectHumanErrorCount(errors, 1)
+    expectHumanMessagesContain(errors, 'PrivateView')
   })
 
   test('can import from multiple files in same module folder', async () => {
@@ -190,7 +195,7 @@ describe('cross-module import resolution (use statement)', () => {
       },
     ])
     const errors = result.getErrors()
-    expect(errors.errorCount()).toBe(0)
+    expectHumanErrorCount(errors, 0)
   })
 
   test('can import from subdirectory relative path', async () => {
@@ -210,7 +215,7 @@ describe('cross-module import resolution (use statement)', () => {
       },
     ])
     const errors = result.getErrors()
-    expect(errors.errorCount()).toBe(0)
+    expectHumanErrorCount(errors, 0)
   })
 
   test('can import from subdirectory and use in view render', async () => {
@@ -230,7 +235,7 @@ describe('cross-module import resolution (use statement)', () => {
       },
     ])
     const errors = result.getErrors()
-    expect(errors.errorCount()).toBe(0)
+    expectHumanErrorCount(errors, 0)
   })
 
   test('can import from nested subdirectory with multiple levels', async () => {
@@ -250,7 +255,7 @@ describe('cross-module import resolution (use statement)', () => {
       },
     ])
     const errors = result.getErrors()
-    expect(errors.errorCount()).toBe(0)
+    expectHumanErrorCount(errors, 0)
   })
 
   test('shared and hide (non-export) declarations are accessible from within the same file', async () => {
@@ -270,7 +275,7 @@ describe('cross-module import resolution (use statement)', () => {
       },
     ])
     const errors = result.getErrors()
-    expect(errors.errorCount()).toBe(0)
+    expectHumanErrorCount(errors, 0)
   })
 
   test('can import from parent directory using ../', async () => {
@@ -290,7 +295,7 @@ describe('cross-module import resolution (use statement)', () => {
       },
     ])
     const errors = result.getErrors()
-    expect(errors.errorCount()).toBe(0)
+    expectHumanErrorCount(errors, 0)
   })
 
   test('can import from parent directory using ".." only', async () => {
@@ -310,7 +315,7 @@ describe('cross-module import resolution (use statement)', () => {
       },
     ])
     const errors = result.getErrors()
-    expect(errors.errorCount()).toBe(0)
+    expectHumanErrorCount(errors, 0)
   })
 
   describe('same-module imports (use Foo)', () => {
@@ -331,7 +336,7 @@ describe('cross-module import resolution (use statement)', () => {
         },
       ])
       const errors = result.getErrors()
-      expect(errors.errorCount()).toBe(0)
+      expectHumanErrorCount(errors, 0)
     })
 
     test('shared declarations are accessible via use statement', async () => {
@@ -351,7 +356,7 @@ describe('cross-module import resolution (use statement)', () => {
         },
       ])
       const errors = result.getErrors()
-      expect(errors.errorCount()).toBe(0)
+      expectHumanErrorCount(errors, 0)
     })
 
     test('same-module symbols are NOT accessible without use statement', async () => {
@@ -370,8 +375,8 @@ describe('cross-module import resolution (use statement)', () => {
         },
       ])
       const errors = result.getErrors()
-      expect(errors.errorCount()).toBe(1)
-      expect(errors.getHumanErrorMessage()).toContain('Button')
+      expectHumanErrorCount(errors, 1)
+      expectHumanMessagesContain(errors, 'Button')
     })
 
     test('hide-private declarations are NOT accessible via use statement', async () => {
@@ -391,8 +396,8 @@ describe('cross-module import resolution (use statement)', () => {
         },
       ])
       const errors = result.getErrors()
-      expect(errors.errorCount()).toBeGreaterThanOrEqual(1)
-      expect(errors.getHumanErrorMessage()).toContain('PrivateHelper')
+      expectHumanErrorCountAtLeast(errors, 1)
+      expectHumanMessagesContain(errors, 'PrivateHelper')
     })
 
     test('same-module use does not require share', async () => {
@@ -417,7 +422,7 @@ describe('cross-module import resolution (use statement)', () => {
         },
       ])
       const errors = result.getErrors()
-      expect(errors.errorCount()).toBe(0)
+      expectHumanErrorCount(errors, 0)
     })
 
     test('named module path parses without crashing', async () => {
@@ -439,8 +444,8 @@ describe('module system edge cases', () => {
       },
     ])
     const errors = result.getErrors()
-    expect(errors.errorCount()).toBe(1)
-    expect(errors.getHumanErrorMessage()).toContain('Cannot resolve module path')
+    expectHumanErrorCount(errors, 1)
+    expectHumanMessagesContain(errors, 'Cannot resolve module path')
   })
 
   test('multiple files with same declaration name in same module', async () => {
@@ -464,7 +469,7 @@ describe('module system edge cases', () => {
       },
     ])
     const errors = result.getErrors()
-    expect(errors.errorCount()).toBe(0)
+    expectHumanErrorCount(errors, 0)
   })
 
   test('local declaration shadows imported declaration', async () => {
@@ -486,7 +491,7 @@ describe('module system edge cases', () => {
     ])
     // Should work - local Button shadows imported Button
     const errors = result.getErrors()
-    expect(errors.errorCount()).toBe(0)
+    expectHumanErrorCount(errors, 0)
   })
 
   test('import multiple declarations from same module', async () => {
@@ -512,7 +517,7 @@ describe('module system edge cases', () => {
       },
     ])
     const errors = result.getErrors()
-    expect(errors.errorCount()).toBe(0)
+    expectHumanErrorCount(errors, 0)
   })
 
   test('error when trying to import default (non-share) declaration from another module', async () => {
@@ -530,8 +535,8 @@ describe('module system edge cases', () => {
       },
     ])
     const errors = result.getErrors()
-    expect(errors.errorCount()).toBe(1)
-    expect(errors.getHumanErrorMessage()).toContain('InternalHelper')
+    expectHumanErrorCount(errors, 1)
+    expectHumanMessagesContain(errors, 'InternalHelper')
   })
 
   test('mixed visibility in same file - share and hide declarations', async () => {
@@ -555,7 +560,7 @@ describe('module system edge cases', () => {
       },
     ])
     const errors = result.getErrors()
-    expect(errors.errorCount()).toBe(0)
+    expectHumanErrorCount(errors, 0)
   })
 })
 
@@ -593,8 +598,8 @@ describe('standard library imports (use @tao/...)', () => {
       },
     ])
     const errors = result.getErrors()
-    expect(errors.errorCount()).toBe(1)
-    expect(errors.getHumanErrorMessage()).toContain('Standard library root is not configured')
+    expectHumanErrorCount(errors, 1)
+    expectHumanMessagesContain(errors, 'Standard library root is not configured')
   })
 
   test('imported std-lib view can be referenced', async () => {
@@ -614,7 +619,7 @@ describe('standard library imports (use @tao/...)', () => {
       },
     ], { stdLibRoot: STD_LIB_ROOT })
     const errors = result.getErrors()
-    expect(errors.errorCount()).toBe(0)
+    expectHumanErrorCount(errors, 0)
   })
 
   test('can import multiple std-lib views', async () => {
@@ -642,7 +647,7 @@ describe('standard library imports (use @tao/...)', () => {
       },
     ], { stdLibRoot: STD_LIB_ROOT })
     const errors = result.getErrors()
-    expect(errors.errorCount()).toBe(0)
+    expectHumanErrorCount(errors, 0)
   })
 
   test('error when importing non-existent name from std-lib', async () => {
@@ -660,8 +665,8 @@ describe('standard library imports (use @tao/...)', () => {
       },
     ], { stdLibRoot: STD_LIB_ROOT })
     const errors = result.getErrors()
-    expect(errors.errorCount()).toBe(1)
-    expect(errors.getHumanErrorMessage()).toContain('NonExistent')
+    expectHumanErrorCount(errors, 1)
+    expectHumanMessagesContain(errors, 'NonExistent')
   })
 
   test('error when importing non-shared std-lib declaration', async () => {
@@ -679,8 +684,8 @@ describe('standard library imports (use @tao/...)', () => {
       },
     ], { stdLibRoot: STD_LIB_ROOT })
     const errors = result.getErrors()
-    expect(errors.errorCount()).toBe(1)
-    expect(errors.getHumanErrorMessage()).toContain('InternalHelper')
+    expectHumanErrorCount(errors, 1)
+    expectHumanMessagesContain(errors, 'InternalHelper')
   })
 
   test('std-lib and relative imports can coexist', async () => {
@@ -707,7 +712,7 @@ describe('standard library imports (use @tao/...)', () => {
       },
     ], { stdLibRoot: STD_LIB_ROOT })
     const errors = result.getErrors()
-    expect(errors.errorCount()).toBe(0)
+    expectHumanErrorCount(errors, 0)
   })
 
   test('std-lib imports from multiple @tao/ submodules', async () => {
@@ -734,7 +739,7 @@ describe('standard library imports (use @tao/...)', () => {
       },
     ], { stdLibRoot: STD_LIB_ROOT })
     const errors = result.getErrors()
-    expect(errors.errorCount()).toBe(0)
+    expectHumanErrorCount(errors, 0)
   })
 })
 
@@ -757,7 +762,7 @@ describe('type imports via use statement', () => {
       },
     ])
     const errors = result.getErrors()
-    expect(errors.errorCount()).toBe(0)
+    expectHumanErrorCount(errors, 0)
   })
 
   test('cross-module share type can be imported and used as parameter type and typed struct literal', async () => {
@@ -778,7 +783,7 @@ describe('type imports via use statement', () => {
       },
     ])
     const errors = result.getErrors()
-    expect(errors.errorCount()).toBe(0)
+    expectHumanErrorCount(errors, 0)
   })
 
   test('cross-module type without share cannot be imported', async () => {
@@ -796,9 +801,8 @@ describe('type imports via use statement', () => {
       },
     ])
     const errors = result.getErrors()
-    expect(errors.errorCount()).toBeGreaterThanOrEqual(1)
-    expect(errors.getHumanErrorMessage()).toContain('Person')
-    expect(errors.getHumanErrorMessage()).toContain(`marked with 'share'`)
+    expectHumanErrorCountAtLeast(errors, 1)
+    expectHumanMessagesContain(errors, 'Person', `marked with 'share'`)
   })
 
   test('cross-module hide type cannot be imported', async () => {
@@ -816,8 +820,8 @@ describe('type imports via use statement', () => {
       },
     ])
     const errors = result.getErrors()
-    expect(errors.errorCount()).toBeGreaterThanOrEqual(1)
-    expect(errors.getHumanErrorMessage()).toContain('Person')
+    expectHumanErrorCountAtLeast(errors, 1)
+    expectHumanMessagesContain(errors, 'Person')
   })
 
   test('cross-module type reference without use statement is not visible', async () => {
@@ -834,8 +838,8 @@ describe('type imports via use statement', () => {
       },
     ])
     const errors = result.getErrors()
-    expect(errors.errorCount()).toBeGreaterThanOrEqual(1)
-    expect(errors.getHumanErrorMessage()).toContain('Person')
+    expectHumanErrorCountAtLeast(errors, 1)
+    expectHumanMessagesContain(errors, 'Person')
   })
 
   test('same-module type without use statement is not visible from another file', async () => {
@@ -852,8 +856,8 @@ describe('type imports via use statement', () => {
       },
     ])
     const errors = result.getErrors()
-    expect(errors.errorCount()).toBeGreaterThanOrEqual(1)
-    expect(errors.getHumanErrorMessage()).toContain('Person')
+    expectHumanErrorCountAtLeast(errors, 1)
+    expectHumanMessagesContain(errors, 'Person')
   })
 
   test('typed struct literal type reference resolves via cross-module use', async () => {
@@ -872,6 +876,6 @@ describe('type imports via use statement', () => {
       },
     ])
     const errors = result.getErrors()
-    expect(errors.errorCount()).toBe(0)
+    expectHumanErrorCount(errors, 0)
   })
 })

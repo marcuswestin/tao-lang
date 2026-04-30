@@ -10,7 +10,7 @@ These tests exercise the Tao pipeline (lex → parse → link → validate → t
 | Parsing / AST         | CST shape, grammar, `parseAST` / `Wrapped` | [`2-test-parser-*.test.ts`](.) — split from the former monolithic parser suite (see below)                                     |
 | Linking / scope       | Cross-refs, scopes                         | `2-test-parser-scope-resolution.test.ts`, parts of parser suite                                                                |
 | Modules               | Imports, exports, `share`, multi-file      | [`4-test-module-imports-exports.test.ts`](4-test-module-imports-exports.test.ts)                                               |
-| Structural validation | Placement rules, `validationMessages`      | [`3-test.validation.test.ts`](3-test.validation.test.ts)                                                                       |
+| Structural validation | Placement rules, `validationMessages`      | [`3-test-validation.test.ts`](3-test-validation.test.ts)                                                                       |
 | Type system (Typir)   | Assignability, inference, call sites       | [`5-test-type-checking.test.ts`](5-test-type-checking.test.ts)                                                                 |
 | Codegen               | Emitted TS/TSX shape                       | [`6-test-codegen-bindings.test.ts`](6-test-codegen-bindings.test.ts)                                                           |
 | Source maps / LSP     | Traces, definitions                        | [`trace-to-source-map.test.ts`](trace-to-source-map.test.ts), [`TaoDefinitionProvider.test.ts`](TaoDefinitionProvider.test.ts) |
@@ -18,7 +18,7 @@ These tests exercise the Tao pipeline (lex → parse → link → validate → t
 ### Conventions
 
 1. **One primary home per pipeline stage** — e.g. AST shape belongs in parser-split files; do not duplicate the same assertion under `3-test.validation` unless the test is specifically about diagnostics after full validation.
-2. **Shared Tao snippets** — If the same source string appears in multiple packages (compiler, formatter, etc.), import from [`fixtures/snippets.ts`](fixtures/snippets.ts) instead of copying.
+2. **Shared Tao snippets** — If the same source string appears in multiple packages (compiler, formatter, etc.), import from [`@shared/testing/tao-snippets`](../../shared/shared-src/testing/tao-snippets.ts) (exported via `@shared/testing`) instead of copying.
 3. **Diagnostic assertions** — Prefer helpers in [`test-utils/diagnostics.ts`](test-utils/diagnostics.ts) so failures print **all** human messages (avoid silent `.some()` misses).
 
 ## Parser suite split (`2-test-parser-*.test.ts`)
@@ -45,11 +45,11 @@ The former monolithic `2-test-parser.test.ts` was split by `describe` block so e
 | ----- | ------------------------------------------------ | ------------------------------------------ | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
 | 1     | Callable local parameter types (`Title is text`) | `localSuperType` on `ParameterDeclaration` | Structural + Typir                                                    | Formatter spacing for `is text`                                                         |
 | 2     | Dot-local typed literals (`.Title "x"`)          | `DotLocalTypeRef`                          | Placement + assignability                                             | Preserve dot shorthand                                                                  |
-| 3     | Action-local params + `do Bump .Step`            | Same as 1–2 under `action`                 | [`3-test.validation.test.ts`](3-test.validation.test.ts) Phase blocks | [`6-test-codegen-bindings.test.ts`](6-test-codegen-bindings.test.ts), formatter Phase 3 |
+| 3     | Action-local params + `do Bump .Step`            | Same as 1–2 under `action`                 | [`3-test-validation.test.ts`](3-test-validation.test.ts) Phase blocks | [`6-test-codegen-bindings.test.ts`](6-test-codegen-bindings.test.ts), formatter Phase 3 |
 
 ## Test utilities
 
 - [`test-utils/test-harness.ts`](test-utils/test-harness.ts) — `parseTaoFully`, `parseAST`, `parseMultipleFiles`, `parseASTWithErrors`, etc.
 - [`test-utils/diagnostics.ts`](test-utils/diagnostics.ts) — Assertions on `ParseError` / human messages.
 - [`test-utils/AST-Wrapper.ts`](test-utils/AST-Wrapper.ts) — Fluent AST navigation in tests.
-- [`fixtures/snippets.ts`](fixtures/snippets.ts) — Shared Tao source strings reused across compiler and formatter tests.
+- [`../../shared/shared-src/testing/tao-snippets.ts`](../../shared/shared-src/testing/tao-snippets.ts) — Shared Tao source strings for compiler/formatter tests (`@shared/testing/tao-snippets`).

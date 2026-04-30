@@ -1,5 +1,5 @@
 import { AST } from '@parser/parser'
-import { SNIPPET_ACTION_BUMP_STEP_NUMBER } from './fixtures/snippets'
+import { SNIPPET_ACTION_BUMP_STEP_NUMBER } from '@shared/testing/tao-snippets'
 import { describe, expect, parseAST, test } from './test-utils/test-harness'
 
 describe('action local parameter types (Phase 3):', () => {
