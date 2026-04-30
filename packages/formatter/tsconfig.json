@@ -16,7 +16,6 @@
     "../parser/src/**/*",
     "../shared/shared-src/**/*",
     "../compiler/tao-compiler.ts",
-    "../compiler/compiler-src/**/*",
-    "../compiler/compiler-tests/fixtures/**/*.ts"
+    "../compiler/compiler-src/**/*"
   ]
 }

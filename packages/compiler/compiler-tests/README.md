@@ -18,7 +18,7 @@ These tests exercise the Tao pipeline (lex → parse → link → validate → t
 ### Conventions
 
 1. **One primary home per pipeline stage** — e.g. AST shape belongs in parser-split files; do not duplicate the same assertion under `3-test.validation` unless the test is specifically about diagnostics after full validation.
-2. **Shared Tao snippets** — If the same source string appears in multiple packages (compiler, formatter, etc.), import from [`fixtures/snippets.ts`](fixtures/snippets.ts) instead of copying.
+2. **Shared Tao snippets** — If the same source string appears in multiple packages (compiler, formatter, etc.), import from [`@shared/testing/tao-snippets`](../../shared/shared-src/testing/tao-snippets.ts) (exported via `@shared/testing`) instead of copying.
 3. **Diagnostic assertions** — Prefer helpers in [`test-utils/diagnostics.ts`](test-utils/diagnostics.ts) so failures print **all** human messages (avoid silent `.some()` misses).
 
 ## Parser suite split (`2-test-parser-*.test.ts`)
@@ -52,4 +52,4 @@ The former monolithic `2-test-parser.test.ts` was split by `describe` block so e
 - [`test-utils/test-harness.ts`](test-utils/test-harness.ts) — `parseTaoFully`, `parseAST`, `parseMultipleFiles`, `parseASTWithErrors`, etc.
 - [`test-utils/diagnostics.ts`](test-utils/diagnostics.ts) — Assertions on `ParseError` / human messages.
 - [`test-utils/AST-Wrapper.ts`](test-utils/AST-Wrapper.ts) — Fluent AST navigation in tests.
-- [`fixtures/snippets.ts`](fixtures/snippets.ts) — Shared Tao source strings reused across compiler and formatter tests.
+- [`../../shared/shared-src/testing/tao-snippets.ts`](../../shared/shared-src/testing/tao-snippets.ts) — Shared Tao source strings for compiler/formatter tests (`@shared/testing/tao-snippets`).

@@ -1,4 +1,5 @@
 import { AST } from '@parser/parser'
+import { expectHasHumanErrors } from './test-utils/diagnostics'
 import { describe, expect, parseAST, parseASTWithErrors, test } from './test-utils/test-harness'
 
 describe('objects, member access, nested set', () => {
@@ -154,7 +155,7 @@ describe('objects, member access, nested set', () => {
         alias E = { }
       }
     `)
-    expect(errors.getHumanErrorMessages().join('\n').length).toBeGreaterThan(0)
+    expectHasHumanErrors(errors)
   })
 
   test('object literal in alias value position parses as ObjectLiteral AST', async () => {

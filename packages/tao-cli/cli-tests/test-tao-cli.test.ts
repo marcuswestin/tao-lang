@@ -10,8 +10,6 @@ async function compileFile(path: string) {
 }
 
 describe('cli:', () => {
-  test('stub test', () => expect(true).toBe(true))
-
   test('compile real Test App with use statements from disk', async () => {
     const appPath = FS.resolvePath(
       __dirname,

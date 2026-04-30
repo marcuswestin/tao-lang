@@ -50,10 +50,15 @@ export async function testFormatCode(code: string, expectedFormattedCode: string
     rawFormattedCode = await Formatter.formatCode(rawFormattedCode, { tabSize: 3 })
   }
 
-  // TODO: Ensuring TaoFile ends in Newline is not working. Remove trimEnd() from both and Fix this!
-  const formattedCode = Formatter.dedent(rawFormattedCode).trimEnd()
-  expectedFormattedCode = reindentExpectedFromFourSpaceTab(
-    Formatter.dedent(expectedFormattedCode).trimStart().trimEnd(),
+  /** normalizeTrailingNewline collapses trailing newlines then appends a single EOF newline when non-empty so comparisons match LSP insertFinalNewline output without masking inner whitespace. */
+  const normalizeTrailingNewline = (s: string) => {
+    const body = s.replace(/\n+$/, '')
+    return body === '' ? '' : `${body}\n`
+  }
+
+  const formattedCode = normalizeTrailingNewline(Formatter.dedent(rawFormattedCode))
+  expectedFormattedCode = normalizeTrailingNewline(
+    reindentExpectedFromFourSpaceTab(Formatter.dedent(expectedFormattedCode).trimStart()),
   )
 
   if (formattedCode === expectedFormattedCode) {

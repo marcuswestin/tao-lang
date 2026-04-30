@@ -2,8 +2,8 @@ import { FS } from '@shared'
 import { Log } from '@shared/Log'
 import { merge } from 'object-deep-merge'
 
-// TODO: Rename to reflect new additional functionality (copy markdown embed json file to output directory)
-export async function genSyntaxTmLanguageFiles(
+/** genIdeSyntaxFiles merges the Langium Tao tmLanguage JSON with TS-block fragments, writes `tao-lang.tmLanguage.json`, and copies the markdown-embed grammar into the IDE output directory. */
+export async function genIdeSyntaxFiles(
   tmJsonPath: string,
   mergeJsonPath: string,
   markdownEmbedJsonPath: string,

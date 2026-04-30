@@ -5,12 +5,13 @@
 
 import { compileTao } from '@compiler/compiler-main'
 import { FS } from '@shared'
-import { describe, expect, test } from 'bun:test'
 import {
   SNIPPET_MINIMAL_BUMP_APP_BARE_STEP,
   SNIPPET_MINIMAL_BUMP_APP_DOT_LOCAL_STEP,
   SNIPPET_MINIMAL_BUMP_APP_QUALIFIED_STEP,
-} from './fixtures/snippets'
+} from '@shared/testing/tao-snippets'
+import { describe, expect, test } from 'bun:test'
+import { formatParseErrorHumanMessages } from './test-utils/diagnostics'
 
 /** writeAndCompile materializes `code` to a tmp file, runs the compiler, and returns the concatenated text of every emitted module so substring assertions can target the resolved-prop / resolved-key emission. */
 async function writeAndCompile(code: string): Promise<string> {
@@ -19,7 +20,7 @@ async function writeAndCompile(code: string): Promise<string> {
   FS.writeFile(filePath, code)
   const result = await compileTao({ file: filePath })
   if (!result.ok) {
-    throw new Error(`Compile failed:\n${result.errorReport.getHumanErrorMessage()}`)
+    throw new Error(`Compile failed:\n${formatParseErrorHumanMessages(result.errorReport)}`)
   }
   return result.files.map(f => f.content).join('\n')
 }

@@ -1,8 +1,9 @@
-import { TaoParser } from '@compiler/langium/parser'
 import { validationMessages } from '@compiler/validation/tao-lang-validator'
 import {
   expectDuplicateIdentifier,
+  expectHasHumanErrors,
   expectHumanMessagesContain,
+  expectNoHumanMessageContains,
   expectSomeHumanMessageSatisfies,
 } from './test-utils/diagnostics'
 import {
@@ -15,8 +16,6 @@ import {
 } from './test-utils/test-harness'
 
 describe('validation — integration smoke (full pipeline):', () => {
-  test('stub test', () => expect(true).toBe(true))
-
   test('needle test', async () => {
     const needle = Math.random().toString(36).substring(2, 15)
     const code = `
@@ -329,9 +328,11 @@ describe('parameter declaration validation:', () => {
         `,
       },
     ])
-    const messages = result.getErrors().getHumanErrorMessages()
-    expect(messages.some(m => m.includes("Parameter shorthand 'Person'"))).toBe(true)
-    expect(messages.some(m => m.includes('including imported types'))).toBe(true)
+    expectHumanMessagesContain(
+      result.getErrors(),
+      "Parameter shorthand 'Person'",
+      'including imported types',
+    )
   })
 })
 
@@ -407,7 +408,7 @@ describe('objects and nested state updates:', () => {
         action A { set (1 + 2).x = 1 }
       }
     `)
-    expect(report.getHumanErrorMessages().length).toBeGreaterThan(0)
+    expectHasHumanErrors(report)
   })
 
   test('set with object literal receiver does not parse (member access must start with a name)', async () => {
@@ -417,7 +418,7 @@ describe('objects and nested state updates:', () => {
         action A { set { a 1 }.a = 2 }
       }
     `)
-    expect(report.getHumanErrorMessages().length).toBeGreaterThan(0)
+    expectHasHumanErrors(report)
   })
 
   test('Text value with object-shaped alias fails validation', async () => {
@@ -785,24 +786,18 @@ describe('struct/item type validation:', () => {
         MissingView Person { Name "Ro", Age 40 }
       }
     `)
-    const messages = report.getHumanErrorMessages()
-    expect(messages.some(m => m.includes('Object-shaped values'))).toBe(false)
-    expect(messages.length).toBeGreaterThan(0)
+    expectNoHumanMessageContains(report, 'Object-shaped values')
+    expectHasHumanErrors(report)
   })
 
   test('struct literal argument to struct-typed parameter does not spuriously report object-in-view-arg', async () => {
-    const { errorReport } = await TaoParser.parseString(
-      `
+    await parseTaoFully(`
       type Person is { Name text, Age number }
       view Show P Person { }
       view V {
         Show Person { Name "Ro", Age 40 }
       }
-    `,
-      { validateUpToStage: 'all' },
-    )
-    const messages = errorReport.getHumanErrorMessages()
-    expect(messages.some(m => m.includes('Object-shaped values'))).toBe(false)
+    `)
   })
 })
 
@@ -819,11 +814,11 @@ describe('compile errors:', () => {
     ])
 
     const errorReport = multi.getErrors()
-    const errorMessages = errorReport.getHumanErrorMessages()
-
-    expect(errorMessages.length).toBeGreaterThan(0)
-    expect(errorMessages.some(msg => msg.includes('MissingView') && msg.includes('Could not resolve reference')))
-      .toBe(true)
+    expectHasHumanErrors(errorReport)
+    expectSomeHumanMessageSatisfies(
+      errorReport,
+      msg => msg.includes('MissingView') && msg.includes('Could not resolve reference'),
+    )
   })
 })
 

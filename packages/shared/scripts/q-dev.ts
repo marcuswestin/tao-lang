@@ -1,6 +1,6 @@
 import { Command } from '@commander-js/extra-typings'
 import { FS } from '@shared'
-import { genSyntaxTmLanguageFiles } from './commands/gen-syntax-tmLanguage-files'
+import { genIdeSyntaxFiles } from './commands/gen-ide-syntax-files'
 
 const program = new Command()
 
@@ -8,8 +8,8 @@ function genDefaultIdeSyntaxPathValue(forPath: string) {
   return FS.resolvePath(__dirname, '../../ide-extension/ide-syntaxes', forPath)
 }
 
-program.command('gen-syntax-tmLanguage-files')
-  .description('Merge tm files to include TS code blocks')
+program.command('gen-ide-syntax-files')
+  .description('Merge Tao tmLanguage with TS fragments and copy markdown-embed grammar into the output directory')
   .argument(
     '[mergeJsonPath]',
     'The path to the merge json file',
@@ -31,7 +31,7 @@ program.command('gen-syntax-tmLanguage-files')
     genDefaultIdeSyntaxPathValue('_gen-syntaxes'),
   )
   .action(async (mergeJsonPath, markdownEmbedJsonPath, tmJsonPath, outputDirPath) => {
-    await genSyntaxTmLanguageFiles(tmJsonPath, mergeJsonPath, markdownEmbedJsonPath, outputDirPath)
+    await genIdeSyntaxFiles(tmJsonPath, mergeJsonPath, markdownEmbedJsonPath, outputDirPath)
   })
 
 program.parse(Bun.argv)

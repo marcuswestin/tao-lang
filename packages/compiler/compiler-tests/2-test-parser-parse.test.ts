@@ -1,9 +1,8 @@
 import { AST } from '@parser/parser'
+import { expectHumanMessagesContain } from './test-utils/diagnostics'
 import { describe, expect, parseAST, parseASTWithErrors, test } from './test-utils/test-harness'
 
 describe('parse:', () => {
-  test('stub test', () => expect(true).toBe(true))
-
   test('no newlines in code', async () => {
     const document = await parseAST(`app MyApp { ui MyView } view MyView { }`)
     expect(document).toBeDefined()
@@ -36,8 +35,7 @@ describe('parse:', () => {
             Text Value "Hello World"
         }
     `)
-    const messages = errorReport.getHumanErrorMessages().join('\n')
-    expect(messages).toContain('Could not resolve reference')
+    expectHumanMessagesContain(errorReport, 'Could not resolve reference')
     // When ui references an app name, resolution fails (Declaration includes views/aliases/actions). If it resolved, validator would report "App ui must be a view declaration".
   })
 
