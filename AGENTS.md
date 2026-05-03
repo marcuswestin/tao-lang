@@ -1,137 +1,59 @@
-# Tao Lang development agent instructions
+# Tao Lang Agent Guide
 
----
+## Command Safety
 
-- **CRITICAL:** `./just-agents` is your one way to interact with the codebase.
-- **ALWAYS** use `./just-agents <cmd> <args>` for all commands.
-- **ALWAYS** start your session by listing available commands: `./just-agents help`
-- **CRITICAL:** You may ONLY run commands with `./just-agents <cmd> <args>`.
-- **CRITICAL:** Execute shell commands with `./just-agents shell "<shell cmd>" "<args>"`.
-- **ALWAYS** use it for piping commands too, e.g: `./just-agents shell ls | ./just-agents shell head -n 20`
-- **CRITICAL**: **Never** modify just-agents.Justfile without asking first (unless the user explicitly asked for a change to agent commands in that file).
-- Favor using `./just-agents shell mv <src> <dest>` over rewriting files and then deleting them.
-- **Justfile Documentation:**
-  - **If** you need to lookup `just`, first check: https://cheatography.com/linux-china/cheat-sheets/justfile/
-  - **If** you need more details, see:: https://just.systems/man/en/
+- `./just-agents` is the only supported way for agents to interact with this repo.
+- Start every session with `./just-agents help`.
+- Run shell commands as `./just-agents shell <cmd> <args>`.
+- Do not run repo commands directly through `just`, `bun`, `npm`, `git`, or other tools.
+- Do not edit `just-agents.Justfile` unless the user explicitly asks for agent command changes.
 
----
+## Project
 
-## Dev Notes:
+Tao Lang is a programming language for building native and web apps.
 
-- **IMPORTANT**: For new features:
-  - Always update validator and formatter with new tests if applicable.
-  - Always feature the new functionality in at least one "Apps/Test Apps/..." app.
+- `packages/parser/` contains the Langium grammar and generated AST.
+- `packages/compiler/` contains validation, resolution, and code generation.
+- `packages/formatter/` contains Tao source formatting.
+- `packages/tao-cli/` contains the CLI.
+- `packages/tao-std-lib/` contains the standard library.
+- `packages/expo-runtime/` and `packages/headless-test-runtime/` run compiled Tao apps.
+- `packages/shared/` contains shared TypeScript and project scripts.
+- `Apps/Test Apps/` contains sample apps used to exercise language/runtime behavior.
 
----
+## Approach
 
-## Misc Instructions:
+- Read existing files before writing, and re-read before editing if the file may have changed.
+- Be thorough in reasoning and concise in user-facing output.
+- Avoid loading large files wholesale unless required; use targeted search or chunks first.
+- Do not use sycophantic openers, closing fluff, emojis, or em dashes.
+- Do not guess APIs, versions, flags, commit SHAs, package names, or command behavior. Verify by reading repo code, local docs, or official docs before asserting.
 
-- **ONLY** delete files if you know it is appropriate, and can likely be restored by git checking it out back out before a commit is done.
-- **Git / commits:** follow `.cursor/skills/tao-git-workflow/SKILL.md` (attach when committing). In short: run `./just-agents fix` and `./just-agents prep-commit` before landing work unless the user opts out.
-- **Git / merge:** never run `./just-agents git-dangerously` with `fetch`, `checkout`, `switch`, `pull`, `merge`, `push`, `rebase`, or similar merge/remote work unless the user **explicitly** instructed a merge (or the same skill’s equally explicit remote step); see `tao-git-workflow` and the comment block in `just-agents.Justfile`.
-- **Git / merge:** after merging **`main` into a feature branch** (or rebasing onto it), run **`./just-agents prep-commit`** until green **before** squash merge, push, or treating the branch as merge-ready; see **`tao-git-workflow`** (_After integrating `main` on a feature branch_) and **`prep-feature-branch-merge`**.
-- **ALWAYS** use the return type of an invoked function (either implicitly or explicitly) rather than redeclaring an identical type. Don't: `type AType = { ... }; let foo: AType = fn();`, Do: `let foo = fn();`
-- _NEVER_ use imports from generated files in our main source code.
+## Conventions
 
-### Code HYGIENE: DRY and LESS IS MORE.
+- Read existing code before editing; prefer local patterns over new abstractions.
+- Keep changes small, DRY, and direct. Extend existing APIs instead of adding parallel ones with the same behavior.
+- Use `@shared/*` abstractions over direct Node/Bun APIs when available.
+- Do not import generated files from main source code.
+- Use the return type of invoked functions instead of redeclaring an identical type.
+- Add JSDoc to exported or shared TypeScript functions: `/** fnName verbs description */`.
+- For new language features, update validation and formatter behavior when applicable, add tests, and feature the behavior in at least one `Apps/Test Apps/` app.
 
-- **CRITICAL:** DRY: Aim for DRY code
-  - Favor shared functions.
-  - Whenever you can, DELETE code.
-  - Within reason, EXTEND existing code rather than adding new.
-- **CRITICAL:** LESS IS MORE
-  - Do not add unnecessary code. The less code the better.
-  - When in doubt, delete code.
-- **CRITICAL:** Do not add a second public API that duplicates another’s behavior and return shape (same inputs, same `getFile` / `getErrors` / build steps) just to expose one extra field or a slightly different assertion message. **Extend** the existing function’s return type or options instead, and keep a **single** implementation.
-- **Before** copying a helper, search for an existing one (`grep`/semantic search) and **prefer** composing or widening it over parallel copies.
-- Shared private builders are fine, but there should be **one** obvious exported entry point per use case, not two near-identical exports.
+## Testing
 
-## Documentation:
+- General checks: `./just-agents check`.
+- Full test suite: `./just-agents test`.
+- Filtered tests: `./just-agents test <filter>`.
+- Package commands: `./just-agents <package> <command> <args>`, for example `./just-agents compiler test`.
+- Before landing work, run `./just-agents fix` and `./just-agents prep-commit` unless the user opts out.
 
-- **ALWAYS** jsdoc all exported/shared TS functions, in the form: `/** <fn name> <verb> <desc> */`, e.g `/** getUserById returns the user with the given id */`.
-- **USUALLY** jsdoc on a single line, unless more is appropriate: `/** <fn name> <verb> <desc> */`.
-- **ALWAYS** start multiline jsdoc lines right after `/**` without a newline; and end with `*/` right at the end of the last line, without a newline before it.
-- **SOMETIMES** jsdoc additional details with list items when appropriate: `/** <fn name> <verb> <desc>\n * - ...\n * - ...\n */`.
-- **USUALLY** prefer conventional acronym casing in new identifiers (`URL`, `HTTP`), not mid-word `Url`/`Http`, unless matching an external API.
+## Git Safety
 
-- `README.md` - Human instructions
-- `Justfile` - Human command runner file (`just <command> <args>`)
-- `LICENSE` - Project license
+- Safe git browsing and staging goes through `./just-agents shell git status|diff|log|add|commit`.
+- Do not use `./just-agents git-dangerously` for `fetch`, `checkout`, `switch`, `pull`, `merge`, `push`, `rebase`, or similar remote/merge work unless the user explicitly asks for that operation.
+- After merging or rebasing `main` into a feature branch, run `./just-agents prep-commit` until green before treating the branch as merge-ready.
+- Use `skills/git-workflow` for staging, committing, batch commits, and merge preparation.
 
-Agent instructions:
+## Skills
 
-- `AGENTS.md` - Agent instructions
-- `just-agents` - Agent command runner (`./just-agents <command> <args>`)
-- `just-agents.Justfile` - Agent commands
-
-## Cursor: rules, commands, skills
-
-Misc configs and artifacts:
-
-Tao Lang Project Docs:
-
-- **`Docs/`** — Design, roadmap, features, example `.tao` files, etc
-
-## Code layout
-
-- `packages/parser/` - Langium grammar and generated AST for Tao Lang
-- `packages/compiler/` - Validator and compiler (using Langium); see [`packages/compiler/README.md`](packages/compiler/README.md) for `compiler-src/` layout and why the compiler `tsconfig` includes formatter sources.
-- `packages/formatter/` - Tao source code formatter
-- `packages/tao-cli/` - Tao CLI: `tao <...>`
-- `packages/tao-std-lib/` - Standard library: e.g `use tao/ui Col, Row, Text`
-- `packages/ide-extension/` - Tao Lang VSCode/Cursor Extension
-- `packages/expo-runtime/` - Tao App runtime: Expo react native harness for compiled Tao apps
-- `packages/headless-test-runtime/` - Headless RN test harness for compiled Tao apps
-- `packages/shared/` - Code shared across all packages. TypeScript modules, internal scripts, etc
-
-- `.builds/` - build artifacts
-- `.config/` - configs for tools
-- `.cursor/` + `.vscode/` - IDE configs
-- `.*` - config files required in project root. Symlinked to `.config/*`
-
-### Package structure conventions
-
-Every package follows these naming rules:
-
-- **Source:** `<pkg>-src/` (e.g. `compiler-src/`, `cli-src/`, `formatter-src/`, `shared-src/`, `extension-src/`).
-  - Exception: `parser` uses `src/` because Langium CLI generates into `src/_gen-tao-parser/`.
-  - Exception: `tao-std-lib` uses `tao/` to mirror `use tao/...` import paths.
-  - Exception: `headless-test-runtime` uses `src/` (single-file package, trivial scope).
-- **Tests:** `<pkg>-tests/` (e.g. `compiler-tests/`, `cli-tests/`, `formatter-tests/`, `extension-tests/`).
-  - Exception: `expo-runtime` uses `tests-expo-runtime/` to avoid Expo auto-discovery conflicts.
-  - Exception: `headless-test-runtime` uses `tests/` (single test file).
-- **Generated output:** `_gen-*` prefix (e.g. `_gen-tao-parser/`, `_gen-ide-extension/`, `_gen-syntaxes/`).
-- **Entry file:** at package root, named after the package (e.g. `tao-compiler.ts`, `tao-cli.ts`, `formatter.ts`).
-- **Test file naming:**
-  - Compiler/formatter: `<N>-test-<topic>.test.ts` (numbered by pipeline stage).
-  - Other packages: `test-<package>.test.ts` (single or few files).
-  - Jest runtime tests: `*.jest-test.ts(x)` (prevents Bun `*.test.ts` collision).
-- **README:** every package has a `README.md` with: purpose, layout, entry point, how to test.
-
-To run a command in a package, use `./just-agents <package> <command> <args>`.
-Examples:
-
-- Run `test` in `packages/expo-runtime`: `./just-agents expo-runtime test`
-- Run `build` in `packages/compiler`: `./just-agents compiler build`
-
-## Testing:
-
-- Run tests: `./just-agents test`, `./just-agents test <test name filter>`
-- Test files are named `<name>.test.ts`
-- Run recipe in a package: `./just-agents <package> <command> <args>`
-  - e.g `./just-agents expo-runtime test`
-
-### `gen`, `TAO_SKIP_GEN`, and `prep-commit`
-
-- Root **`just test`** (human `Justfile`) runs **`just gen`** first, then Bun tests and downstream harnesses (see root `Justfile` `test` recipe). Agents usually invoke **`./just-agents test`**, which forwards to that flow.
-- **`prep-commit`** (`packages/shared/just/dev-cmds.just` `_prep_commit`) runs **`just clean`**, **`just build`** (which includes parser generation), then **`TAO_SKIP_GEN=1 just test`** so the test pass does not regenerate the parser again immediately after a full build.
-- **`packages/compiler/Justfile`** `_deps` runs **`just gen`** before compiler **`test`** / **`build`** for stale-grammar safety; use **`TAO_SKIP_GEN=1`** in the environment when you intentionally want to skip regeneration in that package (inner-loop optimization only).
-
-### Headless runtime watch
-
-- **`packages/headless-test-runtime/just watch`** runs Jest alongside **`watchexec`** on `../compiler`; on compiler changes it runs **`bun scripts/regenerate-headless-test-apps.ts`** and touches **`tests/jest-watch-compiler-hook.ts`** so Jest picks up new outputs. See comments in [`packages/headless-test-runtime/scripts/regenerate-headless-test-apps.ts`](packages/headless-test-runtime/scripts/regenerate-headless-test-apps.ts).
-
-### Conventions
-
-- **ALWAYS** use `@shared/*` abstractions over node/Bun functionality
-  - e.g `@shared/fs` - except when @shared is not available.
+Canonical agent workflows live in `skills/`. Use the relevant skill for task-specific procedures such as code review, TODO work, git workflow, compiler work, Langium formatting/scoping, and agent-system maintenance.

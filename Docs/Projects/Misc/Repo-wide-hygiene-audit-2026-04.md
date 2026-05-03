@@ -145,7 +145,7 @@ Hygiene-first: formatter newline TODO + script rename; rest = product backlog.
 ## Phase 2 — Per-package cognitive notes
 
 1. **`@tao/parser`** — Single responsibility: grammar + codegen via `just gen`. Mental model: Langium types and `AST.is*`.
-2. **`@tao/compiler`** — [`compiler-src/`](../../../packages/compiler/compiler-src/) vs tests documented in [`compiler/README.md`](../../../packages/compiler/README.md) and [`compiler-tests/README.md`](../../../packages/compiler/compiler-tests/README.md). Entry: `tao-compiler.ts` exports. Validator/codegen contract: see [compiler-validator-codegen-contract SKILL](../../../.cursor/skills/compiler-validator-codegen-contract/SKILL.md).
+2. **`@tao/compiler`** — [`compiler-src/`](../../../packages/compiler/compiler-src/) vs tests documented in [`compiler/README.md`](../../../packages/compiler/README.md) and [`compiler-tests/README.md`](../../../packages/compiler/compiler-tests/README.md). Entry: `tao-compiler.ts` exports. Validator/codegen contract: see [`tao-compiler-work`](../../../skills/tao-compiler-work/SKILL.md).
 3. **`@tao/formatter`** — `FormatterSDK`; composite typecheck intentionally bundles compiler/parser ([README](../../../packages/compiler/README.md)). ~~Formatter tests reached into compiler test fixtures~~ — snippets now `@shared/testing/tao-snippets` (Phase 0).
 4. **`@tao/tao-cli`** — Thin orchestration; TODO in `tao-cli-main.ts` about module graph for watch — future simplification of dev UX.
 5. **`tao-ide-extension`** — Generated `_gen-ide-extension`; syntaxes under `ide-syntaxes/_gen-syntaxes/`.
@@ -227,5 +227,5 @@ _No P0 items identified in this read-only pass._ (If `formatter-test-utils` newl
 
 ## Optional follow-ups
 
-- [`.cursor/skills/check-for-improvements/SKILL.md`](../../../.cursor/skills/check-for-improvements/SKILL.md) on a dirty tree before commit.
-- [`.cursor/skills/extrapolate-updates/SKILL.md`](../../../.cursor/skills/extrapolate-updates/SKILL.md) after choosing snippet location or diagnostic pattern.
+- [`code-review`](../../../skills/code-review/SKILL.md) on a dirty tree before commit.
+- [`convention-audit`](../../../skills/convention-audit/SKILL.md) after choosing snippet location or diagnostic pattern.
