@@ -1,6 +1,6 @@
 # Runtime — TanStack Query and InstantDB
 
-Companion to **[Query Design - Preferred.md](./Query%20Design%20-%20Preferred.md)**. Execution details and **why** the datasource bridge splits Tao vs TypeScript.
+Companion to **[Queries Design - Preferred.md](./Queries%20Design%20-%20Preferred.md)**. Execution details and **why** the datasource bridge splits Tao vs TypeScript.
 
 ---
 
@@ -33,11 +33,11 @@ useQuery({
 })
 ```
 
-**Tao generates (design intent):** query structure, **stable `queryKey` materialization** from [Preferred §3.4](./Query%20Design%20-%20Preferred.md#query-identity), mutation structure for invalidation hooks.
+**Tao generates (design intent):** query structure, **stable `queryKey` materialization** from [Preferred §3.4](./Queries%20Design%20-%20Preferred.md#query-identity), mutation structure for invalidation hooks.
 
-**TypeScript provides:** `queryFn`, transport, auth, provider-specific edge cases — see [Preferred — Declarative vs imperative](./Query%20Design%20-%20Preferred.md#declarative-vs-imperative).
+**TypeScript provides:** `queryFn`, transport, auth, provider-specific edge cases — see [Preferred — Declarative vs imperative](./Queries%20Design%20-%20Preferred.md#declarative-vs-imperative).
 
-Open questions (also listed in [Alternatives — Datasource bridge](./Query%20Design%20-%20Alternatives.md#datasource-bridge-open)): auto-generated vs hand-authored portions; mutation → invalidation mapping; how much dynamic shaping stays in TS by policy.
+Open questions (also listed in [Alternatives — Datasource bridge](./Queries%20Design%20-%20Alternatives.md#datasource-bridge-open)): auto-generated vs hand-authored portions; mutation → invalidation mapping; how much dynamic shaping stays in TS by policy.
 
 ---
 
@@ -57,8 +57,8 @@ Open questions (also listed in [Alternatives — Datasource bridge](./Query%20De
 
 ## Relationship loading and caching (runtime view)
 
-- **How** edges resolve (join vs batch vs N+1) is **provider- and strategy-dependent** — Tao schema does not encode loading strategy ([Preferred — Relationships](./Query%20Design%20-%20Preferred.md#relationships)).
-- **Caching** is delegated to TanStack Query, Instant client, or other stacks — Tao does not reinvent cache internals unless a future invalidation DSL lands ([Alternatives](./Query%20Design%20-%20Alternatives.md#cache-invalidation-strategies)).
+- **How** edges resolve (join vs batch vs N+1) is **provider- and strategy-dependent** — Tao schema does not encode loading strategy ([Preferred — Relationships](./Queries%20Design%20-%20Preferred.md#relationships)).
+- **Caching** is delegated to TanStack Query, Instant client, or other stacks — Tao does not reinvent cache internals unless a future invalidation DSL lands ([Alternatives](./Queries%20Design%20-%20Alternatives.md#cache-invalidation-strategies)).
 
 ---
 
@@ -73,7 +73,7 @@ Apps may combine Legend State, TanStack Query, Instant subscriptions, etc. Exact
 - TanStack path: session and tokens in **TS** (or shared native module), not implied by `useQuery` itself.
 - Instant path: follow Instant’s auth/session integration for the chosen major version.
 
-Tao-level `CurrentUser` and session blocks are specified in [Preferred — Authentication](./Query%20Design%20-%20Preferred.md#authentication) and forks in [Alternatives](./Query%20Design%20-%20Alternatives.md#authentication-and-session).
+Tao-level `CurrentUser` and session blocks are specified in [Preferred — Authentication](./Queries%20Design%20-%20Preferred.md#authentication) and forks in [Alternatives](./Queries%20Design%20-%20Alternatives.md#authentication-and-session).
 
 ---
 

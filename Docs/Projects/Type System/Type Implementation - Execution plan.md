@@ -458,7 +458,7 @@ view Example {
 - `check` = inline narrowing / side-render without replacing siblings.
 - Interacts with optional-field narrowing and with async data. Full semantics TBD.
 
-For the **data layer**, async query results are specified as **`Loadable<T>`** in [Query Design - Preferred.md](../Data%20Schema%20and%20Queries/Query%20Design%20-%20Preferred.md); optional `guard`/`check` integration with that model and other UX options are tracked in [Query Design - Alternatives.md](../Data%20Schema%20and%20Queries/Query%20Design%20-%20Alternatives.md#loadable-vs-guard-and-check) — the sketches in _this_ section are **not** the data-layer spec until unified.
+For the **data layer**, async query results are specified as **`Loadable<T>`** in [Queries Design - Preferred.md](../Data%20Schema%20and%20Queries/Process%20Docs/Queries%20Design%20-%20Preferred.md); optional `guard`/`check` integration with that model and other UX options are tracked in [Queries Design - Alternatives.md](../Data%20Schema%20and%20Queries/Process%20Docs/Queries%20Design%20-%20Alternatives.md#loadable-vs-guard-and-check) — the sketches in _this_ section are **not** the data-layer spec until unified.
 
 #### Generics — DEFER
 

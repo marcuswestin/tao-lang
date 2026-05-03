@@ -6,7 +6,6 @@ import type { TaoWorkspace } from '@compiler/langium/tao-services'
 import { createTaoWorkspace } from '@compiler/langium/tao-services'
 import { getParseError, type ParseError } from '@compiler/validation/parse-errors'
 import { LGM as Langium } from '@parser'
-import { TaoFile } from '@parser/_gen-tao-parser/ast'
 import { NodeFileSystem } from '@parser/node'
 import { AST } from '@parser/parser'
 import { Assert } from '@shared'
@@ -96,7 +95,7 @@ export async function resolveReferences(code: string, stdLibRoot = ''): Promise<
 }
 
 /** parseTaoFully runs lex → parse → link → validation; fails the test on any reported error. */
-export async function parseTaoFully(code: string, stdLibRoot = ''): Promise<Wrapped<TaoFile>> {
+export async function parseTaoFully(code: string, stdLibRoot = ''): Promise<Wrapped<AST.TaoFile>> {
   return _parseUpToStage(code, stdLibRoot, 'all')
 }
 
@@ -105,7 +104,7 @@ async function _parseUpToStage(
   code: string,
   stdLibRoot: string,
   stage: 'lexing' | 'parsing' | 'linking' | 'all' | 'none',
-): Promise<Wrapped<TaoFile>> {
+): Promise<Wrapped<AST.TaoFile>> {
   const { errorReport, taoFileAST } = await TaoParser.parseString(code, { stdLibRoot, validateUpToStage: stage })
   Assert(!errorReport.hasError(), 'Expected no errors, but got: ' + errorReport.getHumanErrorMessage())
   return wrap(taoFileAST!)
@@ -122,13 +121,13 @@ export type VirtualFile = {
 
 export type MultiFileParseResult = {
   /** getFile returns the AST for `path` and asserts the whole workspace built cleanly (any error in any file fails the test). */
-  getFile(path: string): Wrapped<TaoFile>
+  getFile(path: string): Wrapped<AST.TaoFile>
   /** getErrors returns the combined error report for all documents (no assertion). */
   getErrors(): ParseError
   /** workspace is the Langium workspace used to build and validate `documents` (e.g. LSP `getDocumentDefinition`). */
   workspace: TaoWorkspace
   /** documents maps each virtual path to its Langium document after `buildDocuments`. */
-  documents: Map<string, Langium.LangiumDocument<TaoFile>>
+  documents: Map<string, Langium.LangiumDocument<AST.TaoFile>>
 }
 
 export type ParseMultipleFilesOpts = {
@@ -147,7 +146,7 @@ export async function parseMultipleFiles(
   return {
     workspace,
     documents,
-    getFile(path: string): Wrapped<TaoFile> {
+    getFile(path: string): Wrapped<AST.TaoFile> {
       const doc = documents.get(path)
       Assert(doc, `No document found for path: ${path}`)
       const errorReports = getParseError(...documents.values())
@@ -167,9 +166,9 @@ export async function parseMultipleFiles(
 async function _buildWorkspaceAndDocuments(
   files: VirtualFile[],
   stdLibRoot?: string,
-): Promise<{ workspace: TaoWorkspace; documents: Map<string, Langium.LangiumDocument<TaoFile>> }> {
+): Promise<{ workspace: TaoWorkspace; documents: Map<string, Langium.LangiumDocument<AST.TaoFile>> }> {
   const workspace = createTaoWorkspace(NodeFileSystem, { stdLibRoot })
-  const documents = new Map<string, Langium.LangiumDocument<TaoFile>>()
+  const documents = new Map<string, Langium.LangiumDocument<AST.TaoFile>>()
   for (const file of files) {
     const uri = Langium.URI.parse(`file://${file.path}`, true)
     const document = workspace.createDocumentFromString(file.code, uri)

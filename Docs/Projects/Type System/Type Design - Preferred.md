@@ -9,7 +9,7 @@
 > - **Long-form language examples and informal semantics** (historical / tutorial depth): **[Language surface - Type System Design.md](./Language%20surface%20-%20Type%20System%20Design.md)** (moved from _Tao Language Design_; may lag Preferred—resolve conflicts in **Alternatives**).
 > - **Implementation checklist** (type matching phases, etc.): **[Type System - Followups.md](./Type%20System%20-%20Followups.md)**.
 > - **Future per-stage `.tao` fixtures** (placeholder): [Example Types - Target](./Example%20Types%20-%20Target/README.md).
-> - **Data layer async types** (`Loadable<T>`) interact with deferred view `guard`/`check` — see [Query Design - Preferred](../Data%20Schema%20and%20Queries/Query%20Design%20-%20Preferred.md) and [Query Design - Alternatives](../Data%20Schema%20and%20Queries/Query%20Design%20-%20Alternatives.md#loadable-vs-guard-and-check).
+> - **Data layer async types** (`Loadable<T>`) interact with deferred view `guard`/`check` — see [Queries Design - Preferred](../Data%20Schema%20and%20Queries/Process%20Docs/Queries%20Design%20-%20Preferred.md) and [Queries Design - Alternatives](../Data%20Schema%20and%20Queries/Process%20Docs/Queries%20Design%20-%20Alternatives.md#loadable-vs-guard-and-check).
 
 ---
 
