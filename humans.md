@@ -111,7 +111,7 @@ Default policy:
 
 After changing agent files, verify discovery manually:
 
-- Cursor: confirm `.cursor/skills` points to `skills/` and the minimal command rule still loads.
+- Cursor: confirm `.cursor/skills` points to `skills/` and `.cursor/hooks.json` still points shell execution through `packages/shared/scripts/cursor-hooks/command-whitelist.sh`.
 - Claude Code: confirm `.claude/skills` points to `skills/`, and `CLAUDE.md` points to `AGENTS.md`.
 - Codex: confirm `AGENTS.md` is concise and root-visible; confirm `.codex/skills` points to `skills/` where supported.
 - Gemini CLI: confirm `GEMINI.md` loads with `/memory show`; confirm `.gemini/skills` points to `skills/` where supported.
@@ -125,4 +125,4 @@ Once per quarter:
 - Review whether any long `SKILL.md` should move detail into `references/`.
 - Re-check official docs for platform discovery changes.
 - Re-evaluate MCPs and remove ones that are not used.
-- Run `./just-agents check` after maintenance edits.
+- Run `./agent check` after maintenance edits.

@@ -1,11 +1,9 @@
-import { AST } from '@parser/parser'
 import { expectHumanMessagesContain } from './test-utils/diagnostics'
 import { describe, expect, parseAST, parseASTWithErrors, test } from './test-utils/test-harness'
 
 describe('parse:', () => {
   test('no newlines in code', async () => {
-    const document = await parseAST(`app MyApp { ui MyView } view MyView { }`)
-    expect(document).toBeDefined()
+    await parseAST(`app MyApp { ui MyView } view MyView { }`)
   })
 
   test('basic app', async () => {
@@ -20,7 +18,7 @@ describe('parse:', () => {
     const appDeclaration = appFile.statements.first.as_AppDeclaration
     appDeclaration.expect('type').toBe('app')
     appDeclaration.expect('name').toBe('MyApp')
-    const uiView = appDeclaration.appStatements.first.ui.as_ViewDeclaration
+    const uiView = appDeclaration.appStatements.first.as_AppUiStatement.ui.as_ViewDeclaration
     uiView.expect('name').toBe('MyView')
     const viewDeclaration = appFile.statements.second.as_ViewDeclaration
     expect(viewDeclaration.unwrap()).toEqual(uiView.unwrap())
@@ -50,8 +48,8 @@ describe('parse:', () => {
     `)
     const action = doc.statements.first.as_ActionDeclaration
     action.expect('name').toBe('TestAction')
-    expect(action.unwrap().parameterList?.parameters.length).toBe(1)
-    expect(action.unwrap().block.statements.length).toBe(1)
+    void action.parameterList.parameters.only
+    void action.block.statements.only
   })
 
   test('parses anonymous inline action expression in view call argument', async () => {
@@ -64,9 +62,7 @@ describe('parse:', () => {
     `)
     const viewV = doc.statements.second.as_ViewDeclaration
     const render = viewV.block.statements.last.as_ViewRender
-    expect(render.unwrap().$type).toBe('ViewRender')
-    const actionArg = render.argumentList?.arguments[1]!
-    expect(AST.isActionExpression(actionArg)).toBe(true)
+    void render.argumentList.arguments[1].as_ActionExpression
   })
 
   test('parses ActionRender (`do Name args…`) inside an action body', async () => {
@@ -78,10 +74,8 @@ describe('parse:', () => {
     `)
     const outer = doc.statements.second.as_ActionDeclaration
     const render = outer.block.statements.first.as_ActionRender
-    expect(render.unwrap().$type).toBe('ActionRender')
-    render.action.as_ActionDeclaration.expect('name').toBe('LogEvent')
-    const arg = render.argumentList!.arguments[0]!
-    expect(AST.isStringTemplateExpression(arg)).toBe(true)
+    render.action.expect('name').toBe('LogEvent')
+    void render.argumentList.arguments[0].as_StringTemplateExpression
   })
 
   test('parses bare ActionRender with no arguments', async () => {
@@ -93,7 +87,7 @@ describe('parse:', () => {
     `)
     const outer = doc.statements.second.as_ActionDeclaration
     const render = outer.block.statements.first.as_ActionRender
-    render.action.as_ActionDeclaration.expect('name').toBe('Notify')
+    render.action.expect('name').toBe('Notify')
   })
 
   test('parses bare argument — value-only form', async () => {
@@ -105,8 +99,7 @@ describe('parse:', () => {
     `)
     const outer = doc.statements.second.as_ActionDeclaration
     const render = outer.block.statements.first.as_ActionRender
-    const arg = render.argumentList.arguments[0]!
-    expect(AST.isUnaryExpression(arg)).toBe(true)
+    void render.argumentList.arguments[0].as_UnaryExpression
   })
 
   test('parses bare reference argument (alias name only)', async () => {
@@ -119,8 +112,7 @@ describe('parse:', () => {
     `)
     const outer = doc.statements.second.as_ActionDeclaration
     const render = outer.block.statements.last.as_ActionRender
-    const arg = render.argumentList.arguments[0]!
-    expect(AST.isMemberAccessExpression(arg)).toBe(true)
+    void render.argumentList.arguments[0].as_MemberAccessExpression
   })
 
   test('parses ActionRender with optional trailing block', async () => {
@@ -134,10 +126,7 @@ describe('parse:', () => {
     `)
     const outer = doc.statements.second.as_ActionDeclaration
     const render = outer.block.statements.first.as_ActionRender
-    expect(render.unwrap().$type).toBe('ActionRender')
-    render.action.as_ActionDeclaration.expect('name').toBe('Inner')
-    const innerBlock = render.block.unwrap()
-    expect(innerBlock.statements).toHaveLength(1)
-    expect(AST.isDebugger(innerBlock.statements[0]!)).toBe(true)
+    render.action.expect('name').toBe('Inner')
+    void render.block.statements.only.as_Debugger
   })
 })

@@ -1,7 +1,19 @@
+import { isKnownTaoAppDataProviderName, unknownTaoAppDataProviderMessage } from '@compiler'
 import type { LGM as langium } from '@parser'
 import { AST } from '@parser/parser'
 import { Assert, switch_safe } from '@shared'
 import { resolveShorthandParameterType } from '../tao-type-shapes'
+import {
+  dataSchemaValidationMessages,
+  dataSchemaValidator,
+  findForBodyHookViolations,
+  forCreateMessages,
+  forCreateValidator,
+  isForStatementPlacementOk,
+  isQueryPlacementOk,
+  queryGuardOnMessages,
+  queryGuardOnValidator,
+} from './data'
 import { typeSystemValidationMessages, typeSystemValidator } from './TypeSystemValidator'
 import { makeValidater, type Reporter } from './ValidationReporter'
 
@@ -10,12 +22,18 @@ export const validationMessages = {
   viewBody: 'Only view/alias/state/action/inject statements are allowed in a view body.',
   actionBody: 'Only state/action/inject and set (state update) statements are allowed in an action body.',
   topLevel: 'Only alias/state/view/action/inject/use statements are allowed at file level.',
+  duplicateAppProvider: 'App can only have one provider declaration.',
+  duplicateAppProviderRelated: 'Another provider declaration here.',
+  unknownAppDataProvider: unknownTaoAppDataProviderMessage,
   duplicateObjectProperty: (name: string) => `Duplicate object property '${name}'.`,
   setTargetMustBeState: (kind: string) => `'set' can only target a state binding, not a '${kind}'.`,
   nameMustBeUppercase: (name: string) => `Name '${name}' must begin with an uppercase letter.`,
+  legacyIDBInjection:
+    '`IDB` is no longer available in injected TypeScript; use compiled data/query/create statements or getTaoData instead.',
   parameterShorthandNotAType: (name: string) =>
     `Parameter shorthand '${name}' must match a local type declaration in this file/scope. Use '<name> <type>' for explicit type references (including imported types).`,
   ...typeSystemValidationMessages,
+  ...dataSchemaValidationMessages,
 } as const
 
 export const validator: langium.ValidationChecks<AST.TaoLangAstType> = {
@@ -52,8 +70,44 @@ export const validator: langium.ValidationChecks<AST.TaoLangAstType> = {
     validateParameterShorthandType(param, report)
   }),
 
+  QueryDeclaration: makeValidater((node, report) => {
+    validateDuplicateIdentifier(node, report)
+    validateUppercaseIdentifierName(node, report)
+    if (!isQueryPlacementOk(node)) {
+      report.error(queryGuardOnMessages.queryNotInViewOrFile, node)
+    }
+  }),
+
+  ForStatement: makeValidater((node, report) => {
+    validateDuplicateIdentifier(node, report)
+    validateUppercaseIdentifierName(node, report)
+    if (!isForStatementPlacementOk(node)) {
+      report.error(forCreateMessages.forOnlyInView, node)
+    }
+    const coll = node.collection.ref
+    if (!coll) {
+      return
+    }
+    if (!AST.isQueryDeclaration(coll)) {
+      report.error(forCreateMessages.forCollectionNotQuery, { node, property: 'collection' })
+      return
+    }
+    if (coll.first) {
+      report.error(forCreateMessages.forCollectionNotListQuery, { node, property: 'collection' })
+    }
+    for (const v of findForBodyHookViolations(node)) {
+      report.error(v.message, v.node)
+    }
+  }),
+
   ObjectLiteral: makeValidater((node, report) => {
     validateDuplicateObjectPropertyNames(node, report)
+  }),
+
+  Injection: makeValidater((node, report) => {
+    if (injectionReferencesLegacyIDB(node)) {
+      report.error(validationMessages.legacyIDBInjection, { node, property: 'tsCodeBlock' })
+    }
   }),
 
   StateUpdate: makeValidater((node, report) => {
@@ -66,7 +120,8 @@ export const validator: langium.ValidationChecks<AST.TaoLangAstType> = {
 
   AppDeclaration: makeValidater((declaration, report) => {
     validateDuplicateIdentifier(declaration, report)
-    const uiStatements = declaration.appStatements.filter(AST.isAppStatement)
+    const uiStatements = declaration.appStatements.filter(AST.isAppUiStatement)
+    const providerStatements = declaration.appStatements.filter(AST.isAppProviderStatement)
 
     if (uiStatements.length === 0) {
       report.error('App must have a UI declaration.', { node: declaration, property: 'appStatements' })
@@ -74,12 +129,29 @@ export const validator: langium.ValidationChecks<AST.TaoLangAstType> = {
 
     if (uiStatements.length > 1) {
       const first = uiStatements[0]!
-      report.error('App can only have one UI declaration.', { node: first, property: 'type' }, {
+      report.error('App can only have one UI declaration.', { node: first, property: 'ui' }, {
         alsoCheck: () => {
           const message = 'Another ui declaration here.'
           return removeItemFrom(first, uiStatements).map((n) => ({ node: n, message }))
         },
       })
+    }
+
+    if (providerStatements.length > 1) {
+      const first = providerStatements[0]!
+      report.error(validationMessages.duplicateAppProvider, { node: first, property: 'provider' }, {
+        alsoCheck: () =>
+          removeItemFrom(first, providerStatements).map((n) => ({
+            node: n,
+            message: validationMessages.duplicateAppProviderRelated,
+          })),
+      })
+    }
+
+    for (const stmt of providerStatements) {
+      if (!isKnownTaoAppDataProviderName(stmt.provider)) {
+        report.error(validationMessages.unknownAppDataProvider(stmt.provider), { node: stmt, property: 'provider' })
+      }
     }
 
     for (const stmt of uiStatements) {
@@ -91,6 +163,9 @@ export const validator: langium.ValidationChecks<AST.TaoLangAstType> = {
   }),
 
   ...typeSystemValidator,
+  ...dataSchemaValidator,
+  ...queryGuardOnValidator,
+  ...forCreateValidator,
 }
 
 /** validateDuplicateObjectPropertyNames reports when an object literal repeats the same property name. */
@@ -102,6 +177,11 @@ function validateDuplicateObjectPropertyNames(node: AST.ObjectLiteral, report: R
     }
     seen.add(prop.name)
   }
+}
+
+/** injectionReferencesLegacyIDB returns true when injected TS references the removed generated `IDB` binding. */
+function injectionReferencesLegacyIDB(node: AST.Injection): boolean {
+  return /\bIDB\b/.test(node.tsCodeBlock ?? '')
 }
 
 /** validateSetTargetsState reports when `set` references something other than a `state` binding. Returns early when the parser failed to produce a target (parse error already reported). */
@@ -129,13 +209,21 @@ function getStateUpdateTargetKind(ref: Exclude<AST.Referenceable, AST.Assignment
     ActionDeclaration: () => 'action',
     AppDeclaration: () => 'app',
     TypeDeclaration: () => 'type',
+    DataDeclaration: () => 'data',
+    QueryDeclaration: () => 'query',
+    ForStatement: () => 'for iterator',
   })
 }
 
 /** getBlockStatementContext returns whether `block` is nested under view-like or action-like syntax. */
 function getBlockStatementContext(block: AST.Block): 'view' | 'action' | null {
   const parent = block.$container
-  if (AST.isViewDeclaration(parent) || AST.isViewRender(parent)) {
+  if (
+    AST.isViewDeclaration(parent)
+    || AST.isViewRender(parent)
+    || AST.isGuardStatement(parent)
+    || AST.isForStatement(parent)
+  ) {
     return 'view'
   } else if (
     AST.isActionDeclaration(parent)

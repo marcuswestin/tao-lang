@@ -1,11 +1,98 @@
+import { isKnownTaoAppDataProviderName } from '@compiler'
 import { AST, LGM } from '@parser'
+import { throwUserInputRejectionError } from '@shared/TaoErrors'
 import {
   getSameModuleUris,
   isSameModuleImport,
   resolveModulePathToUris,
   type UriAndPath,
 } from '../../resolution/ModuleResolution'
+import { refResolved } from '../codegen-util'
 import { emitRelativeImport } from './gen-output-paths'
+import type { TaoCodegenOpts } from './runtime-gen'
+
+/** taoFileNeedsTaoDataRuntime returns true when generated code will reference `getTaoData("…")` (data blocks, queries, guard, create). */
+export function taoFileNeedsTaoDataRuntime(taoFile: AST.TaoFile): boolean {
+  for (const n of AST.Utils.streamAllContents(taoFile)) {
+    if (AST.isDataDeclaration(n)) {
+      return true
+    }
+    if (AST.isQueryDeclaration(n) || AST.isGuardStatement(n) || AST.isCreateStatement(n)) {
+      return true
+    }
+  }
+  return false
+}
+
+/** taoFileUsesForLoop returns true when codegen will emit `React.Fragment` keyed children for `for` loops. */
+export function taoFileUsesForLoop(taoFile: AST.TaoFile): boolean {
+  for (const n of AST.Utils.streamAllContents(taoFile)) {
+    if (AST.isForStatement(n)) {
+      return true
+    }
+  }
+  return false
+}
+
+/** taoFileReferencesDataClientInInjectedTs returns true when any `inject` TS block text mentions `getTaoData` (needs data-client import in emitted module). */
+export function taoFileReferencesDataClientInInjectedTs(taoFile: AST.TaoFile): boolean {
+  for (const n of AST.Utils.streamAllContents(taoFile)) {
+    if (AST.isInjection(n) && n.tsCodeBlock?.includes('getTaoData')) {
+      return true
+    }
+  }
+  return false
+}
+
+/** taoFileNeedsTaoDataImport is true when the emitted TS module should import from `tao-data-client`. */
+export function taoFileNeedsTaoDataImport(taoFile: AST.TaoFile): boolean {
+  return taoFileNeedsTaoDataRuntime(taoFile) || taoFileReferencesDataClientInInjectedTs(taoFile)
+}
+
+/** taoFileHasTopLevelDataDeclaration returns true when this module emits a `data` declaration (needs `setTaoData` + provider ctor imports). */
+export function taoFileHasTopLevelDataDeclaration(taoFile: AST.TaoFile): boolean {
+  for (const stmt of taoFile.statements) {
+    const decl = AST.isModuleDeclaration(stmt) ? stmt.declaration : stmt
+    if (AST.isDataDeclaration(decl)) {
+      return true
+    }
+  }
+  return false
+}
+
+/** buildRuntimePreambleImports returns React / tao-data-client / InstantDB preamble lines for an emitted Tao RN module. */
+export function buildRuntimePreambleImports(
+  taoFile: AST.TaoFile,
+  importBase: string,
+  codegenOpts: TaoCodegenOpts,
+): { reactImport: string; taoDataImport: string } {
+  const taoDataImport = taoFileNeedsTaoDataImport(taoFile)
+    ? (() => {
+      const names = ['getTaoData']
+      if (taoFileHasTopLevelDataDeclaration(taoFile)) {
+        names.push('createTaoDataClient', 'setTaoData')
+      }
+      const fromClient = `import { ${names.join(', ')} } from '${importBase}use/@tao/data/providers/tao-data-client'\n`
+      const providerRegistration = taoFileHasTopLevelDataDeclaration(taoFile)
+        ? providerRegistrationImport(importBase, codegenOpts.appProvider.name)
+        : ''
+      return `${fromClient}${providerRegistration}`
+    })()
+    : ''
+  const reactImport = taoFileUsesForLoop(taoFile) ? `import * as React from 'react'\n` : ''
+  return { reactImport, taoDataImport }
+}
+
+/** providerRegistrationImport returns the side-effect import that registers a known std-lib provider factory. */
+function providerRegistrationImport(importBase: string, provider: string): string {
+  const normalizedProvider = provider ? provider.toLowerCase() : 'memory'
+  if (!isKnownTaoAppDataProviderName(normalizedProvider)) {
+    throwUserInputRejectionError(`Unknown app data provider '${provider}'.`)
+  }
+  return normalizedProvider === 'instantdb'
+    ? `import '${importBase}use/@tao/data/providers/instantdb/instantdb'\n`
+    : `import '${importBase}use/@tao/data/providers/in-memory/in-memory'\n`
+}
 
 /** buildUriToTaoMap maps document URI string to TaoFile AST. */
 export function buildUriToTaoMap(allTaoFiles: AST.TaoFile[]): Map<string, AST.TaoFile> {
@@ -106,19 +193,17 @@ function walkViewStatement(
   importMap: Map<string, Set<string>>,
 ): void {
   if (AST.isViewRender(s)) {
-    const viewDecl = s.view.ref
-    if (viewDecl) {
-      const defDoc = LGM.AstUtils.getDocument(viewDecl)
-      if (defDoc && defDoc.uri.toString() !== doc.uri.toString()) {
-        const targetEmit = uriToEmitPath.get(defDoc.uri.toString())
-        if (targetEmit && targetEmit !== currentEmit) {
-          let set = importMap.get(targetEmit)
-          if (!set) {
-            set = new Set()
-            importMap.set(targetEmit, set)
-          }
-          set.add(viewDecl.name)
+    const viewDecl = refResolved(s.view, 'ViewRender.view')
+    const defDoc = LGM.AstUtils.getDocument(viewDecl)
+    if (defDoc && defDoc.uri.toString() !== doc.uri.toString()) {
+      const targetEmit = uriToEmitPath.get(defDoc.uri.toString())
+      if (targetEmit && targetEmit !== currentEmit) {
+        let set = importMap.get(targetEmit)
+        if (!set) {
+          set = new Set()
+          importMap.set(targetEmit, set)
         }
+        set.add(viewDecl.name)
       }
     }
     if (s.block) {
@@ -130,6 +215,12 @@ function walkViewStatement(
   }
   if (AST.isViewDeclaration(s)) {
     walkViewDecl(s, doc, currentEmit, uriToEmitPath, importMap)
+    return
+  }
+  if (AST.isForStatement(s)) {
+    for (const inner of s.block.statements) {
+      walkViewStatement(inner, doc, currentEmit, uriToEmitPath, importMap)
+    }
   }
 }
 

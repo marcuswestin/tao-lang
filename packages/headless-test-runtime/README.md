@@ -2,6 +2,16 @@
 
 Headless React Native test harness for compiled Tao apps (no Expo, no device).
 
+## Runtime boundary
+
+This package is a generic React Native Jest harness for compiled Tao apps. It is useful for proving generated app behavior that should work across every Tao runtime, but it does not model the full Expo host:
+
+- No iOS or Android native bridges.
+- No browser runtime or `react-native-web` layout.
+- No device APIs, Expo Router runtime, or Metro bundling behavior.
+
+For platform-dependent app runtime work, use this harness for portable React Native behavior and pair it with `packages/expo-runtime/` tests or manual Expo checks for iOS, Android, and web-specific behavior.
+
 ## Layout
 
 - **`src/`** — compile helpers

@@ -23,5 +23,5 @@ description: Implements one coherent batch from a markdown TODO list, updates th
 
 ## Validation
 
-- Run the narrow relevant checks for touched packages, or `./just-agents check` when the change is cross-cutting.
+- Run the narrow relevant checks for touched packages, or `./agent check` when the change is cross-cutting.
 - Report completed items, deferred items, TODO file updates, and test results.

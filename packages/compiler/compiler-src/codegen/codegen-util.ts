@@ -1,8 +1,9 @@
 import { AST, LGM } from '@parser'
-import { Assert } from '@shared'
-
 import * as LangiumGen from '@parser/generate'
+import type { Node, Reference } from '@parser/parserASTExport'
+import { Assert } from '@shared'
 import { Iterable, Stream } from '@shared'
+import { throwUnexpectedBehaviorError } from '@shared/TaoErrors'
 
 export type Compiled = LangiumGen.CompositeGeneratorNode
 export const CompositeGeneratorNode = LangiumGen.CompositeGeneratorNode
@@ -67,6 +68,17 @@ export function compileNodeListPropertyOptional<
 
 export function compileNoop(): Compiled {
   return new LangiumGen.CompositeGeneratorNode()
+}
+
+/** refResolved returns the linked cross-reference target; codegen assumes validation required this ref to resolve. */
+export function refResolved<T extends Node>(ref: Reference<T>, diagnosticLabel: string): T {
+  const target = ref.ref
+  if (!target) {
+    throwUnexpectedBehaviorError({
+      humanMessage: `${diagnosticLabel}: expected resolved cross-reference after validation.`,
+    })
+  }
+  return target
 }
 
 type CompileListItemFn<ItemT extends any> = (
@@ -158,8 +170,13 @@ export function compileNodePropertyRef<
   node: NodeT,
   propName: PropName,
   genFn: (resolved: PropVal) => Compiled,
+  opts?: { requireResolved?: boolean; diagnosticLabel?: string },
 ): Compiled {
   const ref = node[propName] as LGM.Reference<_NodeRefTarget<NodeT, PropName>>
+  if (opts?.requireResolved) {
+    const diagnosticLabel = opts.diagnosticLabel ?? `${node.$type}.${String(propName)}`
+    return genFn(refResolved(ref, diagnosticLabel) as PropVal)
+  }
   return ref ? genFn(ref.ref as PropVal) : compileNoop()
 }
 

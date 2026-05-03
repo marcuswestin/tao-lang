@@ -25,4 +25,4 @@ description: Maintains AGENTS.md, platform adapters, skills, humans.md, and agen
 
 - Confirm `skills/*/SKILL.md` is the only canonical skill source.
 - Confirm platform skill paths point to `skills/`.
-- Run `./just-agents check` for the final migration unless the user opts out.
+- Run `./agent check` for the final migration unless the user opts out.

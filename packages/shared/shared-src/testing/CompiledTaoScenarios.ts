@@ -1,14 +1,22 @@
 import * as FS from '../fs'
 
+/** TaoScenarioAppConfigObject is the nested app config override shape accepted by scenario JSON. */
+export type TaoScenarioAppConfigObject = { [key: string]: string | TaoScenarioAppConfigObject }
+
 /** CompiledTaoScenarioStep is one assertion or interaction within a compiled Tao scenario run. */
 export type CompiledTaoScenarioStep =
   | { type: 'assertVisibleText'; text: string }
   | { type: 'pressVisibleText'; text: string }
 
+/** CompiledTaoWaitForOptions mirrors RTL `waitFor` options (timeout / poll interval) for compiled Tao scenario helpers. */
+export type CompiledTaoWaitForOptions = { timeout?: number; interval?: number }
+
 /** CompiledTaoScenario is a parsed `scenario.json` — steps to run, plus an optional skip flag. */
 export type CompiledTaoScenario = {
   /** When truthy, shared scenario tests skip this folder: `true`, missing file, or a string reason for `test.todo`. */
   skip: boolean | string
+  /** App config overrides passed to compile, e.g. `{ "provider": { "appId": "test-db" } }`. */
+  app?: TaoScenarioAppConfigObject
   steps: CompiledTaoScenarioStep[]
 }
 
@@ -33,6 +41,8 @@ export type CompiledTaoScenarioRenderResult = {
   queryAllByRole?(role: string, options?: { name: string }): unknown[]
   /** pressVisibleText dispatches a press on the element returned by `getByText` (e.g. Testing Library `fireEvent.press`). */
   pressVisibleText(text: string): void
+  /** When present, `assertVisibleText` uses async wait (e.g. RTL `waitFor`) so post-mutation UI can settle. */
+  waitFor?(callback: () => unknown, options?: CompiledTaoWaitForOptions): Promise<unknown>
 }
 
 /** CompiledTaoScenarioAdapter abstracts compile/render/cleanup so scenario tests work across Expo and headless runtimes. */
@@ -55,6 +65,7 @@ export type TaoScenarioAdapterCompileOpts = {
   path: string
   stdLibRoot?: string
   outputFileName: string
+  app?: TaoScenarioAppConfigObject
 }
 
 /** createCompiledTaoScenarioAdapter builds a {@link CompiledTaoScenarioAdapter} from per-runtime compile, render, and cleanup hooks. */
@@ -68,12 +79,13 @@ export function createCompiledTaoScenarioAdapter(config: {
   cleanup(): void | Promise<void>
 }): CompiledTaoScenarioAdapter {
   return {
-    compileScenario({ scenarioDir, scenarioName }) {
+    compileScenario({ scenarioDir, scenarioName, scenario }) {
       const outputFileName = config.computeOutputFileName(scenarioName)
       return config.compile({
         path: FS.resolvePath(scenarioDir, `${scenarioName}.tao`),
         stdLibRoot: config.stdLibRoot,
         outputFileName,
+        app: scenario.app,
       })
     },
     renderCompiledApp: ({ outputPath }) => config.render(outputPath),
@@ -142,7 +154,7 @@ export async function runScenario(opts: {
     })
 
     for (const step of opts.scenario.steps) {
-      runStep(step, renderResult)
+      await runStep(step, renderResult)
     }
   } finally {
     await opts.adapter.cleanup()
@@ -162,8 +174,28 @@ function parseCompiledTaoScenario(rawScenario: unknown, scenarioPath: string): C
 
   return {
     skip: rawScenario['skip'] as boolean | string,
+    app: parseScenarioAppOverrides(rawScenario['app'], scenarioPath),
     steps: steps.map((step, index) => parseStep(step, scenarioPath, index)),
   }
+}
+
+/** parseScenarioAppOverrides validates optional scenario-level app compile overrides. */
+function parseScenarioAppOverrides(value: unknown, scenarioPath: string): TaoScenarioAppConfigObject | undefined {
+  if (value === undefined) {
+    return undefined
+  }
+  if (!isScenarioAppConfigObject(value)) {
+    throw new Error(`Scenario "app" must be an object when present: ${scenarioPath}`)
+  }
+  return value
+}
+
+/** isScenarioAppConfigObject returns true when value is a nested app config object with string leaves. */
+function isScenarioAppConfigObject(value: unknown): value is TaoScenarioAppConfigObject {
+  if (!isRecord(value)) {
+    return false
+  }
+  return Object.values(value).every(val => typeof val === 'string' || isScenarioAppConfigObject(val))
 }
 
 const STEP_KEYS = ['assertVisibleText', 'pressVisibleText'] as const
@@ -198,9 +230,21 @@ function parseStep(rawStep: unknown, scenarioPath: string, stepIndex: number): C
 }
 
 /** runStep runs one scenario step against the rendered app. */
-function runStep(step: CompiledTaoScenarioStep, renderResult: CompiledTaoScenarioRenderResult) {
+async function runStep(step: CompiledTaoScenarioStep, renderResult: CompiledTaoScenarioRenderResult) {
   switch (step.type) {
     case 'assertVisibleText':
+      if (renderResult.waitFor) {
+        await renderResult.waitFor(() => {
+          if (renderResult.queryAllByText) {
+            if (renderResult.queryAllByText(step.text).length === 0) {
+              renderResult.getByText(step.text)
+            }
+            return
+          }
+          renderResult.getByText(step.text)
+        })
+        return
+      }
       if (renderResult.queryAllByText) {
         if (renderResult.queryAllByText(step.text).length === 0) {
           renderResult.getByText(step.text)

@@ -50,7 +50,7 @@ No other first-party package imports another package’s **test tree** in the or
 
 **`_build_all`** ([`dev-cmds.just`](../../../packages/shared/just/dev-cmds.just) `_build_all`): `TAO_DEPS_BATCHED=1` → shared → parser → formatter → compiler → tao-cli → headless-test-runtime → expo-runtime → ide-extension with `TAO_SKIP_COMPILER_BUILD=1` for package build/install. This is the **authoritative build order** for “what runs before what.”
 
-**Agent entry ([`just-agents.Justfile`](../../../just-agents.Justfile)):** forwards `fmt`, `fix`, `prep-commit`, `test`, `lint`, `check`, `gen`, `build`, `clean`, and per-package recipes to the **same** root `Justfile` via `MAIN_JUSTFILE := "--justfile Justfile"`. Adds `shell` (whitelisted commands per `ALLOWED_SHELL_COMMANDS`) and `git-dangerously` (raw git; policy in file comments).
+**Agent entry ([`agent.Justfile`](../../../agent.Justfile)):** forwards `fmt`, `fix`, `prep-commit`, `test`, `lint`, `check`, `gen`, `build`, `clean`, and per-package recipes to the **same** root `Justfile` via `MAIN_JUSTFILE := "--justfile Justfile"`. Adds `shell` (whitelisted commands per `ALLOWED_SHELL_COMMANDS`) and `git-dangerously` (raw git; policy in file comments).
 
 **`prep-commit`:** `_prep_commit` runs `just clean` → `just build` → `TAO_SKIP_GEN=1 just test` → `just _check` → `just fix` (see comments in [`dev-cmds.just`](../../../packages/shared/just/dev-cmds.just) ~19–27).
 

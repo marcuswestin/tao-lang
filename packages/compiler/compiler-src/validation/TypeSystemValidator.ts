@@ -541,7 +541,7 @@ function validateActionRenderCallee(node: AST.ActionRender, report: Reporter<AST
   if (AST.isActionDeclaration(ref)) {
     return
   }
-  const kind = calleeKind(ref)
+  const kind = calleeKind(ref as AST.Declaration)
   report.error(typeSystemValidationMessages.doMustReferenceAction(kind), { node, property: 'action' })
 }
 
@@ -559,6 +559,9 @@ function calleeKind(ref: AST.Declaration): string {
   }
   if (AST.isTypeDeclaration(ref)) {
     return 'type'
+  }
+  if (AST.isDataDeclaration(ref)) {
+    return 'data'
   }
   return ref.$type
 }

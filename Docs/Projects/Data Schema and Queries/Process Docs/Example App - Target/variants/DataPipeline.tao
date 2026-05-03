@@ -1,10 +1,6 @@
 // TARGET-ONLY FICTION — pipeline variant. See ../README.md.
 
 data MeetupData {
-  source InstantDB {
-    appId "example-app-id"
-  }
-
   type EventTitle is text
 
   Events Event {
@@ -42,6 +38,12 @@ mutation CreateEvent Host Person, Title EventTitle, StartsAt instant {
     Title Title
     StartsAt StartsAt
     Host Host
+  }
+}
+
+app MeetupLite {
+  provider InstantDB {
+    appId "example-app-id"
   }
 }
 

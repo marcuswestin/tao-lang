@@ -1,0 +1,111 @@
+set dotenv-load := true
+set shell := ["bash", "-euo", "pipefail", "-c"]
+
+compose := "docker compose --env-file .env -f docker-compose.yml"
+instant_repo := "https://github.com/instantdb/instant.git"
+instant_commit := "9988b736198c01f0636d2c94270917e4f4180f7b"
+default_app := "../../Apps/Test Apps/Data Schema/Data Schema.tao"
+
+default:
+  @just --list
+
+bootstrap:
+  mkdir -p vendor
+  if [ ! -d vendor/instant/.git ]; then \
+    git clone --depth 1 {{instant_repo}} vendor/instant; \
+  fi
+  if ! git -C vendor/instant cat-file -e {{instant_commit}}^{commit}; then \
+    git -C vendor/instant fetch --depth 1 origin {{instant_commit}}; \
+  fi
+  git -C vendor/instant checkout {{instant_commit}}
+
+image: bootstrap
+  {{compose}} build instant
+
+up: image
+  {{compose}} up -d
+  just wait
+  just seed
+
+wait:
+  @printf 'Waiting for InstantDB on http://127.0.0.1:%s/health' "$INSTANT_PORT"
+  @attempt=0; \
+  until curl -fsS "http://127.0.0.1:$INSTANT_PORT/health" >/dev/null; do \
+    attempt=$((attempt + 1)); \
+    if [ "$attempt" -gt 120 ]; then \
+      echo; \
+      echo "Timed out waiting for InstantDB"; \
+      {{compose}} ps; \
+      {{compose}} logs --tail 120 instant; \
+      exit 1; \
+    fi; \
+    printf '.'; \
+    sleep 2; \
+  done; \
+  echo ' ready'
+
+seed:
+  {{compose}} exec -T postgres psql \
+    -U "$POSTGRES_USER" \
+    -d "$POSTGRES_DB" \
+    -v app_id="$APP_ID" \
+    -v admin_token="$ADMIN_TOKEN" \
+    -f /dev/stdin < scripts/seed-app.sql
+
+status:
+  {{compose}} ps
+
+logs:
+  {{compose}} logs -f instant
+
+down:
+  {{compose}} down
+
+reset:
+  {{compose}} down
+  docker volume rm local-instantdb_local-instantdb-postgres || true
+
+reset-caches:
+  {{compose}} down -v
+
+config HOST="localhost":
+  @echo "appId=$APP_ID"
+  @echo "apiURI=http://{{HOST}}:$INSTANT_PORT"
+  @echo "websocketURI=ws://{{HOST}}:$INSTANT_PORT/runtime/session"
+
+compile APP=default_app HOST="localhost":
+  cd ../tao-cli && bun run --no-clear-screen ./tao-cli.ts compile "{{APP}}" \
+    --runtime-dir "../expo-runtime" \
+    --std-lib-root "../tao-std-lib" \
+    --verbose \
+    --app provider.name=InstantDB \
+    --app provider.appId="$APP_ID" \
+    --app provider.apiURI="http://{{HOST}}:$INSTANT_PORT" \
+    --app provider.websocketURI="ws://{{HOST}}:$INSTANT_PORT/runtime/session"
+
+watch APP=default_app HOST="localhost":
+  cd ../tao-cli && bun run --no-clear-screen --watch ./tao-cli.ts compile "{{APP}}" \
+    --watch \
+    --runtime-dir "../expo-runtime" \
+    --std-lib-root "../tao-std-lib" \
+    --verbose \
+    --app provider.name=InstantDB \
+    --app provider.appId="$APP_ID" \
+    --app provider.apiURI="http://{{HOST}}:$INSTANT_PORT" \
+    --app provider.websocketURI="ws://{{HOST}}:$INSTANT_PORT/runtime/session"
+
+web EXPO_PORT="8081":
+  cd ../expo-runtime && BROWSER="none" bunx expo start --web --port "{{EXPO_PORT}}"
+
+ios:
+  cd ../expo-runtime && BROWSER="none" bunx expo start --ios
+
+android:
+  cd ../expo-runtime && BROWSER="none" bunx expo start --android
+
+dev APP=default_app HOST="localhost" EXPO_PORT="8081": up
+  just watch "{{APP}}" "{{HOST}}" & \
+  watch_pid=$!; \
+  trap 'kill "$watch_pid" 2>/dev/null || true' EXIT INT TERM; \
+  cd ../expo-runtime; \
+  BROWSER="none" bunx expo start --web --port "{{EXPO_PORT}}"

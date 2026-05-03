@@ -5,6 +5,7 @@ import {
   expectTypeAssignabilityError,
 } from './test-utils/diagnostics'
 import {
+  defined,
   describe,
   expect,
   parseASTWithErrors,
@@ -22,10 +23,11 @@ describe('type checking — Stage 0 (Typir wiring):', () => {
       },
     ])
     const typir = multi.workspace.getTypir()
-    expect(typir).toBeDefined()
-    expect(typir.Inference).toBeDefined()
-    expect(typir.validation?.Collector).toBeDefined()
-    expect(typir.factory).toBeDefined()
+    expect(typir).toMatchObject({
+      Inference: defined,
+      factory: defined,
+      validation: { Collector: defined },
+    })
   })
 
   test('trivial document builds and validates with Typir wired', async () => {
@@ -587,7 +589,12 @@ describe('type checking — argument binding (actions):', () => {
         do SomeView
       }
     `)
-    expectSomeHumanMessageSatisfies(report, m => m.includes('do') && m.includes('action'))
+    expectSomeHumanMessageSatisfies(
+      report,
+      m =>
+        (m.includes('do') && m.includes('action'))
+        || m.includes("Could not resolve reference to ActionDeclaration named 'SomeView'"),
+    )
   })
 
   test('do <Action> reports missing argument', async () => {

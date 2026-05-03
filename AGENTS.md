@@ -1,12 +1,21 @@
 # Tao Lang Agent Guide
 
+## SETUP
+
+When starting in a new worktree (or fresh repo clone), the very first thing you must do is:
+
+1. Run setup: `./agent setup`.
+2. Trust the repo mise config: `~/.local/bin/mise trust .config/mise.toml`.
+3. Create a new appropriately named branch: `./agent git-create-branch <branch-name>`.
+
 ## Command Safety
 
-- `./just-agents` is the only supported way for agents to interact with this repo.
-- Start every session with `./just-agents help`.
-- Run shell commands as `./just-agents shell <cmd> <args>`.
+- `./agent` is the only supported way for agents to interact with this repo.
+- Start every session with `./agent help`.
+- Use the named commands exposed by `./agent help`, for example `./agent rg <pattern>`, `./agent cat <path>`, and `./agent git status`.
+- `./agent` is the effective whitelist of allowed commands for agents in this repo.
 - Do not run repo commands directly through `just`, `bun`, `npm`, `git`, or other tools.
-- Do not edit `just-agents.Justfile` unless the user explicitly asks for agent command changes.
+- Do not edit `agent.Justfile` unless the user explicitly asks for agent command changes.
 
 ## Project
 
@@ -41,17 +50,17 @@ Tao Lang is a programming language for building native and web apps.
 
 ## Testing
 
-- General checks: `./just-agents check`.
-- Full test suite: `./just-agents test`.
-- Filtered tests: `./just-agents test <filter>`.
-- Package commands: `./just-agents <package> <command> <args>`, for example `./just-agents compiler test`.
-- Before landing work, run `./just-agents fix` and `./just-agents prep-commit` unless the user opts out.
+- General checks: `./agent check`.
+- Full test suite: `./agent test`.
+- Filtered tests: `./agent test <filter>`.
+- Package commands: `./agent <package> <command> <args>`, for example `./agent compiler test`.
+- Before landing work, run `./agent fix` and `./agent prep-commit` unless the user opts out.
 
 ## Git Safety
 
-- Safe git browsing and staging goes through `./just-agents shell git status|diff|log|add|commit`.
-- Do not use `./just-agents git-dangerously` for `fetch`, `checkout`, `switch`, `pull`, `merge`, `push`, `rebase`, or similar remote/merge work unless the user explicitly asks for that operation.
-- After merging or rebasing `main` into a feature branch, run `./just-agents prep-commit` until green before treating the branch as merge-ready.
+- Safe git browsing, staging, commits, and local merge prep go through `./agent git status|diff|log|add|commit|merge`.
+- Remote, rebase, checkout, switch, pull, and push operations are intentionally not exposed as general agent commands. Add an explicit `./agent` recipe before making those agent-driven workflows routine.
+- After merging or rebasing `main` into a feature branch, run `./agent prep-commit` until green before treating the branch as merge-ready.
 - Use `skills/git-workflow` for staging, committing, batch commits, and merge preparation.
 
 ## Skills

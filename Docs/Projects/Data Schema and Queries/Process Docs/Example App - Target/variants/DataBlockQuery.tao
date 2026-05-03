@@ -2,10 +2,13 @@
 // Compare: Query Design - Alternatives.md #query-flow-pipeline-vs-block
 
 data MeetupData {
-  source InstantDB {
+  // ... same entities as DataPipeline.tao (omitted duplicate for sketch)
+}
+
+app MeetupLite {
+  provider InstantDB {
     appId "example-app-id"
   }
-  // ... same entities as DataPipeline.tao (omitted duplicate for sketch)
 }
 
 // Illustrative block form — semantics TBD; may desugar to same IR as pipeline

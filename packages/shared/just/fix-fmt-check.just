@@ -8,7 +8,7 @@ OXLINT_CMD := "oxlint --ignore-path .gitignore --type-aware --deny-warnings"
 _fmt:
     just _fmt_just
     cd packages/shared && just sort-package-json-files 1> /dev/null 2>&1
-    dprint fmt 1> /dev/null 2>&1
+    dprint fmt --incremental=false 1> /dev/null 2>&1
     {{ MISE_CMD }} fmt 1> /dev/null 2>&1
     {{ OXLINT_CMD }} --fix 1> /dev/null 2>&1
     just tao fmt ./Apps/
@@ -41,28 +41,31 @@ _ts_autofix_package PACKAGE:
 
 [no-quiet]
 _fix: _fmt
-    just _ts_autofix_package compiler
-    just _ts_autofix_package tao-cli
-    just _ts_autofix_package shared
-    just _ts_autofix_package headless-test-runtime
-    just _ts_autofix_package ide-extension
-    just _ts_autofix_package expo-runtime
+    just concurrently-exec-named \
+        "compiler" "just _ts_autofix_package compiler" \
+        "tao-cli" "just _ts_autofix_package tao-cli" \
+        "shared" "just _ts_autofix_package shared" \
+        "headless-runtime" "just _ts_autofix_package headless-test-runtime" \
+        "ide-extension" "just _ts_autofix_package ide-extension" \
+        "expo-runtime" "just _ts_autofix_package expo-runtime"
     cd packages/expo-runtime && bunx expo lint --fix
     cd packages/expo-runtime && bunx eslint --fix
     just _fmt # Run formatter again, for any changes made
 
 [no-quiet]
 _check:
-    just lint
-    dprint check
-    cd packages/compiler && tsc -b --force
-    cd packages/compiler && tsc --noEmit --noUnusedLocals
-    cd packages/tao-cli && tsc --noEmit --noUnusedLocals
-    cd packages/shared && tsc --noEmit --noUnusedLocals
-    cd packages/headless-test-runtime && tsc --noEmit --noUnusedLocals
-    cd packages/ide-extension && tsc --noEmit --noUnusedLocals
-    cd packages/expo-runtime && tsc --noEmit --noUnusedLocals
-    cd packages/expo-runtime && just lint
+    just concurrently-exec-named \
+        "lint" "just lint" \
+        "dprint" "dprint check --incremental=false" \
+        "compiler-build" "cd packages/compiler && tsc -b --force"
+    just concurrently-exec-named \
+        "compiler" "cd packages/compiler && tsc --noEmit --noUnusedLocals" \
+        "tao-cli" "cd packages/tao-cli && tsc --noEmit --noUnusedLocals" \
+        "shared" "cd packages/shared && tsc --noEmit --noUnusedLocals" \
+        "headless-runtime" "cd packages/headless-test-runtime && tsc --noEmit --noUnusedLocals" \
+        "ide-extension" "cd packages/ide-extension && tsc --noEmit --noUnusedLocals" \
+        "expo-runtime" "cd packages/expo-runtime && tsc --noEmit --noUnusedLocals" \
+        "expo-lint" "cd packages/expo-runtime && just lint"
 
 _lint:
     {{ OXLINT_CMD }}

@@ -74,7 +74,12 @@ export class TaoScopeComputation extends langium.DefaultScopeComputation {
         ViewDeclaration: (n) => this.collectSymbolForScope(n, document, localSymbols),
         ActionDeclaration: (n) => this.collectSymbolForScope(n, document, localSymbols),
         TypeDeclaration: (n) => this.collectSymbolForScope(n, document, localSymbols),
+        DataDeclaration: (n) => this.collectSymbolForScope(n, document, localSymbols),
+        DataEntityDeclaration: (n) => this.collectSymbolForScope(n, document, localSymbols, n.$container),
+        DataTypeDeclaration: (n) => this.collectSymbolForScope(n, document, localSymbols, n.$container),
         ParameterDeclaration: (n) => this.collectParameterSymbolForScope(n, document, localSymbols),
+        QueryDeclaration: (n) => this.collectSymbolForScope(n, document, localSymbols),
+        ForStatement: (n) => this.collectSymbolForScope(n, document, localSymbols, n),
       })
     }
 

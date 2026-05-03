@@ -4,15 +4,31 @@
 import { TaoParser } from '@compiler/langium/parser'
 import type { TaoWorkspace } from '@compiler/langium/tao-services'
 import { createTaoWorkspace } from '@compiler/langium/tao-services'
-import { getParseError, ParseError } from '@compiler/validation/parse-errors'
+import { getParseError, type ParseError } from '@compiler/validation/parse-errors'
 import { LGM as Langium } from '@parser'
 import { TaoFile } from '@parser/_gen-tao-parser/ast'
 import { NodeFileSystem } from '@parser/node'
 import { AST } from '@parser/parser'
 import { Assert } from '@shared'
+import { describe, expect as bunExpect, test } from 'bun:test'
 import { wrap, Wrapped } from './AST-Wrapper'
+import { expectHasHumanErrors } from './diagnostics'
 
-export { describe, expect, test } from 'bun:test'
+export { describe, test }
+/** expect re-exports Bun's test matcher (same object as `bunExpect`). */
+export const expect = bunExpect
+/** defined matches any value except `undefined` or `null` (for `.match()` / `toMatchObject` shapes). */
+export const defined = bunExpect.anything()
+/** anyText matches any string (asymmetric matcher for `.match()` shapes). */
+export const anyText = bunExpect.any(String)
+/** anyNum matches any number (asymmetric matcher for `.match()` shapes). */
+export const anyNum = bunExpect.any(Number)
+
+/** expectSingle asserts `items` has exactly one element and returns that element. */
+export function expectSingle<T>(items: readonly T[] | T[] | null | undefined): T {
+  expect(items).toHaveLength(1)
+  return items![0]!
+}
 
 // Lexing
 /////////
@@ -65,6 +81,13 @@ export async function parseASTWithErrors(code: string, stdLibRoot = ''): Promise
   const { errorReport } = await TaoParser.parseString(code, { stdLibRoot, validateUpToStage: 'all' })
   Assert(errorReport.hasError(), 'parseASTWithErrors expected at least one error report, but got none.')
   return errorReport
+}
+
+/** expectParseHasHumanErrors parses `code` through the full pipeline, asserts at least one human diagnostic, and returns the aggregated `ParseError`. */
+export async function expectParseHasHumanErrors(code: string, stdLibRoot = ''): Promise<ParseError> {
+  const report = await parseASTWithErrors(code, stdLibRoot)
+  expectHasHumanErrors(report)
+  return report
 }
 
 /** resolveReferences parses through linking; fails the test if lexer, parser, or linker reported errors (validation not run). */

@@ -17,7 +17,6 @@ function assertCondition<T>(
   if (!condition) {
     throwUnexpectedBehaviorError({
       humanMessage: `Expected: ${expectedConditionDescription}`,
-      cause: new Error('AssertError'),
       logInfo: { condition: condition, info: logInfo },
     })
   }

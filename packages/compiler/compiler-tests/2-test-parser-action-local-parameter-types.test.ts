@@ -1,17 +1,14 @@
-import { AST } from '@parser/parser'
 import { SNIPPET_ACTION_BUMP_STEP_NUMBER } from '@shared/testing/tao-snippets'
-import { describe, expect, parseAST, test } from './test-utils/test-harness'
+import { defined, describe, expect, parseAST, test } from './test-utils/test-harness'
 
 describe('action local parameter types (Phase 3):', () => {
   test('action Bump Step is number parses with localSuperType', async () => {
     const doc = await parseAST(`
       ${SNIPPET_ACTION_BUMP_STEP_NUMBER}
     `)
-    const action = doc.statements.first.as_ActionDeclaration
-    const param = action.unwrap().parameterList!.parameters[0]!
-    expect(param.name).toBe('Step')
-    expect(param.localSuperType).toBeDefined()
-    expect(param.type).toBeUndefined()
+    const p0 = doc.statements.first.as_ActionDeclaration.parameterList.parameters[0]
+    p0.match({ name: 'Step', localSuperType: defined })
+    expect(p0.unwrap().type).toBeUndefined()
   })
 
   test('do Bump .Step 3 parses dot shorthand in action call', async () => {
@@ -21,15 +18,9 @@ describe('action local parameter types (Phase 3):', () => {
         do Bump .Step 3
       }
     `)
-    const use = doc.statements.second.as_ActionDeclaration
-    const render = use.block.statements.first.as_ActionRender
-    const arg = render.argumentList!.arguments[0]!
-    expect(AST.isTypedLiteralExpression(arg)).toBe(true)
-    if (AST.isTypedLiteralExpression(arg)) {
-      expect(AST.isDotLocalTypeRef(arg.type)).toBe(true)
-      if (AST.isDotLocalTypeRef(arg.type)) {
-        expect(arg.type.name).toBe('Step')
-      }
-    }
+    doc.statements.second.as_ActionDeclaration.block.statements.first.as_ActionRender.argumentList.arguments[0]
+      .as_TypedLiteralExpression.match({
+        type: { $type: 'DotLocalTypeRef', name: 'Step' },
+      })
   })
 })

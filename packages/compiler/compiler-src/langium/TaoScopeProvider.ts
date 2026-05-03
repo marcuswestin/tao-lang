@@ -18,8 +18,10 @@ const moduleScopedRefRules: readonly {
 }[] = [
   { property: 'view', isContainer: AST.isViewRender },
   { property: 'action', isContainer: AST.isActionRender },
-  { property: 'ui', isContainer: AST.isAppStatement },
+  { property: 'ui', isContainer: AST.isAppUiStatement },
   { property: 'ref', isContainer: AST.isNamedTypeRef },
+  { property: 'namedRef', isContainer: AST.isDataFieldType },
+  { property: 'arrayRef', isContainer: AST.isDataFieldType },
 ]
 
 /** TaoScopeProvider resolves reference scopes using module and use-statement rules. */
@@ -46,6 +48,14 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
     if (context.property === 'root' && AST.isMemberAccessExpression(context.container)) {
       const document = langium.AstUtils.getDocument(context.container)
       return this.createScope(this.getLocalScope(context, document))
+    }
+
+    if (context.property === 'entity' && AST.isQueryDeclaration(context.container)) {
+      return this.getDataSchemaEntityScope(context)
+    }
+
+    if (context.property === 'entity' && AST.isCreateStatement(context.container)) {
+      return this.getDataSchemaEntityScope(context)
     }
 
     return super.getScope(context)
@@ -157,6 +167,28 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
 
     this.callableOwnerSyntheticTypes.set(callable, synthetic)
     return synthetic
+  }
+
+  /** getDataSchemaEntityScope limits `query` / `create` entity links to entities declared on the referenced `data` schema. */
+  private getDataSchemaEntityScope(context: langium.ReferenceInfo): langium.Scope {
+    const stmt = context.container
+    if (!AST.isQueryDeclaration(stmt) && !AST.isCreateStatement(stmt)) {
+      return this.createScope([])
+    }
+    const schema = stmt.schema.ref
+    if (!schema || !AST.isDataDeclaration(schema)) {
+      return this.createScope([])
+    }
+    let document: langium.LangiumDocument
+    try {
+      document = langium.AstUtils.getDocument(schema)
+    } catch {
+      return this.createScope([])
+    }
+    const descs = schema.dataStatements
+      .filter(AST.isDataEntityDeclaration)
+      .map(e => this.descriptions.createDescription(e, e.name, document))
+    return this.createScope(descs)
   }
 
   /** getModuleScopedDeclarations merges local symbols with use-imported symbols. */

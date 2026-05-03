@@ -1,0 +1,14 @@
+{
+  "app": {
+    "provider": {
+      "name": "Memory"
+    }
+  },
+  "steps": [
+    { "assertVisibleText": "Data Schema Test App" },
+    { "assertVisibleText": "Create Event 0" },
+    { "pressVisibleText": "Create Event 0" },
+    { "assertVisibleText": "New Event 1" },
+    { "pressVisibleText": "Create Event 1" }
+  ]
+}

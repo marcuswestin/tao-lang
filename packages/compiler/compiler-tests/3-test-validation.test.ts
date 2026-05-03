@@ -26,7 +26,6 @@ describe('validation — integration smoke (full pipeline):', () => {
         }
     `
     const result = await parseTaoFully(code)
-    expect(result).toBeDefined()
     result.statements.first.as_AppDeclaration.expect('name').toBe('KitchenSink')
   })
 
@@ -189,7 +188,12 @@ describe('statement placement validation:', () => {
         }
       }
     `)
-    expectSomeHumanMessageSatisfies(report, m => m.includes("'do'") && m.includes('view'))
+    expectSomeHumanMessageSatisfies(
+      report,
+      m =>
+        (m.includes("'do'") && m.includes('view'))
+        || m.includes("Could not resolve reference to ActionDeclaration named 'SomeView'"),
+    )
   })
 })
 

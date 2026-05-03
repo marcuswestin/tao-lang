@@ -8,21 +8,48 @@ import {
   compileNodeProperty,
   compileNodePropertyRef,
   compileNoop,
+  compileTODO,
   CompositeGeneratorNode,
+  refResolved,
 } from '@compiler/codegen/codegen-util'
 import { parameterName } from '@compiler/tao-type-shapes'
 import { resolveArgumentBindings } from '@compiler/typing/tao-argument-bindings'
 import { AST } from '@parser/parser'
-import { Iterable as _Iterable, Stream, switch_safe } from '@shared'
+import { Assert, Iterable as _Iterable, Stream, switch_safe } from '@shared'
 import { throwUnexpectedBehaviorError } from '@shared/TaoErrors'
-import { compileTODO } from '../codegen-util'
 import { decodeTaoTemplateTextChunk } from '../tao-template-text-chunk'
+import type { TaoAppConfig, TaoAppConfigObject } from './app-config'
 
-export function compileTaoFile(taoFile: AST.TaoFile): Compiled {
-  return new RuntimeGen().TaoFile(taoFile)
+/** TaoResolvedAppProvider is the provider selected for the compiled app after Tao source + compile overrides. */
+export type TaoResolvedAppProvider = {
+  name: string
+  params: TaoAppConfigObject
+}
+
+/** TaoCodegenOpts toggles codegen behavior for harnesses (e.g. headless) without changing Tao source. */
+export type TaoCodegenOpts = {
+  /** Normalized app config after Tao source and compile overrides are merged. */
+  app: TaoAppConfig
+  /** Provider selected from the entry app and app overrides. Defaults to Memory. */
+  appProvider: TaoResolvedAppProvider
+}
+
+/** TaoCodegenInputOpts are caller-provided app overrides before source defaults are resolved. */
+export type TaoCodegenInputOpts = {
+  /** App config overrides, e.g. `{ provider: { appId: "test-db" } }`. */
+  app?: TaoAppConfigObject
+}
+
+export function compileTaoFile(taoFile: AST.TaoFile, codegenOpts?: TaoCodegenOpts): Compiled {
+  const resolved: TaoCodegenOpts = codegenOpts ?? {
+    app: { app: {} },
+    appProvider: { name: 'Memory', params: {} },
+  }
+  return new RuntimeGen(resolved).TaoFile(taoFile)
 }
 
 class RuntimeGen {
+  constructor(private readonly codegenOpts: TaoCodegenOpts) {}
   TODO(node: AST.Node): Compiled {
     return compileTODO(node)
   }
@@ -30,8 +57,19 @@ class RuntimeGen {
   TaoFile(taoFile: AST.TaoFile): Compiled {
     return compileNode(taoFile)`
       ${this.taoFileScope(taoFile)}
+      ${compileNodeListProperty(taoFile, 'statements', wireUseStatement)}
       ${compileNodeListProperty(taoFile, 'statements', stmt => this.Statement(stmt))}
+      ${this.taoFileAppInits(taoFile)}
     `
+
+    function wireUseStatement(statement: AST.Statement): Compiled {
+      if (!AST.isUseStatement(statement)) {
+        return compileNoop()
+      }
+      const lines = statement.importedNames.map(name => `_Scope.${name} = ${name}`).join('\n')
+      return compileNode(statement)`${lines}
+`
+    }
   }
 
   Statement(statement: AST.Statement): Compiled {
@@ -48,6 +86,11 @@ class RuntimeGen {
       ViewRender: (n) => this.ViewRender(n),
       ActionRender: (n) => this.ActionRender(n),
       TypeDeclaration: (n) => this.TypeDeclaration(n),
+      DataDeclaration: (n) => this.dataDeclarationRuntime(n),
+      QueryDeclaration: (n) => this.QueryDeclaration(n),
+      GuardStatement: (n) => this.GuardStatement(n),
+      ForStatement: (n) => this.ForStatement(n),
+      CreateStatement: (n) => this.CreateStatement(n),
     })
   }
 
@@ -58,6 +101,7 @@ class RuntimeGen {
       ActionDeclaration: (n) => this.ActionDeclaration(n),
       ViewDeclaration: (n) => this.ViewDeclaration(n),
       TypeDeclaration: (n) => this.TypeDeclaration(n),
+      DataDeclaration: (n) => this.dataDeclarationRuntime(n),
     })
   }
 
@@ -149,7 +193,6 @@ class RuntimeGen {
     }
     throwUnexpectedBehaviorError({
       humanMessage: 'StringTemplateSegment must have exactly one of `text` or `expression` set (grammar invariant).',
-      cause: new Error('CodegenInvariantError'),
     })
   }
 
@@ -201,15 +244,25 @@ class RuntimeGen {
   }
 
   AppDeclaration(declaration: AST.AppDeclaration): Compiled {
-    return compileNodeListProperty(declaration, 'appStatements', appStmnt =>
-      compileNode(appStmnt)`
+    const ui = declaration.appStatements.find(AST.isAppUiStatement)
+    if (!ui) {
+      return compileNoop()
+    }
+    const uiTarget = refResolved(ui.ui, 'AppUiStatement.ui')
+    return compileNode(declaration)`
         function _AppUIView() {
-          return <${appStmnt.ui.ref!.name} />
+          return <${uiTarget.name} />
         }; export const AppUIView = _AppUIView // TODO: Remove this
-      `)
+      `
   }
 
   ModuleDeclaration(moduleDecl: AST.ModuleDeclaration): Compiled {
+    if (moduleDecl.visibility === 'share' && AST.isActionDeclaration(moduleDecl.declaration)) {
+      const name = moduleDecl.declaration.name
+      return compileNode(moduleDecl)`
+        export const ${name} = ${this.actionLiteral(moduleDecl.declaration, name)}
+      `
+    }
     const visibility = compileNodeProperty(moduleDecl, 'visibility', (val) => val ? 'export ' : '')
     const declaration = this.Statement(moduleDecl.declaration)
     return compileNode(moduleDecl)`
@@ -273,27 +326,18 @@ class RuntimeGen {
     )
   }
 
-  /** ActionRender compiles `do TargetAction Param1 v1, …` to `_Scope.<Name>.invoke({ … })`, optionally followed
-   * by a nested `block` of action statements (same scope as the invocation). Argument-binding maps each
-   * `Argument` to the callee `ParameterDeclaration` so the props object uses resolved parameter names. */
+  /** ActionRender compiles `do ActionName …` to `_Scope.ActionName.invoke({ … })`. */
   ActionRender(node: AST.ActionRender): Compiled {
-    return compileNodePropertyRef(node, 'action', actionDecl => {
-      if (!AST.isActionDeclaration(actionDecl)) {
-        throwUnexpectedBehaviorError({
-          humanMessage: 'ActionRender callee must resolve to an action declaration after validation.',
-          cause: new Error('CodegenInvariantError'),
-        })
-      }
-      const propsBag = this.actionRenderPropsBag(node, actionDecl)
-      const invoke = compileNode(node)`_Scope.${actionDecl.name}.invoke(${propsBag})`
-      if (!isBlockWithStatements(node.block)) {
-        return invoke
-      }
-      return compileNode(node)`
+    const actionDecl = refResolved(node.action, 'ActionRender.action')
+    const propsBag = this.actionRenderPropsBag(node, actionDecl)
+    const invoke = compileNode(node)`_Scope.${actionDecl.name}.invoke(${propsBag})`
+    if (!isBlockWithStatements(node.block)) {
+      return invoke
+    }
+    return compileNode(node)`
         ${invoke}
         ${this.Block(node.block)}
       `
-    })
   }
 
   /** actionRenderPropsBag emits `{ ParamName: <expr>, … }` keyed by resolved parameter names, or `{}` when
@@ -338,7 +382,7 @@ class RuntimeGen {
   StateUpdate(update: AST.StateUpdate): Compiled {
     const operator = compileNodeProperty(update, 'operator')
     const value = this.Expression(update.value)
-    const name = update.target.root.ref!.name
+    const name = refResolved(update.target.root, 'StateUpdate.target.root').name
     const propertyPath = `[${update.target.properties.map(s => `'${s}'`).join(', ')}]`
     return compileNode(update)`
       _Scope.${name}.updateValue('${operator}', ${value}, ${propertyPath})
@@ -358,13 +402,25 @@ class RuntimeGen {
 
     const bindings = this.streamAllDescendantsOf(block)
       .filterIs(AST.isMemberAccessExpression)
-      .map(ma => ma.root.ref)
+      .map(ma => refResolved(ma.root, 'MemberAccessExpression.root'))
       .filterIs(AST.isAssignmentDeclaration)
       .filter(decl => decl.type === 'state')
       .unique()
 
-    const renderNodes = this.streamBlockStatements(block)
-      .filterIs(AST.isRenderNode)
+    const viewBodyOrdered = block.statements.filter(
+      s => !AST.isQueryDeclaration(s) && !AST.isGuardStatement(s),
+    )
+
+    const queryStmts = block.statements.filter(AST.isQueryDeclaration)
+    const guardStmt = block.statements.find(AST.isGuardStatement)
+    const guardQueries = queryStmts
+    const guardEarly = guardStmt
+      ? this.viewGuardEarlyReturn(
+        viewDeclaration,
+        guardStmt,
+        this.viewGuardLoadingExpr(viewDeclaration, guardQueries),
+      )
+      : compileNoop()
 
     const params = this.ViewParameterList(parameterList)
 
@@ -375,13 +431,106 @@ class RuntimeGen {
             ${this.typeDeclarations(viewDeclaration, declarations)}
             ${compileNodeList(declarations, declaration => this.Declaration(declaration))}
             ${compileNodeList(bindings, decl => this.reactiveBinding(decl))}
+            ${compileNodeList(queryStmts, q => this.QueryDeclaration(q))}
+            ${guardEarly}
             return <>
-              ${compileNodeList(renderNodes, renderNode => this.renderNode(renderNode))}
+              ${compileNodeList(viewBodyOrdered, stmt => this.viewFragmentStatement(stmt))}
             </>
           }
         })
       `
     )
+  }
+
+  /** viewFragmentStatement emits view-ordered JSX / `for` / debugger; skips hoisted declarations and statements handled elsewhere. */
+  viewFragmentStatement(stmt: AST.Statement): Compiled {
+    if (!AST.isViewFragmentStatement(stmt)) {
+      return this.Statement(stmt)
+    }
+    return switch_safe.type(stmt, {
+      ViewRender: n => this.renderNode(n),
+      Injection: n => this.renderNode(n),
+      ForStatement: n => this.ForStatement(n),
+      Debugger: n => this.Debugger(n),
+      QueryDeclaration: () => compileNoop(),
+      GuardStatement: () => compileNoop(),
+      TypeDeclaration: () => compileNoop(),
+      DataDeclaration: () => compileNoop(),
+      AppDeclaration: () => compileNoop(),
+      AssignmentDeclaration: () => compileNoop(),
+      ViewDeclaration: () => compileNoop(),
+      ActionDeclaration: () => compileNoop(),
+    })
+  }
+
+  /** ForStatement maps collection query data to keyed fragments with a per-iteration scope binding. */
+  ForStatement(node: AST.ForStatement): Compiled {
+    const coll = refResolved(node.collection, 'ForStatement.collection')
+    Assert.is(
+      coll,
+      AST.isQueryDeclaration,
+      'ForStatement collection must resolve to a query declaration after validation.',
+      { collection: node.collection.$refText },
+    )
+    const alias = coll.name
+    const binding = node.name
+    const inner = compileNodeList(node.block.statements, stmt => this.viewFragmentStatement(stmt))
+    return compileNode(node)`
+      {TR.ForEachQueryRow(_Scope, ${JSON.stringify(alias)}, ${JSON.stringify(binding)}, (_Scope) => (
+        <>
+          ${inner}
+        </>
+      ))}
+    `
+  }
+
+  /** CreateStatement inserts a row via the active TaoDataClient provider. */
+  CreateStatement(node: AST.CreateStatement): Compiled {
+    const schema = refResolved(node.schema, 'CreateStatement.schema')
+    const entity = refResolved(node.entity, 'CreateStatement.entity')
+    const collection = collectionSlugFromPlural(entity.pluralName)
+    const props = compileIndentedNodeList(node.fields, f => this.createFieldAssignment(f))
+    return compileNode(node)`
+      getTaoData(${JSON.stringify(schema.name)}).insert(${JSON.stringify(collection)}, {
+        ${props}
+      })
+    `
+  }
+
+  /** createFieldAssignment emits one object property for `create { … }`. */
+  private createFieldAssignment(field: AST.CreateFieldAssignment): Compiled {
+    const key = JSON.stringify(field.field)
+    if (field.value) {
+      return compileNode(field)`${key}: ${this.Expression(field.value)},`
+    }
+    return compileNode(field)`${key}: _Scope.${field.field},`
+  }
+
+  /** viewGuardLoadingExpr emits query-result `isLoading` checks for in-view live queries used by `guard`. */
+  private viewGuardLoadingExpr(anchor: AST.ViewDeclaration, queries: readonly AST.QueryDeclaration[]): Compiled {
+    const aliases = [...new Set(queries.map(q => q.name).filter(Boolean))]
+    if (aliases.length === 0) {
+      return compileNode(anchor)`false`
+    }
+    const expr = aliases.map(n => `_Scope.${n}?.isLoading === true`).join(' || ')
+    return compileNode(anchor)`${expr}`
+  }
+
+  /** viewGuardEarlyReturn emits a loading check and JSX fallback from `guard { … }`. */
+  private viewGuardEarlyReturn(
+    anchor: AST.ViewDeclaration,
+    guard: AST.GuardStatement,
+    loadingExpr: Compiled,
+  ): Compiled {
+    const parts = guard.block.statements.filter(s => AST.isViewRender(s) || AST.isInjection(s))
+    const inner = compileNodeList(parts, x => this.renderNode(x as AST.ViewRender | AST.Injection))
+    return compileNode(anchor)`
+      if (${loadingExpr}) {
+        return <>
+          ${inner}
+        </>
+      }
+    `
   }
 
   // `TypeDeclaration`s are compile-time-only and don't participate in the runtime `_Scope`, so they're filtered out upstream.
@@ -425,27 +574,32 @@ class RuntimeGen {
   }
 
   ViewRender(viewRender: AST.ViewRender): Compiled {
-    return compileNodePropertyRef(viewRender, 'view', viewDecl => {
-      if (!AST.isViewDeclaration(viewDecl)) {
-        throwUnexpectedBehaviorError({
-          humanMessage: 'ViewRender callee must resolve to a view declaration after validation.',
-          cause: new Error('CodegenInvariantError'),
-        })
-      }
-      const argumentList = this.viewRenderArgumentList(viewRender, viewDecl)
-      const scopeProp = this.viewScopeProp(viewDecl)
-      if (!isBlockWithStatements(viewRender.block)) {
-        return compileNode(viewRender)`
-          <${viewDecl.name}${scopeProp} ${argumentList}/>
-        `
-      } else {
-        return compileNode(viewRender)`
-          <${viewDecl.name}${scopeProp} ${argumentList}>
-            ${compileNodeList(viewRender.block.statements, stmt => this.viewRenderBlockStatement(stmt))}
-          </${viewDecl.name}>
-        `
-      }
-    })
+    return compileNodePropertyRef(
+      viewRender,
+      'view',
+      viewDecl => {
+        Assert.is(
+          viewDecl,
+          AST.isViewDeclaration,
+          'ViewRender callee must resolve to a view declaration after validation.',
+          { callee: viewRender.view.$refText },
+        )
+        const argumentList = this.viewRenderArgumentList(viewRender, viewDecl)
+        const scopeProp = this.viewScopeProp(viewDecl)
+        if (!isBlockWithStatements(viewRender.block)) {
+          return compileNode(viewRender)`
+            <${viewDecl.name}${scopeProp} ${argumentList}/>
+          `
+        } else {
+          return compileNode(viewRender)`
+            <${viewDecl.name}${scopeProp} ${argumentList}>
+              ${compileNodeList(viewRender.block.statements, stmt => this.viewRenderBlockStatement(stmt))}
+            </${viewDecl.name}>
+          `
+        }
+      },
+      { requireResolved: true, diagnosticLabel: 'ViewRender.view' },
+    )
   }
 
   viewRenderBlockStatement(stmt: AST.Statement): Compiled {
@@ -458,6 +612,9 @@ class RuntimeGen {
     }
     if (AST.isInjection(stmt)) {
       return compileNode(stmt)`{${this.Injection(stmt)}}`
+    }
+    if (AST.isForStatement(stmt)) {
+      return this.ForStatement(stmt)
     }
     return this.Statement(stmt)
   }
@@ -530,7 +687,7 @@ class RuntimeGen {
   }
 
   Injection(injection: AST.Injection): Compiled {
-    const trimmedTsCodeBlock = compileNodeProperty(injection, 'tsCodeBlock', trimTsFence)
+    const trimmedTsCodeBlock = compileNodeProperty(injection, 'tsCodeBlock', stripTsFenceFromTsCodeBlock)
     return switch_safe.property(injection, 'type', {
       raw: () => (compileNode(injection)`
         ${trimmedTsCodeBlock}
@@ -549,6 +706,103 @@ class RuntimeGen {
     `
   }
 
+  /** GuardStatement only emits from `ViewDeclaration`; file-level guards are rejected by validation. */
+  GuardStatement(_node: AST.GuardStatement): Compiled {
+    return compileNoop()
+  }
+
+  /** QueryDeclaration binds `_Scope.<Alias>` via `getTaoData('Schema').peekQuery` (file) or `useLiveQuery` (view hook). */
+  QueryDeclaration(node: AST.QueryDeclaration): Compiled {
+    const schema = refResolved(node.schema, 'QueryDeclaration.schema')
+    const entity = refResolved(node.entity, 'QueryDeclaration.entity')
+    const collection = collectionSlugFromPlural(entity.pluralName)
+    const firstLit = node.first ? 'true' : 'false'
+    const schemaLit = JSON.stringify(schema.name)
+    const collLit = JSON.stringify(collection)
+    if (AST.isTaoFile(node.$container)) {
+      return compileNode(node)`
+        _Scope.${node.name} = getTaoData(${schemaLit}).peekQuery(${collLit}, { first: ${firstLit} })
+      `
+    }
+    return compileNode(node)`
+      _Scope.${node.name} = getTaoData(${schemaLit}).useLiveQuery(${collLit}, { first: ${firstLit} })
+    `
+  }
+
+  /** dataDeclarationRuntime creates the app-selected provider client and declares the dataset shape at module load. */
+  dataDeclarationRuntime(decl: AST.DataDeclaration): Compiled {
+    const entities = decl.dataStatements.filter(AST.isDataEntityDeclaration)
+
+    return compileNode(decl)`
+      setTaoData(${JSON.stringify(decl.name)}, createTaoDataClient(${
+      JSON.stringify(this.codegenOpts.appProvider.name)
+    }))
+      getTaoData(${JSON.stringify(decl.name)}).declareDataset({
+        entities: {
+          ${compileIndentedNodeList(entities, ent => this.dataEntitySchemaEntry(ent))}
+        },
+        links: {},
+      })
+    `
+  }
+
+  /** dataEntitySchemaEntry emits one `entities` entry for `declareDataset`. */
+  private dataEntitySchemaEntry(entity: AST.DataEntityDeclaration): Compiled {
+    const key = collectionSlugFromPlural(entity.pluralName)
+    const inner = entity.fields
+      .map((f) => ({ f, t: dataFieldToInstantFieldType(f) }))
+      .map(x => `${x.f.name}: ${JSON.stringify(x.t)}`)
+      .join(', ')
+    return compileNode(entity)`${key}: { ${inner} },`
+  }
+
+  /** taoFileAppInits exports a bootstrap hook that opens the data provider then runs compiled `on init` handlers. */
+  taoFileAppInits(taoFile: AST.TaoFile): Compiled {
+    const openCalls = this.taoDataOpenCalls(taoFile)
+    const onInits: AST.OnStatement[] = []
+    for (const stmt of taoFile.statements) {
+      if (AST.isModuleDeclaration(stmt) && AST.isAppDeclaration(stmt.declaration)) {
+        this.collectOnInits(stmt.declaration, onInits)
+      } else if (AST.isAppDeclaration(stmt)) {
+        this.collectOnInits(stmt, onInits)
+      }
+    }
+    if (openCalls.length === 0 && onInits.length === 0) {
+      return compileNode(taoFile)`
+        export function _taoRunAppInits() {}
+      `
+    }
+    return compileNode(taoFile)`
+      export function _taoRunAppInits() {
+        ${openCalls.join('\n')}
+        ${compileNodeList(onInits, n => this.Block(n.handler.block))}
+      }
+    `
+  }
+
+  /** taoDataOpenCalls emits provider `open(...)` calls for every data block in this Tao module. */
+  private taoDataOpenCalls(taoFile: AST.TaoFile): string[] {
+    const calls: string[] = []
+    for (const stmt of taoFile.statements) {
+      const decl = AST.isModuleDeclaration(stmt) ? stmt.declaration : stmt
+      if (!AST.isDataDeclaration(decl)) {
+        continue
+      }
+      const name = JSON.stringify(decl.name)
+      calls.push(`getTaoData(${name}).open(${JSON.stringify(this.codegenOpts.appProvider.params)})`)
+    }
+    return calls
+  }
+
+  /** collectOnInits gathers `on init` statements from an app declaration. */
+  private collectOnInits(app: AST.AppDeclaration, out: AST.OnStatement[]): void {
+    for (const st of app.appStatements) {
+      if (AST.isOnStatement(st) && st.event === 'init') {
+        out.push(st)
+      }
+    }
+  }
+
   // Helper functions
   ///////////////////
 
@@ -557,10 +811,6 @@ class RuntimeGen {
   private streamAllDescendantsOf(node: AST.Node): Stream<AST.Node> {
     const iterator = AST.Utils.streamAllContents(node).iterator()
     return Stream.fromIterator(iterator)
-  }
-
-  private streamBlockStatements(block: AST.Block): Stream<AST.Statement> {
-    return Stream.fromArray(block.statements)
   }
 }
 
@@ -574,13 +824,38 @@ function isBlockWithStatements(block: AST.Block | undefined): block is BlockWith
   return block !== undefined && block.statements.length > 0
 }
 
+/** collectionSlugFromPlural maps entity plural names (e.g. `People`) to IDB collection keys (e.g. `people`). */
+function collectionSlugFromPlural(pluralName: string): string {
+  if (pluralName.length === 0) {
+    return pluralName
+  }
+  return pluralName.charAt(0).toLowerCase() + pluralName.slice(1)
+}
+
+/** dataFieldToInstantFieldType maps Tao data fields to Instant entity JSON types. */
+function dataFieldToInstantFieldType(field: AST.DataFieldDeclaration): 'string' | 'number' | 'boolean' | 'any' {
+  const ft = field.type
+  if (!ft || ft.primitiveType === undefined) {
+    return 'any'
+  }
+  return switch_safe(ft.primitiveType, {
+    text: () => 'string',
+    number: () => 'number',
+    boolean: () => 'boolean',
+    action: () => 'any',
+    view: () => 'any',
+  })
+}
+
 /** isNestedDeclaration returns true when the declaration lives inside another declaration (not at file/module level). */
 function isNestedDeclaration(decl: AST.Declaration): boolean {
   return AST.isBlock(decl.$container)
 }
 
-/** trimTsFence normalizes ```ts fences to commented markers for embedding. */
-function trimTsFence(content: string) {
-  const fenced = content.replace(/^```ts/g, '\n/* ```ts */\n').replace(/ *```$/g, '\n/* ``` */')
-  return fenced.replace('```ts\n\n', '```ts\n').replace('\n\n/* ``` */', '\n/* ``` */')
+/** stripTsFenceFromTsCodeBlock removes outer ```ts / ``` fences from an embedded TS code block for executable emit. */
+function stripTsFenceFromTsCodeBlock(content: string): string {
+  let s = content.trim()
+  s = s.replace(/^```ts\s*\n?/im, '')
+  s = s.replace(/\n?```\s*$/m, '')
+  return s.trim()
 }

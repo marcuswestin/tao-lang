@@ -1,5 +1,4 @@
-import { AST } from '@parser/parser'
-import { describe, expect, resolveReferences, test } from './test-utils/test-harness'
+import { describe, resolveReferences, test } from './test-utils/test-harness'
 
 describe('scope resolution', () => {
   test('alias reference resolves to alias statement', async () => {
@@ -24,9 +23,7 @@ describe('scope resolution', () => {
     `)
     const view = doc.statements.second.as_ViewDeclaration
     const alias = view.block.statements.second.as_AssignmentDeclaration
-    const val = alias.value.as_MemberAccessExpression
-    expect(val.unwrap().root.ref).toBeDefined()
-    expect(AST.isAssignmentDeclaration(val.unwrap().root.ref)).toBe(true)
+    alias.value.as_MemberAccessExpression.root.match({ $type: 'AssignmentDeclaration' })
   })
 
   test('view parameter resolves as identifier reference', async () => {
@@ -38,9 +35,7 @@ describe('scope resolution', () => {
     `)
     const view = doc.statements.second.as_ViewDeclaration
     const alias = view.block.statements.first.as_AssignmentDeclaration
-    const val = alias.value.as_MemberAccessExpression
-    expect(val.unwrap().root.ref).toBeDefined()
-    expect(AST.isParameterDeclaration(val.unwrap().root.ref)).toBe(true)
+    alias.value.as_MemberAccessExpression.root.match({ $type: 'ParameterDeclaration' })
   })
 
   test('multiple aliases resolve independently', async () => {
@@ -54,8 +49,6 @@ describe('scope resolution', () => {
     `)
     const view = doc.statements.second.as_ViewDeclaration
     const alias = view.block.statements.last.as_AssignmentDeclaration
-    const val = alias.value.as_MemberAccessExpression
-    expect(val.unwrap().root.ref).toBeDefined()
-    expect(AST.isAssignmentDeclaration(val.unwrap().root.ref)).toBe(true)
+    alias.value.as_MemberAccessExpression.root.match({ $type: 'AssignmentDeclaration' })
   })
 })

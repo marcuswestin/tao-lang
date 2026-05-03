@@ -24,4 +24,4 @@ description: Audits code or docs against Tao repo conventions, identifies patter
 ## Validation
 
 - For read-only audits, no test run is required.
-- For executed cleanup, run `./just-agents check` or the narrow package check that covers touched files.
+- For executed cleanup, run `./agent check` or the narrow package check that covers touched files.

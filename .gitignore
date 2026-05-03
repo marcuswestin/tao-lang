@@ -8,3 +8,7 @@ _gen
 _gen-*
 
 backups
+
+TMP_taodev
+
+.claude

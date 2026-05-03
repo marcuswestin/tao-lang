@@ -1,10 +1,11 @@
 import { eachMapping, originalPositionFor, TraceMap } from '@jridgewell/trace-mapping'
 import type { TraceRegion } from '@parser/generate'
-import { afterEach, describe, expect, test } from 'bun:test'
+import { afterEach, describe, test } from 'bun:test'
 
 import { FS } from '@shared'
 import { compileTao } from '../compiler-src/compiler-main'
 import { appendSourceMappingUrlPragma, traceToEncodedSourceMapJson } from '../compiler-src/trace-to-source-map'
+import { defined, expect } from './test-utils/test-harness'
 
 type V3Map = { version: number; file: string; sources: string[]; sourcesContent?: (string | null)[]; mappings: string }
 
@@ -45,18 +46,18 @@ describe('traceToEncodedSourceMapJson', () => {
     const json = traceToEncodedSourceMapJson({ outputAbsolutePath: outTsPath, trace: root })
     const map = JSON.parse(json) as V3Map
 
-    expect(map.version).toBe(3)
-    expect(map.file).toBe('out.tsx')
+    expect(map).toMatchObject({
+      version: 3,
+      file: 'out.tsx',
+      sourcesContent: [taoText],
+    })
     expect(map.sources.length).toBeGreaterThanOrEqual(1)
     expect(map.sources[0]).toMatch(/app\.tao$/)
     expect(map.mappings.length).toBeGreaterThan(0)
-    expect(map.sourcesContent?.[0]).toBe(taoText)
 
     const tracer = new TraceMap(JSON.parse(json))
     const orig = originalPositionFor(tracer, { line: 1, column: 0 })
-    expect(orig.source).toBe(map.sources[0])
-    expect(orig.line).toBe(1)
-    expect(orig.column).toBe(0)
+    expect(orig).toMatchObject({ source: map.sources[0], line: 1, column: 0 })
   })
 
   test('appendSourceMappingUrlPragma appends co-located map reference', () => {
@@ -78,7 +79,7 @@ describe('traceToEncodedSourceMapJson', () => {
     }
 
     const devApp = result.files.find((f) => f.relativePath.endsWith('DevApp.tsx'))
-    expect(devApp?.trace).toBeDefined()
+    expect(devApp).toMatchObject({ trace: defined })
 
     const json = traceToEncodedSourceMapJson({
       outputAbsolutePath: FS.joinPath(FS.tmpdir(), 'DevApp.tsx'),

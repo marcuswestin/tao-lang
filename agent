@@ -1,0 +1,15 @@
+#!/bin/bash
+set -euo pipefail
+
+if [ -x "${HOME}/.local/bin/mise" ]; then
+  eval "$("${HOME}/.local/bin/mise" activate bash)"
+fi
+
+case "${1:-help}" in
+  help|setup|fmt|fix|prep-commit|test|lint|check|gen|build|clean|expo-runtime|compiler|headless-test-runtime|ide-extension|shared|cli|tao|git|git-create-branch)
+    exec just --justfile agent.Justfile "$@"
+    ;;
+  *)
+    exec just --justfile agent.Justfile _run-command "$@"
+    ;;
+esac

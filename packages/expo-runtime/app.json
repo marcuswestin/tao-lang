@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.tao-expo-runtime"
+      "bundleIdentifier": "com.taolang.exporuntimeexampleapp"
     },
     "android": {
       "adaptiveIcon": {
@@ -21,7 +21,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.tao-lang.expo-runtime-example-app"
+      "package": "com.taolang.exporuntimeexampleapp"
     },
     "web": {
       "output": "static",

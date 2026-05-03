@@ -17,14 +17,23 @@ _unstage_changes:
     echo "> Abort successful."
 
 _prep_commit:
-    # Order: clean+build ensures a cold tree; tests skip regen (`TAO_SKIP_GEN=1`) because build already ran `gen`;
-    # `_check` runs lint/typecheck; `fix` runs last so autofixers (fmt, eslint, ts-autofix) can repair anything
-    # `_check` reported without leaving the tree in a "red" state for the human commit step.
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if git diff --quiet --exit-code \
+        && git diff --cached --quiet --exit-code \
+        && [ -z "$(git ls-files --others --exclude-standard)" ]; then
+        echo -e "\n> No repo changes; skipping pre-commit prep.\n"
+        exit 0
+    fi
+
+    # Order: clean+build gives tests a cold generated baseline; `fix` then repairs
+    # source before the final read-only validation phase.
     echo "\n> Clean build artifacts..." && just clean
     echo "> Build everything..." && just build
-    echo "> Run code tests..." && TAO_SKIP_GEN=1 just test
-    echo "> Run pre-commit checks..." && just _check
     echo "> Make auto-fixable changes..." && just fix
+    echo "> Run code tests and pre-commit checks..." && just concurrently-exec-named \
+        "tests" "TAO_SKIP_GEN=1 just test" \
+        "checks" "just _check"
     echo "\n> Pre-commit checks complete. Ready to commit.\n"
 
 _post_commit_unstash:
@@ -40,14 +49,17 @@ _build_all:
     set -euo pipefail
     export TAO_DEPS_BATCHED=1
     just _install_mise_deps
-    (cd packages/shared && just build)
-    (cd packages/parser && just build)
-    (cd packages/formatter && just build)
-    (cd packages/compiler && just build)
+    just concurrently-exec-named \
+        "shared" "cd packages/shared && just build" \
+        "parser" "cd packages/parser && just build"
+    just concurrently-exec-named \
+        "formatter" "cd packages/formatter && just build" \
+        "compiler" "cd packages/compiler && just build"
     (cd packages/tao-cli && just build)
-    (cd packages/headless-test-runtime && just build)
-    (cd packages/expo-runtime && just build)
-    (cd packages/ide-extension && TAO_SKIP_COMPILER_BUILD=1 just build-package-and-install)
+    just concurrently-exec-named \
+        "headless-runtime" "cd packages/headless-test-runtime && just build" \
+        "expo-runtime" "cd packages/expo-runtime && just build" \
+        "ide-extension" "cd packages/ide-extension && TAO_SKIP_COMPILER_BUILD=1 just build"
 
 _x_fix_file_associations:
     brew install duti --quiet

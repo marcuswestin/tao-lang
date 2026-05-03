@@ -92,3 +92,163 @@ describe('codegen — action local parameter types (Phase 3):', () => {
     expect(outDotLocal).toMatch(/Bump\.invoke\(\{[\s\S]*Step:/)
   })
 })
+
+const SNIPPET_INSTANT_DATA_APP = `
+use Text from @tao/ui
+
+data HarnessData {
+  Items Item { T text }
+}
+
+app HarnessApp {
+  provider InstantDB { appId "00000000-0000-0000-0000-000000000001" }
+  ui HarnessRoot
+}
+
+view HarnessRoot {
+  Text "ok"
+}
+`
+
+const STD_LIB_ROOT = FS.resolvePath(FS.joinPath(__dirname, '../../tao-std-lib'))
+
+describe('codegen — app provider selection and overrides:', () => {
+  test('app provider override emits Memory provider registration, memory open params, and no instantdb import', async () => {
+    const tmpDir = FS.mkTmpDir(FS.joinPath(FS.tmpdir(), 'tao-codegen-data-provider-'))
+    const filePath = FS.joinPath(tmpDir, 'app.tao')
+    FS.writeFile(filePath, SNIPPET_INSTANT_DATA_APP)
+    const result = await compileTao({ file: filePath, stdLibRoot: STD_LIB_ROOT, app: { provider: 'Memory' } })
+    if (!result.ok) {
+      throw new Error(`Compile failed:\n${formatParseErrorHumanMessages(result.errorReport)}`)
+    }
+    const out = result.files.map(f => f.content).join('\n')
+    expect(out).toContain('createTaoDataClient("Memory")')
+    expect(out).not.toContain('createTaoDataClient("InstantDB")')
+    expect(out).toContain('getTaoData("HarnessData").open({})')
+    expect(out).not.toMatch(/from '\.\.\/.*instantdb\/instantdb'/)
+  })
+
+  test('default compile uses the app provider statement', async () => {
+    const tmpDir = FS.mkTmpDir(FS.joinPath(FS.tmpdir(), 'tao-codegen-data-provider-'))
+    const filePath = FS.joinPath(tmpDir, 'app.tao')
+    FS.writeFile(filePath, SNIPPET_INSTANT_DATA_APP)
+    const result = await compileTao({ file: filePath, stdLibRoot: STD_LIB_ROOT })
+    if (!result.ok) {
+      throw new Error(`Compile failed:\n${formatParseErrorHumanMessages(result.errorReport)}`)
+    }
+    const out = result.files.map(f => f.content).join('\n')
+    expect(out).toContain('createTaoDataClient("InstantDB")')
+    expect(out).toContain('getTaoData("HarnessData").open({"appId":"00000000-0000-0000-0000-000000000001"})')
+    expect(out).toMatch(/providers\/instantdb\/instantdb/)
+  })
+
+  test('data schema runtime shape includes non-primitive fields for provider insert validation', async () => {
+    const out = await writeAndCompile(`
+      data HarnessData {
+        People Person { Name text }
+        Events Event {
+          Title text,
+          Host Person,
+          Attendees [Person],
+        }
+      }
+      app HarnessApp { ui HarnessRoot }
+      view HarnessRoot { }
+    `)
+    expect(out).toContain('events: { Title: "string", Host: "any", Attendees: "any" }')
+  })
+
+  test('app provider param override replaces provider init params without compiler validation', async () => {
+    const tmpDir = FS.mkTmpDir(FS.joinPath(FS.tmpdir(), 'tao-codegen-data-provider-'))
+    const filePath = FS.joinPath(tmpDir, 'app.tao')
+    FS.writeFile(filePath, SNIPPET_INSTANT_DATA_APP)
+    const result = await compileTao({
+      file: filePath,
+      stdLibRoot: STD_LIB_ROOT,
+      app: { provider: { appId: 'override-app' } },
+    })
+    if (!result.ok) {
+      throw new Error(`Compile failed:\n${formatParseErrorHumanMessages(result.errorReport)}`)
+    }
+    const out = result.files.map(f => f.content).join('\n')
+    expect(out).toContain('createTaoDataClient("InstantDB")')
+    expect(out).toContain('getTaoData("HarnessData").open({"appId":"override-app"})')
+  })
+
+  test('flat dotted app provider param override replaces provider init params', async () => {
+    const tmpDir = FS.mkTmpDir(FS.joinPath(FS.tmpdir(), 'tao-codegen-data-provider-'))
+    const filePath = FS.joinPath(tmpDir, 'app.tao')
+    FS.writeFile(filePath, SNIPPET_INSTANT_DATA_APP)
+    const result = await compileTao({
+      file: filePath,
+      stdLibRoot: STD_LIB_ROOT,
+      app: { 'provider.appId': 'flat-override-app' },
+    })
+    if (!result.ok) {
+      throw new Error(`Compile failed:\n${formatParseErrorHumanMessages(result.errorReport)}`)
+    }
+    const out = result.files.map(f => f.content).join('\n')
+    expect(out).toContain('createTaoDataClient("InstantDB")')
+    expect(out).toContain('getTaoData("HarnessData").open({"appId":"flat-override-app"})')
+  })
+
+  test('multiple data declarations keep distinct provider clients', async () => {
+    const tmpDir = FS.mkTmpDir(FS.joinPath(FS.tmpdir(), 'tao-codegen-data-provider-'))
+    const filePath = FS.joinPath(tmpDir, 'app.tao')
+    FS.writeFile(
+      filePath,
+      `
+      data FirstData {
+        FirstItems FirstItem { T text }
+      }
+      data SecondData {
+        SecondItems SecondItem { T text }
+      }
+      query FirstData get FirstItem as FirstRows
+      query SecondData get SecondItem as SecondRows
+      app HarnessApp { ui HarnessRoot }
+      view HarnessRoot { }
+    `,
+    )
+    const result = await compileTao({ file: filePath, stdLibRoot: STD_LIB_ROOT })
+    if (!result.ok) {
+      throw new Error(`Compile failed:\n${formatParseErrorHumanMessages(result.errorReport)}`)
+    }
+    const out = result.files.map(f => f.content).join('\n')
+    expect(out).toContain('setTaoData("FirstData", createTaoDataClient("Memory"))')
+    expect(out).toContain('setTaoData("SecondData", createTaoDataClient("Memory"))')
+    expect(out).toContain('getTaoData("FirstData").peekQuery("firstItems"')
+    expect(out).toContain('getTaoData("SecondData").peekQuery("secondItems"')
+    expect(out).toContain('getTaoData("FirstData").open({})')
+    expect(out).toContain('getTaoData("SecondData").open({})')
+  })
+
+  test('bootstrap runs init hooks for imported Tao modules', async () => {
+    const tmpDir = FS.mkTmpDir(FS.joinPath(FS.tmpdir(), 'tao-codegen-data-provider-'))
+    const mainPath = FS.joinPath(tmpDir, 'app.tao')
+    FS.writeFile(
+      FS.joinPath(tmpDir, 'db.tao'),
+      `
+      share data SharedData {
+        Items Item { T text }
+      }
+    `,
+    )
+    FS.writeFile(
+      mainPath,
+      `
+      use SharedData from ./db
+      query SharedData get Item as Rows
+      app HarnessApp { ui HarnessRoot }
+      view HarnessRoot { }
+    `,
+    )
+    const result = await compileTao({ file: mainPath, stdLibRoot: STD_LIB_ROOT })
+    if (!result.ok) {
+      throw new Error(`Compile failed:\n${formatParseErrorHumanMessages(result.errorReport)}`)
+    }
+    const bootstrap = result.files.find(f => f.relativePath === result.entryRelativePath)?.content ?? ''
+    expect(bootstrap).toContain('_taoRunAppInits0()')
+    expect(bootstrap).toContain('_taoRunAppInits1()')
+  })
+})

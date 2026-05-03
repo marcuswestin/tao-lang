@@ -3,4 +3,5 @@ import "../shared/just/all-imports.just"
 build: _bun_deps
 
 sort-package-json-files:
-    bunx sort-package-json ../../packages/*/package.json
+    mkdir -p ../../.builds/tmp
+    TMPDIR="$(pwd)/../../.builds/tmp" bunx sort-package-json ../../packages/*/package.json

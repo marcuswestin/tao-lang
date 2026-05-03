@@ -1,6 +1,10 @@
 import { FS } from '@shared'
 import { compiledScenarioTaoAppBootstrapRelativePath } from '@shared/TaoPaths'
-import { createCompiledTaoScenarioAdapter, renderCompiledTaoApp } from '@shared/testing'
+import {
+  createCompiledTaoScenarioAdapter,
+  renderCompiledTaoApp,
+  type RenderCompiledTaoAppResult,
+} from '@shared/testing'
 import * as RNTesting from '@testing-library/react-native'
 import { type ComponentType, createElement } from 'react'
 import {
@@ -17,19 +21,13 @@ export {
   regenerateAllHeadlessScenarioOutputs,
 } from './headless-compile'
 
-type CompiledAppModule = {
-  default: ComponentType
-}
-
-type RenderCompiledAppResult = RNTesting.RenderResult & {
-  compiledModule: CompiledAppModule
-  pressVisibleText(text: string): void
-}
+type RenderCompiledAppResult = RenderCompiledTaoAppResult & RNTesting.RenderResult
 
 const runtimeTestingDeps = {
   cleanup: () => RNTesting.cleanup(),
   render: (defaultExport: unknown) => RNTesting.render(createElement(defaultExport as ComponentType)),
   fireEvent: RNTesting.fireEvent,
+  waitFor: RNTesting.waitFor,
 }
 
 /** createHeadlessScenarioAdapter builds a `CompiledTaoScenarioAdapter` that compiles `${scenarioDir}/${scenarioName}.tao` into the stable
@@ -55,5 +53,5 @@ export function createHeadlessScenarioAdapter() {
 export function renderCompiledHeadlessTaoApp(
   outputPath = headlessDefaultCompiledAppBootstrapPath,
 ): RenderCompiledAppResult {
-  return renderCompiledTaoApp(outputPath, runtimeTestingDeps) as RenderCompiledAppResult
+  return renderCompiledTaoApp(outputPath, runtimeTestingDeps) as unknown as RenderCompiledAppResult
 }

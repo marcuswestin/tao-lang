@@ -763,3 +763,206 @@ describe('Formatter — action local parameter types (Phase 3):', () => {
     .format(SNIPPET_ACTION_BUMP_AND_USE_DOT_STEP_RAW)
     .equals(SNIPPET_ACTION_BUMP_AND_USE_DOT_STEP_FORMATTED)
 })
+
+describe('Formatter — data schema:', () => {
+  testFormatter('formats minimal data block')
+    .format(`data    MyData   {  }`)
+    .equals(`
+      data MyData { }
+    `)
+
+  testFormatter('formats app provider block')
+    .format(`
+      app  MyApp {
+      provider   InstantDB   {  appId    "test-app"   }
+      ui Root
+      }
+    `)
+    .equals(`
+      app MyApp {
+          provider InstantDB {
+              appId "test-app"
+          }
+          ui Root
+      }
+    `)
+
+  testFormatter('formats data-scoped type declaration')
+    .format(`
+      data  MyData {
+      type   Status   is    text
+      }
+    `)
+    .equals(`
+      data MyData {
+          type Status is text
+      }
+    `)
+
+  testFormatter('formats entity with fields and commas')
+    .format(`
+      data  MyData {
+      Events  Event {
+      Title    text ,
+      Ordering    number ,
+      }
+      }
+    `)
+    .equals(`
+      data MyData {
+          Events Event {
+              Title text,
+              Ordering number,
+          }
+      }
+    `)
+
+  testFormatter('formats entity with field metadata')
+    .format(`
+      data  MyData {
+      People  Person {
+      Email   text  optional   unique ,
+      Status   text  default   "going" ,
+      }
+      }
+    `)
+    .equals(`
+      data MyData {
+          People Person {
+              Email text optional unique,
+              Status text default "going",
+          }
+      }
+    `)
+
+  testFormatter('formats entity with to-many array field')
+    .format(`
+      data  MyData {
+      Events Event { Title text }
+      People  Person {
+      Events   [  Event  ] ,
+      }
+      }
+    `)
+    .equals(`
+      data MyData {
+          Events Event {
+              Title text
+          }
+          People Person {
+              Events [Event],
+          }
+      }
+    `)
+
+  testFormatter('formats shorthand fields')
+    .format(`
+      data  MyData {
+      Events Event { Title text }
+      People Person { Name text }
+      Rsvps  Rsvp {
+      Event ,
+      Person ,
+      }
+      }
+    `)
+    .equals(`
+      data MyData {
+          Events Event {
+              Title text
+          }
+          People Person {
+              Name text
+          }
+          Rsvps Rsvp {
+              Event,
+              Person,
+          }
+      }
+    `)
+
+  testFormatter('formats full target app data block')
+    .format(`
+      data MeetupData {
+      type Status is text
+      People Person {
+      Name   text,
+      Email  text optional unique,
+      Events [Event],
+      Rsvps  [Rsvp],
+      }
+      Events Event {
+      Title text,
+      Host Person,
+      Ordering number,
+      Rsvps [Rsvp],
+      }
+      Rsvps Rsvp {
+      Event,
+      Person,
+      Status default "going",
+      }
+      }
+    `)
+    .equals(`
+      data MeetupData {
+          type Status is text
+          People Person {
+              Name text,
+              Email text optional unique,
+              Events [Event],
+              Rsvps [Rsvp],
+          }
+          Events Event {
+              Title text,
+              Host Person,
+              Ordering number,
+              Rsvps [Rsvp],
+          }
+          Rsvps Rsvp {
+              Event,
+              Person,
+              Status default "going",
+          }
+      }
+    `)
+
+  testFormatter('formats for loop and create statement')
+    .format(`
+      data D {
+        Items Item { N text }
+      }
+      query D get Item as Rows
+      action A {
+        create  D.Item  {  N  "a"  }
+      }
+      view V {
+        for  It  in  Rows  {
+          Text "x"
+        }
+      }
+    `)
+    .equals(`
+
+      data D {
+          Items Item {
+              N text
+          }
+      }
+
+      query D get Item as Rows
+
+      action A {
+          create D.Item {
+              N "a"
+          }
+      }
+
+      view V {
+          for It in Rows {
+              Text "x"
+          }
+      }
+
+    `)
+})

@@ -1,9 +1,10 @@
 import { toStringAndTrace, type TraceRegion } from '@parser/generate'
 import { Assert, FS } from '@shared'
+import type { TaoAppConfigObject } from './codegen/app/app-config'
 import { getErrorAppString } from './codegen/app/app-gen-error'
 import { generateTypescriptReactNativeApp } from './codegen/app/app-gen-main'
 import { TaoParser } from './langium/parser'
-import { ParseError } from './validation/parse-errors'
+import { type ParseError } from './validation/parse-errors'
 
 export type CompileOutputFile = {
   relativePath: string
@@ -30,6 +31,8 @@ export type CompileResult =
 export type CompileOpts = {
   file: string
   stdLibRoot?: string
+  /** App config overrides, e.g. `{ provider: { appId: "test-db" } }`. */
+  app?: TaoAppConfigObject
 }
 
 /** compileTao parses `opts.file` (optional `stdLibRoot` for imports) and emits RN TypeScript when clean; on error returns
@@ -50,6 +53,7 @@ export async function compileTao(opts: CompileOpts): Promise<CompileResult> {
     parsed.usedFilesASTs,
     entryAbsolutePath,
     opts.stdLibRoot,
+    opts.app ? { app: opts.app } : undefined,
   )
   const files: CompileOutputFile[] = []
   for (const f of generated.fileNodes) {
@@ -64,6 +68,10 @@ export async function compileTao(opts: CompileOpts): Promise<CompileResult> {
     {
       fromRelativePath: FS.joinPath(__dirname, '../../tao-std-lib/tao/tao-runtime'),
       toRelativePath: FS.joinPath('use', '@tao', 'tao-runtime'),
+    },
+    {
+      fromRelativePath: FS.joinPath(__dirname, '../../tao-std-lib/tao/data/providers'),
+      toRelativePath: FS.joinPath('use', '@tao', 'data', 'providers'),
     },
   ]
   return {

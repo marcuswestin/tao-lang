@@ -1,5 +1,10 @@
 import "../shared/just/all-imports.just"
 
+release-prep: _deps prebuild test
+
+prebuild: build install-ios-platform
+    bunx expo prebuild
+
 build: _deps
     # Hermes (expo runner) requires import.meta.url to be defined.
     # It's a hack, and I'd like to make it cleaner.
@@ -8,11 +13,23 @@ build: _deps
 watch-lib: _deps
     just cli watch-lib {{ justfile_directory() }}/_gen-tao-lib
 
-release-prep: _deps build test
-    npx expo prebuild
+install-ios-platform:
+    if command -v xcodebuild >/dev/null; then xcodebuild -downloadPlatform iOS; else echo "xcodebuild not found; skipping iOS platform install"; fi
 
 run: _deps
-    BROWSER="none" bunx expo start --web --ios
+    BROWSER="none" bunx expo start --web --ios --android
+
+web: _deps
+    BROWSER="none" bunx expo start --web
+
+ios: _deps
+    BROWSER="none" bunx expo start --ios
+
+device: _deps install-ios-platform
+    BROWSER="none" bunx expo run:ios --device
+
+android: _deps
+    BROWSER="none" bunx expo start --android
 
 clean:
     rm -rf .expo

@@ -1,3 +1,5 @@
+import type { CompiledTaoWaitForOptions } from './CompiledTaoScenarios'
+
 /** loadCompiledTaoAppModuleFromPath clears `require.cache` for `outputPath`, `require`s it, and returns the module namespace. */
 export function loadCompiledTaoAppModuleFromPath(outputPath: string): { default: unknown } {
   const resolvedModulePath = require.resolve(outputPath)
@@ -46,6 +48,8 @@ export type RuntimeTestingDeps = {
   /** render receives the compiled module's default export (component) and returns the Testing Library screen. */
   render(element: unknown): PressVisibleTextScreen & Record<string, unknown>
   fireEvent: { press(target: unknown): void }
+  /** RTL `waitFor` — used by scenario `assertVisibleText` when UI updates asynchronously (widened so RN Testing Library assignable without a hard `@shared` → RTL type dependency). */
+  waitFor(callback: () => unknown, options?: CompiledTaoWaitForOptions): Promise<unknown>
 }
 
 /** RenderCompiledTaoAppResult is the RTL screen plus the loaded module namespace and {@link attachPressVisibleText} helper. */
@@ -55,6 +59,7 @@ export type RenderCompiledTaoAppResult =
   & {
     compiledModule: { default: unknown }
     pressVisibleText(text: string): void
+    waitFor(callback: () => unknown, options?: CompiledTaoWaitForOptions): Promise<unknown>
   }
 
 /** renderCompiledTaoApp loads the module at `outputPath` (cache-bust `require`), runs `cleanup`, `render(default)`, and merges `pressVisibleText`. */
@@ -66,5 +71,7 @@ export function renderCompiledTaoApp(outputPath: string, deps: RuntimeTestingDep
     ...screen,
     compiledModule,
     ...attachPressVisibleText(screen, deps.fireEvent),
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- RTL `waitFor` does not rely on `this` from `deps`.
+    waitFor: deps.waitFor,
   }
 }

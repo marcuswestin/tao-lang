@@ -1,0 +1,14 @@
+---
+description: React hooks naming for Tao std-lib data providers and related codegen
+globs: packages/tao-std-lib/tao/data/providers/**/*.ts,packages/compiler/compiler-src/codegen/app/runtime-gen.ts
+alwaysApply: false
+---
+
+# Tao data + React hooks
+
+- Any **function or method** that invokes React hooks (`useState`, `useEffect`, library `useQuery`, etc.) **must start with `use`** (e.g. `useLiveQuery` on `TaoDataClient` impls).
+- **Do not** put hook calls in methods named `liveQuery`, `fetchLive`, etc.; rename to `use*` or extract a `use*` custom hook.
+- **Codegen** for in-view `query` emits `getTaoData(schema).useLiveQuery(...)` (never `liveQuery` or other non-`use*` hook names).
+- **`peekQuery` / `insert` / `isBusy`** must remain hook-free (sync / effects owned by the caller).
+
+See also: `skills/tao-react-data-hooks/SKILL.md`.

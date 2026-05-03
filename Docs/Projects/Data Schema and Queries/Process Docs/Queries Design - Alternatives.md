@@ -58,13 +58,14 @@ Open: identifier vs keyword disambiguation in clause heads.
 
 ## Provider config placement {#provider-config-placement}
 
-**Preferred:** nested `source Provider { … }` inside `data` + field tags for codegen — [Preferred §1 Schema](./Query%20Design%20-%20Preferred.md#schema).
+**Preferred:** `provider Provider { … }` inside `app`; omitted provider defaults to Memory. Provider params pass through untyped and are validated only by the provider implementation — [Preferred §1 Schema](./Query%20Design%20-%20Preferred.md#schema).
 
-| Option                                                 | Status      | Notes                                                    |
-| ------------------------------------------------------ | ----------- | -------------------------------------------------------- |
-| `source` inside `data` block                           | `preferred` | Matches InstantDB-style app binding in exploratory apps. |
-| Provider config only in TS / sidecar JSON              | `deferred`  | Keeps Tao schema pure; more drift risk.                  |
-| Separate top-level `provider` block referencing `data` | `open`      | Clear separation; two places to edit.                    |
+| Option                                                 | Status       | Notes                                                |
+| ------------------------------------------------------ | ------------ | ---------------------------------------------------- |
+| `provider` inside `app` block                          | `preferred`  | App runtime concern; keeps `data` schema-only.       |
+| `source` inside `data` block                           | `superseded` | Matched early InstantDB sketches but overfit schema. |
+| Provider config only in TS / sidecar JSON              | `deferred`   | Keeps Tao schema pure; more drift risk.              |
+| Separate top-level `provider` block referencing `data` | `open`       | Clear separation; two places to edit.                |
 
 ---
 

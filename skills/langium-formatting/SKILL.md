@@ -22,5 +22,5 @@ description: Implements or reviews Tao Langium formatter behavior with idempoten
 
 ## Validation
 
-- Run `./just-agents test formatter` or a targeted formatter filter.
+- Run `./agent test formatter` or a targeted formatter filter.
 - Include an idempotence case when adding new formatting behavior.

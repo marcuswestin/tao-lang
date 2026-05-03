@@ -31,7 +31,10 @@ export default class TaoFormatter extends AbstractFormatter {
       UseStatement: (n) => this.formatUseStatement(n),
       ModuleDeclaration: (n) => this.formatModuleDeclaration(n),
       AppDeclaration: (n) => this.formatAppDeclaration(n),
-      AppStatement: (n) => this.formatAppStatement(n),
+      AppUiStatement: (n) => this.formatAppUiStatement(n),
+      AppProviderStatement: (n) => this.formatAppProviderStatement(n),
+      AppProviderProperty: (n) => this.formatAppProviderProperty(n),
+      OnStatement: (n) => this.formatOnStatement(n),
       ViewDeclaration: (n) => this.formatViewDeclaration(n),
       ActionDeclaration: (n) => this.formatActionDeclaration(n),
       ViewRender: (n) => this.formatViewRender(n),
@@ -60,6 +63,17 @@ export default class TaoFormatter extends AbstractFormatter {
       PrimitiveTypeRef: (n) => this.formatPrimitiveTypeRef(n),
       NamedTypeRef: (n) => this.formatNamedTypeRef(n),
       DotLocalTypeRef: (n) => this.formatDotLocalTypeRef(n),
+      DataDeclaration: (n) => this.formatDataDeclaration(n),
+      DataTypeDeclaration: (n) => this.formatDataTypeDeclaration(n),
+      DataEntityDeclaration: (n) => this.formatDataEntityDeclaration(n),
+      DataFieldDeclaration: (n) => this.formatDataFieldDeclaration(n),
+      DataFieldType: (n) => this.formatDataFieldType(n),
+      DataFieldMetadata: (n) => this.formatDataFieldMetadata(n),
+      QueryDeclaration: (n) => this.formatQueryDeclaration(n),
+      GuardStatement: (n) => this.formatGuardStatement(n),
+      ForStatement: (n) => this.formatForStatement(n),
+      CreateStatement: (n) => this.formatCreateStatement(n),
+      CreateFieldAssignment: (n) => this.formatCreateFieldAssignment(n),
     })
   }
 
@@ -103,6 +117,65 @@ export default class TaoFormatter extends AbstractFormatter {
     f.keyword('.').append(Formatting.noSpace())
   }
 
+  // Data Schema formatting
+  /////////////////////////
+
+  private formatDataDeclaration(node: AST.DataDeclaration): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('data').append(Formatting.oneSpace())
+    f.property('name').append(Formatting.oneSpace())
+    this._indentBlock(node, 'dataStatements')
+    for (const stmt of node.dataStatements) {
+      f.node(stmt).prepend(Formatting.indent())
+    }
+  }
+
+  private formatDataTypeDeclaration(node: AST.DataTypeDeclaration): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('type').append(Formatting.oneSpace())
+    f.property('name').append(Formatting.oneSpace())
+    f.keyword('is').append(Formatting.oneSpace())
+  }
+
+  private formatDataEntityDeclaration(node: AST.DataEntityDeclaration): void {
+    const f = this.getNodeFormatter(node)
+    f.property('pluralName').append(Formatting.oneSpace())
+    f.property('name').append(Formatting.oneSpace())
+    this._indentBlock(node, 'fields')
+    this._spaceBetweenCommaSeperatedItems(node)
+    for (const field of node.fields) {
+      f.node(field).prepend(Formatting.indent())
+    }
+  }
+
+  private formatDataFieldDeclaration(node: AST.DataFieldDeclaration): void {
+    const f = this.getNodeFormatter(node)
+    if (node.type) {
+      f.property('name').append(Formatting.oneSpace())
+    }
+    if (node.type) {
+      f.property('type').prepend(Formatting.oneSpace())
+    }
+    for (const meta of node.metadata) {
+      f.node(meta).prepend(Formatting.oneSpace())
+    }
+  }
+
+  private formatDataFieldType(node: AST.DataFieldType): void {
+    if (node.arrayRef) {
+      const f = this.getNodeFormatter(node)
+      f.keyword('[').append(Formatting.noSpace())
+      f.keyword(']').prepend(Formatting.noSpace())
+    }
+  }
+
+  private formatDataFieldMetadata(node: AST.DataFieldMetadata): void {
+    if (node.value) {
+      const f = this.getNodeFormatter(node)
+      f.property('kind').append(Formatting.oneSpace())
+    }
+  }
+
   private formatTaoFile(node: AST.TaoFile): void {
     const f = this.getNodeFormatter(node)
     const stmts = node.statements
@@ -134,10 +207,80 @@ export default class TaoFormatter extends AbstractFormatter {
     this._indentBlock(node, 'appStatements')
   }
 
-  private formatAppStatement(node: AST.AppStatement): void {
+  private formatAppUiStatement(node: AST.AppUiStatement): void {
     const f = this.getNodeFormatter(node)
-    // Space after 'ui' keyword: "ui MyView"
     f.keyword('ui').append(Formatting.oneSpace())
+    f.property('ui')
+  }
+
+  private formatAppProviderStatement(node: AST.AppProviderStatement): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('provider').append(Formatting.oneSpace())
+    f.property('provider').append(Formatting.oneSpace())
+    this._indentBlock(node, 'properties')
+  }
+
+  private formatAppProviderProperty(node: AST.AppProviderProperty): void {
+    const f = this.getNodeFormatter(node)
+    f.property('name').append(Formatting.oneSpace())
+  }
+
+  private formatOnStatement(node: AST.OnStatement): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('on').append(Formatting.oneSpace())
+    f.property('event').append(Formatting.oneSpace())
+    f.node(node.handler)
+  }
+
+  private formatQueryDeclaration(node: AST.QueryDeclaration): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('query').append(Formatting.oneSpace())
+    f.property('schema').append(Formatting.oneSpace())
+    f.keyword('get').append(Formatting.oneSpace())
+    if (node.first) {
+      f.keyword('first').append(Formatting.oneSpace())
+    }
+    f.property('entity').append(Formatting.oneSpace())
+    f.keyword('as').append(Formatting.oneSpace())
+    f.property('name')
+  }
+
+  private formatGuardStatement(node: AST.GuardStatement): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('guard').append(Formatting.oneSpace())
+    f.node(node.block)
+  }
+
+  private formatForStatement(node: AST.ForStatement): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('for').append(Formatting.oneSpace())
+    f.property('name').append(Formatting.oneSpace())
+    f.keyword('in').append(Formatting.oneSpace())
+    f.property('collection').append(Formatting.oneSpace())
+    f.node(node.block)
+  }
+
+  private formatCreateStatement(node: AST.CreateStatement): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('create').append(Formatting.oneSpace())
+    f.property('schema')
+    f.keyword('.')
+    f.property('entity').append(Formatting.oneSpace())
+    this._indentBlock(node, 'fields')
+    this._spaceBetweenCommaSeperatedItems(node)
+    for (const field of node.fields) {
+      f.node(field).prepend(Formatting.indent())
+    }
+  }
+
+  private formatCreateFieldAssignment(node: AST.CreateFieldAssignment): void {
+    const f = this.getNodeFormatter(node)
+    if (node.value !== undefined) {
+      f.property('field').append(Formatting.oneSpace())
+      f.node(node.value)
+    } else {
+      f.property('field')
+    }
   }
 
   private formatViewDeclaration(node: AST.ViewDeclaration): void {
@@ -181,6 +324,9 @@ export default class TaoFormatter extends AbstractFormatter {
   }
 
   private formatActionRender(node: AST.ActionRender): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('do').append(Formatting.oneSpace())
+    f.property('action')
     this._spaceBeforeProperty(node, 'argumentList')
     if (node.block) {
       this._spaceBeforeProperty(node, 'block')

@@ -1,5 +1,6 @@
 import * as LegendAppState from '@legendapp/state'
 import * as LegendAppStateReact from '@legendapp/state/react'
+import React from 'react'
 
 import { Assert, switch_Exhaustive } from './runtime-utils'
 import { Views } from './Views'
@@ -48,6 +49,7 @@ export const TR: _TaoRuntime = {
   // Scoping
   BlockScope,
   Declare,
+  ForEachQueryRow,
 
   // Atom Value Expressions
   Literal,
@@ -72,6 +74,7 @@ export const TR: _TaoRuntime = {
 export type _TaoRuntime = {
   BlockScope: typeof BlockScope
   Declare: typeof Declare
+  ForEachQueryRow: typeof ForEachQueryRow
 
   Literal: typeof Literal
   AppState: typeof AppState
@@ -95,6 +98,55 @@ export type _TaoRuntime = {
 function BlockScope<ScopeT extends I.Scope, ReturnT>(parentScope: ScopeT, fn: (scope: ScopeT) => ReturnT) {
   const _Scope = Object.create(parentScope ?? Object.prototype) as ScopeT
   return fn(_Scope)
+}
+
+/** queryResultRowsForListQuery returns `scope[queryAlias].data` when it is an array; otherwise an empty list. */
+function queryResultRowsForListQuery(scope: I.Scope, queryAlias: string): readonly unknown[] {
+  const data = scope[queryAlias]?.data
+  return Array.isArray(data) ? data : []
+}
+
+/** queryForEachRowReactKey prefers a string `id` on object-shaped rows; otherwise falls back to the row index. */
+function queryForEachRowReactKey(item: unknown, fallbackIndex: number): string {
+  if (typeof item === 'object' && item !== null) {
+    const id = Reflect.get(item, 'id')
+    if (typeof id === 'string' && id.length > 0) {
+      return id
+    }
+  }
+  return String(fallbackIndex)
+}
+
+/** castQueryRowToJSValue is the single boundary where a provider row is treated as {@link I.JSValue} for {@link Literal} (Tao-validated query rows are object-shaped). */
+function castQueryRowToJSValue(row: object): I.JSValue {
+  return row as I.JSValue
+}
+
+/** bindQueryRowLiteral exposes the current row on `scope` under `bindingName` as a literal expression. */
+function bindQueryRowLiteral(scope: I.Scope, bindingName: string, row: unknown): void {
+  Assert(row !== null && typeof row === 'object', 'For-each query row must be an object (validator contract).')
+  Object.assign(scope, { [bindingName]: Literal(castQueryRowToJSValue(row)) })
+}
+
+/** ForEachQueryRow maps `scope[queryAlias].data` rows into keyed fragments, binding each row as `Literal` on `bindingName` in a child scope before `renderRow`. */
+function ForEachQueryRow<ScopeT extends I.Scope>(
+  parentScope: ScopeT,
+  queryAlias: string,
+  bindingName: string,
+  renderRow: (rowScope: ScopeT) => I.Rendered,
+): I.Rendered {
+  const rows = queryResultRowsForListQuery(parentScope, queryAlias)
+  return React.createElement(
+    React.Fragment,
+    null,
+    ...rows.map((item, idx) =>
+      BlockScope(parentScope, (rowScope) => {
+        bindQueryRowLiteral(rowScope, bindingName, item)
+        const inner = renderRow(rowScope)
+        return React.createElement(React.Fragment, { key: queryForEachRowReactKey(item, idx) }, inner)
+      })
+    ),
+  )
 }
 
 /**
@@ -126,7 +178,7 @@ class Value {
   }
 }
 
-function Literal(value: I.JSValue) {
+function Literal<T extends I.JSValue>(value: T) {
   return new LiteralExpression(value)
 }
 

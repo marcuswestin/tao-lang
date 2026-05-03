@@ -1,0 +1,60 @@
+use Button, Col, Row, Text from @tao/ui
+
+data MeetupData {
+   type Status is text
+   People Person {
+      Name text,
+      Email text optional unique,
+      Events [Event],
+      Rsvps [Rsvp],
+   }
+   Events Event {
+      Title text,
+      Host Person,
+      Ordering number,
+      Rsvps [Rsvp],
+   }
+   Rsvps Rsvp {
+      Event,
+      Person,
+      Status default "going",
+   }
+}
+
+query MeetupData get first Person as CurrentUser
+
+state EventCount = 0
+
+action CreateEvent {
+   set EventCount += 1
+   create MeetupData.Event {
+      Title "New Event ${ EventCount }",
+      Ordering EventCount,
+      Host CurrentUser
+   }
+}
+
+app DataSchemaApp {
+   provider InstantDB {
+      appId "9faf89c0-c15c-49b4-bf3f-3b5b2cd9a19f"
+      // apiURI "http://localhost:9020"
+      // websocketURI "ws://localhost:9020/runtime/session"
+      apiURI "http://192.168.50.102:9020"
+      websocketURI "ws://192.168.50.102:9020/runtime/session"
+   }
+   ui RootView
+}
+
+view RootView {
+   query MeetupData get Event as MyEvents
+   guard {
+      Text "Loading..."
+   }
+   Button "Create Event ${ EventCount }", CreateEvent
+   Col {
+      Text "Data Schema Test App"
+      for Event in MyEvents {
+         Text "${ Event.Title}"
+      }
+   }
+}

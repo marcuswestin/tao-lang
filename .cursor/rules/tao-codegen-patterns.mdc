@@ -1,0 +1,19 @@
+---
+description: Tao codegen style — grammar unions, refResolved, thin emitted TS vs TR helpers
+globs: packages/compiler/compiler-src/codegen/**/*.ts packages/tao-std-lib/tao/tao-runtime/**/*.ts packages/parser/tao-grammar.langium
+alwaysApply: false
+---
+
+# Tao codegen and runtime patterns
+
+## Grammar unions and dispatch
+
+When codegen branches on a **subset** of `Statement` (or another large union), add a **`type` alias** in `tao-grammar.langium` that lists exactly those alternatives. Then use **`AST.is…`** for the subset and **`switch_safe.type`** for an **exhaustive** handler map. Avoid long chains of unrelated `if (AST.is…)` checks that are easy to extend incorrectly.
+
+## Resolved references
+
+Cross-references that validation guarantees must be linked should use **`refResolved`** from `compiler-src/codegen/codegen-util.ts` instead of `node.x.ref` followed by null checks and `compileNoop()`. A missing `.ref` after validation is an internal error (`throwUnexpectedBehaviorError`), not silent omission.
+
+## Emitted code vs `TR`
+
+Generated TypeScript should **mirror Tao structure** and delegate mechanics to **`TR.*`** in `tao-std-lib` `tao-runtime` where it improves clarity (loops, keyed lists, scope wiring, etc.). Aim for readable emitted modules—**high-level assembly** calling runtime **building blocks**—not inlined control-flow that belongs in the runtime library.

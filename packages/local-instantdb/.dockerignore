@@ -1,0 +1,8 @@
+*
+!Dockerfile.instant
+!vendor/
+vendor/**
+!vendor/instant/
+!vendor/instant/server/
+!vendor/instant/server/deps.edn
+!vendor/instant/server/build.clj

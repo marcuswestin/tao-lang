@@ -3,7 +3,10 @@ import {
   appendSourceMappingUrlPragma,
   type CompileOutputFile,
   compileTao,
+  mergeTaoAppConfig,
+  parseAppConfigAssignment,
   resolveTaoRuntimeBootstrapAbsolutePath,
+  type TaoAppConfigObject,
   traceToEncodedSourceMapJson,
 } from '@compiler'
 import { FS, TaoError } from '@shared'
@@ -30,14 +33,15 @@ export function taoCliMain() {
     .option('--watch', 'Watch the file and recompile when it changes')
     .option('--verbose', 'Verbose output', false)
     .option('--std-lib-root <path>', 'The root directory of the standard library', (value) => FS.resolvePath(value))
-    .action(async (path, { watch, verbose, runtimeDir, stdLibRoot }) => {
+    .option('--app <assignment>', 'Override an app config key, e.g. --app provider.appId=value', collectAppOverride, {})
+    .action(async (path, { watch, verbose, runtimeDir, stdLibRoot, app }) => {
       hci.setVerbose(verbose)
       await hci.wrapExecution(async () => {
         /** compileAndWrite runs `TaoSDK_compile` for the path/runtime/std-lib and prints the output path.
          * In watch mode, parse/compiler errors are logged and the process keeps running so `just dev` is not torn down. */
         async function compileAndWrite() {
           hci.verboselyInform(`Compiling...`)
-          const result = await TaoSDK_compile({ path, runtimeDir, stdLibRoot })
+          const result = await TaoSDK_compile({ path, runtimeDir, stdLibRoot, app })
           hci.inform(`Compiled to ${result.outputPath}`)
         }
 
@@ -87,7 +91,7 @@ export function taoCliMain() {
       })
     })
 
-  program.parse(process.argv)
+  program.parse(normalizeAppOverrideArgv(process.argv))
 }
 
 type TaoSDK_compileOpts = {
@@ -96,6 +100,8 @@ type TaoSDK_compileOpts = {
   stdLibRoot?: string
   /** When set (e.g. scenario harnesses), emit bootstrap under this path relative to `runtimeDir` instead of `_gen/tao-app/app-bootstrap.tsx`. */
   outputFileName?: string
+  /** App config overrides, e.g. `{ provider: { appId: "test-db" } }`. */
+  app?: TaoAppConfigObject
 }
 
 type TaoSDK_compileResult = {
@@ -122,7 +128,11 @@ export async function TaoSDK_compile(opts: TaoSDK_compileOpts): Promise<TaoSDK_c
   const targetEmitRoot = FS.dirname(targetOutputPath)
   const stagedOutputPath = FS.resolvePath(stagedEmitRoot, FS.relativePath(targetEmitRoot, targetOutputPath))
 
-  const result = await compileTao({ file: opts.path, stdLibRoot: opts.stdLibRoot })
+  const result = await compileTao({
+    file: opts.path,
+    stdLibRoot: opts.stdLibRoot,
+    app: opts.app,
+  })
   if (!result.ok) {
     FS.writeFile(stagedOutputPath, result.code)
     replaceTargetEmitRoot(stagedEmitRoot, targetEmitRoot)
@@ -141,6 +151,42 @@ export async function TaoSDK_compile(opts: TaoSDK_compileOpts): Promise<TaoSDK_c
 
   replaceTargetEmitRoot(stagedEmitRoot, targetEmitRoot)
   return { outputPath: targetOutputPath, files: emitFiles }
+}
+
+/** collectAppOverride parses repeatable `--app key=value` CLI assignments into a merged app config object. */
+function collectAppOverride(value: string, previous: TaoAppConfigObject): TaoAppConfigObject {
+  try {
+    return mergeTaoAppConfig({ app: previous }, parseAppConfigAssignment(value)).app
+  } catch {
+    throwUserInputRejectionError(`Invalid --app override '${value}'. Expected key=value.`)
+  }
+}
+
+/** normalizeAppOverrideArgv converts `--app.provider.key=value` into Commander’s repeatable `--app provider.key=value` form. */
+function normalizeAppOverrideArgv(argv: string[]): string[] {
+  const out: string[] = []
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i]!
+    if (!arg.startsWith('--app.')) {
+      out.push(arg)
+      continue
+    }
+    const raw = arg.slice('--app.'.length)
+    const eq = raw.indexOf('=')
+    out.push('--app')
+    if (eq >= 0) {
+      out.push(raw)
+      continue
+    }
+    const value = argv[i + 1]
+    if (value === undefined) {
+      out.push(raw)
+      continue
+    }
+    out.push(`${raw}=${value}`)
+    i++
+  }
+  return out
 }
 
 /** replaceTargetEmitRoot swaps the staged generated tree into the runtime output location. */

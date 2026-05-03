@@ -24,4 +24,4 @@ description: Reviews changed code for bugs, regressions, missing tests, and mean
 ## Validation
 
 - A review can be read-only.
-- If the user asks for fixes after review, run the relevant `./just-agents` checks for touched areas before declaring done.
+- If the user asks for fixes after review, run the relevant `./agent` checks for touched areas before declaring done.

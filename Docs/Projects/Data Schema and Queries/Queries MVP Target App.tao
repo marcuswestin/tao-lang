@@ -1,0 +1,188 @@
+// This app is the target for the Queries MVP.
+// Let's get it to compile and run.
+
+// Data Schema
+//////////////
+
+data MeetupData {
+  // MVP Defer: Enum types
+  // type Status is "going" | "maybe" | "no"
+  type Status is text
+
+  // Entities are defined by both Plural and Singular.
+  // This is used in queries to query the plural, but
+  // e.g map and filter over the singular.
+  // Also, this allows for natural query result names.
+  People Person {
+    Name   text,
+    Email  text optional unique,
+    Events [Event], // infer: inverse of Event.Host?
+    Rsvps  [Rsvp],  // infer: inverse of Rsvp.Person?
+  }
+
+  Events Event {
+    Title text,
+    Host Person,
+    Ordering number,
+    Rsvps [Rsvp], // inferred inverse of Rsvp.Event?
+  }
+
+  Rsvps Rsvp {
+    Event,
+    Person,
+    Status default "going",
+} }
+
+// Auth & App Setup
+///////////////////
+
+query MeetupData get first Person as CurrentUser
+
+app MeetupLite {
+  provider InstantDB { appId "meetup-lite-dev" }
+  ui AppRoot
+  // MVP Defer: Auth/session model
+  // session { CurrentUser is Person from MeetupData.auth }
+}
+
+// App
+//////
+
+use Text, Col from @tao/ui
+
+view AppRoot {
+  guard { Text "Loading MeetupLite..." }
+
+  Col {
+    Text "MeetupLite" { }
+    MyHostedEvents { }
+    MyRsvps { }
+    EventFeed { }
+} }
+
+// // MVP Defer: Global queries
+// query MeetupData get Rsvp
+//   // MVP Defer: count
+//   > count as TotalRsvps
+
+// My events
+////////////
+
+view MyHostedEvents {
+  query MeetupData get Events as MyEvents
+    > where Host is CurrentUser
+    > order Ordering asc
+
+  guard { Text "Loading your events..." }
+
+  Col {
+    Text "Hosted by you"
+    Button "Create Event", CreateEvent // <- Type-matches to OnPress
+    EventsList MyEvents
+} }
+
+state Ordering 0
+
+action CreateEvent {
+  set Ordering += 1
+  alias Title = "Event ${Ordering}"
+  create MeetupData.Event { Title, Ordering, Host CurrentUser }
+}
+
+// My RSVPs
+///////////
+
+view MyRsvps {
+  query MeetupData get Rsvps
+    // MVP Defer: explicit `with` for batching / N+1 control.
+    // Until then: traversing `Rsvp.Event` in `order` / templates implies
+    // loading that edge (provider resolves FK → Event row for sort + display).
+    > where Rsvp.Person is CurrentUser
+    > order Rsvp.Event.Ordering asc
+
+  guard { Text "Loading your RSVPs..." }
+
+  Col {
+    Text "Your RSVPs"
+    for Rsvp in Rsvps {
+      Text "${Rsvp.Event.Title} - ${Rsvp.Status}"
+} } }
+
+// Event feed - public events
+/////////////////////////////
+
+view EventFeed {
+  query MeetupData get Events
+    > where Host is not CurrentUser
+    // TODO: This is probably not doable: > where CurrentUser is not in .Rsvps
+    > order Ordering asc
+    > take 50
+
+  Col {
+    Text "Upcoming events"
+    EventsList Events
+} }
+
+// Shared views
+///////////////
+
+view EventsList Events {
+  for Event in Events {
+    EventCard Event
+} }
+
+view EventCard Event {
+  Col {
+    Text Event.Title
+    Text Event.Ordering
+    Text "Hosted by ${Event.Host.Name}"
+    EventRsvpsList Event
+} }
+
+view EventRsvpsList Event {
+  // Everyone's Rsvps for this event (loop + "others" rows).
+  query MeetupData get Rsvps as EventRsvps
+    > where Rsvp.Event is Event
+    // TODO: Enable `query Event get .Rsvps`
+
+  // At most one row: current user's Rsvp for this event, if any.
+  query MeetupData get Rsvps as MyRsvps
+    > where Rsvp.Event is Event
+    > where Rsvp.Person is CurrentUser
+    > take 1
+  // TODO, Enable:
+  //  query Event get first Rsvp
+  //    > where Rsvp.Person is CurrentUser
+
+  guard { Text "Loading Rsvps..." }
+
+  // First-time Rsvp: no row for CurrentUser yet (others may already have rows).
+  if MyRsvps.isEmpty {
+    // `do` inside actions executes an action
+    Button "Go", action { do CreateRsvp Event, Status "going" }
+    Button "Maybe", action { do CreateRsvp Event, Status "maybe" }
+    Button "Decline", action { do CreateRsvp Event, Status "no" }
+  }
+
+  for Rsvp in EventRsvps {
+    if Rsvp.Person is CurrentUser {
+      Text "You're: " + Rsvp.Status
+      Button "Go", action { do SetRsvpStatus Rsvp, "going" }
+      Button "Maybe", action { do SetRsvpStatus Rsvp, "maybe" }
+      Button "Decline",    action { do SetRsvpStatus Rsvp, "no" }
+    } else {
+      Text "${Rsvp.Person.Name} is ${Rsvp.Status}"
+  } }
+
+  action SetRsvpStatus Rsvp, Status {
+    update Rsvp {
+      Status,
+} } }
+
+action CreateRsvp Event, Status text {
+  create MeetupData.Rsvp {
+    Event,
+    Person CurrentUser,
+    Status,
+  }
+}

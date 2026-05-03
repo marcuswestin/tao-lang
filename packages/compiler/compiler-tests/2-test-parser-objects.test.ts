@@ -1,6 +1,4 @@
-import { AST } from '@parser/parser'
-import { expectHasHumanErrors } from './test-utils/diagnostics'
-import { describe, expect, parseAST, parseASTWithErrors, test } from './test-utils/test-harness'
+import { describe, expect, expectParseHasHumanErrors, parseAST, test } from './test-utils/test-harness'
 
 describe('objects, member access, nested set', () => {
   test('parses object literal and member access', async () => {
@@ -12,8 +10,7 @@ describe('objects, member access, nested set', () => {
       }
     `)
     const render = doc.statements.second.as_ViewDeclaration.block.statements.last.as_ViewRender
-    const arg = render.unwrap().argumentList!.arguments[0]!
-    expect(AST.isMemberAccessExpression(arg)).toBe(true)
+    void render.argumentList.arguments[0].as_MemberAccessExpression
   })
 
   test('set bare state name has root S and empty properties path', async () => {
@@ -53,10 +50,7 @@ describe('objects, member access, nested set', () => {
       }
     `)
     const alias = doc.statements.first.as_ViewDeclaration.block.statements.first.as_AssignmentDeclaration
-    const obj = alias.value.as_ObjectLiteral
-    expect(obj.properties.length).toBe(1)
-    expect(obj.properties.first.name).toBe('x')
-    obj.properties.first.value.as_NumberLiteral.expect('number').toBe(1)
+    alias.value.as_ObjectLiteral.properties.match([{ name: 'x', value: { $type: 'NumberLiteral', number: 1 } }])
   })
 
   test('parses multi-property object literal', async () => {
@@ -79,7 +73,7 @@ describe('objects, member access, nested set', () => {
     `)
     const view = doc.statements.first.as_ViewDeclaration
     const inner2w = view.block.statements.first.as_AssignmentDeclaration.value.as_ObjectLiteral.properties.first.value
-    expect(AST.isObjectLiteral(inner2w.as_ObjectLiteral.unwrap())).toBe(true)
+    void inner2w.as_ObjectLiteral
     const inner3a = view.block.statements.second.as_AssignmentDeclaration.value.as_ObjectLiteral.properties.first.value
       .as_ObjectLiteral
     const inner3b = inner3a.properties.first.value.as_ObjectLiteral
@@ -150,12 +144,11 @@ describe('objects, member access, nested set', () => {
   })
 
   test('empty object literal `{ }` does not parse as ObjectLiteral (requires at least one property)', async () => {
-    const errors = await parseASTWithErrors(`
+    await expectParseHasHumanErrors(`
       view V {
         alias E = { }
       }
     `)
-    expectHasHumanErrors(errors)
   })
 
   test('object literal in alias value position parses as ObjectLiteral AST', async () => {
@@ -164,7 +157,8 @@ describe('objects, member access, nested set', () => {
         alias O = { a 1 }
       }
     `)
-    const val = doc.statements.first.as_ViewDeclaration.block.statements.first.as_AssignmentDeclaration.unwrap().value
-    expect(val.$type).toBe('ObjectLiteral')
+    doc.statements.first.as_ViewDeclaration.block.statements.first.as_AssignmentDeclaration.value.match({
+      $type: 'ObjectLiteral',
+    })
   })
 })

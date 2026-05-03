@@ -1,12 +1,17 @@
 import { spawnSync, type SpawnSyncReturns } from '../exec'
 import { existsSync } from '../fs'
 
+/** TaoSdkAppConfigObject is the nested app config override shape passed through JSON to `TaoSDK_compile`. */
+export type TaoSdkAppConfigObject = { [key: string]: string | TaoSdkAppConfigObject }
+
 /** TaoSdkCompileSpawnOptsJson is the JSON passed to `TaoSDK_compile` via env for subprocess `bun -e` harnesses. */
 export type TaoSdkCompileSpawnOptsJson = {
   path: string
   runtimeDir: string
   stdLibRoot?: string
   outputFileName?: string
+  /** App config overrides, e.g. `{ provider: { appId: "test-db" } }`. */
+  app?: TaoSdkAppConfigObject
 }
 
 /** Known `process.env` keys used to pass `TaoSdkCompileSpawnOptsJson` into the inline `bun -e` script. */
@@ -77,6 +82,7 @@ type TaoSdkCompileArgs = {
   path: string
   stdLibRoot?: string
   outputFileName?: string
+  app?: TaoSdkAppConfigObject
 }
 
 type CompileOutputOpts = { outputPath: string; runtimeLabel: string }
@@ -93,6 +99,7 @@ export function compileTaoSdkWithBunSync(
       runtimeDir: args.runtimeDir,
       stdLibRoot: args.stdLibRoot,
       outputFileName: args.outputFileName,
+      app: args.app,
     },
     optsEnvVar: args.optsEnvVar,
   })

@@ -1,10 +1,11 @@
-import { resolveTaoRuntimeBootstrapAbsolutePath } from '@compiler/tao-runtime-bootstrap-path'
+import { resolveTaoRuntimeBootstrapAbsolutePath } from '@compiler/tao-compiler-misc'
 import { FS } from '@shared'
 import { compiledScenarioTaoAppBootstrapRelativePath } from '@shared/TaoPaths'
 import {
   compileTaoSdkWithBunSync,
   discoverCompiledTaoScenarios,
   TAO_SDK_COMPILE_OPTS_ENV_HEADLESS,
+  type TaoSdkAppConfigObject,
   type TaoSdkRuntimeCompileResult,
 } from '@shared/testing'
 
@@ -12,6 +13,8 @@ export type CompileOpts = {
   path: string
   stdLibRoot?: string
   outputFileName?: string
+  /** App config overrides, e.g. `{ "provider": { "appId": "test-db" } }`. Omitted keeps the app/provider default (Memory). */
+  app?: TaoSdkAppConfigObject
 }
 
 const runtimeDir = FS.resolvePath(__dirname, '..')
@@ -46,6 +49,7 @@ export function regenerateAllHeadlessScenarioOutputs() {
       path: FS.resolvePath(scenarioDir, `${scenarioName}.tao`),
       stdLibRoot,
       outputFileName,
+      app: scenario.app,
     })
   }
 }
@@ -62,6 +66,7 @@ export function compileTaoForHeadlessRuntime(opts: CompileOpts): TaoSdkRuntimeCo
     path: opts.path,
     stdLibRoot: opts.stdLibRoot,
     outputFileName: opts.outputFileName,
+    app: opts.app,
     outputPath,
     runtimeLabel: 'the headless runtime',
   })

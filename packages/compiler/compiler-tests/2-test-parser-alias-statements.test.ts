@@ -1,5 +1,4 @@
 import { decodeTaoTemplateTextChunk } from '@compiler/codegen/tao-template-text-chunk'
-import { AST } from '@parser/parser'
 import { describe, expect, parseAST, parseASTWithErrors, test } from './test-utils/test-harness'
 
 describe('alias statements', () => {
@@ -35,7 +34,6 @@ describe('alias statements', () => {
     const alias = view.block.statements.first.as_AssignmentDeclaration
     alias.expect('name').toBe('Greeting')
     const tmpl = alias.value.as_StringTemplateExpression.unwrap()
-    expect(tmpl.segments).toHaveLength(1)
     expect(tmpl.segments[0]?.text).toBe('hello')
   })
 
@@ -50,7 +48,6 @@ describe('alias statements', () => {
     const first = view.block.statements.first.as_AssignmentDeclaration
     first.expect('name').toBe('Name')
     const tmpl = first.value.as_StringTemplateExpression.unwrap()
-    expect(tmpl.segments).toHaveLength(1)
     expect(tmpl.segments[0]?.text).toBe('world')
     const second = view.block.statements.second.as_AssignmentDeclaration
     second.expect('name').toBe('Count')
@@ -65,11 +62,13 @@ describe('alias statements', () => {
     const view = doc.statements.first.as_ViewDeclaration
     const alias = view.block.statements.second.as_AssignmentDeclaration
     const tmpl = alias.value.as_StringTemplateExpression.unwrap()
-    expect(tmpl.segments).toHaveLength(3)
-    expect(tmpl.segments[0]?.text).toBe('a ')
-    expect(tmpl.segments[1]?.expression).toBeDefined()
-    expect(AST.isMemberAccessExpression(tmpl.segments[1]!.expression!)).toBe(true)
-    expect(tmpl.segments[2]?.text).toBe(' b')
+    expect(tmpl).toMatchObject({
+      segments: [
+        { text: 'a ' },
+        { expression: { $type: 'MemberAccessExpression' } },
+        { text: ' b' },
+      ],
+    })
   })
 
   test('string template interpolation accepts an object literal expression', async () => {
@@ -81,10 +80,8 @@ describe('alias statements', () => {
     const view = doc.statements.first.as_ViewDeclaration
     const alias = view.block.statements.first.as_AssignmentDeclaration
     const tmpl = alias.value.as_StringTemplateExpression.unwrap()
-    expect(tmpl.segments).toHaveLength(3)
     expect(tmpl.segments[0]?.text).toBe('x ')
-    expect(tmpl.segments[1]?.expression).toBeDefined()
-    expect(AST.isObjectLiteral(tmpl.segments[1]!.expression!)).toBe(true)
+    expect(tmpl.segments[1]).toMatchObject({ expression: { $type: 'ObjectLiteral' } })
     expect(tmpl.segments[2]?.text).toBe(' y')
   })
 
@@ -107,9 +104,7 @@ describe('alias statements', () => {
     const view = doc.statements.first.as_ViewDeclaration
     const alias = view.block.statements.first.as_AssignmentDeclaration
     const tmpl = alias.value.as_StringTemplateExpression.unwrap()
-    const segExpr = tmpl.segments[1]?.expression
-    expect(segExpr).toBeDefined()
-    expect(AST.isMemberAccessExpression(segExpr!)).toBe(true)
+    expect(tmpl.segments[1]).toMatchObject({ expression: { $type: 'MemberAccessExpression' } })
   })
 
   test('string template preserves raw escape sequences in segment text, and decoder unescapes them', async () => {
@@ -122,7 +117,6 @@ describe('alias statements', () => {
     const view = doc.statements.first.as_ViewDeclaration
     const alias = view.block.statements.first.as_AssignmentDeclaration
     const tmpl = alias.value.as_StringTemplateExpression.unwrap()
-    expect(tmpl.segments).toHaveLength(1)
     const raw = tmpl.segments[0]?.text
     expect(raw).toBe('a\\nb\\tc\\\\d\\"e\\$f')
     expect(decodeTaoTemplateTextChunk(raw!)).toBe('a\nb\tc\\d"e$f')
@@ -138,9 +132,7 @@ describe('alias statements', () => {
     `)
     const view = doc.statements.second.as_ViewDeclaration
     view.block.statements.first.as_AssignmentDeclaration.expect('name').toBe('Msg')
-    const st = view.unwrap().block.statements[1]
-    expect(AST.isViewRender(st)).toBe(true)
-    expect((st as AST.ViewRender).view?.ref?.name).toBe('Text')
+    view.block.statements.second.as_ViewRender.view.as_ViewDeclaration.expect('name').toBe('Text')
   })
 
   test('identifier reference in argument', async () => {
@@ -153,8 +145,7 @@ describe('alias statements', () => {
     `)
     const view = doc.statements.second.as_ViewDeclaration
     const render = view.block.statements.second.as_ViewRender
-    const arg = render.argumentList!.arguments[0]!
-    expect(AST.isMemberAccessExpression(arg)).toBe(true)
+    void render.argumentList.arguments[0].as_MemberAccessExpression
   })
 
   test('alias in nested view body', async () => {

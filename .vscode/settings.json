@@ -4,8 +4,8 @@
   "editor.lineHeight": 17,
   // "window.zoomLevel": 1.5, // Monitor extra large
   // "window.zoomLevel": 1.3, // Monitor large
-  // "window.zoomLevel": 1.0, // Monitor medium
-  "window.zoomLevel": 0.15, // Laptop
+  "window.zoomLevel": 0.8, // Monitor medium
+  // "window.zoomLevel": 0.15, // Laptop
   // Use compiler typescript version, for langium generated code to typecheck properly
   "typescript.tsdk": "packages/compiler/node_modules/typescript/lib",
   // Build extension and restart host (requires extension ryuta46.multi-command).
@@ -27,7 +27,8 @@
     "**/tsconfig.tsbuildinfo": true
   },
   "editor.codeActionsOnSave": {
-    "source.addMissingImports": "explicit"
+    "source.addMissingImports": "explicit",
+    "source.organizeImports": "explicit"
   },
   // Code Formatting: DPrint, by default.
   "editor.formatOnSave": true,

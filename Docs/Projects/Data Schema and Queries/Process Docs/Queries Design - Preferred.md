@@ -19,7 +19,7 @@ Define a **type-safe, backend-agnostic data layer** in Tao that:
 - Models entities and relationships declaratively in a **schema**
 - Keeps schemas separate from UI; **views consume typed values produced by queries**
 - Binds schemas to **providers** (REST, GraphQL, Supabase, InstantDB, …)
-- Maps **schema + queries + mutations** to runtime data systems (e.g. TanStack Query, InstantDB)
+- Maps **schema + queries + data writes** to runtime data systems (e.g. TanStack Query, InstantDB)
 - Supports **code generation** (schema + clients + helpers)
 - Enables **co-located queries** while supporting reuse — _illustrative intent:_ loading something in the spirit of “`User.Posts` filtered by category with fields `Title`, `Category.Name`” (not proposed syntax; placement/reuse forks → [Alternatives](./Query%20Design%20-%20Alternatives.md#query-placement-and-reuse))
 
@@ -36,7 +36,7 @@ data Data {
   type Title is text
 
   Tasks Task {
-    Title is Title
+    Title
     Completed is boolean default false
     Owner is Person
     Tags [Tag]
@@ -61,7 +61,7 @@ data Data {
 - Relationships inferred when unambiguous (see [Relationships](#relationships)).
 - Schema is **purely declarative** — no imperative backend logic in the schema; execution lives in providers and TypeScript injections.
 
-**Provider binding in schema (preferred stance):** A `data` block may include a nested **`source`** (e.g. `source InstantDB { appId "…" }`) plus field metadata (`unique`, `indexed`, `optional`, `default`, cascades) for codegen and provider validation. _Alternatives_ (config only in TS, split files, …) → [Alternatives](./Query%20Design%20-%20Alternatives.md#provider-config-placement).
+**Provider binding in app (preferred stance):** An `app` block may include `provider Name { key "value" }` while `data` stays schema-only. Every app has a provider; omitted provider defaults to Memory. Provider key-value pairs are passed through to provider init untyped, and only provider implementations validate their own params. Field metadata (`unique`, `indexed`, `optional`, `default`, cascades) remains schema metadata for codegen/provider use. _Alternatives_ (config only in TS, split files, …) → [Alternatives](./Query%20Design%20-%20Alternatives.md#provider-config-placement).
 
 ---
 
@@ -79,7 +79,7 @@ Examples: InstantDB → schema + direct APIs; REST → HTTP; GraphQL → operati
 
 ---
 
-### 3. Queries and Mutations (execution boundary) {#queries-and-mutations-boundary}
+### 3. Queries and Data Writes (execution boundary) {#queries-and-writes-boundary}
 
 ```text
 Schema → Provider → Runtime → Views
@@ -125,10 +125,12 @@ Queries may define parameters:
 
 ```tao
 query Data get Tasks for Owner Person as UserTasks
-  > where Owner is Owner
+  > where Owner is ${Owner}
 ```
 
 **Model:** parameters are named, typed, in scope for all clauses, bound into Tao expressions.
+
+For query parameter values, we use ${ ... } just the same as in string interpolation
 
 ---
 
@@ -142,7 +144,7 @@ queryKey = [ schema, collection, parameters, pipeline steps ]
 
 **Requirements:** deterministic, parameter-sensitive, order-sensitive (pipeline).
 
-**Purpose:** cache identity (TanStack Query), invalidation targeting, deduplication. _Bridge TS patterns_ → [Runtime - TanStack Query and InstantDB.md](./Runtime%20-%20TanStack%20Query%20and%20InstantDB.md).
+**Purpose:** feeds the **provider’s runtime library** — e.g. TanStack Query `queryKey` / dedup, InstantDB client subscription and reconciliation — so the same logical query maps to one cached path in that SDK. **Caching itself** is implemented by those libraries (not a separate Tao cache). _Bridge TS patterns_ → [Runtime - TanStack Query and InstantDB.md](./Runtime%20-%20TanStack%20Query%20and%20InstantDB.md).
 
 ---
 
@@ -165,62 +167,87 @@ Produces **derived types**, nested selections, compile-time inference. Phase 1 m
 
 ### 3.6 Async model {#async-model}
 
-All queries return **`Loadable<T>`** with states `loading` | `error(err)` | `ready(T)`.
+#### MVP: `guard` + React Suspense (no generics)
 
-**Principle:** async is **explicit in the type system**. Views handle states before using values.
+The MVP **does not** introduce `Loadable<T>` or any generic wrapper type. Instead, async data loading is handled transparently via **React Suspense** and Tao's `guard` statement.
 
-**Related:** optional `guard`/`check` ergonomics for async and narrowing are **not** finalized here — see [Alternatives](./Query%20Design%20-%20Alternatives.md#loadable-vs-guard-and-check), [Type Design - Alternatives](../Type%20System/Type%20Design%20-%20Alternatives.md#value-guards-and-loadable), and the deferred sketch in [Type Implementation - Execution plan](../Type%20System/Type%20Implementation%20-%20Execution%20plan.md#value-guards-async-loading-missing-defer).
+**`guard` statement semantics:**
 
----
-
-## Mutation Model {#mutation-model}
-
-### 4.1 Mutation shape {#mutation-shape}
-
-**Update (patch-style, Phase 1 preferred):**
+`guard` is a **statement** inside a view, not a wrapper around the view's content. Its body defines the **Suspense fallback**. Everything that appears **below** the `guard` statement in the view is compiled inside a React `<Suspense>` boundary whose `fallback` is the guard body.
 
 ```tao
-mutation ToggleTodo TodoItem Task {
-  Data.Tasks.update TodoItem {
-    Completed not TodoItem.Completed
+view TodoList {
+  query Data get Tasks as AllTasks
+
+  guard { Text "Loading..." }
+
+  Col {
+    each AllTasks as Task {
+      Text Task.Title
+    }
   }
 }
 ```
 
-**Create and delete (first-class alongside patch):**
+Compiles conceptually to:
+
+```tsx
+<Suspense fallback={<Text>Loading...</Text>}>
+  <Col>
+    {AllTasks.map(task => <Text>{task.Title}</Text>)}
+  </Col>
+</Suspense>
+```
+
+If any subview below the guard accesses data that has not yet loaded, React suspends rendering and shows the guard's fallback until the data is ready.
+
+**MVP scope and simplifying assumptions:**
+
+- Only the **bare** `guard { … }` form is supported — **no** `guard <state> { … }` conditional variant.
+- `guard` appears **once** per view, **before** all render statements. These constraints are assumed but not necessarily validated in MVP.
+- `guard` is purely a Suspense boundary; it does not narrow types or match on loading states.
+- There is no explicit `loading` / `error` / `ready` state in the Tao type system at this stage — the runtime handles it.
+
+**Future direction:** a richer async model (explicit loadable states, `guard <state> { … }` matching, error boundaries, etc.) may be introduced in a later phase. Prior exploration of `Loadable<T>`, `guard`/`check` ergonomics, and type-level async is deferred — see [Alternatives](./Query%20Design%20-%20Alternatives.md#loadable-vs-guard-and-check), [Type Design - Alternatives](../Type%20System/Type%20Design%20-%20Alternatives.md#value-guards-and-loadable), and the deferred sketch in [Type Implementation - Execution plan](../Type%20System/Type%20Implementation%20-%20Execution%20plan.md#value-guards-async-loading-missing-defer).
+
+---
+
+## Write Model {#write-model}
+
+### 4.1 Data writes via `create` and `update` in actions {#write-statements}
+
+There is **no `mutation` keyword**. Data writes use `create` and `update` statements inside **actions** (event handlers, callbacks, etc.). Their syntax mirrors `set` — they assign field values on a data entity.
+
+**Update (patch-style):**
 
 ```tao
-mutation AddTodo Owner Person, TodoText text {
-  Data.Tasks.create {
+action ToggleTodo Task {
+  update Task {
+    Completed not Task.Completed
+  }
+}
+```
+
+**Create:**
+
+```tao
+action AddTodo Owner Person, TodoText text {
+  create Data.Tasks {
     Title TodoText
     Owner Owner
   }
 }
-
-mutation DeleteTodo TodoItem Task {
-  Data.Tasks.delete TodoItem
-}
 ```
 
-**Constraints:** `update` / `delete` targets must be mutation parameters in Phase 1; no arbitrary expressions initially. _Command-style / server-named mutations vs patch-only_ → [Alternatives](./Query%20Design%20-%20Alternatives.md#write-model-command-vs-patch).
+`create` and `update` are **statements**, not top-level declarations. They live wherever imperative logic is allowed (actions, event handlers, etc.).
+
+**MVP scope:** `create` and `update` only. No `delete` in MVP — can be added in a later phase. _Command-style / server-named mutations vs patch-only_ → [Alternatives](./Query%20Design%20-%20Alternatives.md#write-model-command-vs-patch).
 
 ---
 
-### 4.2 Mutation return values {#mutation-returns}
+### 4.2 Coherence after writes {#cache-invalidation}
 
-Mutations may return `void`, updated entity, or `Loadable<T>` (provider-dependent). **Direction:** default no implicit return; optional explicit return later.
-
----
-
-### 4.3 Write model {#write-model-summary}
-
-**Preferred Phase 1:** **patch** model (`update` with field expressions). **Command** model (opaque operations) remains possible later — [Alternatives](./Query%20Design%20-%20Alternatives.md#write-model-command-vs-patch).
-
----
-
-### 4.4 Cache invalidation {#cache-invalidation}
-
-Mutations must map to query invalidation or direct cache updates. **Phase 1:** provider/runtime owns strategy; explicit invalidation DSL later — [Alternatives](./Query%20Design%20-%20Alternatives.md#cache-invalidation-strategies).
+`create` / `update` must integrate with how the **provider’s client** keeps reads consistent — e.g. TanStack Query invalidation or optimistic updates, InstantDB transactional / sync updates. Tao generates calls that line up with that SDK; **Phase 1:** no Tao-level cache of its own. Explicit invalidation DSL later — [Alternatives](./Query%20Design%20-%20Alternatives.md#cache-invalidation-strategies).
 
 ---
 
@@ -249,11 +276,13 @@ If multiple relationships exist between the same entities, explicit inverse synt
 Schema
   → Provider binding
   → Generated query layer
-  → Runtime (TanStack / InstantDB / …)
+  → Provider client library (caching + sync live here)
   → Reactive UI
 ```
 
-**Datasource bridge:** Tao generates query structure, query identity (`queryKey` shape), and mutation structure; TypeScript supplies `queryFn`, auth, and provider-specific logic — details in [Runtime - TanStack Query and InstantDB.md](./Runtime%20-%20TanStack%20Query%20and%20InstantDB.md).
+**Caching:** done by the **provider’s runtime/SDK** (TanStack Query’s cache, InstantDB’s client, etc.). Tao’s generated layer invokes those APIs; it does not implement a separate cache.
+
+**Datasource bridge:** Tao generates query structure, stable query identity (for keys / dedup where applicable), and write-call shape; TypeScript supplies `queryFn`, auth, and provider-specific logic — details in [Runtime - TanStack Query and InstantDB.md](./Runtime%20-%20TanStack%20Query%20and%20InstantDB.md).
 
 ---
 
@@ -288,9 +317,9 @@ Single unified pipeline targets may include: InstantDB schema, REST/OpenAPI, Gra
 
 ## Key constraints {#key-constraints}
 
-1. **TanStack Query:** schema-agnostic; key-based caching — expand in [Runtime](./Runtime%20-%20TanStack%20Query%20and%20InstantDB.md).
+1. **Provider clients own caching:** TanStack Query, InstantDB SDK, and similar libraries hold query results and invalidation semantics; Tao [§3.4](#query-identity) supplies stable identity so generated code plugs into them cleanly — [Runtime](./Runtime%20-%20TanStack%20Query%20and%20InstantDB.md).
 2. **Query granularity:** Phase 1 full entities; later projections — [Alternatives](./Query%20Design%20-%20Alternatives.md#query-granularity).
-3. **Caching:** runtime concern; identity from [§3.4](#query-identity).
+3. **No Tao-managed cache:** reads and writes go through the provider runtime; coherence after writes follows that SDK’s patterns ([§4.2](#cache-invalidation)).
 
 ---
 
@@ -302,16 +331,22 @@ The compiler should verify whether a provider supports a query shape and fail ea
 
 ## Implementation phases {#implementation-phases}
 
-### Phase 1 — Minimal system
+### Phase 1 — Minimal system (MVP)
 
 - Schema (entities + relationships + `source` + minimal field metadata)
-- InstantDB provider
-- Basic queries + mutations (patch + create + delete)
-- `Loadable<T>` + view integration
+- Codegen targets the app provider through the thin `TaoDataClient` runtime; InstantDB apps import `@instantdb/*`, while omitted providers default to Memory
+- Basic queries + `create` / `update` write statements in actions
+- View control flow: `for` (iteration), `if`/`else` (conditionals)
+- `guard { … }` Suspense boundaries for async data in views (no `Loadable<T>`, no generics)
+- Fake auth (`query Data get first Person as CurrentUser`); no session model
 
-### Phase 2 — REST + TanStack
+### Phase 2 — Runtime datasource interface + REST/TanStack
 
-- REST provider; query → TanStack mapping; parameters; key derivation; basic projections
+- **Runtime TS interface:** widen the MVP-thin provider contract into a typed datasource contract (`DataSource<Schema>` or similar) with query, mutate, subscribe methods as additional provider families land.
+- Typed query results: map schema entity types through pipeline clauses to output type at the interface boundary.
+- REST provider; query → TanStack Query mapping (`queryKey` + `queryFn`); key derivation from [§3.4](#query-identity).
+- Basic projections / `select { … }`.
+- `Loadable<T>` wrapper type (`loading | error | ready`) or richer `guard` variants — see [§3.6 future direction](#async-model).
 
 ### Phase 3 — Broader backends
 
@@ -325,15 +360,16 @@ The compiler should verify whether a provider supports a query shape and fail ea
 
 ## Summary {#summary}
 
-| Piece     | Role                       |
-| --------- | -------------------------- |
-| Schema    | Entities and relationships |
-| Queries   | Define data requirements   |
-| Providers | Execute data access        |
-| Runtime   | Caching and state          |
-| Views     | Consume typed values       |
+| Piece             | Role                         |
+| ----------------- | ---------------------------- |
+| Schema            | Entities and relationships   |
+| Queries           | Define data requirements     |
+| `create`/`update` | Write data from actions      |
+| Providers         | Execute data access          |
+| Runtime           | Provider SDK (caching, sync) |
+| Views             | Consume typed values         |
 
-**Core invariant:** all data entering views is **fully typed** with **explicit async** behavior (`Loadable<T>`).
+**Core invariant:** all data entering views is **fully typed**; async loading is handled by `guard { … }` Suspense boundaries (MVP) with richer explicit-state models deferred to later phases.
 
 ---
 
@@ -341,12 +377,14 @@ The compiler should verify whether a provider supports a query shape and fail ea
 
 Detailed forks for each bullet live in **[Query Design - Alternatives.md](./Query%20Design%20-%20Alternatives.md)** and the checklist in **Outstanding** there.
 
+**Runtime abstraction (MVP-thin, broader surface deferred):** MVP compiles to a small `TaoDataClient` provider interface for Memory and InstantDB. Phase 2 may widen that into a typed `DataSource<Schema>` contract with query/mutate/subscribe methods for REST/TanStack and other providers. See [Phase 2](#implementation-phases).
+
 **Query and language:** aggregation/grouping; ordering semantics; pagination model; further query-reuse vs co-location strategy.
 
-**Mutation and data flow:** multi-step transactions; optimistic updates; mutation return standardization.
+**Writes and data flow:** `delete` statement; multi-step transactions; optimistic updates; dedicated `mutation` keyword / top-level declarations; write return values.
 
 **Schema and modeling:** ID / primary key strategy; full schema metadata system; relationship inverse syntax when ambiguous.
 
-**Runtime and execution:** advanced invalidation DSL; lazy/eager loading controls; offline/sync; conflict resolution.
+**Runtime and execution:** `Loadable<T>` or richer async model beyond bare `guard`; advanced invalidation DSL; lazy/eager loading controls; offline/sync; conflict resolution.
 
-**Platform and tooling:** authorization (field/row-level); error semantics; migrations; codegen layout; testing generated code.
+**Platform and tooling:** authorization (field/row-level); real auth/session model; error semantics; migrations; codegen layout; testing generated code.

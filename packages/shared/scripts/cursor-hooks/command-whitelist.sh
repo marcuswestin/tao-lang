@@ -21,9 +21,9 @@ function halt_command() {
   exit 2
 }
 
-# Allow when ./just-agents is first, or when Cursor runs "cd <dir> && ./just-agents ..." (so $4 is ./just-agents).
-# Recipes are defined in just-agents.Justfile.
-if_command_lacks "^(\./just-agents |cd[[:space:]]+.+&&[[:space:]]*\./just-agents )" \
-  && halt_command "Only agent commands are allowed. Use ./just-agents <cmd>. See ./just-agents help"
+# Allow when ./agent / bash ./agent is first, or after "cd ... &&" (with optional bash before ./agent).
+# Recipes are defined in agent.Justfile.
+if_command_lacks "^(\./agent |bash[[:space:]]+\./agent |cd[[:space:]]+.+&&[[:space:]]*(\./agent |bash[[:space:]]+\./agent ))" \
+  && halt_command "Only agent commands are allowed. Use ./agent <cmd>. See ./agent help"
 
 echo '{"permission": "allow"}'

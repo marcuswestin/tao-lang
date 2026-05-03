@@ -1,5 +1,6 @@
+export * from './compiler-src/codegen/app/app-config'
 export * from './compiler-src/compiler-main'
 export * from './compiler-src/langium/langium-lsp'
 export * from './compiler-src/langium/tao-services'
-export * from './compiler-src/tao-runtime-bootstrap-path'
+export * from './compiler-src/tao-compiler-misc'
 export * from './compiler-src/trace-to-source-map'

@@ -49,7 +49,7 @@ Open questions (also listed in [Alternatives — Datasource bridge](./Query%20De
 
 **Rough mapping from Tao:**
 
-- Tao `data` + `source InstantDB { … }` → generated InstantDB schema + thin wrappers.
+- Tao `data` + app-level `provider InstantDB { … }` → generated InstantDB schema + thin wrappers.
 - Tao queries → Instant query calls (or equivalent) preserving typed results surfaced as `Loadable<T>` in views.
 - Tao mutations (patch / create / delete) → `transact` / update patterns, plus provider-driven invalidation or sync.
 
@@ -74,3 +74,69 @@ Apps may combine Legend State, TanStack Query, Instant subscriptions, etc. Exact
 - Instant path: follow Instant’s auth/session integration for the chosen major version.
 
 Tao-level `CurrentUser` and session blocks are specified in [Preferred — Authentication](./Query%20Design%20-%20Preferred.md#authentication) and forks in [Alternatives](./Query%20Design%20-%20Alternatives.md#authentication-and-session).
+
+---
+
+## RAW TRANSFER (from `Docs/Tao Lang Roadmap.md` @ git `HEAD`)
+
+Verbatim excerpt: old roadmap lines **618–677**. In the old file this block sat under **App Routing** with the heading `#### Layout: Choice exploration, thinking & justification` — the title was a misnomer; the content is **data sources, schema targets, and provider/driver brainstorming**. Preserved here next to TanStack/Instant runtime notes.
+
+#### Layout: Choice exploration, thinking & justification
+
+- [ ] Design: Data Sources: Declaration, Schema, Queries, Authentication, Offline-first, Providers
+  - Goal:
+    - Authentication
+    - Model definitions
+      - Relations between models
+        - Cascading deletes
+      - Access permissions
+    - Reactive queries
+      - Defined on models?
+    - Mutations
+      - Defined on models?
+      - Do mutations describe the mutation code?
+      - Or do they just specify the endpoints to sync to?
+      - They need to define conflict resolutions. At least "last-write" strategy as a lowest common denominator
+    - Offline first
+      - Realtime sync
+      - Conflict resolutions
+
+  - [ ] Study schema definition targets
+    - [ ] Relational
+    - [ ] Event based
+      - [ ] https://github.com/livestorejs/livestore/blob/main/examples/standalone/web-todomvc/src/livestore/schema.ts
+        - This could map directly to schema definitions!
+      - [ ] A first data driver
+      - [ ] Pick target driver .. tanstack w ElectricDB/TxDB? supabase with powersync? instantdb? zerodb? localStorage/localOnly? https://tanstack.com/db/latest/docs/overview#localstoragecollection
+        - Supabase
+          - Not offline-first
+          - Might be able to get there with watermelonDB or powersync
+        - Tanstack DB
+          - Can persist to ElectricDB, RxDB, or custom via Tanstack Query -> backend.
+        - Tanstack Query
+          - Works by mapping a useQuery => e.g a REST endpoint, GraphQL, etc
+          - Requires manual query invalidation ...
+          - NOT great
+        - oRPC? OpenAPI rpc ...
+          - Live queries? https://orpc.unnoq.com/docs/integrations/tanstack-query#live-query-options
+        - LiveStore?
+          - Event source!
+            - Do I want to support different sorts of databases?
+            - Relational
+            - Eventlog
+            - Etc ..
+            - How is this modeled in the schema?
+              - This is really cool! https://github.com/livestorejs/livestore/blob/main/examples/standalone/web-todomvc/src/livestore/schema.ts
+          - Offline first!
+          - Looks promising maybe?
+          - https://livestore.dev
+        - Prisma?
+          - Hmmm
+      - [ ] app datasource clause
+        - Using a generic bridge interface?
+        - Or does the datasource definition itself generate the code?
+          - THIS is probably easier in the beginning!
+          - Maybe a light mix of both?
+          - Do we even have datasource-specific querying language?
+            - This would be improved supported by type percolation
+      - [ ] Pick another datasource, and make that work too

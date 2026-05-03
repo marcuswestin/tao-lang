@@ -1,5 +1,4 @@
-import { AST } from '@parser/parser'
-import { describe, expect, parseAST, test } from './test-utils/test-harness'
+import { describe, parseAST, test } from './test-utils/test-harness'
 
 describe('dot-local type ref (Phase 2):', () => {
   test('`.Title "x"` parses as TypedLiteralExpression with DotLocalTypeRef', async () => {
@@ -9,26 +8,10 @@ describe('dot-local type ref (Phase 2):', () => {
         Badge .Title "x"
       }
     `)
-    const stmts = doc.unwrap().statements
-    const root = stmts[1]!
-    if (!AST.isViewDeclaration(root)) {
-      return
-    }
-    const render = root.block.statements[0]!
-    expect(AST.isViewRender(render)).toBe(true)
-    if (!AST.isViewRender(render)) {
-      return
-    }
-    const args = render.argumentList?.arguments ?? []
-    expect(args.length).toBe(1)
-    const arg = args[0]!
-    expect(AST.isTypedLiteralExpression(arg)).toBe(true)
-    if (AST.isTypedLiteralExpression(arg)) {
-      expect(AST.isDotLocalTypeRef(arg.type)).toBe(true)
-      if (AST.isDotLocalTypeRef(arg.type)) {
-        expect(arg.type.name).toBe('Title')
-      }
-    }
+    doc.statements.second.as_ViewDeclaration.block.statements.first.as_ViewRender.argumentList.arguments[0]
+      .as_TypedLiteralExpression.match({
+        type: { $type: 'DotLocalTypeRef', name: 'Title' },
+      })
   })
 
   test('`.Count 42` parses with number value', async () => {
@@ -38,21 +21,11 @@ describe('dot-local type ref (Phase 2):', () => {
         Counter .Count 42
       }
     `)
-    const stmts = doc.unwrap().statements
-    const root = stmts[1]!
-    if (!AST.isViewDeclaration(root)) {
-      return
-    }
-    const render = root.block.statements[0]!
-    if (!AST.isViewRender(render)) {
-      return
-    }
-    const arg = render.argumentList?.arguments[0]!
-    expect(AST.isTypedLiteralExpression(arg)).toBe(true)
-    if (AST.isTypedLiteralExpression(arg)) {
-      expect(AST.isDotLocalTypeRef(arg.type)).toBe(true)
-      expect(AST.isNumberLiteral(arg.value)).toBe(true)
-    }
+    doc.statements.second.as_ViewDeclaration.block.statements.first.as_ViewRender.argumentList.arguments[0]
+      .as_TypedLiteralExpression.match({
+        type: { $type: 'DotLocalTypeRef' },
+        value: { $type: 'NumberLiteral', number: 42 },
+      })
   })
 
   test('`.Person { Name "Ro" }` parses with object literal value', async () => {
@@ -63,21 +36,11 @@ describe('dot-local type ref (Phase 2):', () => {
         Profile .Person { Name "Ro" }
       }
     `)
-    const stmts = doc.unwrap().statements
-    const root = stmts[2]!
-    if (!AST.isViewDeclaration(root)) {
-      return
-    }
-    const render = root.block.statements[0]!
-    if (!AST.isViewRender(render)) {
-      return
-    }
-    const arg = render.argumentList?.arguments[0]!
-    expect(AST.isTypedLiteralExpression(arg)).toBe(true)
-    if (AST.isTypedLiteralExpression(arg)) {
-      expect(AST.isDotLocalTypeRef(arg.type)).toBe(true)
-      expect(AST.isObjectLiteral(arg.value)).toBe(true)
-    }
+    doc.statements[2].as_ViewDeclaration.block.statements.first.as_ViewRender.argumentList.arguments[0]
+      .as_TypedLiteralExpression.match({
+        type: { $type: 'DotLocalTypeRef' },
+        value: { $type: 'ObjectLiteral' },
+      })
   })
 
   test('multiple dot-local args parse: `.Title "x", .Subtitle "y"`', async () => {
@@ -87,22 +50,9 @@ describe('dot-local type ref (Phase 2):', () => {
         Badge .Title "x", .Subtitle "y"
       }
     `)
-    const stmts = doc.unwrap().statements
-    const root = stmts[1]!
-    if (!AST.isViewDeclaration(root)) {
-      return
-    }
-    const render = root.block.statements[0]!
-    if (!AST.isViewRender(render)) {
-      return
-    }
-    const args = render.argumentList?.arguments ?? []
-    expect(args.length).toBe(2)
-    for (const arg of args) {
-      expect(AST.isTypedLiteralExpression(arg)).toBe(true)
-      if (AST.isTypedLiteralExpression(arg)) {
-        expect(AST.isDotLocalTypeRef(arg.type)).toBe(true)
-      }
-    }
+    doc.statements.second.as_ViewDeclaration.block.statements.first.as_ViewRender.argumentList.arguments.match([
+      { $type: 'TypedLiteralExpression', type: { $type: 'DotLocalTypeRef' } },
+      { $type: 'TypedLiteralExpression', type: { $type: 'DotLocalTypeRef' } },
+    ])
   })
 })

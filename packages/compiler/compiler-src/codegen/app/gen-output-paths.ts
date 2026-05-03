@@ -21,7 +21,8 @@ export function longestCommonDirectoryPrefix(absolutePaths: string[]): string {
   return FS.dirname(prefix)
 }
 
-/** emitPathUnderTaoApp returns the path relative to the `tao-app/` directory for a Tao source file. */
+/** emitPathUnderTaoApp returns the path relative to the `tao-app/` directory for a Tao source file.
+ * Avoid Tao basenames that match generated support module paths ignoring case (e.g. `InstantDB.tao` vs `instantdb/instantdb.ts`); on case-insensitive hosts both import paths can resolve to the same module. */
 export function emitPathUnderTaoApp(
   sourceAbsolutePath: string,
   projectRoot: string,

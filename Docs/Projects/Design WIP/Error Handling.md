@@ -66,7 +66,7 @@ try (var in = Files.newBufferedReader(Path.of("example.txt"))) {
 } catch (IOException e) {
     throw new RuntimeException("Failed to read file", e);
 } finally {
-    // 
+    //
 }
 ```
 
@@ -115,3 +115,48 @@ const data = load(allocator) catch |err| {
 };
 defer allocator.free(data);
 ```
+
+## Data loading, NaV, guard, and boundary notes (moved)
+
+Moved from `Docs/Tao Lang Roadmap.md` to consolidate language-level error and loading semantics in one place.
+
+- External data may be loading or errored.
+- External data should be type checked at entry.
+- Need a consistent model for missing/loading/error states (often described as NaV in old notes).
+
+### Guard/check direction (unresolved)
+
+Candidate syntax from moved notes:
+
+```tao
+check foo.bar.cat (info) => { ... }
+check foo.bar.cat Missing, Refreshing (info) => { ... }
+guard foo.bar.cat Loading { ... }
+guard foo.bar.cat { ... }
+```
+
+Open choices:
+
+- Prefer `check` or `guard` as the primary keyword.
+- Decide how a guard/check affects downstream type guarantees.
+- Decide halting behavior and whether it is expression-scoped or block-scoped.
+
+### Boundary semantics (unresolved)
+
+Candidate syntax:
+
+```tao
+boundary Missing { <STATEMENTS> }
+guard { ... }
+```
+
+Open questions:
+
+- Do we support explicit boundaries for child halts/errors?
+- Should boundaries preserve previously rendered content while new data is loading or errored?
+- How do boundaries integrate with routing/navigation guards?
+
+## Related docs
+
+- [App Routing and Navigation](App%20Routing%20and%20Navigation.md)
+- [Queries Design - Preferred](../Data%20Schema%20and%20Queries/Process%20Docs/Queries%20Design%20-%20Preferred.md)

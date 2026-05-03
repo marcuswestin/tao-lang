@@ -1,0 +1,66 @@
+name: local-instantdb
+
+services:
+  postgres:
+    image: ghcr.io/instantdb/postgresql:postgresql-16-pg-hint-plan
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - local-instantdb-postgres:/var/lib/postgresql/data
+    command:
+      - postgres
+      - -c
+      - wal_level=logical
+      - -c
+      - max_replication_slots=16
+      - -c
+      - max_wal_senders=16
+      - -c
+      - shared_preload_libraries=pg_hint_plan
+      - -c
+      - random_page_cost=1.1
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  instant:
+    build:
+      context: .
+      dockerfile: Dockerfile.instant
+    restart: unless-stopped
+    working_dir: /app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      NREPL_BIND_ADDRESS: 0.0.0.0
+      WAL_HISTORY_STORAGE: pg
+    command: ["make", "dev-oss"]
+    volumes:
+      - ./vendor/instant/server:/app
+      - local-instantdb-m2:/root/.m2
+      - local-instantdb-gitlibs:/root/.gitlibs
+      - local-instantdb-clojure-cache:/root/.cache
+    ports:
+      - "${INSTANT_PORT}:8888"
+      - "${NREPL_PORT}:6005"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8888/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 40s
+
+volumes:
+  local-instantdb-postgres:
+  local-instantdb-m2:
+  local-instantdb-gitlibs:
+  local-instantdb-clojure-cache:

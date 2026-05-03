@@ -20,6 +20,7 @@ const runtimeTestingDeps = {
   cleanup: () => RNTesting.cleanup(),
   render: (defaultExport: unknown) => RNTesting.render(createElement(defaultExport as CompiledAppComponent)),
   fireEvent: RNTesting.fireEvent,
+  waitFor: RNTesting.waitFor,
 }
 
 /** createExpoScenarioAdapter creates a shared-scenario adapter for the Expo runtime. */
@@ -48,6 +49,7 @@ function compileTaoForExpoRuntime(opts: TaoScenarioAdapterCompileOpts): TaoSdkRu
     path: opts.path,
     stdLibRoot: opts.stdLibRoot,
     outputFileName: opts.outputFileName,
+    app: opts.app,
     outputPath,
     runtimeLabel: 'the Expo runtime',
   })

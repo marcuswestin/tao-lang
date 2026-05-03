@@ -3,20 +3,23 @@ grammar TaoLang
 entry TaoFile:
     statements += Statement*;
 
-Statement: Declaration | ModuleDeclaration | UseStatement | Debugger | Injection | ViewRender | ActionRender | StateUpdate;
+Statement: Declaration | ModuleDeclaration | UseStatement | Debugger | Injection | ViewRender | ActionRender | StateUpdate
+    | QueryDeclaration | GuardStatement | ForStatement | CreateStatement;
 
 
 
 // Shared Types
 ///////////////
 
-type Referenceable = Declaration | ParameterDeclaration;
+type Referenceable = Declaration | ParameterDeclaration | QueryDeclaration | ForStatement;
 
-type ScopeRelevantNode = UseStatement | Declaration | AppDeclaration | ParameterDeclaration;
+type ScopeRelevantNode = UseStatement | Declaration | AppDeclaration | ParameterDeclaration | DataEntityDeclaration | DataTypeDeclaration | QueryDeclaration | ForStatement;
 
-type ViewStatement = ViewRender | Injection | AssignmentDeclaration | BlockDeclaration | Debugger;
-type TopLevelStatement = Declaration | UseStatement | Injection | Debugger;
-type ActionStatement = StateUpdate | Injection | Debugger | AssignmentDeclaration | BlockDeclaration | ActionRender;
+// ViewFragmentStatement groups view-ordered body items handled by `viewFragmentStatement` codegen (exhaustive switch); not every `Statement` is a fragment statement.
+type ViewFragmentStatement = ViewRender | Injection | ForStatement | Debugger | QueryDeclaration | GuardStatement | Declaration;
+type ViewStatement = ViewRender | Injection | AssignmentDeclaration | BlockDeclaration | Debugger | QueryDeclaration | GuardStatement | ForStatement;
+type TopLevelStatement = Declaration | UseStatement | Injection | Debugger | QueryDeclaration;
+type ActionStatement = StateUpdate | Injection | Debugger | AssignmentDeclaration | BlockDeclaration | ActionRender | CreateStatement;
 
 // ArgumentListHost groups the call-site nodes that own an `ArgumentList`. Generic argument-binding logic
 // (see `tao-argument-bindings.ts`) keys off this union, so adding a new host kind (e.g. function calls)
@@ -27,7 +30,7 @@ type ArgumentListHost = ViewRender | ActionRender;
 ////////////////////
 
 RuntimeDeclaration: AppDeclaration | AssignmentDeclaration | BlockDeclaration;
-Declaration: RuntimeDeclaration | TypeDeclaration;
+Declaration: RuntimeDeclaration | TypeDeclaration | DataDeclaration;
 
 PrimitiveType returns string: 'text' | 'number' | 'boolean' | 'action' | 'view';
 
@@ -82,10 +85,76 @@ UseStatement:
 
 AppDeclaration:
     type='app' name=ID '{' appStatements += AppStatement* '}';
+
 AppStatement:
-    ( type='ui' ui=[Referenceable:ID]
-    // | type='root' root=[Declaration:ID]
-    );
+    AppUiStatement | AppProviderStatement | OnStatement;
+
+AppUiStatement:
+    'ui' ui=[Referenceable:ID];
+
+AppProviderStatement:
+    'provider' provider=ID '{' properties+=AppProviderProperty* '}';
+
+AppProviderProperty:
+    name=ID value=StringTemplateExpression;
+
+OnStatement:
+    'on' event=ID handler=ActionExpression;
+
+// Data Schema
+//////////////
+
+// `data Name { … }` declares a schema with data-scoped types and entity declarations.
+// Wired into `Declaration` so it inherits module visibility, duplicate-name, and uppercase checks.
+DataDeclaration:
+    'data' name=ID '{' dataStatements+=DataStatement* '}';
+
+DataStatement: DataTypeDeclaration | DataEntityDeclaration;
+
+// Data-scoped type alias, e.g. `type Status is text`. Shares shape with top-level `TypeDeclaration`
+// but lives inside a `data` block and resolves within that scope.
+DataTypeDeclaration:
+    'type' name=ID 'is' base=TypeReference;
+
+// Entity declaration: `Plural Singular { fields… }`. `pluralName` is the collection name (e.g. `Events`),
+// `name` is the singular (e.g. `Event`) and serves as the referenceable identifier.
+DataEntityDeclaration:
+    pluralName=ID name=ID '{' (fields+=DataFieldDeclaration (',' fields+=DataFieldDeclaration)* ','?)? '}';
+
+QueryDeclaration:
+    'query' schema=[DataDeclaration:ID] 'get' first?='first'? entity=[DataEntityDeclaration:ID] 'as' name=ID;
+
+GuardStatement:
+    'guard' block=Block;
+
+ForStatement:
+    'for' name=ID 'in' collection=[Referenceable:ID] block=Block;
+
+CreateStatement:
+    'create' schema=[DataDeclaration:ID] '.' entity=[DataEntityDeclaration:ID]
+    '{' (fields+=CreateFieldAssignment (',' fields+=CreateFieldAssignment)* ','?)? '}';
+
+CreateFieldAssignment:
+    field=ID value=Expression?;
+
+// Field inside an entity. When `type` is absent, it's a shorthand field: `Event,` means name equals type.
+DataFieldDeclaration:
+    name=ID (type=DataFieldType)? metadata+=DataFieldMetadata*;
+
+// Field type: primitive (`text`, `number`), named reference to an entity/type, or `[Entity]` for to-many.
+// References use `DataFieldTarget` so they resolve to entities and data-scoped types within the same
+// `data` block, as well as top-level declarations.
+DataFieldType:
+    primitiveType=PrimitiveType | '[' arrayRef=[DataFieldTarget:ID] ']' | namedRef=[DataFieldTarget:ID];
+
+DataFieldMetadata:
+    kind=DataFieldMetadataKind (value=Expression)?;
+
+DataFieldMetadataKind returns string: 'optional' | 'unique' | 'default';
+
+// Cross-reference target for data field types: entities and data-scoped types within the same
+// `data` block, plus top-level declarations (for referencing types declared outside the data block).
+type DataFieldTarget = Declaration | DataEntityDeclaration | DataTypeDeclaration;
 
 DeclarationVisibility returns string: 'hide' | 'share' | 'module';
 ModuleDeclaration:
@@ -119,11 +188,12 @@ StateUpdate:
 // Invocation of a declared action from inside another action body, e.g.
 // `do LogEvent Message "submitted", Level "info"`. The leading `do` keyword
 // disambiguates from `ViewRender` (same `Name Arg val …` shape but different
-// callee kind). Argument binding flows through the shared resolver in
-// `tao-argument-bindings.ts`. Optional `block` mirrors `ViewRender` for nested
+// callee kind). The callee cross-ref is restricted to `ActionDeclaration` so
+// `do Bump .Step 3` parses as `do Bump` with a dot-local typed argument (not a
+// qualified callee path). Optional `block` mirrors `ViewRender` for nested
 // action statements after the call.
 ActionRender:
-    'do' action=[Declaration:ID] argumentList=ArgumentList? block=Block?;
+    'do' action=[ActionDeclaration:ID] argumentList=ArgumentList? block=Block?;
 
 // Parameters and Arguments
 ///////////////////////////

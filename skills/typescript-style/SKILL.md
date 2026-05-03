@@ -19,7 +19,8 @@ description: Applies Tao TypeScript style for constructor properties, JSDoc, gen
 4. Use `@shared/*` abstractions when available.
 5. Do not import generated files from main source code.
 6. Use the inferred return type of function calls instead of redeclaring identical local types.
+7. When `@shared/*` is unavailable and the package intentionally targets Bun, prefer Bun-native commands and APIs over Node/npm equivalents.
 
 ## Validation
 
-- Run the narrow package check for touched TypeScript files, or `./just-agents check` for shared/cross-package changes.
+- Run the narrow package check for touched TypeScript files, or `./agent check` for shared/cross-package changes.

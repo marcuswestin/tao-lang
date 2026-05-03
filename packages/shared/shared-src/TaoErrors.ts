@@ -41,7 +41,8 @@ export function throwUserInputRejectionError(humanMessage: string): never {
 }
 
 /** throwUnexpectedBehaviorError throws `UnexpectedBehaviorError` with a cause chain; `humanMessage` is shown to
- * the user when set, otherwise a generic sorry message. Non-`Error` causes are wrapped and serialized into `logInfo`. */
+ * the user when set, otherwise a generic sorry message. Omit `cause` unless passing an existing `Error`; otherwise
+ * non-`Error` causes are wrapped and serialized into `logInfo`, and missing `cause` uses an internal placeholder `Error`. */
 export function throwUnexpectedBehaviorError(context: UnexpectedBehaviorContext): never {
   throw new UnexpectedBehaviorError(context)
 }
@@ -119,7 +120,8 @@ class NotYetImplementedError extends BaseTaoError {
 }
 
 export type UnexpectedBehaviorContext = {
-  cause: unknown
+  /** When set and already an `Error`, becomes the thrown error’s `cause`. Omit at call sites unless rethrowing/wrapping an existing `Error`; other values and `undefined` are normalized inside {@link UnexpectedBehaviorError}. */
+  cause?: unknown
   humanMessage?: string
   logInfo?: Record<string, unknown>
 }
@@ -158,13 +160,15 @@ class UnexpectedBehaviorError extends BaseTaoError {
   ): { cause: Error; logInfo?: Record<string, unknown> } {
     if (opts.cause instanceof Error) {
       return { cause: opts.cause, logInfo: opts.logInfo }
-    } else {
-      const cause = new Error('UnknownUnexpectedBehaviorError')
-      const __unknownUnexpectedBehaviorObject = safeJSONStringifyAdditionalInfo(opts.cause)
-      return {
-        cause,
-        logInfo: { ...opts.logInfo, __unknownUnexpectedBehaviorObject },
-      }
+    }
+    if (opts.cause === undefined) {
+      return { cause: new Error('UnexpectedBehaviorError'), logInfo: opts.logInfo }
+    }
+    const cause = new Error('UnknownUnexpectedBehaviorError')
+    const __unknownUnexpectedBehaviorObject = safeJSONStringifyAdditionalInfo(opts.cause)
+    return {
+      cause,
+      logInfo: { ...opts.logInfo, __unknownUnexpectedBehaviorObject },
     }
   }
 

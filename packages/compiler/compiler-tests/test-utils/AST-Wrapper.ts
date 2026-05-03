@@ -10,6 +10,10 @@ export function wrap<T extends AST.Node>(node: T): Wrapped<T> {
     expect(key: string) {
       return expect((node as Record<string, unknown>)[key])
     },
+    /** match asserts `node` satisfies `shape` via deep partial `toMatchObject` semantics. */
+    match(shape: unknown) {
+      expect(node).toMatchObject(shape as Record<string, unknown>)
+    },
     unwrap() {
       return node
     },
@@ -84,6 +88,13 @@ function wrapArray<T>(array: unknown[]): WrappedArray<T> {
         case 'last':
           expect(target.length > 0, `Array is empty, cannot get .last`).toBe(true)
           return wrapElement(target[target.length - 1])
+        case 'only':
+          expect(target, `Array expected exactly 1 element, got ${target.length}`).toHaveLength(1)
+          return wrapElement(target[0])
+        case 'match':
+          return (shape: unknown[]) => {
+            expect(target).toMatchObject(shape)
+          }
         default: {
           // Wrap numeric index access lazily
           const index = typeof prop === 'string' ? Number(prop) : NaN
@@ -111,11 +122,15 @@ type OwnKeys<T> = Exclude<keyof T, keyof AST.Node>
 type IsUnion<T, U = T> = T extends T ? ([U] extends [T] ? false : true) : never
 type IsSingleType<T> = IsUnion<T> extends true ? false : true
 
-// WrappedArray adds .first and .last accessors to arrays
+// WrappedArray adds .first, .last, and .match accessors to arrays
 type WrappedArray<T> = T[] & {
   readonly first: T
   readonly second: T
   readonly last: T
+  /** only asserts the array has exactly one element and returns that element (wrapped if AST). */
+  readonly only: T
+  /** match asserts the array satisfies `shape` via deep partial `toMatchObject` semantics. */
+  match(shape: readonly unknown[]): void
 }
 
 // WrappedProp strips undefined (optional props are asserted at runtime) then wraps
@@ -139,4 +154,7 @@ export type Wrapped<T extends AST.Node> =
       unwrap(): T
     } & WrappedProps<T>
     : AsGetters<T>)
-  & {}
+  & {
+    /** match asserts the node satisfies `shape` via deep partial `toMatchObject` semantics. */
+    match(shape: unknown): void
+  }

@@ -26,7 +26,8 @@ setup: _setup_git_repo
 # Development
 #############
 
-DEV_APP := "./Apps/Test Apps/Kitchen Sink/Kitchen Sink.tao"
+DEV_APP := "./Apps/Test Apps/Data Schema/Data Schema.tao"
+BUN_TEST_ROOTS := "packages/shared packages/parser packages/formatter packages/compiler packages/tao-cli packages/ide-extension packages/tao-std-lib"
 
 # Run all components in watch mode.
 @dev:
@@ -50,7 +51,7 @@ ensure-repo-clean: _ensure_repo_clean
 # Run tests for whatever directory we're in, with an optional filter
 [no-cd]
 test *FILTER: gen
-    bun test --reporter=dot --test-name-pattern '{{ FILTER }}'
+    bun test {{ BUN_TEST_ROOTS }} --reporter=dot --test-name-pattern '{{ FILTER }}'
     just headless-test-runtime test '{{ FILTER }}'
     cd packages/expo-runtime && just test '{{ FILTER }}'
 
@@ -59,7 +60,7 @@ theadless *FILTER: gen
 
 # Watch tests, but bail on first failure
 bail-watch *FILTER:
-    bun test --watch --no-clear-screen --bail --test-name-pattern '{{ FILTER }}'
+    bun test {{ BUN_TEST_ROOTS }} --watch --no-clear-screen --bail --test-name-pattern '{{ FILTER }}'
 
 # Watch all tests
 watch *FILTER:
@@ -124,6 +125,12 @@ clean:
 clean-full: clean
     find . -name node_modules -type d -prune -exec rm -rf {} +
     (cd packages/expo-runtime && just clean-full)
+
+# Code navigation helpers
+#########################
+
+search PATTERN DIR=".":
+    rg --line-number --no-heading --color=never "{{ PATTERN }}" {{ DIR }} || true
 
 # Package command runners
 # #######################

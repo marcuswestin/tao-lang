@@ -155,7 +155,7 @@ All stages share two invariants:
 - **New:** `packages/compiler/compiler-src/typing/` auxiliary files per stage (e.g. `operators.ts`, `structs.ts`, `subtyping.ts`, `pattern-match.ts`) as the surface grows.
 - **Modify:** `packages/compiler/compiler-src/langium/tao-services.ts` (or generated `*-module.ts` per [Configuration via services](https://langium.org/docs/reference/configuration-services/)) — register Typir / `TaoTypeSystem`.
 - **Modify:** `packages/compiler/package.json` — add `typir`, `typir-langium` (version-aligned with Langium; see [typir-langium](https://www.npmjs.com/package/typir-langium)).
-- **Modify:** `packages/parser/tao-grammar.langium` — starting at Stage 2 every structural stage adds grammar. Regenerate AST with `./just-agents gen`.
+- **Modify:** `packages/parser/tao-grammar.langium` — starting at Stage 2 every structural stage adds grammar. Regenerate AST with `./agent gen`.
 - **Modify:** `packages/formatter/` — each grammar-changing stage updates the formatter and its tests.
 - **Modify:** `packages/compiler/compiler-src/validation/tao-lang-validator.ts` — keep non-type structural rules; **remove** any ad-hoc checks Typir now subsumes.
 - **Modify (Stage 11):** `packages/compiler/.../runtime-gen.ts` and friends.

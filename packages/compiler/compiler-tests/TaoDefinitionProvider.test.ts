@@ -1,5 +1,12 @@
-import { describe, expect, test } from 'bun:test'
-import { MultiFileParseResult, parseMultipleFiles } from './test-utils/test-harness'
+import {
+  defined,
+  describe,
+  expect,
+  expectSingle,
+  MultiFileParseResult,
+  parseMultipleFiles,
+  test,
+} from './test-utils/test-harness'
 
 // getDefinitionAt returns definition links for the given document path and position.
 async function getDefinitionAt(
@@ -25,14 +32,12 @@ describe('TaoDefinitionProvider', () => {
       { stdLibRoot: '/tao-std-lib' },
     )
 
-    const links = await getDefinitionAt(result, '/project/app.tao', 0, 4)
-
-    expect(links).toBeDefined()
-    expect(links).toHaveLength(1)
-    const [link] = links!
-    expect(link.targetUri).toContain('/tao-std-lib/tao/ui/Views.tao')
-    expect(link.targetRange).toBeDefined()
-    expect(link.originSelectionRange).toBeDefined()
+    const link = expectSingle(await getDefinitionAt(result, '/project/app.tao', 0, 4))
+    expect(link).toMatchObject({
+      targetUri: expect.stringContaining('/tao-std-lib/tao/ui/Views.tao'),
+      targetRange: defined,
+      originSelectionRange: defined,
+    })
   })
 
   test('getDefinition on same-module imported name returns link to declaration', async () => {
@@ -41,11 +46,9 @@ describe('TaoDefinitionProvider', () => {
       { path: '/project/other.tao', code: 'view Button { }' },
     ])
 
-    const links = await getDefinitionAt(result, '/project/app.tao', 0, 4)
-
-    expect(links).toBeDefined()
-    expect(links).toHaveLength(1)
-    const [link] = links!
-    expect(link.targetUri).toContain('/project/other.tao')
+    const link = expectSingle(await getDefinitionAt(result, '/project/app.tao', 0, 4))
+    expect(link).toMatchObject({
+      targetUri: expect.stringContaining('/project/other.tao'),
+    })
   })
 })
