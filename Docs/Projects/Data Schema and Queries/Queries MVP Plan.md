@@ -31,131 +31,14 @@ Build the MVP of Tao's data layer: schema, queries, view control flow, and data 
 
 ## Milestones
 
-**Status:** **M1 is complete** (parse, validate, format for `data` blocks; no codegen). **M2 is complete** for the core slice: raw `query` (including **no-`first`** collection form), view `guard`, `data` → **`getTaoData().declareDataset(...)`** + **`getTaoData().open(...)`** (provider params from `app provider`, **Memory** by default), file-level **`peekQuery`** and in-view **`liveQuery`**, guard driven by per-query loading state, codegen + std lib + [`Apps/Test Apps/Data Schema`](../../../Apps/Test%20Apps/Data%20Schema/) as the primary incremental app. **Real InstantDB** runs in **Expo** (Metro) when the app provider is `InstantDB`. **M3 is complete** in toolchain + Data Schema app: **`for`** over list queries, **`create`** in actions, **`getTaoData().insert`**, parser/validator/formatter/codegen tests; **[`scenario.json`](../../../Apps/Test%20Apps/Data%20Schema/scenario.json)** asserts **Create Event** → **New Event 1**. **Harness:** scenarios can pass nested app overrides such as `{ "provider": { "name": "Memory" } }` or `{ "provider": { "appId": "test-db" } }` through `TaoSDK_compile` (and **`tao compile`** via `--app` / `--app.provider.*` flags); generated memory apps import only the Memory provider registration, while Instant apps import `instantdb/instantdb.ts` / `@instantdb/react-native`. Expo Jest shared scenarios still **allow-list** only **Simple test render** so CI does not pull Instant into that path. **M3.5 is complete:** `createTaoDataClient` + provider registration, trimmed redundant schema-name args on **`TaoDataClient`**, removal of legacy **`DbBootstrap` / `InstantDbBootstrap`** `.tao`, validators grouped under [`validation/data/`](../../../packages/compiler/compiler-src/validation/data/), **`app-config`**-driven import/runtime codegen (dropped `tao-runtime-bootstrap-path.ts`). **Prep/build ergonomics:** root **`dprint`** fmt/check runs with **`--incremental=false`**; **`sort-package-json`** uses a repo **`TMPDIR`**; **`_build_all`** runs the IDE extension **`build`** (package only, no local install). **Next:** **M4** (pipeline queries, dotted paths), **M5** (`if`/`else`), **M6** (`update`), **M7** staging app, **M8** literal target app.
+**Status:** M1-M3.5 are complete. The current implementation parses and validates `data` blocks, supports raw queries, view `guard`, list-shaped query aliases, `for`, `create`, app/provider overrides, provider factory registration, and grouped data validators under [`validation/data/`](../../../packages/compiler/compiler-src/validation/data/). The active next milestones are **M4** (pipeline queries and dotted paths), **M5** (`if`/`else`), **M6** (`update`), **M7** (relationship-heavy staging app), and **M8** (literal target app).
 
-**M2 follow-ups (optional):** richer scenario assertions everywhere harnesses support Instant; dedicated codegen test files; tighter TS for query row / `for` bindings; subscribe or lazy-bind file-level **`peekQuery`** so aliases stay fresh after `open` (today **`InstantTaoData.peekQuery`** uses the reactor snapshot without subscribing — fine for fields omitted from `create` until relations ship).
+### Completed milestones
 
-### M1 — Schema: `data` block (grammar + validation + formatter) — **done**
-
-Incremental test app: [`Apps/Test Apps/Data Schema/Data Schema.tao`](../../../Apps/Test%20Apps/Data%20Schema/Data%20Schema.tao) (minimal UI + full `data MeetupData { ... }` shape).
-
-Test app starts with just the `data MeetupData { ... }` block.
-
-New grammar constructs:
-
-- `data Name { ... }` top-level declaration.
-- `provider Provider { key "value" }` inside the app block; omitted provider defaults to Memory.
-- `type Name is base` inside data block (data-scoped type alias).
-- Entity declarations: `Plural Singular { fields... }`.
-- Field types: `text`, `number`, named type refs, `[Entity]` (to-many).
-- Field metadata: `optional`, `unique`, `default expr`.
-- Shorthand fields: `Event,` (name = type, no explicit type).
-
-Work:
-
-- [x] Grammar rules for `data` block and all sub-constructs.
-- [x] Parser generation (`./agent gen`) produces AST nodes.
-- [x] Validator: entity references resolve, relationships consistent (cardinality inference per [Preferred §Relationships](./Process%20Docs/Queries%20Design%20-%20Preferred.md#relationships)), field types resolve, duplicate entity/field checks.
-- [x] Formatter handles `data` blocks.
-- [x] Tests: parser round-trip, validation happy/sad paths.
-
-No codegen yet — just parse, validate, format.
-
-### M2 — Raw queries + `guard` + InstantDB end-to-end — **done** (core)
-
-**Goal:** first **running** InstantDB-backed Tao app: schema + **raw** queries (no `where`, `order`, `take`, or dotted paths in queries) + `guard`, compiled and verified in a real runtime (Expo and/or headless test runtime).
-
-**Reference app (manual porting / shape):** repo [`TMP_taodev/`](../../../TMP_taodev/) — use as the working example for wiring InstantDB in a small app: e.g. [`TMP_taodev/src/lib/db.ts`](../../../TMP_taodev/src/lib/db.ts), [`TMP_taodev/src/instant.schema.ts`](../../../TMP_taodev/src/instant.schema.ts), app bootstrap. Tao codegen should converge on the same responsibilities (`init` + schema, **`useQuery`** in views) without copying the Next.js app structure verbatim; Tao centralizes that in **`InstantTaoData`** + generated **`getTaoData()`** calls.
-
-**Development InstantDB app id:** use `9faf89c0-c15c-49b4-bf3f-3b5b2cd9a19f` in the incremental test app’s `app ... { provider InstantDB { appId "…" } }` so local runs hit a known dev project (distinct from `meetup-lite-dev` in the target `.tao` until final integration).
-
-Incremental [Data Schema test app](../../../Apps/Test%20Apps/Data%20Schema/Data%20Schema.tao) today includes:
-
-- `provider InstantDB { appId "9faf89c0-c15c-49b4-bf3f-3b5b2cd9a19f" }` on `app DataSchemaApp`.
-- File-level queries: `query MeetupData get first Person as CurrentUser` and `query MeetupData get Event as MyEvents` (singular entity ref; no pipeline).
-- `app … { provider InstantDB { ... }; ui RootView }`; providers open from compiled `_taoRunAppInits`, so no bootstrap Tao action is needed.
-- Root view with `guard { Text "Loading..." }` then main UI. Headless [`scenario.json`](../../../Apps/Test%20Apps/Data%20Schema/scenario.json) asserts **“Loading…”** where the stub keeps queries loading-shaped, and (with **Memory** + list/`create` wired) **Create Event** / **New Event** text for the M3 create path.
-
-New grammar (M2 only):
-
-- `query Schema get Entity as Alias` with optional `first` before `Entity`.
-- **No** query pipeline (`>` steps), **no** dotted field paths inside queries.
-- `guard { ... }` in views (bare form only).
-- App lifecycle: `on init` with `action { … }` body (today **only** `init` is validated); `do ActionName` uses `ActionRender` (`action` cross-ref, not `view`).
-
-**Runtime std lib (hand-written, not generated):**
-
-- [`tao-data-client.ts`](../../../packages/tao-std-lib/tao/data/providers/tao-data-client.ts) — `TaoDataClient`, `getTaoData` / `setTaoData`, init params (`instantdb` | `memory`).
-- [`in-memory.ts`](../../../packages/tao-std-lib/tao/data/providers/in-memory/in-memory.ts) / [`instantdb.ts`](../../../packages/tao-std-lib/tao/data/providers/instantdb/instantdb.ts) — `MemoryTaoData` / `InstantTaoData` (Instant pulls `@instantdb/react-native`; **not** re-exported from `tao-data-client` so memory-only bundles skip loading it).
-- **Generated code stays short:** `setTaoData(createTaoDataClient(...))`, `declareDataset`, `_Scope.Alias = getTaoData().peekQuery|liveQuery(…)`, per-query `isLoading` checks for guards, `_taoRunAppInits()` calls `getTaoData().open(providerParams)`.
-- **Harness compile override:** `TaoSDK_compile` / `compileTao` accept optional nested **`app`** config overrides (CLI: `--app provider.appId=value` or `--app.provider.appId=value`) so tests can select provider and database without changing Tao source.
-
-Work:
-
-- [x] Grammar rules for raw `query` (`first`, `as`); **no** `>` pipeline in this milestone.
-- [x] Grammar rule for `guard { ... }`; app `on init` + `AppUiStatement` / `OnStatement` split.
-- [x] Validator: entities exist on the named schema; query placement; duplicate names; `first` / collection shape; `on` event = `init` only; guard only under views.
-- [x] Formatter handles raw queries, `guard`, and app `on` / `do` surfaces.
-- [x] Codegen: `data` → `getTaoData().declareDataset` (primitive field map for entities).
-- [x] Codegen: file-level `query` → `getTaoData().peekQuery`; in-view `query` → `getTaoData().liveQuery`.
-- [x] Codegen: `guard` → early `if` on query-result `isLoading` checks for in-view queries, with JSX fallback — not React `<Suspense>` in the MVP path.
-- [x] Query results: `{ data, isLoading, error }`; headless scenarios use **Memory** provider via app overrides/defaults so CI does not load Instant unless explicitly requested.
-- [x] Headless: [`./agent headless-test-runtime test`](../../../packages/headless-test-runtime/) includes the Data Schema scenario; full [`./agent test`](../../../AGENTS.md) runs compiler + headless + expo-runtime harnesses.
-- [ ] Optional polish: assert post-load UI text once non-stub data is wired; add focused parser/validation/codegen test files named in the original M2 checklist; tighten types for query aliases (`CurrentUser.Name`, etc.).
-
-### M3 — List queries + `for` + `create` (button adds events) — **done**
-
-**Goal:** the Data Schema test app lists **all** events and has a **button** that runs a **`create`** mutation; each tap **appends** an event and the **`for`** loop shows the updated list end-to-end (codegen + `IDB` + runtime), with headless scenario coverage where feasible.
-
-**Relationship to M2:** M2 already documents a **collection** raw query (`query MeetupData get Event as MyEvents` — no `first`) and validates `first` vs collection shape. M3 does **not** invent new query surface syntax for “all rows”; it **tightens** list-shaped results for views (`IDB` + types), adds **`for`**, **`create`**, and stub/real data paths so lists are **iterable** in JSX and CI assertions can see rows.
-
-Incremental test app shape (illustrative — keep the **MyEvents** alias to match M2):
-
-- Reuse or refine file- / view-level `query MeetupData get Event as MyEvents` so the alias is consistently **list-shaped** in validator, codegen, and runtime (`peekQuery` / `useQuery` return data the emitter can `.map` over).
-- Root UI: `for Event in MyEvents { … }` rendering each row (minimal row UI is fine — e.g. title text or stable test id).
-- A `Button` (or equivalent) whose handler invokes an action containing **`create MeetupData.Event { … }`** with enough fields to satisfy validation; after success, list refresh follows the same query subscription path as M2 `useQuery`.
-
-New grammar / surfaces (this milestone only):
-
-- **`for Binding in Collection { ... }`** as a view statement — `Collection` is a query alias (or expression) that resolves to an array-like / list-shaped query result.
-- **`create Schema.Entity { field value, ... }`** in action bodies only.
-
-**Semantics carried forward from M2 (tightened in M3):** `query Schema get Entity as Alias` **without** `first` must be **safe to iterate** in `for` and have correct **element types** for the binding.
-
-Explicitly **not** in M3:
-
-- Query pipeline (`> where` / `> order` / `> take`) or dotted paths inside queries — **M4**.
-- **`update`** — **M6**.
-
-Work:
-
-- [x] Grammar: `for` view statement; `create` in actions; only adjust raw `query` grammar/AST if `first` vs omission needs clarification for downstream typing.
-- [x] Validator: `for` binding scope; list type for `in`; `create` entity/field existence and value types; action-only placement for `create`; align list vs singleton query aliases with `for` and `create` refresh.
-- [x] Codegen: `for` → `.map((binding) => …)` in JSX; `create` → thin `IDB` / `transact` wrapper; ensure collection aliases emit list-shaped reads consistent with M2 call sites.
-- [x] Formatter: `for`, `create` (collection queries unchanged if grammar unchanged).
-- [x] Tests: parser, validation, codegen; extend [`Data Schema.tao`](../../../Apps/Test%20Apps/Data%20Schema/Data%20Schema.tao) + [`scenario.json`](../../../Apps/Test%20Apps/Data%20Schema/scenario.json) so **one** `create` runs and assertions see **N+1** rows (or visible new content). **Headless:** prefer real button press / harness action if the headless runtime supports it; otherwise call the same `create` path from **`on init`** (e.g. second init action or a dev-only branch) so CI still proves list growth without implying tap simulation exists yet.
-- [ ] Optional: richer headless assertions once stub/real `IDB` returns stable list data in CI.
-
-### M3.5 — Milestone spike: architectural pause before M4 — **done**
-
-**Intent:** M1–M3 are done; M4 (`>` pipeline + dotted paths), M5 (`if`/`else`), M6 (`update`), and M7–M8 (target app) are next. Pipeline work will roughly **double** surface area across grammar, validation, codegen, and both providers — whatever asymmetry or duplication exists now will **calcify**. This spike is **not** new user-facing syntax: preserve M3 behavior while taking only structural wins that pay back **before** M4 lands.
-
-**Leave alone:** the small **`TaoDataClient`** surface; app-level provider overrides as the harness seam; validator **split-by-concern** (this spike only **groups** files); **`compileNode` / `refResolved`** codegen idioms.
-
-**In scope (do before M4):**
-
-- [x] **Factory:** add `createTaoDataClient(providerName)` in std-lib; provider modules register factories, and codegen imports one provider registration path based on app provider selection.
-- [x] **Trim redundant schema-name argument** on `TaoDataClient` methods where it duplicates `getTaoData(name)` — `peekQuery(collection, opts)` / `useLiveQuery(collection, opts)` / `insert(collection, record)` / `declareDataset(shape)` / `isBusy()`.
-- [x] **Remove legacy bootstrap `.tao`** after confirming no shipped `use …` / `do InitDb` / `OpenDb` paths remain.
-- [x] **Group data/query validators:** move `DataSchemaValidator.ts`, `ForCreateValidator.ts`, and `QueryGuardOnValidator.ts` into [`validation/data/`](../../../packages/compiler/compiler-src/validation/data/) with a thin barrel; register from [`tao-lang-validator.ts`](../../../packages/compiler/compiler-src/validation/tao-lang-validator.ts) so M4/M6 validators (`pipeline`, `update`) have an obvious home.
-
-**Explicitly defer (revisit after M4 has real dual-provider pipeline behavior):**
-
-- Promote query options from `{ first: boolean }` to a **`mode: 'one' | 'many'`** (and room for `take` / pipeline) — **end of M4** when call sites are exercised.
-- **Provider capability registry** keyed by `source` — **defer** until at least one pipeline clause is implemented on **both** Memory and Instant (avoid speculative registries).
-- **Move `evaluateRecordFields`** out of the interface module — minor cleanup when convenient.
-
-**Verification:** `./agent prep-commit`; `./agent headless-test-runtime test` (Data Schema scenario); `./agent expo-runtime test`; manual Expo on Data Schema (Create Event still appends); diff generated Data Schema output before/after (smaller snippets, single provider import where applicable).
+- **M1:** `data` block grammar, validation, formatter support, and parser generation landed.
+- **M2:** raw `query`, `guard`, app provider configuration, `TaoDataClient`, Memory/Instant providers, short generated `declareDataset` / `open` / query calls, and harness app overrides landed.
+- **M3:** list-shaped queries, `for`, `create`, `getTaoData().insert`, Data Schema scenario coverage, parser/validator/formatter/codegen tests, and visible list-growth behavior landed.
+- **M3.5:** `createTaoDataClient`, per-provider registration imports, trimmed `TaoDataClient` signatures, removal of legacy DB bootstrap `.tao` files, `validation/data/` grouping, and app-config-driven runtime imports landed.
 
 ### M4 — Query pipeline: `where`, `order`, `take`, dotted paths
 
@@ -270,24 +153,11 @@ Work:
 - [Queries MVP Target App](./Queries%20MVP%20Target%20App.tao) — authoritative MVP target (the app that must compile and run)
 - [`TMP_taodev/`](../../../TMP_taodev/) — working reference app for InstantDB wiring (`src/lib/db.ts`, `src/instant.schema.ts`, etc.); not part of the shipped Tao toolchain, but the template for behavior and file responsibilities.
 - Std lib (M2/M3.5): `packages/tao-std-lib/tao/data/providers/instantdb/instantdb.ts`, `in-memory/in-memory.ts`, and `tao-data-client.ts` — thin provider contract; copied under emitted `use/@tao/data/providers/` with the app.
-- [Query Design - Preferred](./Process%20Docs/Queries%20Design%20-%20Preferred.md) — design decisions
-- [Query Design - Alternatives](./Process%20Docs/Queries%20Design%20-%20Alternatives.md) — deferred forks
+- [Queries Design - Preferred](./Process%20Docs/Queries%20Design%20-%20Preferred.md) — design decisions
+- [Queries Design - Alternatives](./Process%20Docs/Queries%20Design%20-%20Alternatives.md) — deferred forks
 - [Runtime - TanStack Query and InstantDB](./Process%20Docs/Runtime%20-%20TanStack%20Query%20and%20InstantDB.md) — InstantDB mapping notes
 - `packages/parser/` — Langium grammar
 - `packages/compiler/` — validator and codegen
 - `packages/headless-test-runtime/` — end-to-end compiled app tests
 
 ---
-
-## Maintaining this document
-
-Keep this plan **current** whenever Data Schema / Queries MVP work lands (same PR when practical, or an immediate doc follow-up).
-
-- **New information:** Update the **Summary / Status** paragraph, the milestone sections that changed, file links, test-app paths, and **Risks / open questions** when behavior, grammar, harness flags, app provider overrides, or providers (`InstantTaoData`, `MemoryTaoData`) shift. Prefer one coherent narrative here over scattering “done” notes only in chat or `TODO.md`.
-- **Completions:** When a milestone or a major slice closes, mark the relevant checklist items `[x]` **in the milestone section**, and add a **dated line under Completed log** below (what shipped; optional pointer to PR or commit). The Status paragraph, inline checklists, and Completed log must **not contradict** each other.
-
-## Completed log
-
-Append-only (newest entry first). Example line shape: `- **YYYY-MM-DD — M*n*:** short note on what completed.`
-
-- **2026-05-01 — M3 + M3.5:** Shipped **`for`** / **`create`** end-to-end (grammar, validators under **`validation/data/`**, formatter, **`app-config`** codegen and provider imports, compiler tests including bindings). Std-lib **`createTaoDataClient`**, trimmed **`TaoDataClient`** signatures, removed **`DbBootstrap.tao`** / **`InstantDbBootstrap.tao`**. **`TaoSDK_compile`** / **`TaoBunSdk`** and **`tao` CLI** nested **`--app`** overrides. **`AGENTS.md`** note on trivial helpers; **`ide-extension`** default **`build`** without local install; shared **`dprint --incremental=false`**, repo **`TMPDIR`** for **`sort-package-json`**, **`_build_all`** extension step uses package build only. Process docs and Data Schema scenario landed in prior commits on this branch; this commit syncs the plan only.

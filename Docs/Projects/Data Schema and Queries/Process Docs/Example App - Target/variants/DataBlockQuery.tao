@@ -1,5 +1,5 @@
 // TARGET-ONLY FICTION — block-query alternative for same domain. See ../README.md.
-// Compare: Query Design - Alternatives.md #query-flow-pipeline-vs-block
+// Compare: Queries Design - Alternatives.md #query-flow-pipeline-vs-block
 
 data MeetupData {
   // ... same entities as DataPipeline.tao (omitted duplicate for sketch)

@@ -1,4 +1,5 @@
 import {
+  expectAnyHumanMessageSubstring,
   expectDuplicateIdentifier,
   expectHumanMessagesContain,
   expectSomeHumanMessageSatisfies,
@@ -93,8 +94,7 @@ describe('type checking — typed literals:', () => {
       alias Msg = Greeting 42
       view V { }
     `)
-    const messages = report.getHumanErrorMessages()
-    expect(messages.some(m => m.includes('not assignable') || m.includes('number'))).toBe(true)
+    expectAnyHumanMessageSubstring(report, ['not assignable', 'number'])
   })
 
   test('bare literal alias validates without nominal promotion', async () => {
@@ -122,8 +122,7 @@ describe('type checking — view argument assignability:', () => {
         B 42
       }
     `)
-    const messages = report.getHumanErrorMessages()
-    expect(messages.some(m => m.includes('does not match any unbound parameter'))).toBe(true)
+    expectHumanMessagesContain(report, 'does not match any unbound parameter')
   })
 
   test('action argument accepts action declaration reference', async () => {
@@ -143,8 +142,7 @@ describe('type checking — view argument assignability:', () => {
         B 42
       }
     `)
-    const messages = report.getHumanErrorMessages()
-    expect(messages.some(m => m.includes('does not match any unbound parameter'))).toBe(true)
+    expectHumanMessagesContain(report, 'does not match any unbound parameter')
   })
 
   test('action argument rejects string literal', async () => {
@@ -154,8 +152,7 @@ describe('type checking — view argument assignability:', () => {
         B "nope"
       }
     `)
-    const messages = report.getHumanErrorMessages()
-    expect(messages.some(m => m.includes('does not match any unbound parameter'))).toBe(true)
+    expectHumanMessagesContain(report, 'does not match any unbound parameter')
   })
 
   test('view parameter accepts bare view reference', async () => {
@@ -175,8 +172,7 @@ describe('type checking — view argument assignability:', () => {
         Panel "nope"
       }
     `)
-    const messages = report.getHumanErrorMessages()
-    expect(messages.some(m => m.includes('does not match any unbound parameter'))).toBe(true)
+    expectHumanMessagesContain(report, 'does not match any unbound parameter')
   })
 
   test('view parameter rejects action reference', async () => {
@@ -187,8 +183,7 @@ describe('type checking — view argument assignability:', () => {
         Panel H
       }
     `)
-    const messages = report.getHumanErrorMessages()
-    expect(messages.some(m => m.includes('does not match any unbound parameter'))).toBe(true)
+    expectHumanMessagesContain(report, 'does not match any unbound parameter')
   })
 })
 

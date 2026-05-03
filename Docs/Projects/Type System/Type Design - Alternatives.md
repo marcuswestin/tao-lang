@@ -63,7 +63,7 @@ View-level **`guard` / `check`** for loading, missing, and reloading are **defer
 
 **[Type Implementation - Execution plan — Value guards (DEFER)](./Type%20Implementation%20-%20Execution%20plan.md#value-guards-async-loading-missing-defer)**
 
-Data-layer async results: **[Query Design - Preferred](../Data%20Schema%20and%20Queries/Query%20Design%20-%20Preferred.md)** (`Loadable<T>`). Cross-cutting UX: **[Query Design - Alternatives](../Data%20Schema%20and%20Queries/Query%20Design%20-%20Alternatives.md#loadable-vs-guard-and-check)**.
+Data-layer async results: **[Queries Design - Preferred](../Data%20Schema%20and%20Queries/Process%20Docs/Queries%20Design%20-%20Preferred.md)** (`Loadable<T>`). Cross-cutting UX: **[Queries Design - Alternatives](../Data%20Schema%20and%20Queries/Process%20Docs/Queries%20Design%20-%20Alternatives.md#loadable-vs-guard-and-check)**.
 
 ---
 

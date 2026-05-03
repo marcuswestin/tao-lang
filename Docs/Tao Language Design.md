@@ -4,7 +4,7 @@
 
 Data is described with **declarative schemas** (entities, relationships, and where they are fetched), separate from UI. Views consume **typed** values produced by queries; async behavior is explicit (e.g. `Loadable`-shaped results in the intended design).
 
-**Authoritative design (current preferred + alternatives + prior art + runtime notes):** see **[Query Design - Preferred.md](Projects/Data%20Schema%20and%20Queries/Query%20Design%20-%20Preferred.md)** in _Projects/Data Schema and Queries_, with **[Query Design - Alternatives.md](Projects/Data%20Schema%20and%20Queries/Query%20Design%20-%20Alternatives.md)** for forks not duplicated in the preferred doc.
+**Authoritative design (current preferred + alternatives + prior art + runtime notes):** see **[Queries Design - Preferred.md](Projects/Data%20Schema%20and%20Queries/Process%20Docs/Queries%20Design%20-%20Preferred.md)** in _Projects/Data Schema and Queries_, with **[Queries Design - Alternatives.md](Projects/Data%20Schema%20and%20Queries/Process%20Docs/Queries%20Design%20-%20Alternatives.md)** for forks not duplicated in the preferred doc.
 
 The sketch below is **historical / illustrative** only (older `model` / `Text` shape); it does **not** match the preferred `Tasks Task` / `X is Y` schema style in the linked project docs.
 

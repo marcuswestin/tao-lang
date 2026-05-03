@@ -1,9 +1,9 @@
-# Query Design — Preferred
+# Queries Design — Preferred
 
 > **How to read this document**
 >
 > - This file is the **current preferred** Tao data layer design (what we intend to build toward).
-> - **Forks, competing options, and debates** live in **[Query Design - Alternatives.md](./Query%20Design%20-%20Alternatives.md)** — follow links like _→ [Alternatives](…#anchor)_ instead of duplicating them here.
+> - **Forks, competing options, and debates** live in **[Queries Design - Alternatives.md](./Queries%20Design%20-%20Alternatives.md)** — follow links like _→ [Alternatives](…#anchor)_ instead of duplicating them here.
 > - **External language prior art** (GraphQL, Prisma, KQL, …): **[Prior Art - Query Languages.md](./Prior%20Art%20-%20Query%20Languages.md)**.
 > - **TanStack Query vs InstantDB** execution and bridge details: **[Runtime - TanStack Query and InstantDB.md](./Runtime%20-%20TanStack%20Query%20and%20InstantDB.md)**.
 > - **Target-only example fictions** (not valid Tao today): **[Example App - Target](./Example%20App%20-%20Target/README.md)**.
@@ -21,9 +21,9 @@ Define a **type-safe, backend-agnostic data layer** in Tao that:
 - Binds schemas to **providers** (REST, GraphQL, Supabase, InstantDB, …)
 - Maps **schema + queries + data writes** to runtime data systems (e.g. TanStack Query, InstantDB)
 - Supports **code generation** (schema + clients + helpers)
-- Enables **co-located queries** while supporting reuse — _illustrative intent:_ loading something in the spirit of “`User.Posts` filtered by category with fields `Title`, `Category.Name`” (not proposed syntax; placement/reuse forks → [Alternatives](./Query%20Design%20-%20Alternatives.md#query-placement-and-reuse))
+- Enables **co-located queries** while supporting reuse — _illustrative intent:_ loading something in the spirit of “`User.Posts` filtered by category with fields `Title`, `Category.Name`” (not proposed syntax; placement/reuse forks → [Alternatives](./Queries%20Design%20-%20Alternatives.md#query-placement-and-reuse))
 
-This document is a **design overview**, not a formal spec. Expression-level details (e.g. `where` RHS forms) → [Alternatives](./Query%20Design%20-%20Alternatives.md#query-clauses-and-interpolation).
+This document is a **design overview**, not a formal spec. Expression-level details (e.g. `where` RHS forms) → [Alternatives](./Queries%20Design%20-%20Alternatives.md#query-clauses-and-interpolation).
 
 ---
 
@@ -61,7 +61,7 @@ data Data {
 - Relationships inferred when unambiguous (see [Relationships](#relationships)).
 - Schema is **purely declarative** — no imperative backend logic in the schema; execution lives in providers and TypeScript injections.
 
-**Provider binding in app (preferred stance):** An `app` block may include `provider Name { key "value" }` while `data` stays schema-only. Every app has a provider; omitted provider defaults to Memory. Provider key-value pairs are passed through to provider init untyped, and only provider implementations validate their own params. Field metadata (`unique`, `indexed`, `optional`, `default`, cascades) remains schema metadata for codegen/provider use. _Alternatives_ (config only in TS, split files, …) → [Alternatives](./Query%20Design%20-%20Alternatives.md#provider-config-placement).
+**Provider binding in app (preferred stance):** An `app` block may include `provider Name { key "value" }` while `data` stays schema-only. Every app has a provider; omitted provider defaults to Memory. Provider key-value pairs are passed through to provider init untyped, and only provider implementations validate their own params. Field metadata (`unique`, `indexed`, `optional`, `default`, cascades) remains schema metadata for codegen/provider use. _Alternatives_ (config only in TS, split files, …) → [Alternatives](./Queries%20Design%20-%20Alternatives.md#provider-config-placement).
 
 ---
 
@@ -91,7 +91,7 @@ Schema → Provider → Runtime → Views
 
 ### 3.1 Query shape {#query-shape}
 
-**Preferred:** pipeline-based queries (KQL/LINQ-inspired). _Block-shaped query syntax_ → [Alternatives](./Query%20Design%20-%20Alternatives.md#query-flow-pipeline-vs-block).
+**Preferred:** pipeline-based queries (KQL/LINQ-inspired). _Block-shaped query syntax_ → [Alternatives](./Queries%20Design%20-%20Alternatives.md#query-flow-pipeline-vs-block).
 
 ```tao
 query Data get Tasks as CompletedTasks
@@ -107,7 +107,7 @@ query Data get Tasks as CompletedTasks
 ### 3.2 Query semantics {#query-semantics}
 
 - Operate in **Tao expression space** (e.g. `where Owner is CurrentUser`).
-- **Preferred:** no string interpolation in `where` — RHS is a normal expression. _`${…}` form_ → [Alternatives](./Query%20Design%20-%20Alternatives.md#query-clauses-and-interpolation).
+- **Preferred:** no string interpolation in `where` — RHS is a normal expression. _`${…}` form_ → [Alternatives](./Queries%20Design%20-%20Alternatives.md#query-clauses-and-interpolation).
 
 **Name resolution**
 
@@ -161,7 +161,7 @@ queryKey = [ schema, collection, parameters, pipeline steps ]
   }
 ```
 
-Produces **derived types**, nested selections, compile-time inference. Phase 1 may stay full-entity; _granularity tradeoffs_ → [Alternatives](./Query%20Design%20-%20Alternatives.md#query-granularity).
+Produces **derived types**, nested selections, compile-time inference. Phase 1 may stay full-entity; _granularity tradeoffs_ → [Alternatives](./Queries%20Design%20-%20Alternatives.md#query-granularity).
 
 ---
 
@@ -208,7 +208,7 @@ If any subview below the guard accesses data that has not yet loaded, React susp
 - `guard` is purely a Suspense boundary; it does not narrow types or match on loading states.
 - There is no explicit `loading` / `error` / `ready` state in the Tao type system at this stage — the runtime handles it.
 
-**Future direction:** a richer async model (explicit loadable states, `guard <state> { … }` matching, error boundaries, etc.) may be introduced in a later phase. Prior exploration of `Loadable<T>`, `guard`/`check` ergonomics, and type-level async is deferred — see [Alternatives](./Query%20Design%20-%20Alternatives.md#loadable-vs-guard-and-check), [Type Design - Alternatives](../Type%20System/Type%20Design%20-%20Alternatives.md#value-guards-and-loadable), and the deferred sketch in [Type Implementation - Execution plan](../Type%20System/Type%20Implementation%20-%20Execution%20plan.md#value-guards-async-loading-missing-defer).
+**Future direction:** a richer async model (explicit loadable states, `guard <state> { … }` matching, error boundaries, etc.) may be introduced in a later phase. Prior exploration of `Loadable<T>`, `guard`/`check` ergonomics, and type-level async is deferred — see [Alternatives](./Queries%20Design%20-%20Alternatives.md#loadable-vs-guard-and-check), [Type Design - Alternatives](../../Type%20System/Type%20Design%20-%20Alternatives.md#value-guards-and-loadable), and the deferred sketch in [Type Implementation - Execution plan](../../Type%20System/Type%20Implementation%20-%20Execution%20plan.md#value-guards-async-loading-missing-defer).
 
 ---
 
@@ -241,13 +241,13 @@ action AddTodo Owner Person, TodoText text {
 
 `create` and `update` are **statements**, not top-level declarations. They live wherever imperative logic is allowed (actions, event handlers, etc.).
 
-**MVP scope:** `create` and `update` only. No `delete` in MVP — can be added in a later phase. _Command-style / server-named mutations vs patch-only_ → [Alternatives](./Query%20Design%20-%20Alternatives.md#write-model-command-vs-patch).
+**MVP scope:** `create` and `update` only. No `delete` in MVP — can be added in a later phase. _Command-style / server-named mutations vs patch-only_ → [Alternatives](./Queries%20Design%20-%20Alternatives.md#write-model-command-vs-patch).
 
 ---
 
 ### 4.2 Coherence after writes {#cache-invalidation}
 
-`create` / `update` must integrate with how the **provider’s client** keeps reads consistent — e.g. TanStack Query invalidation or optimistic updates, InstantDB transactional / sync updates. Tao generates calls that line up with that SDK; **Phase 1:** no Tao-level cache of its own. Explicit invalidation DSL later — [Alternatives](./Query%20Design%20-%20Alternatives.md#cache-invalidation-strategies).
+`create` / `update` must integrate with how the **provider’s client** keeps reads consistent — e.g. TanStack Query invalidation or optimistic updates, InstantDB transactional / sync updates. Tao generates calls that line up with that SDK; **Phase 1:** no Tao-level cache of its own. Explicit invalidation DSL later — [Alternatives](./Queries%20Design%20-%20Alternatives.md#cache-invalidation-strategies).
 
 ---
 
@@ -264,7 +264,7 @@ action AddTodo Owner Person, TodoText text {
 | `A ↔ [B]`   | One-to-many (single ref to collection) |
 | `A ↔ B`     | Ambiguous → explicit annotation later  |
 
-If multiple relationships exist between the same entities, explicit inverse syntax will be required in a later phase. _Further relationship / loading-strategy options_ → [Alternatives](./Query%20Design%20-%20Alternatives.md#relationship-loading-and-cardinality).
+If multiple relationships exist between the same entities, explicit inverse syntax will be required in a later phase. _Further relationship / loading-strategy options_ → [Alternatives](./Queries%20Design%20-%20Alternatives.md#relationship-loading-and-cardinality).
 
 **Execution strategies** (join, batching, multiple queries): **not** encoded in Tao schema text — provider/runtime concern.
 
@@ -288,7 +288,7 @@ Schema
 
 ## Reference example app {#reference-example}
 
-Target-only `.tao` fictions (not parseable today) for a minimal **event RSVP** domain live in **[Example App - Target](./Example%20App%20-%20Target/README.md)**. Swap `use Data from ./variants/DataPipeline` vs `DataBlockQuery` to compare pipeline vs block sketches; map variants to [Alternatives](./Query%20Design%20-%20Alternatives.md#query-flow-pipeline-vs-block).
+Target-only `.tao` fictions (not parseable today) for a minimal **event RSVP** domain live in **[Example App - Target](./Example%20App%20-%20Target/README.md)**. Swap `use Data from ./variants/DataPipeline` vs `DataBlockQuery` to compare pipeline vs block sketches; map variants to [Alternatives](./Queries%20Design%20-%20Alternatives.md#query-flow-pipeline-vs-block).
 
 ---
 
@@ -302,7 +302,7 @@ Single unified pipeline targets may include: InstantDB schema, REST/OpenAPI, Gra
 
 ## Authentication {#authentication}
 
-**Expected direction:** session available in expressions (e.g. `CurrentUser`); provider handles tokens/headers; possible schema annotations later. _Open auth/session shapes_ → [Alternatives](./Query%20Design%20-%20Alternatives.md#authentication-and-session).
+**Expected direction:** session available in expressions (e.g. `CurrentUser`); provider handles tokens/headers; possible schema annotations later. _Open auth/session shapes_ → [Alternatives](./Queries%20Design%20-%20Alternatives.md#authentication-and-session).
 
 ---
 
@@ -318,14 +318,14 @@ Single unified pipeline targets may include: InstantDB schema, REST/OpenAPI, Gra
 ## Key constraints {#key-constraints}
 
 1. **Provider clients own caching:** TanStack Query, InstantDB SDK, and similar libraries hold query results and invalidation semantics; Tao [§3.4](#query-identity) supplies stable identity so generated code plugs into them cleanly — [Runtime](./Runtime%20-%20TanStack%20Query%20and%20InstantDB.md).
-2. **Query granularity:** Phase 1 full entities; later projections — [Alternatives](./Query%20Design%20-%20Alternatives.md#query-granularity).
+2. **Query granularity:** Phase 1 full entities; later projections — [Alternatives](./Queries%20Design%20-%20Alternatives.md#query-granularity).
 3. **No Tao-managed cache:** reads and writes go through the provider runtime; coherence after writes follows that SDK’s patterns ([§4.2](#cache-invalidation)).
 
 ---
 
 ## Provider capability validation {#provider-capability-validation}
 
-The compiler should verify whether a provider supports a query shape and fail early when unsupported (e.g. REST may not support joins; InstantDB may not support aggregations). _Matrix / examples_ → [Alternatives](./Query%20Design%20-%20Alternatives.md#provider-capability-matrix).
+The compiler should verify whether a provider supports a query shape and fail early when unsupported (e.g. REST may not support joins; InstantDB may not support aggregations). _Matrix / examples_ → [Alternatives](./Queries%20Design%20-%20Alternatives.md#provider-capability-matrix).
 
 ---
 
@@ -375,7 +375,7 @@ The compiler should verify whether a provider supports a query shape and fail ea
 
 ## Outstanding and deferred (high level) {#outstanding}
 
-Detailed forks for each bullet live in **[Query Design - Alternatives.md](./Query%20Design%20-%20Alternatives.md)** and the checklist in **Outstanding** there.
+Detailed forks for each bullet live in **[Queries Design - Alternatives.md](./Queries%20Design%20-%20Alternatives.md)** and the checklist in **Outstanding** there.
 
 **Runtime abstraction (MVP-thin, broader surface deferred):** MVP compiles to a small `TaoDataClient` provider interface for Memory and InstantDB. Phase 2 may widen that into a typed `DataSource<Schema>` contract with query/mutate/subscribe methods for REST/TanStack and other providers. See [Phase 2](#implementation-phases).
 

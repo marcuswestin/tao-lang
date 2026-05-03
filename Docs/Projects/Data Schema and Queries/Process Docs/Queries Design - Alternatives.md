@@ -1,9 +1,9 @@
-# Query Design — Alternatives
+# Queries Design — Alternatives
 
 > **How to read this document**
 >
 > - This file tracks **forks, rejected options, and open questions** for the Tao data layer. It does **not** restate external language surveys — see **[Prior Art - Query Languages.md](./Prior%20Art%20-%20Query%20Languages.md)**.
-> - The **current preferred** choices live in **[Query Design - Preferred.md](./Query%20Design%20-%20Preferred.md)**. Each section below links back to the matching anchor in Preferred where applicable.
+> - The **current preferred** choices live in **[Queries Design - Preferred.md](./Queries%20Design%20-%20Preferred.md)**. Each section below links back to the matching anchor in Preferred where applicable.
 
 **Status legend:** `preferred` (matches Preferred doc today) · `deferred` · `rejected` · `open` · `superseded`
 
@@ -31,7 +31,7 @@
 
 ## Query flow: pipeline vs block {#query-flow-pipeline-vs-block}
 
-**Preferred:** pipeline (`>` steps) — [Preferred §3.1](./Query%20Design%20-%20Preferred.md#query-shape).
+**Preferred:** pipeline (`>` steps) — [Preferred §3.1](./Queries%20Design%20-%20Preferred.md#query-shape).
 
 | Option                                                     | Status      | Notes                                                           |
 | ---------------------------------------------------------- | ----------- | --------------------------------------------------------------- |
@@ -45,7 +45,7 @@
 
 ## Query clauses and interpolation {#query-clauses-and-interpolation}
 
-**Preferred:** `where Owner is CurrentUser` — RHS is Tao expression space; no `${}` — [Preferred §3.2](./Query%20Design%20-%20Preferred.md#query-semantics).
+**Preferred:** `where Owner is CurrentUser` — RHS is Tao expression space; no `${}` — [Preferred §3.2](./Queries%20Design%20-%20Preferred.md#query-semantics).
 
 | Option                                               | Status      | Notes                                                           |
 | ---------------------------------------------------- | ----------- | --------------------------------------------------------------- |
@@ -58,7 +58,7 @@ Open: identifier vs keyword disambiguation in clause heads.
 
 ## Provider config placement {#provider-config-placement}
 
-**Preferred:** `provider Provider { … }` inside `app`; omitted provider defaults to Memory. Provider params pass through untyped and are validated only by the provider implementation — [Preferred §1 Schema](./Query%20Design%20-%20Preferred.md#schema).
+**Preferred:** `provider Provider { … }` inside `app`; omitted provider defaults to Memory. Provider params pass through untyped and are validated only by the provider implementation — [Preferred §1 Schema](./Queries%20Design%20-%20Preferred.md#schema).
 
 | Option                                                 | Status       | Notes                                                |
 | ------------------------------------------------------ | ------------ | ---------------------------------------------------- |
@@ -93,19 +93,19 @@ Illustrative intent (not syntax): “load `User.Posts` filtered by category with
 
 ## `Loadable` vs `guard` and `check` {#loadable-vs-guard-and-check}
 
-**Preferred:** queries yield `Loadable<T>`; views branch explicitly — [Preferred §3.6](./Query%20Design%20-%20Preferred.md#async-model).
+**Preferred:** MVP queries use runtime loading state with `guard`; richer `Loadable<T>` / explicit async states are deferred — [Preferred §3.6](./Queries%20Design%20-%20Preferred.md#async-model).
 
-| Option                                                           | Status      | Notes                                                                                                                                                                                                                                                                                                                            |
-| ---------------------------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Loadable<T>` only                                               | `preferred` | Explicit in type system.                                                                                                                                                                                                                                                                                                         |
-| `guard loading { … }` on async parameters (example in test apps) | `deferred`  | Ergonomic; must unify with type system `guard`/`check` — see [Type Design - Alternatives](../Type%20System/Type%20Design%20-%20Alternatives.md#value-guards-and-loadable) and [Type Implementation - Execution plan](../Type%20System/Type%20Implementation%20-%20Execution%20plan.md#value-guards-async-loading-missing-defer). |
-| Automatic suspense-style without types                           | `rejected`  | Violates explicit async principle.                                                                                                                                                                                                                                                                                               |
+| Option                                                           | Status     | Notes                                                                                                                                                                                                                                                                                                                                  |
+| ---------------------------------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Loadable<T>` only                                               | `deferred` | Explicit in type system, but not the MVP path.                                                                                                                                                                                                                                                                                         |
+| `guard loading { … }` on async parameters (example in test apps) | `deferred` | Ergonomic; must unify with type system `guard`/`check` — see [Type Design - Alternatives](../../Type%20System/Type%20Design%20-%20Alternatives.md#value-guards-and-loadable) and [Type Implementation - Execution plan](../../Type%20System/Type%20Implementation%20-%20Execution%20plan.md#value-guards-async-loading-missing-defer). |
+| Automatic suspense-style without types                           | `rejected` | Violates explicit async principle.                                                                                                                                                                                                                                                                                                     |
 
 ---
 
 ## Write model: command vs patch {#write-model-command-vs-patch}
 
-**Preferred Phase 1:** patch-style `update` — [Preferred §4](./Query%20Design%20-%20Preferred.md#mutation-model).
+**Preferred Phase 1:** patch-style `update` — [Preferred §4](./Queries%20Design%20-%20Preferred.md#mutation-model).
 
 | Option                                                       | Status      | Notes                                             |
 | ------------------------------------------------------------ | ----------- | ------------------------------------------------- |
@@ -119,17 +119,17 @@ Related **strategic bundles** below (especially **Bundle A** vs **Bundle C**).
 
 ## Cache invalidation strategies {#cache-invalidation-strategies}
 
-| Option                             | Status      | Notes                                                                     |
-| ---------------------------------- | ----------- | ------------------------------------------------------------------------- |
-| Provider/runtime default (Phase 1) | `preferred` | [Preferred §4.4](./Query%20Design%20-%20Preferred.md#cache-invalidation). |
-| Automatic by touched collections   | `deferred`  | Needs dependency graph.                                                   |
-| Explicit Tao invalidation DSL      | `deferred`  | Power + spec cost.                                                        |
+| Option                             | Status      | Notes                                                                       |
+| ---------------------------------- | ----------- | --------------------------------------------------------------------------- |
+| Provider/runtime default (Phase 1) | `preferred` | [Preferred §4.4](./Queries%20Design%20-%20Preferred.md#cache-invalidation). |
+| Automatic by touched collections   | `deferred`  | Needs dependency graph.                                                     |
+| Explicit Tao invalidation DSL      | `deferred`  | Power + spec cost.                                                          |
 
 ---
 
 ## Relationship loading and cardinality {#relationship-loading-and-cardinality}
 
-**Preferred:** inference rules in [Preferred §Relationships](./Query%20Design%20-%20Preferred.md#relationships); Tao does not encode join vs batch strategy.
+**Preferred:** inference rules in [Preferred §Relationships](./Queries%20Design%20-%20Preferred.md#relationships); Tao does not encode join vs batch strategy.
 
 | Option                              | Status      | Notes                                   |
 | ----------------------------------- | ----------- | --------------------------------------- |
@@ -161,7 +161,7 @@ Illustrative rows (extend as providers land):
 | Aggregations              | endpoint-specific | in `queryFn`       | limited vs SQL  | resolver-defined  |
 | Realtime push             | rare              | separate           | yes (Instant)   | subscriptions     |
 
-Compiler should **fail early** when a Preferred query shape exceeds provider support — [Preferred §Provider capability](./Query%20Design%20-%20Preferred.md#provider-capability-validation).
+Compiler should **fail early** when a Preferred query shape exceeds provider support — [Preferred §Provider capability](./Queries%20Design%20-%20Preferred.md#provider-capability-validation).
 
 ---
 
@@ -187,7 +187,7 @@ High-level packages (from former _Query Language Design_). Tao may mix aspects o
 
 - **Pros:** matches stable `queryKey` + `queryFn`; phased growth.
 - **Cons:** power users may lean on TS escape hatches.
-- **Status:** `preferred` (closest to [Preferred](./Query%20Design%20-%20Preferred.md)).
+- **Status:** `preferred` (closest to [Preferred](./Queries%20Design%20-%20Preferred.md)).
 
 ### Bundle D — Tao intent; TS is the real query language
 
@@ -236,5 +236,5 @@ Open: what is auto-generated vs hand-written; exact `queryKey` derivation; mutat
 
 ## Scratch / superseded sketches
 
-- Legacy `entity User { id: ID … }` / `schema TODOs { model … }` blocks from early working papers — **superseded** by `Tasks Task` + `X is Y` in [Preferred](./Query%20Design%20-%20Preferred.md#schema).
+- Legacy `entity User { id: ID … }` / `schema TODOs { model … }` blocks from early working papers — **superseded** by `Tasks Task` + `X is Y` in [Preferred](./Queries%20Design%20-%20Preferred.md#schema).
 - `query currentUser = User.get(session.userId)` strawman — **superseded** by named `query` + pipeline direction; keep as historical comparison only.
