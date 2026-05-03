@@ -35,6 +35,7 @@ Tao Lang is a programming language for building native and web apps.
 - Read existing files before writing, and re-read before editing if the file may have changed.
 - Be thorough in reasoning and concise in user-facing output.
 - Avoid loading large files wholesale unless required; use targeted search or chunks first.
+- When you notice repo, tooling, documentation, workflow, or performance problems during normal work, use `skills/repo-issue-notes` and add a brief dated note to `agent-issues.md` before finishing. Do not derail the current task for non-blocking cleanup.
 - Do not use sycophantic openers, closing fluff, emojis, or em dashes.
 - Do not guess APIs, versions, flags, commit SHAs, package names, or command behavior. Verify by reading repo code, local docs, or official docs before asserting.
 
