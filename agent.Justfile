@@ -37,7 +37,6 @@ help:
 
 # Setup repo (install deps, generate parser, build). Run this first in a new worktree.
 setup:
-    if [ -x "$HOME/.local/bin/mise" ]; then "$HOME/.local/bin/mise" trust .config/mise.toml; fi
     just {{ MAIN_JUSTFILE }} setup
 
 # Formats all files
@@ -123,7 +122,11 @@ git SUB_CMD *ARGS:
         fi
 
         if [ "$needs_prep" = "1" ]; then
-            just {{ AGENT_JUSTFILE }} prep-commit
+            if [ "${TAO_SKIP_PREP_COMMIT:-}" = "1" ]; then
+                echo "> TAO_SKIP_PREP_COMMIT=1; skipping pre-commit prep."
+            else
+                just {{ AGENT_JUSTFILE }} prep-commit
+            fi
         else
             echo "> No staged commit content; skipping pre-commit prep."
         fi
