@@ -21,8 +21,8 @@
     }
   ],
   "files.exclude": {
-    ".config/MISE_DIR": true,
-    ".config/mise.lock": true,
+    ".devenv": true,
+    ".direnv": true,
     "**/node_modules": true,
     "**/tsconfig.tsbuildinfo": true
   },
@@ -35,7 +35,7 @@
   "editor.formatOnPaste": true,
   "editor.formatOnType": true,
   "editor.defaultFormatter": "dprint.dprint",
-  "dprint.path": ".config/MISE_DIR/installs/npm-dprint/latest/bin/dprint",
+  "dprint.path": ".devenv/profile/bin/dprint",
   "files.insertFinalNewline": true,
   "files.trimFinalNewlines": true,
   "files.trimTrailingWhitespace": true,

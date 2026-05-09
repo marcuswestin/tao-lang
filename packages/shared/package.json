@@ -8,7 +8,10 @@
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "concurrently": "^9.2.1"
+    "concurrently": "^9.2.1",
+    "sort-package-json": "^3.4.0",
+    "ts-autofix": "1.0.0",
+    "typescript": "5.9.3"
   },
   "peerDependencies": {
     "typescript": "^5"
