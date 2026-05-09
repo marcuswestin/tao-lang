@@ -4,8 +4,8 @@
 
 When starting in a new worktree (or fresh repo clone), the very first thing you must do is:
 
-1. Run setup: `./agent setup`.
-2. Trust the repo mise config: `~/.local/bin/mise trust .config/mise.toml`.
+1. Run bootstrap: `bash .config/bootstrap-dev-env.sh`.
+2. Run setup if bootstrap was skipped because tools already exist: `./agent setup`.
 3. Create a new appropriately named branch: `./agent git-create-branch <branch-name>`.
 
 ## Command Safety
