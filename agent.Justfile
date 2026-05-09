@@ -122,11 +122,7 @@ git SUB_CMD *ARGS:
         fi
 
         if [ "$needs_prep" = "1" ]; then
-            if [ "${TAO_SKIP_PREP_COMMIT:-}" = "1" ]; then
-                echo "> TAO_SKIP_PREP_COMMIT=1; skipping pre-commit prep."
-            else
-                just {{ AGENT_JUSTFILE }} prep-commit
-            fi
+            just {{ AGENT_JUSTFILE }} prep-commit
         else
             echo "> No staged commit content; skipping pre-commit prep."
         fi

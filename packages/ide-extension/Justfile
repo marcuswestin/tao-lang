@@ -46,9 +46,9 @@ uninstall-extension:
     code --uninstall-extension tao.tao-ide-extension
 
 install-extension:
-    cursor --install-extension ../../.builds/tao-ide-extension-0.0.1.vsix --force
-    code --install-extension ../../.builds/tao-ide-extension-0.0.1.vsix --force
-    antigravity --install-extension ../../.builds/tao-ide-extension-0.0.1.vsix --force
+    if command -v cursor >/dev/null 2>&1; then cursor --install-extension ../../.builds/tao-ide-extension-0.0.1.vsix --force; fi
+    if command -v code >/dev/null 2>&1; then code --install-extension ../../.builds/tao-ide-extension-0.0.1.vsix --force; fi
+    if command -v antigravity >/dev/null 2>&1; then antigravity --install-extension ../../.builds/tao-ide-extension-0.0.1.vsix --force; fi
 
 restart-cursor:
     osascript -e 'quit app "Cursor"'
