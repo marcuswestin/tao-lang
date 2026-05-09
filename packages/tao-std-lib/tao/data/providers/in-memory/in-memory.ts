@@ -11,7 +11,7 @@ import {
 
 /** randomRowId returns a v4 UUID using whichever `crypto` API the host exposes (RN polyfills `getRandomValues`; modern Node/web give `randomUUID`). */
 function randomRowId(): string {
-  const c = typeof crypto !== 'undefined' ? (crypto as Crypto & { randomUUID?: () => string }) : undefined
+  const c = typeof crypto !== 'undefined' ? crypto : undefined
   if (c?.randomUUID) {
     return c.randomUUID()
   }
