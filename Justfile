@@ -8,17 +8,8 @@ alias d := dev
 alias t := test
 alias w := watch
 
-# Dev Environment Setup
-#######################
-
 # Print available commands
 help: _print_help
-
-# Create "enter-tao" dev environment
-create-dev-env: _create_dev_env
-
-# Update the dev environment
-update-dev-env: _update_dev_env
 
 # Setup repo for development
 setup: _setup_git_repo

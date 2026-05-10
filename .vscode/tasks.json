@@ -2,21 +2,14 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "type": "npm",
-      "script": "vscode:prepublish",
-      "path": "packages/ide-extension",
-      "label": "Tao-VSCode-task: Run 'just build-package-and-install' in packages/ide-extension",
-      "detail": "just build"
-    },
-    {
       "label": "build-package-and-install-extension",
       "type": "shell",
-      "command": "just build-package-and-install",
+      "command": "devenv shell -- just ide-extension build-package-and-install",
       "options": {
-        "cwd": "${workspaceFolder}/packages/ide-extension",
+        "cwd": "${workspaceFolder}",
         "shell": {
           "executable": "zsh",
-          "args": ["-c", "eval \"$(~/.local/bin/mise activate zsh)\" && just build-package-and-install"]
+          "args": ["-c"]
         }
       },
       "group": {

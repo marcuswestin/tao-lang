@@ -1,5 +1,4 @@
 {
-  "$schema": "MISE_DIR/installs/npm-oxlint/latest/lib/node_modules/oxlint/configuration_schema.json",
   "categories": {
     "correctness": "warn",
     "perf": "warn"

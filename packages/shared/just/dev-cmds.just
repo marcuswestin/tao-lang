@@ -48,7 +48,7 @@ _build_all:
     #!/usr/bin/env bash
     set -euo pipefail
     export TAO_DEPS_BATCHED=1
-    just _install_mise_deps
+    just deps
     just concurrently-exec-named \
         "shared" "cd packages/shared && just build" \
         "parser" "cd packages/parser && just build"
@@ -60,9 +60,3 @@ _build_all:
         "headless-runtime" "cd packages/headless-test-runtime && just build" \
         "expo-runtime" "cd packages/expo-runtime && just build" \
         "ide-extension" "cd packages/ide-extension && TAO_SKIP_COMPILER_BUILD=1 just build"
-
-_x_fix_file_associations:
-    brew install duti --quiet
-    for ext in md txt json yaml yml xml css js ts tsx jsx zsh just; \
-        do duti -s $(osascript -e 'id of app "Cursor"') .$ext all; \
-    done

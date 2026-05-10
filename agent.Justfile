@@ -37,7 +37,6 @@ help:
 
 # Setup repo (install deps, generate parser, build). Run this first in a new worktree.
 setup:
-    if [ -x "$HOME/.local/bin/mise" ]; then "$HOME/.local/bin/mise" trust .config/mise.toml; fi
     just {{ MAIN_JUSTFILE }} setup
 
 # Formats all files
