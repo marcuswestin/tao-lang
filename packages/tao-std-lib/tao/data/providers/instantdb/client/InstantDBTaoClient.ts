@@ -1,19 +1,19 @@
 import * as IDB from '@instantdb/react-native'
 import { Assert } from '../../../../tao-runtime/runtime-utils'
 import {
-    buildQueryResult,
-    evaluateQueryPlan,
-    evaluateRecordFields,
-    registerTaoDataProvider,
-    type TaoDataClient,
-    type TaoDataProviderParams,
-    taoDatasetFieldIsIndexed,
-    type TaoDatasetFieldShape,
-    taoDatasetFieldType,
-    type TaoDatasetShape,
-    type TaoQueryPlan,
-    type TaoQueryPredicate,
-    type TaoQueryResult,
+  buildQueryResult,
+  evaluateQueryPlan,
+  evaluateRecordFields,
+  registerTaoDataProvider,
+  type TaoDataClient,
+  type TaoDataProviderParams,
+  taoDatasetFieldIsIndexed,
+  type TaoDatasetFieldShape,
+  taoDatasetFieldType,
+  type TaoDatasetShape,
+  type TaoQueryPlan,
+  type TaoQueryPredicate,
+  type TaoQueryResult,
 } from '../../tao-data-client'
 import { createTaoIDBClient } from './TaoIDBClient'
 
@@ -350,7 +350,11 @@ function instantOrder(plan: TaoQueryPlan): Record<string, unknown> | undefined {
   const entries: [string, string][] = []
   for (const order of plan.order) {
     if (order.path.length !== 1) {
-      console.warn(`[Tao/InstantDB] Nested order path '${order.path.join('.')}' is not supported by InstantDB and will be ignored.`)
+      console.warn(
+        `[Tao/InstantDB] Nested order path '${
+          order.path.join('.')
+        }' is not supported by InstantDB and will be ignored.`,
+      )
       continue
     }
     entries.push([order.path[0]!, order.direction])

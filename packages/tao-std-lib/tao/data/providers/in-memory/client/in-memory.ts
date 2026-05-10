@@ -1,16 +1,16 @@
 import * as React from 'react'
 import {
-    buildQueryResult,
-    evaluateQueryPlan,
-    evaluateRecordFields,
-    registerTaoDataProvider,
-    type TaoDataClient,
-    type TaoDataProviderParams,
-    type TaoDatasetShape,
-    taoQueryIdentity,
-    type TaoQueryPlan,
-    type TaoQueryPredicate,
-    type TaoQueryResult,
+  buildQueryResult,
+  evaluateQueryPlan,
+  evaluateRecordFields,
+  registerTaoDataProvider,
+  type TaoDataClient,
+  type TaoDataProviderParams,
+  type TaoDatasetShape,
+  taoQueryIdentity,
+  type TaoQueryPlan,
+  type TaoQueryPredicate,
+  type TaoQueryResult,
 } from '../../tao-data-client'
 
 /** randomRowId returns a v4 UUID using whichever `crypto` API the host exposes (RN polyfills `getRandomValues`; modern Node/web give `randomUUID`). */

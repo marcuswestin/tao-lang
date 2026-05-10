@@ -1,16 +1,16 @@
 import {
-    Compiled,
-    compileIndentedNodeList,
-    compileInlineNodeList,
-    compileNode,
-    compileNodeList,
-    compileNodeListProperty,
-    compileNodeProperty,
-    compileNodePropertyRef,
-    compileNoop,
-    compileTODO,
-    CompositeGeneratorNode,
-    refResolved,
+  Compiled,
+  compileIndentedNodeList,
+  compileInlineNodeList,
+  compileNode,
+  compileNodeList,
+  compileNodeListProperty,
+  compileNodeProperty,
+  compileNodePropertyRef,
+  compileNoop,
+  compileTODO,
+  CompositeGeneratorNode,
+  refResolved,
 } from '@compiler/codegen/codegen-util'
 import { parameterName } from '@compiler/tao-type-shapes'
 import { resolveArgumentBindings } from '@compiler/typing/tao-argument-bindings'
@@ -18,11 +18,11 @@ import { AST } from '@parser/parser'
 import { Assert, Stream, switch_safe } from '@shared'
 import { throwUnexpectedBehaviorError } from '@shared/TaoErrors'
 import {
-    collectionSlugFromPlural,
-    normalizedQueryFieldPathSegments,
-    queryDeclarationAliasName,
-    queryDeclarationCardinality,
-    queryDeclarationEntity,
+  collectionSlugFromPlural,
+  normalizedQueryFieldPathSegments,
+  queryDeclarationAliasName,
+  queryDeclarationCardinality,
+  queryDeclarationEntity,
 } from '../../query/query-model'
 import { decodeTaoTemplateTextChunk } from '../tao-template-text-chunk'
 import type { TaoAppConfig, TaoAppConfigObject } from './app-config'

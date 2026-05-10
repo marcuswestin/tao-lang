@@ -1,9 +1,9 @@
 import type { LGM as langium } from '@parser'
 import { AST } from '@parser/parser'
 import {
-    normalizedQueryFieldPathSegments,
-    queryDeclarationEntity,
-    queryFieldPathSegments,
+  normalizedQueryFieldPathSegments,
+  queryDeclarationEntity,
+  queryFieldPathSegments,
 } from '../../query/query-model'
 import { makeValidater, type Reporter } from '../ValidationReporter'
 

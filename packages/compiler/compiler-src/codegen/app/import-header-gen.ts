@@ -2,10 +2,10 @@ import { isKnownTaoAppDataProviderName } from '@compiler'
 import { AST, LGM } from '@parser'
 import { throwUserInputRejectionError } from '@shared/TaoErrors'
 import {
-    getSameModuleUris,
-    isSameModuleImport,
-    resolveModulePathToUris,
-    type UriAndPath,
+  getSameModuleUris,
+  isSameModuleImport,
+  resolveModulePathToUris,
+  type UriAndPath,
 } from '../../resolution/ModuleResolution'
 import { refResolved } from '../codegen-util'
 import { emitRelativeImport } from './gen-output-paths'

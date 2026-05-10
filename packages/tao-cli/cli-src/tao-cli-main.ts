@@ -1,13 +1,13 @@
 import { Command } from '@commander-js/extra-typings'
 import {
-    appendSourceMappingUrlPragma,
-    type CompileOutputFile,
-    compileTao,
-    mergeTaoAppConfig,
-    parseAppConfigAssignment,
-    resolveTaoRuntimeBootstrapAbsolutePath,
-    type TaoAppConfigObject,
-    traceToEncodedSourceMapJson,
+  appendSourceMappingUrlPragma,
+  type CompileOutputFile,
+  compileTao,
+  mergeTaoAppConfig,
+  parseAppConfigAssignment,
+  resolveTaoRuntimeBootstrapAbsolutePath,
+  type TaoAppConfigObject,
+  traceToEncodedSourceMapJson,
 } from '@compiler'
 import { FS, TaoError } from '@shared'
 import { Log } from '@shared/Log'
