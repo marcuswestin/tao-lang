@@ -1,6 +1,7 @@
 import { LGM as langium } from '@parser'
 import { AST } from '@parser/parser'
 import { Assert, switch_safe } from '@shared'
+import { queryDeclarationAliasName } from '../query/query-model'
 
 /** TaoScopeComputation builds exported and local symbol tables for Tao files.
  * - Cross-module use sees share exports; same-module sees module-visible names. */
@@ -78,7 +79,7 @@ export class TaoScopeComputation extends langium.DefaultScopeComputation {
         DataEntityDeclaration: (n) => this.collectSymbolForScope(n, document, localSymbols, n.$container),
         DataTypeDeclaration: (n) => this.collectSymbolForScope(n, document, localSymbols, n.$container),
         ParameterDeclaration: (n) => this.collectParameterSymbolForScope(n, document, localSymbols),
-        QueryDeclaration: (n) => this.collectSymbolForScope(n, document, localSymbols),
+        QueryDeclaration: (n) => this.collectQuerySymbolForScope(n, document, localSymbols),
         ForStatement: (n) => this.collectSymbolForScope(n, document, localSymbols, n),
       })
     }
@@ -124,6 +125,19 @@ export class TaoScopeComputation extends langium.DefaultScopeComputation {
     if (name) {
       localSymbols.add(scopeNode, this.descriptions.createDescription(node, name, document))
     }
+  }
+
+  /** collectQuerySymbolForScope registers query aliases, including default aliases that are not stored in `name`. */
+  private collectQuerySymbolForScope(
+    node: AST.QueryDeclaration,
+    document: langium.LangiumDocument,
+    localSymbols: langium.MultiMap<AST.Node, AST.NodeDescription>,
+  ) {
+    const scopeNode = node.$container
+    if (!scopeNode) {
+      return
+    }
+    localSymbols.add(scopeNode, this.descriptions.createDescription(node, queryDeclarationAliasName(node), document))
   }
 
   /** iterateAllNodesIn depth-first streams all nodes with cancel checks.

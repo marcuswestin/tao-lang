@@ -6,3 +6,5 @@ Critical command rule: interact with this repo only through `./agent`. Start wit
 `./agent` is the effective whitelist of allowed commands for agents in this repo.
 
 Prefer local repo patterns, keep edits focused, and use the canonical skill files for task-specific workflows.
+
+Integrating a feature branch into **`main`** is **squash-merge only**; the squash message format is defined in `AGENTS.md` (Git Safety) and **`skills/git-workflow`**.

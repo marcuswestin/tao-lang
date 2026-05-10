@@ -160,8 +160,9 @@ cli *ARGS:
     cd {{ justfile_dir() }}/packages/tao-cli && just {{ ARGS }}
 
 # Build and run Tao CLI with given arguments
+[positional-arguments]
 tao *ARGS:
-    cd {{ justfile_dir() }} && just _tao {{ ARGS }}
+    cd {{ justfile_dir() }} && just _tao "$@"
 
 [no-cd]
 q-dev *ARGS:

@@ -49,6 +49,8 @@ export default class TaoFormatter extends AbstractFormatter {
       BinaryExpression: (n) => this.formatBinaryExpression(n),
       UnaryExpression: (n) => this.formatUnaryExpression(n),
       NumberLiteral: (n) => this.formatNumberLiteral(n),
+      BooleanLiteral: (n) => this.formatBooleanLiteral(n),
+      NullLiteral: (n) => this.formatNullLiteral(n),
       StringTemplateExpression: (n) => this.formatStringTemplateExpression(n),
       StringTemplateSegment: (n) => this.formatStringTemplateSegment(n),
       StateUpdate: (n) => this.formatStateUpdate(n),
@@ -70,6 +72,16 @@ export default class TaoFormatter extends AbstractFormatter {
       DataFieldType: (n) => this.formatDataFieldType(n),
       DataFieldMetadata: (n) => this.formatDataFieldMetadata(n),
       QueryDeclaration: (n) => this.formatQueryDeclaration(n),
+      QueryCollectionSource: (n) => this.formatQueryCollectionSource(n),
+      QueryOneSource: (n) => this.formatQueryOneSource(n),
+      QueryLegacySource: (n) => this.formatQueryLegacySource(n),
+      QueryWhereStep: (n) => this.formatQueryWhereStep(n),
+      QueryOrderStep: (n) => this.formatQueryOrderStep(n),
+      QueryIncludeStep: (n) => this.formatQueryIncludeStep(n),
+      QueryComparisonPredicate: (n) => this.formatQueryComparisonPredicate(n),
+      QueryLogicalPredicate: (n) => this.formatQueryLogicalPredicate(n),
+      QueryNotPredicate: (n) => this.formatQueryNotPredicate(n),
+      QueryFieldPath: (n) => this.formatQueryFieldPath(n),
       GuardStatement: (n) => this.formatGuardStatement(n),
       ForStatement: (n) => this.formatForStatement(n),
       CreateStatement: (n) => this.formatCreateStatement(n),
@@ -236,13 +248,95 @@ export default class TaoFormatter extends AbstractFormatter {
     const f = this.getNodeFormatter(node)
     f.keyword('query').append(Formatting.oneSpace())
     f.property('schema').append(Formatting.oneSpace())
+    f.node(node.source)
+    if (node.name) {
+      f.keyword('as').prepend(Formatting.oneSpace()).append(Formatting.oneSpace())
+      f.property('name')
+    }
+    for (const step of node.steps) {
+      f.node(step).prepend(Formatting.newLine())
+    }
+  }
+
+  private formatQueryCollectionSource(node: AST.QueryCollectionSource): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('for').append(Formatting.oneSpace())
+    f.property('collection')
+  }
+
+  private formatQueryOneSource(node: AST.QueryOneSource): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('get').append(Formatting.oneSpace())
+    f.keyword('one').append(Formatting.oneSpace())
+    f.property('entity')
+  }
+
+  private formatQueryLegacySource(node: AST.QueryLegacySource): void {
+    const f = this.getNodeFormatter(node)
     f.keyword('get').append(Formatting.oneSpace())
     if (node.first) {
       f.keyword('first').append(Formatting.oneSpace())
     }
-    f.property('entity').append(Formatting.oneSpace())
-    f.keyword('as').append(Formatting.oneSpace())
-    f.property('name')
+    f.property('entity')
+  }
+
+  private formatQueryWhereStep(node: AST.QueryWhereStep): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('>').append(Formatting.oneSpace())
+    f.keyword('where').append(Formatting.oneSpace())
+  }
+
+  private formatQueryOrderStep(node: AST.QueryOrderStep): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('>').append(Formatting.oneSpace())
+    f.keyword('order').append(Formatting.oneSpace())
+    f.node(node.path).append(Formatting.oneSpace())
+  }
+
+  private formatQueryIncludeStep(node: AST.QueryIncludeStep): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('>').append(Formatting.oneSpace())
+    f.keyword('include').append(Formatting.oneSpace())
+    this._spaceBetweenCommaSeperatedItems(node)
+  }
+
+  private formatQueryComparisonPredicate(node: AST.QueryComparisonPredicate): void {
+    const f = this.getNodeFormatter(node)
+    f.node(node.path).append(Formatting.oneSpace())
+    if (node.is) {
+      f.keyword('is').append(Formatting.oneSpace())
+    }
+    if (node.not) {
+      f.keyword('not').append(Formatting.oneSpace())
+    }
+    if (node.op) {
+      f.property('op').surround(Formatting.oneSpace())
+    }
+    if (node.membership) {
+      f.keyword('in').surround(Formatting.oneSpace())
+    }
+    if (node.stringOperator) {
+      f.property('stringOperator').surround(Formatting.oneSpace())
+    }
+    if (node.ignoreCase) {
+      f.keyword('ignoring').surround(Formatting.oneSpace())
+      f.keyword('case').prepend(Formatting.oneSpace())
+    }
+  }
+
+  private formatQueryLogicalPredicate(node: AST.QueryLogicalPredicate): void {
+    const f = this.getNodeFormatter(node)
+    f.property('op').surround(Formatting.oneSpace())
+  }
+
+  private formatQueryNotPredicate(node: AST.QueryNotPredicate): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('not').append(Formatting.oneSpace())
+  }
+
+  private formatQueryFieldPath(node: AST.QueryFieldPath): void {
+    const f = this.getNodeFormatter(node)
+    f.keywords('.').prepend(Formatting.noSpace()).append(Formatting.noSpace())
   }
 
   private formatGuardStatement(node: AST.GuardStatement): void {
@@ -354,6 +448,14 @@ export default class TaoFormatter extends AbstractFormatter {
 
   private formatNumberLiteral(_node: AST.NumberLiteral): void {
     // No formatting for number literals
+  }
+
+  private formatBooleanLiteral(_node: AST.BooleanLiteral): void {
+    // No formatting for boolean literals.
+  }
+
+  private formatNullLiteral(_node: AST.NullLiteral): void {
+    // No formatting for null literals.
   }
 
   private formatStringTemplateExpression(node: AST.StringTemplateExpression): void {

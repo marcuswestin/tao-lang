@@ -37,6 +37,7 @@ export function generateTypescriptReactNativeApp(
   fileNodes: { relativePath: string; node: GeneratorNode }[]
   bootstrapNode: GeneratorNode
   bootstrapRelativePath: string
+  codegenOpts: TaoCodegenOpts
 } {
   const allTaoFiles = dedupeTaoFilesByUri([mainTaoFile, ...importedTaoFiles])
   const resolvedCodegen = buildMergedEntryCodegenOpts(mainTaoFile, codegenInputOpts)
@@ -77,6 +78,7 @@ export function generateTypescriptReactNativeApp(
     fileNodes,
     bootstrapNode,
     bootstrapRelativePath: BOOTSTRAP_RELATIVE_PATH,
+    codegenOpts: resolvedCodegen,
   }
 }
 

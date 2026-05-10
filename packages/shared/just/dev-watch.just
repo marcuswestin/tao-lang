@@ -64,13 +64,25 @@ _watch_app_build:
     just _compile_dev_app "--watch"
 
 _compile_dev_app WATCH="":
+    #!{{ ZSH_INIT }}
+    TAO_DEV_PROVIDER="${TAO_DEV_PROVIDER:-InstantDB}"
+    TAO_DEV_APP_ID="${TAO_DEV_APP_ID:-9faf89c0-c15c-49b4-bf3f-3b5b2cd9a19f}"
+    TAO_DEV_ADMIN_TOKEN="${TAO_DEV_ADMIN_TOKEN:-90200000-0000-4000-8000-000000000003}"
+    TAO_DEV_API_URI="${TAO_DEV_API_URI:-http://localhost:9020}"
+    TAO_DEV_WEBSOCKET_URI="${TAO_DEV_WEBSOCKET_URI:-ws://localhost:9020/runtime/session}"
     cd packages/tao-cli && bun run --no-clear-screen \
         {{ WATCH }} \
         ./tao-cli.ts compile "../../{{ env('TAO_DEV_APP') }}" \
             {{ WATCH }} \
             --runtime-dir "../expo-runtime" \
             --std-lib-root "../tao-std-lib" \
-            --verbose
+            --verbose \
+            --push-schema \
+            --app provider.name="$TAO_DEV_PROVIDER" \
+            --app provider.appId="$TAO_DEV_APP_ID" \
+            --app provider.adminToken="$TAO_DEV_ADMIN_TOKEN" \
+            --app provider.apiURI="$TAO_DEV_API_URI" \
+            --app provider.websocketURI="$TAO_DEV_WEBSOCKET_URI"
 
 # Run expo on port 8081
 _watch_runtime_reload:
@@ -78,7 +90,7 @@ _watch_runtime_reload:
     set -euo pipefail
     cd packages/expo-runtime
     echo "[runtime_reload] Expo web: http://localhost:8081/"
-    npx expo start --web --port 8081
+    BROWSER="Chrome" npx expo start --web --ios --port 8081
 
 _watch_typecheck_extension:
     # One-shot build establishes composite outputs under `.builds/ts-packages/` before watch (avoids TS6305 after `just clean`).

@@ -3,6 +3,8 @@ import { Assert, FS } from '@shared'
 import type { TaoAppConfigObject } from './codegen/app/app-config'
 import { getErrorAppString } from './codegen/app/app-gen-error'
 import { generateTypescriptReactNativeApp } from './codegen/app/app-gen-main'
+import { collectSerializedDataSchemas, type TaoSerializedDataSchema } from './codegen/app/data-schema-serialization'
+import type { TaoResolvedAppProvider } from './codegen/app/runtime-gen'
 import { TaoParser } from './langium/parser'
 import { type ParseError } from './validation/parse-errors'
 
@@ -19,7 +21,10 @@ export type CompileResult =
     files: CompileOutputFile[]
     /** Relative path within `tao-app/` for the bootstrap file (e.g. `app-bootstrap.tsx`). */
     entryRelativePath: string
-    copyDirs: { fromRelativePath: string; toRelativePath: string }[]
+    copyDirs: { fromAbsolutePath: string; toRelativePath: string }[]
+    copyFiles: { fromAbsolutePath: string; toRelativePath: string }[]
+    appDataProvider: TaoResolvedAppProvider
+    dataSchemas: TaoSerializedDataSchema[]
   }
   | {
     ok: false
@@ -66,12 +71,22 @@ export async function compileTao(opts: CompileOpts): Promise<CompileResult> {
   })
   const copyDirs = [
     {
-      fromRelativePath: FS.joinPath(__dirname, '../../tao-std-lib/tao/tao-runtime'),
+      fromAbsolutePath: FS.joinPath(__dirname, '../../tao-std-lib/tao/tao-runtime'),
       toRelativePath: FS.joinPath('use', '@tao', 'tao-runtime'),
     },
     {
-      fromRelativePath: FS.joinPath(__dirname, '../../tao-std-lib/tao/data/providers'),
-      toRelativePath: FS.joinPath('use', '@tao', 'data', 'providers'),
+      fromAbsolutePath: FS.joinPath(__dirname, '../../tao-std-lib/tao/data/providers/instantdb/client'),
+      toRelativePath: FS.joinPath('use', '@tao', 'data', 'providers', 'instantdb', 'client'),
+    },
+    {
+      fromAbsolutePath: FS.joinPath(__dirname, '../../tao-std-lib/tao/data/providers/in-memory/client'),
+      toRelativePath: FS.joinPath('use', '@tao', 'data', 'providers', 'in-memory', 'client'),
+    },
+  ]
+  const copyFiles = [
+    {
+      fromAbsolutePath: FS.joinPath(__dirname, '../../tao-std-lib/tao/data/providers/tao-data-client.ts'),
+      toRelativePath: FS.joinPath('use', '@tao', 'data', 'providers', 'tao-data-client.ts'),
     },
   ]
   return {
@@ -80,5 +95,8 @@ export async function compileTao(opts: CompileOpts): Promise<CompileResult> {
     files,
     entryRelativePath: generated.bootstrapRelativePath,
     copyDirs,
+    copyFiles,
+    appDataProvider: generated.codegenOpts.appProvider,
+    dataSchemas: collectSerializedDataSchemas([parsed.taoFileAST, ...parsed.usedFilesASTs]),
   }
 }

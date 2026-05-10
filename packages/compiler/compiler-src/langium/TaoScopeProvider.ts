@@ -50,12 +50,25 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
       return this.createScope(this.getLocalScope(context, document))
     }
 
-    if (context.property === 'entity' && AST.isQueryDeclaration(context.container)) {
-      return this.getDataSchemaEntityScope(context)
+    if (
+      context.property === 'collection'
+      && AST.isQueryCollectionSource(context.container)
+    ) {
+      return this.getDataSchemaEntityScope(context, 'plural')
+    }
+
+    if (
+      context.property === 'entity'
+      && (
+        AST.isQueryOneSource(context.container)
+        || AST.isQueryLegacySource(context.container)
+      )
+    ) {
+      return this.getDataSchemaEntityScope(context, 'singular')
     }
 
     if (context.property === 'entity' && AST.isCreateStatement(context.container)) {
-      return this.getDataSchemaEntityScope(context)
+      return this.getDataSchemaEntityScope(context, 'singular')
     }
 
     return super.getScope(context)
@@ -170,9 +183,9 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
   }
 
   /** getDataSchemaEntityScope limits `query` / `create` entity links to entities declared on the referenced `data` schema. */
-  private getDataSchemaEntityScope(context: langium.ReferenceInfo): langium.Scope {
-    const stmt = context.container
-    if (!AST.isQueryDeclaration(stmt) && !AST.isCreateStatement(stmt)) {
+  private getDataSchemaEntityScope(context: langium.ReferenceInfo, naming: 'singular' | 'plural'): langium.Scope {
+    const stmt = this.getDataSchemaReferencingStatement(context.container)
+    if (!stmt) {
       return this.createScope([])
     }
     const schema = stmt.schema.ref
@@ -187,8 +200,23 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
     }
     const descs = schema.dataStatements
       .filter(AST.isDataEntityDeclaration)
-      .map(e => this.descriptions.createDescription(e, e.name, document))
+      .map(e => this.descriptions.createDescription(e, naming === 'plural' ? e.pluralName : e.name, document))
     return this.createScope(descs)
+  }
+
+  /** getDataSchemaReferencingStatement returns the owning statement with a `schema` reference for data entity scopes. */
+  private getDataSchemaReferencingStatement(node: AST.Node): AST.QueryDeclaration | AST.CreateStatement | undefined {
+    if (AST.isCreateStatement(node)) {
+      return node
+    }
+    if (
+      AST.isQueryCollectionSource(node)
+      || AST.isQueryOneSource(node)
+      || AST.isQueryLegacySource(node)
+    ) {
+      return node.$container
+    }
+    return undefined
   }
 
   /** getModuleScopedDeclarations merges local symbols with use-imported symbols. */

@@ -150,7 +150,9 @@ export class TaoTypeSystem implements LangiumTypeSystemDefinition<TaoSpecifics> 
       .inferenceRule({ filter: AST.isNumberLiteral })
       .finish()
 
-    typir.factory.Primitives.create({ primitiveName: 'boolean' }).finish()
+    typir.factory.Primitives.create({ primitiveName: 'boolean' })
+      .inferenceRule({ filter: AST.isBooleanLiteral })
+      .finish()
 
     const actionT = typir.factory.Primitives.create({ primitiveName: 'action' }).finish()
 

@@ -33,11 +33,11 @@
 
 **Preferred:** pipeline (`>` steps) — [Preferred §3.1](./Queries%20Design%20-%20Preferred.md#query-shape).
 
-| Option                                                     | Status      | Notes                                                           |
-| ---------------------------------------------------------- | ----------- | --------------------------------------------------------------- |
-| Pipeline `query Data get Tasks` + `> where …` + `> take N` | `preferred` | Order-sensitive; maps to execution pipeline; KQL/LINQ-inspired. |
-| Block `query Data get Tasks { where … take N }`            | `deferred`  | Same semantics, different surface; ergonomics TBD.              |
-| Hybrid (allow both)                                        | `open`      | Parser + formatter cost; style guide needed.                    |
+| Option                                        | Status      | Notes                                                           |
+| --------------------------------------------- | ----------- | --------------------------------------------------------------- |
+| Pipeline `query Data for Tasks` + `> where …` | `preferred` | Order-sensitive; maps to execution pipeline; KQL/LINQ-inspired. |
+| Block `query Data for Tasks { where … }`      | `deferred`  | Same semantics, different surface; ergonomics TBD.              |
+| Hybrid (allow both)                           | `open`      | Parser + formatter cost; style guide needed.                    |
 
 **Example app:** swap via `variants/` in [Example App - Target](./Example%20App%20-%20Target/README.md) when added.
 
@@ -79,6 +79,8 @@ Illustrative intent (not syntax): “load `User.Posts` filtered by category with
 | Shared named queries in module scope | `preferred`       | Reuse across views; stable query identity.        |
 | Catalog-only (no inline)             | `rejected` for v1 | Too heavy for small apps.                         |
 
+Alias-as-source / query-on-query is `deferred`: later restricted desugar only when the compiler can merge the derived query into one provider query.
+
 ---
 
 ## Query granularity {#query-granularity}
@@ -95,11 +97,11 @@ Illustrative intent (not syntax): “load `User.Posts` filtered by category with
 
 **Preferred:** MVP queries use runtime loading state with `guard`; richer `Loadable<T>` / explicit async states are deferred — [Preferred §3.6](./Queries%20Design%20-%20Preferred.md#async-model).
 
-| Option                                                           | Status     | Notes                                                                                                                                                                                                                                                                                                                                  |
-| ---------------------------------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Loadable<T>` only                                               | `deferred` | Explicit in type system, but not the MVP path.                                                                                                                                                                                                                                                                                         |
-| `guard loading { … }` on async parameters (example in test apps) | `deferred` | Ergonomic; must unify with type system `guard`/`check` — see [Type Design - Alternatives](../../Type%20System/Type%20Design%20-%20Alternatives.md#value-guards-and-loadable) and [Type Implementation - Execution plan](../../Type%20System/Type%20Implementation%20-%20Execution%20plan.md#value-guards-async-loading-missing-defer). |
-| Automatic suspense-style without types                           | `rejected` | Violates explicit async principle.                                                                                                                                                                                                                                                                                                     |
+| Option                                                           | Status      | Notes                                                                                                                                                                                                                                                                                                                                  |
+| ---------------------------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `guard { … }` Suspense boundary                                  | `preferred` | MVP path. Queries expose typed values / handles to views, and `guard` supplies the fallback boundary without adding `Loadable<T>`.                                                                                                                                                                                                     |
+| `Loadable<T>` only                                               | `deferred`  | Explicit in type system, but not the MVP path.                                                                                                                                                                                                                                                                                         |
+| `guard loading { … }` on async parameters (example in test apps) | `deferred`  | Ergonomic; must unify with type system `guard`/`check` — see [Type Design - Alternatives](../../Type%20System/Type%20Design%20-%20Alternatives.md#value-guards-and-loadable) and [Type Implementation - Execution plan](../../Type%20System/Type%20Implementation%20-%20Execution%20plan.md#value-guards-async-loading-missing-defer). |
 
 ---
 
@@ -155,13 +157,16 @@ Further cardinality edge cases (multiple edges between same types): explicit inv
 
 Illustrative rows (extend as providers land):
 
-| Capability                | REST              | TanStack           | InstantDB       | GraphQL (typical) |
-| ------------------------- | ----------------- | ------------------ | --------------- | ----------------- |
-| Ad hoc joins in one query | often no          | build in `queryFn` | model-dependent | yes (resolvers)   |
-| Aggregations              | endpoint-specific | in `queryFn`       | limited vs SQL  | resolver-defined  |
-| Realtime push             | rare              | separate           | yes (Instant)   | subscriptions     |
+| Capability                | REST              | TanStack           | InstantDB                     | GraphQL (typical) |
+| ------------------------- | ----------------- | ------------------ | ----------------------------- | ----------------- |
+| Ad hoc joins in one query | often no          | build in `queryFn` | model-dependent               | yes (resolvers)   |
+| Aggregations              | endpoint-specific | in `queryFn`       | limited vs SQL                | resolver-defined  |
+| Realtime push             | rare              | separate           | yes (Instant)                 | subscriptions     |
+| Offset pagination         | endpoint-specific | in `queryFn`       | deferred in Tao V1            | schema-dependent  |
+| Cursor pagination         | endpoint-specific | in `queryFn`       | deferred in Tao V1            | common pattern    |
+| Nested relationship order | endpoint-specific | in `queryFn`       | reject or denormalize for now | resolver-defined  |
 
-Compiler should **fail early** when a Preferred query shape exceeds provider support — [Preferred §Provider capability](./Queries%20Design%20-%20Preferred.md#provider-capability-validation).
+V1 defers compiler enforcement and lets provider implementations accept the structured plan. Later provider manifests should **fail early** when a Preferred query shape exceeds provider support — [Preferred §Provider capability](./Queries%20Design%20-%20Preferred.md#provider-capability-validation).
 
 ---
 

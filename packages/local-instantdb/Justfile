@@ -4,7 +4,6 @@ set shell := ["bash", "-euo", "pipefail", "-c"]
 compose := "docker compose --env-file .env -f docker-compose.yml"
 instant_repo := "https://github.com/instantdb/instant.git"
 instant_commit := "9988b736198c01f0636d2c94270917e4f4180f7b"
-default_app := "../../Apps/Test Apps/Data Schema/Data Schema.tao"
 
 default:
   @just --list
@@ -72,40 +71,3 @@ config HOST="localhost":
   @echo "appId=$APP_ID"
   @echo "apiURI=http://{{HOST}}:$INSTANT_PORT"
   @echo "websocketURI=ws://{{HOST}}:$INSTANT_PORT/runtime/session"
-
-compile APP=default_app HOST="localhost":
-  cd ../tao-cli && bun run --no-clear-screen ./tao-cli.ts compile "{{APP}}" \
-    --runtime-dir "../expo-runtime" \
-    --std-lib-root "../tao-std-lib" \
-    --verbose \
-    --app provider.name=InstantDB \
-    --app provider.appId="$APP_ID" \
-    --app provider.apiURI="http://{{HOST}}:$INSTANT_PORT" \
-    --app provider.websocketURI="ws://{{HOST}}:$INSTANT_PORT/runtime/session"
-
-watch APP=default_app HOST="localhost":
-  cd ../tao-cli && bun run --no-clear-screen --watch ./tao-cli.ts compile "{{APP}}" \
-    --watch \
-    --runtime-dir "../expo-runtime" \
-    --std-lib-root "../tao-std-lib" \
-    --verbose \
-    --app provider.name=InstantDB \
-    --app provider.appId="$APP_ID" \
-    --app provider.apiURI="http://{{HOST}}:$INSTANT_PORT" \
-    --app provider.websocketURI="ws://{{HOST}}:$INSTANT_PORT/runtime/session"
-
-web EXPO_PORT="8081":
-  cd ../expo-runtime && BROWSER="none" bunx expo start --web --port "{{EXPO_PORT}}"
-
-ios:
-  cd ../expo-runtime && BROWSER="none" bunx expo start --ios
-
-android:
-  cd ../expo-runtime && BROWSER="none" bunx expo start --android
-
-dev APP=default_app HOST="localhost" EXPO_PORT="8081": up
-  just watch "{{APP}}" "{{HOST}}" & \
-  watch_pid=$!; \
-  trap 'kill "$watch_pid" 2>/dev/null || true' EXIT INT TERM; \
-  cd ../expo-runtime; \
-  BROWSER="none" bunx expo start --web --port "{{EXPO_PORT}}"

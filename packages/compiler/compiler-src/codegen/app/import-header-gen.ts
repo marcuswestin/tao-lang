@@ -2,10 +2,10 @@ import { isKnownTaoAppDataProviderName } from '@compiler'
 import { AST, LGM } from '@parser'
 import { throwUserInputRejectionError } from '@shared/TaoErrors'
 import {
-  getSameModuleUris,
-  isSameModuleImport,
-  resolveModulePathToUris,
-  type UriAndPath,
+    getSameModuleUris,
+    isSameModuleImport,
+    resolveModulePathToUris,
+    type UriAndPath,
 } from '../../resolution/ModuleResolution'
 import { refResolved } from '../codegen-util'
 import { emitRelativeImport } from './gen-output-paths'
@@ -90,8 +90,8 @@ function providerRegistrationImport(importBase: string, provider: string): strin
     throwUserInputRejectionError(`Unknown app data provider '${provider}'.`)
   }
   return normalizedProvider === 'instantdb'
-    ? `import '${importBase}use/@tao/data/providers/instantdb/instantdb'\n`
-    : `import '${importBase}use/@tao/data/providers/in-memory/in-memory'\n`
+    ? `import '${importBase}use/@tao/data/providers/instantdb/client/InstantDBTaoClient'\n`
+    : `import '${importBase}use/@tao/data/providers/in-memory/client/in-memory'\n`
 }
 
 /** buildUriToTaoMap maps document URI string to TaoFile AST. */

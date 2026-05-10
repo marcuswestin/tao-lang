@@ -2,6 +2,7 @@ import { isKnownTaoAppDataProviderName, unknownTaoAppDataProviderMessage } from 
 import type { LGM as langium } from '@parser'
 import { AST } from '@parser/parser'
 import { Assert, switch_safe } from '@shared'
+import { queryDeclarationAliasName, queryDeclarationCardinality } from '../query/query-model'
 import { resolveShorthandParameterType } from '../tao-type-shapes'
 import {
   dataSchemaValidationMessages,
@@ -13,6 +14,8 @@ import {
   isQueryPlacementOk,
   queryGuardOnMessages,
   queryGuardOnValidator,
+  queryValidationMessages,
+  queryValidator,
 } from './data'
 import { typeSystemValidationMessages, typeSystemValidator } from './TypeSystemValidator'
 import { makeValidater, type Reporter } from './ValidationReporter'
@@ -34,6 +37,7 @@ export const validationMessages = {
     `Parameter shorthand '${name}' must match a local type declaration in this file/scope. Use '<name> <type>' for explicit type references (including imported types).`,
   ...typeSystemValidationMessages,
   ...dataSchemaValidationMessages,
+  ...queryValidationMessages,
 } as const
 
 export const validator: langium.ValidationChecks<AST.TaoLangAstType> = {
@@ -92,7 +96,7 @@ export const validator: langium.ValidationChecks<AST.TaoLangAstType> = {
       report.error(forCreateMessages.forCollectionNotQuery, { node, property: 'collection' })
       return
     }
-    if (coll.first) {
+    if (queryDeclarationCardinality(coll) === 'one') {
       report.error(forCreateMessages.forCollectionNotListQuery, { node, property: 'collection' })
     }
     for (const v of findForBodyHookViolations(node)) {
@@ -166,6 +170,7 @@ export const validator: langium.ValidationChecks<AST.TaoLangAstType> = {
   ...dataSchemaValidator,
   ...queryGuardOnValidator,
   ...forCreateValidator,
+  ...queryValidator,
 }
 
 /** validateDuplicateObjectPropertyNames reports when an object literal repeats the same property name. */
@@ -260,7 +265,7 @@ function validateUppercaseIdentifierName<NodeT extends AST.Node & { name?: strin
   node: NodeT,
   report: Reporter<NodeT>,
 ): void {
-  const name = node.name
+  const name = bindingName(node)
   if (name === undefined) {
     return
   }
@@ -279,21 +284,24 @@ function validateDuplicateIdentifier<NodeT extends AST.Referenceable>(
   report: Reporter<NodeT>,
 ): void {
   const duplicates = getDuplicateIdentifiers(binding)
+  const name = bindingName(binding)
   if (duplicates.length > 0) {
-    const message = `Duplicate identifier '${binding.name}'.`
+    const message = `Duplicate identifier '${name}'.`
     const property = 'name' as AST.NodePropName<NodeT>
-    report.error(message, { node: binding, property }, {
-      alsoCheck: () => duplicates.map(node => ({ node, message })),
-    })
+    const info = AST.isQueryDeclaration(binding) && binding.name === undefined
+      ? binding
+      : { node: binding, property }
+    report.error(message, info, { alsoCheck: () => duplicates.map(node => ({ node, message })) })
   }
 }
 
 /** getDuplicateIdentifiers returns parameters and sibling declarations that conflict with the binding name. */
 function getDuplicateIdentifiers(binding: AST.Referenceable): AST.Node[] {
+  const name = bindingName(binding)
   const siblingAliases = getDuplicateSiblingDeclarations(binding)
   const paramOwner = findParameterizedDeclaration(binding)
   const matchingParams = paramOwner?.parameterList?.parameters.filter(
-    p => p !== binding && p.name === binding.name,
+    p => p !== binding && p.name === name,
   ) ?? []
 
   return [...matchingParams, ...siblingAliases]
@@ -340,9 +348,14 @@ function flattenTopLevelDeclarations(statements: readonly AST.Statement[]): AST.
 
 /** getDuplicateSiblingDeclarations returns same-scope declarations with the same name as the binding. */
 function getDuplicateSiblingDeclarations(binding: AST.Referenceable): AST.Node[] {
+  const name = bindingName(binding)
   return getSiblingStatements(binding).filter(node => {
-    return AST.isReferenceable(node) && node.name === binding.name && node !== binding
+    return AST.isReferenceable(node) && bindingName(node) === name && node !== binding
   })
+}
+
+function bindingName(node: AST.Node & { name?: string }): string | undefined {
+  return AST.isQueryDeclaration(node) ? queryDeclarationAliasName(node) : node.name
 }
 
 /** findParameterizedDeclaration returns the nearest enclosing view or action that may own parameters. */

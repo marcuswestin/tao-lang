@@ -17,6 +17,7 @@ For each feature:
 
 ## Now
 
+- [ ] Split up grammar into multiple files.
 - [ ] Add instantdb skills: npx skills add instantdb/skills
 - [ ] Gather up libs to consider pulling in:
   - https://github.com/react-navigation/react-navigation

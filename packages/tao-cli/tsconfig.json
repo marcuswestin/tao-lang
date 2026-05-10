@@ -6,6 +6,8 @@
   "include": [
     "cli-src/**/*",
     "cli-tests/**/*",
+    "../tao-std-lib/tao/data/providers/tao-data-client.ts",
+    "../tao-std-lib/tao/data/providers/*/admin/**/*.ts",
     "tao-cli.ts"
   ],
   "compilerOptions": {

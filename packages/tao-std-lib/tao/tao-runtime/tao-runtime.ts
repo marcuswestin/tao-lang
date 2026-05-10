@@ -9,10 +9,10 @@ export namespace I {
   // Internal types
   /////////////////
 
-  export type JSAtomValue = string | number | boolean
+  export type JSAtomValue = string | number | boolean | null
   /** JSObjectValue is a plain object tree used for Tao object literals and object state. */
   export type JSObjectValue = { [k: string]: JSValue }
-  export type JSValue = JSAtomValue | JSObjectValue
+  export type JSValue = JSAtomValue | JSObjectValue | JSValue[]
   export type Name = string // & { __name: true }
   export type Rendered = React.ReactNode
 
@@ -61,6 +61,7 @@ export const TR: _TaoRuntime = {
   BinaryOperation,
   MemberAccess,
   Object: TaoObject,
+  QueryData,
   StringTemplate,
   UnaryOperation,
 
@@ -84,6 +85,7 @@ export type _TaoRuntime = {
   BinaryOperation: typeof BinaryOperation
   MemberAccess: typeof MemberAccess
   Object: typeof TaoObject
+  QueryData: typeof QueryData
   StringTemplate: typeof StringTemplate
   UnaryOperation: typeof UnaryOperation
 
@@ -173,7 +175,10 @@ class Value {
     readonly jsValue: I.JSValue,
   ) {}
   render(): I.Rendered {
-    Assert(typeof this.jsValue !== 'object', 'Object-shaped values cannot be rendered (validator should reject).')
+    Assert(
+      this.jsValue === null || typeof this.jsValue !== 'object',
+      'Object-shaped values cannot be rendered (validator should reject).',
+    )
     return String(this.jsValue)
   }
 }
@@ -237,16 +242,16 @@ class StringTemplateExpression implements I.Expression {
 function AppState(
   initialValue: I.ImmutableExpression,
 ): I.MutableState {
-  const initialValueT = initialValue.evaluate().jsValue
-  const store$ = LegendAppState.observable(initialValueT) as LegendAppState.Observable<I.JSValue>
+  const initialValueT = initialValue.evaluate().jsValue as unknown
+  const store$ = LegendAppState.observable(initialValueT) as LegendAppState.ObservableParam
   return new MutableState(store$)
 }
 
 function ViewState(
   initialValue: I.ImmutableExpression,
 ): I.MutableState {
-  const initialValueT = initialValue.evaluate().jsValue
-  const store$ = LegendAppStateReact.useObservable(initialValueT) as LegendAppState.Observable<I.JSValue>
+  const initialValueT = initialValue.evaluate().jsValue as unknown
+  const store$ = LegendAppStateReact.useObservable(initialValueT) as LegendAppState.ObservableParam
   return new MutableState(store$)
 }
 
@@ -265,7 +270,7 @@ function compoundNumberResult(operator: CompoundAssignmentOperator, current: num
 
 class MutableState implements I.MutableState {
   constructor(
-    private store$: LegendAppState.Observable<I.JSValue>,
+    private store$: LegendAppState.ObservableParam,
   ) {}
 
   /** observableAt returns the Legend observable at nested propertyPath (each key indexes nested observables). Validator guarantees the path exists on the state's static shape. */
@@ -303,6 +308,25 @@ class MutableState implements I.MutableState {
 
 function Alias(value: I.Expression) {
   return value
+}
+
+type QueryResultLike = { readonly data: unknown }
+
+/** QueryData exposes a provider query result's data payload as a Tao expression. */
+function QueryData(queryResult: QueryResultLike): I.Expression {
+  return new QueryDataExpression(queryResult)
+}
+
+class QueryDataExpression implements I.Expression {
+  constructor(readonly queryResult: QueryResultLike) {}
+
+  evaluate(): Value {
+    return new Value(this.queryResult.data as I.JSValue)
+  }
+
+  useReactiveHandle(): I.Expression {
+    return this
+  }
 }
 
 type BinaryOperators = '+' | '-' | '*' | '/'
@@ -425,7 +449,7 @@ class MemberAccessExpression implements I.Expression {
   ) {}
   evaluate(): Value {
     if (this.root instanceof MutableState) {
-      const leaf$ = this.root.observableAt(this.path) as LegendAppState.Observable<I.JSValue>
+      const leaf$ = this.root.observableAt(this.path)
       return new Value(leaf$.peek() as I.JSValue)
     }
     if (this.path.length === 0) {

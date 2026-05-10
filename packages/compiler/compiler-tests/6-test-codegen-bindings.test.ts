@@ -139,7 +139,7 @@ describe('codegen — app provider selection and overrides:', () => {
     const out = result.files.map(f => f.content).join('\n')
     expect(out).toContain('createTaoDataClient("InstantDB")')
     expect(out).toContain('getTaoData("HarnessData").open({"appId":"00000000-0000-0000-0000-000000000001"})')
-    expect(out).toMatch(/providers\/instantdb\/instantdb/)
+    expect(out).toMatch(/providers\/instantdb\/client\/InstantDBTaoClient/)
   })
 
   test('data schema runtime shape includes non-primitive fields for provider insert validation', async () => {
@@ -155,7 +155,9 @@ describe('codegen — app provider selection and overrides:', () => {
       app HarnessApp { ui HarnessRoot }
       view HarnessRoot { }
     `)
-    expect(out).toContain('events: { Title: "string", Host: "any", Attendees: "any" }')
+    expect(out).toContain(
+      '"events":{"Title":{"type":"string"},"Host":{"type":"any"},"Attendees":{"type":"any"}}',
+    )
   })
 
   test('app provider param override replaces provider init params without compiler validation', async () => {
@@ -217,10 +219,65 @@ describe('codegen — app provider selection and overrides:', () => {
     const out = result.files.map(f => f.content).join('\n')
     expect(out).toContain('setTaoData("FirstData", createTaoDataClient("Memory"))')
     expect(out).toContain('setTaoData("SecondData", createTaoDataClient("Memory"))')
-    expect(out).toContain('getTaoData("FirstData").peekQuery("firstItems"')
-    expect(out).toContain('getTaoData("SecondData").peekQuery("secondItems"')
+    expect(out).toContain('getTaoData("FirstData").peekQuery({')
+    expect(out).toContain('collection: "firstItems"')
+    expect(out).toContain('getTaoData("SecondData").peekQuery({')
+    expect(out).toContain('collection: "secondItems"')
     expect(out).toContain('getTaoData("FirstData").open({})')
     expect(out).toContain('getTaoData("SecondData").open({})')
+  })
+
+  test('query pipeline emits structured query plan with dynamic values', async () => {
+    const out = await writeAndCompile(`
+      data D {
+        People Person {
+          Age number indexed,
+          Email text unique,
+        }
+      }
+      state MinAge = 18
+      query D for People as Youth
+        > where Person.Age >= MinAge
+        > where Email contains "@school.edu" ignoring case
+        > order People.Age asc
+      query D get one Person
+        > where Email = "ro@example.test"
+      app A { ui V }
+      view V { }
+    `)
+    expect(out).toContain('cardinality: "many"')
+    expect(out).toContain('collection: "people"')
+    expect(out).toContain('"Age":{"type":"number","indexed":true}')
+    expect(out).toContain('"Email":{"type":"string","unique":true,"indexed":true}')
+    expect(out).toContain('path: ["Age"]')
+    expect(out).not.toContain('path: ["Person", "Age"]')
+    expect(out).not.toContain('path: ["People", "Age"]')
+    expect(out).toContain('op: ">="')
+    expect(out).toContain('value: _Scope.MinAge')
+    expect(out).toContain('op: "contains"')
+    expect(out).toContain('ignoreCase: true')
+    expect(out).toContain('_Scope.Person = getTaoData("D").peekQuery({')
+    expect(out).toContain('cardinality: "one"')
+  })
+
+  test('compile result exposes provider config and serialized data schemas', async () => {
+    const appPath = FS.resolvePath(
+      __dirname,
+      '../../../Apps/Test Apps/Data Schema/Data Schema.tao',
+    )
+    const result = await compileTao({ file: appPath, stdLibRoot: STD_LIB_ROOT })
+    if (!result.ok) {
+      throw new Error(`Compile failed:\n${formatParseErrorHumanMessages(result.errorReport)}`)
+    }
+    expect(result.appDataProvider.name).toBe('InstantDB')
+    const schema = result.dataSchemas.find(s => s.name === 'MeetupData')
+    expect(schema?.shape.entities['events']?.['Ordering']).toEqual({ type: 'number', indexed: true })
+    expect(schema?.shape.entities['people']?.['Email']).toEqual({
+      type: 'string',
+      optional: true,
+      unique: true,
+      indexed: true,
+    })
   })
 
   test('bootstrap runs init hooks for imported Tao modules', async () => {

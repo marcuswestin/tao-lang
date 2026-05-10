@@ -33,7 +33,7 @@ useQuery({
 })
 ```
 
-**Tao generates (design intent):** query structure, **stable `queryKey` materialization** from [Preferred §3.4](./Queries%20Design%20-%20Preferred.md#query-identity), mutation structure for invalidation hooks.
+**Tao generates (design intent):** a structured `TaoQueryPlan`, **stable `queryKey` materialization** from [Preferred §3.4](./Queries%20Design%20-%20Preferred.md#query-identity), mutation structure for invalidation hooks.
 
 **TypeScript provides:** `queryFn`, transport, auth, provider-specific edge cases — see [Preferred — Declarative vs imperative](./Queries%20Design%20-%20Preferred.md#declarative-vs-imperative).
 
@@ -50,8 +50,17 @@ Open questions (also listed in [Alternatives — Datasource bridge](./Queries%20
 **Rough mapping from Tao:**
 
 - Tao `data` + app-level `provider InstantDB { … }` → generated InstantDB schema + thin wrappers.
-- Tao queries → Instant query calls (or equivalent) preserving typed results surfaced as `Loadable<T>` in views.
-- Tao mutations (patch / create / delete) → `transact` / update patterns, plus provider-driven invalidation or sync.
+- Tao queries → structured `TaoQueryPlan` values passed through `TaoDataClient.useLiveQuery` / `peekQuery`; the Instant provider lowers supported plan pieces to InstaQL and keeps the plan shape available for future capability validation.
+- Tao writes (`create` / `update`) → `transact` / update patterns, plus provider-driven invalidation or sync.
+
+### Current V1 provider behavior
+
+- `id` is treated as the provider row id and can be queried without being declared as a Tao field.
+- Query field paths are normalized before execution: root prefixes such as `Person.Email` / `People.Email` become `Email`, while nested relationship paths remain explicit.
+- Memory applies the structured plan in-process. InstantDB lowers supported `where`, top-level `order`, and `include` clauses to InstaQL.
+- Limiting and pagination are intentionally not implemented in V1. They need a provider-capability design before Tao commits to a portable query-plan shape.
+
+Current limits: limiting/pagination, provider capability manifests, and strict compile-time rejection of provider-specific gaps are still deferred. In particular, nested relationship ordering should be rejected, denormalized, or handled by a provider-specific strategy before being treated as generally supported.
 
 ---
 
@@ -64,7 +73,7 @@ Open questions (also listed in [Alternatives — Datasource bridge](./Queries%20
 
 ## Reactive UI stacks (mention only)
 
-Apps may combine Legend State, TanStack Query, Instant subscriptions, etc. Exact composition is **per-app runtime** choice; Tao’s contract is **typed values** crossing the view boundary, typically via `Loadable<T>`.
+Apps may combine Legend State, TanStack Query, Instant subscriptions, React Suspense, etc. Exact composition is **per-app runtime** choice; Tao’s MVP contract is **typed query values and query handles** crossing the view boundary, with loading handled by `guard { … }` / Suspense rather than a `Loadable<T>` wrapper.
 
 ---
 

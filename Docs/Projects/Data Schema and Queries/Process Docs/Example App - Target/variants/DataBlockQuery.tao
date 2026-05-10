@@ -12,7 +12,7 @@ app MeetupLite {
 }
 
 // Illustrative block form — semantics TBD; may desugar to same IR as pipeline
-query MeetupData get Events for Host Person as HostedEvents {
+query MeetupData for Events as HostedEvents {
   where Host is Host
   order StartsAt asc
 }

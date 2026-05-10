@@ -1,19 +1,20 @@
 import { Command } from '@commander-js/extra-typings'
 import {
-  appendSourceMappingUrlPragma,
-  type CompileOutputFile,
-  compileTao,
-  mergeTaoAppConfig,
-  parseAppConfigAssignment,
-  resolveTaoRuntimeBootstrapAbsolutePath,
-  type TaoAppConfigObject,
-  traceToEncodedSourceMapJson,
+    appendSourceMappingUrlPragma,
+    type CompileOutputFile,
+    compileTao,
+    mergeTaoAppConfig,
+    parseAppConfigAssignment,
+    resolveTaoRuntimeBootstrapAbsolutePath,
+    type TaoAppConfigObject,
+    traceToEncodedSourceMapJson,
 } from '@compiler'
 import { FS, TaoError } from '@shared'
 import { Log } from '@shared/Log'
 import { throwUserInputRejectionError } from '@shared/TaoErrors'
 import chokidar from 'chokidar'
 import { hci } from './hci-human-computer-interaction'
+import { pushCompiledSchema } from './schema-push'
 import { formatFile } from './tao-sdk/sdk-format'
 
 const ENABLE_SOURCE_MAPS = false
@@ -34,14 +35,23 @@ export function taoCliMain() {
     .option('--verbose', 'Verbose output', false)
     .option('--std-lib-root <path>', 'The root directory of the standard library', (value) => FS.resolvePath(value))
     .option('--app <assignment>', 'Override an app config key, e.g. --app provider.appId=value', collectAppOverride, {})
-    .action(async (path, { watch, verbose, runtimeDir, stdLibRoot, app }) => {
+    .option('--push-schema', 'Push data schemas after a successful compile')
+    .option('--push-schema-overwrite', 'Push data schemas after compile using provider overwrite/exact-sync mode')
+    .action(async (path, { watch, verbose, runtimeDir, stdLibRoot, app, pushSchema, pushSchemaOverwrite }) => {
       hci.setVerbose(verbose)
       await hci.wrapExecution(async () => {
         /** compileAndWrite runs `TaoSDK_compile` for the path/runtime/std-lib and prints the output path.
          * In watch mode, parse/compiler errors are logged and the process keeps running so `just dev` is not torn down. */
         async function compileAndWrite() {
           hci.verboselyInform(`Compiling...`)
-          const result = await TaoSDK_compile({ path, runtimeDir, stdLibRoot, app })
+          const result = await TaoSDK_compile({
+            path,
+            runtimeDir,
+            stdLibRoot,
+            app,
+            pushSchema: pushSchema === true,
+            pushSchemaOverwrite: pushSchemaOverwrite === true,
+          })
           hci.inform(`Compiled to ${result.outputPath}`)
         }
 
@@ -102,6 +112,10 @@ type TaoSDK_compileOpts = {
   outputFileName?: string
   /** App config overrides, e.g. `{ provider: { appId: "test-db" } }`. */
   app?: TaoAppConfigObject
+  /** When true, push schemas with provider admin after successful compile. */
+  pushSchema?: boolean
+  /** When true, push schemas with provider admin in overwrite/exact-sync mode after successful compile. */
+  pushSchemaOverwrite?: boolean
 }
 
 type TaoSDK_compileResult = {
@@ -142,14 +156,22 @@ export async function TaoSDK_compile(opts: TaoSDK_compileOpts): Promise<TaoSDK_c
   for (const f of emitFiles) {
     writePlannedEmitFile(f)
   }
-  for (const { fromRelativePath, toRelativePath } of result.copyDirs) {
+  for (const { fromAbsolutePath, toRelativePath } of result.copyDirs) {
     FS.copyDirectory(
-      FS.resolvePath(stagedEmitRoot, fromRelativePath),
+      fromAbsolutePath,
       FS.resolvePath(stagedEmitRoot, toRelativePath),
     )
   }
+  for (const { fromAbsolutePath, toRelativePath } of result.copyFiles) {
+    const dest = FS.resolvePath(stagedEmitRoot, toRelativePath)
+    FS.mkdir(FS.dirname(dest))
+    FS.copyFile(fromAbsolutePath, dest)
+  }
 
   replaceTargetEmitRoot(stagedEmitRoot, targetEmitRoot)
+  if (opts.pushSchema === true || opts.pushSchemaOverwrite === true) {
+    await pushCompiledSchema(result, opts.pushSchemaOverwrite === true)
+  }
   return { outputPath: targetOutputPath, files: emitFiles }
 }
 

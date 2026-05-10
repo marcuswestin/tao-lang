@@ -16,6 +16,7 @@ export type ParseOptions = {
 export type ParseResult = {
   taoFileAST?: AST.TaoFile
   usedFilesASTs: AST.TaoFile[]
+  appStatements: AST.AppStatement[]
   errorReport: ParseError
 }
 
@@ -69,6 +70,7 @@ async function internalParseTaoCode(
   return {
     taoFileAST: entryDocument.parseResult.value,
     usedFilesASTs: usedDocuments.map(doc => doc.parseResult.value),
+    appStatements: entryAppStatements(entryDocument.parseResult.value),
     errorReport,
   }
 }
@@ -179,6 +181,17 @@ function getModuleTaoFiles(workspace: TaoWorkspace, directory: string): string[]
   return FS.readDir(directory)
     .filter((name) => workspace.supportsExtension(FS.extname(name)))
     .map((name) => FS.resolvePath(directory, name))
+}
+
+/** entryAppStatements returns the entry app declaration statements, if an app is declared. */
+function entryAppStatements(taoFile: AST.TaoFile): AST.AppStatement[] {
+  for (const stmt of taoFile.statements) {
+    const declaration = AST.isModuleDeclaration(stmt) ? stmt.declaration : stmt
+    if (AST.isAppDeclaration(declaration)) {
+      return declaration.appStatements
+    }
+  }
+  return []
 }
 
 /** addReachableTaoFileDocument creates and adds a document for a .tao file path. */

@@ -221,6 +221,9 @@ function argumentValueFingerprint(expr: AST.Expression | AST.ObjectLiteral): Typ
   if (AST.isNumberLiteral(expr)) {
     return { kind: 'primitive', primitive: 'number' }
   }
+  if (AST.isBooleanLiteral(expr)) {
+    return { kind: 'primitive', primitive: 'boolean' }
+  }
   if (AST.isActionExpression(expr)) {
     return { kind: 'primitive', primitive: 'action' }
   }

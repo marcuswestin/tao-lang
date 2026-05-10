@@ -95,8 +95,9 @@ shared *ARGS:
 cli *ARGS:
     just {{ MAIN_JUSTFILE }} cli {{ ARGS }}
 
+[positional-arguments]
 tao *ARGS:
-    just {{ MAIN_JUSTFILE }} tao {{ ARGS }}
+    just {{ MAIN_JUSTFILE }} tao "$@"
 
 # Create and switch to a new branch.
 [positional-arguments]

@@ -12,6 +12,10 @@ Format:
 
 ## Open
 
+### 2026-05-04 - `./agent prep-commit` can fail inside compiler `ts-autofix`.
+
+- Saw `TypeError: context.host.getCompilationSettings is not a function` from `ts-autofix` during the compiler autofix step after the build phase passed.
+
 ### 2026-05-03 - `./agent fd` is listed in help but is not available.
 
 - Saw `command not found: fd` after `./agent help` listed it as a read command.
