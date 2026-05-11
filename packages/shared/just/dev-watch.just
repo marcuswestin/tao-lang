@@ -5,9 +5,12 @@ _dev:
     just deps gen
     echo "compile"
     just _compile_dev_app
+    echo "local InstantDB (Docker)"
+    just instantdb-local up
+    echo 'InstantDB stays in Docker when you stop `just dev` (compose `up -d` is detached). Run `just instantdb-local down` to tear it down.'
     echo "start dev loops"
     while true; do
-        just _prefix_strip_parallel "_watch_" \
+        just _prefix_strip_parallel_dev "_watch_" \
             {{ _DEV_WATCH_RECIPES }} \
             _r_reloead_q_quit || break; # consider adding _steal_focus
     done
@@ -49,6 +52,13 @@ _r_reloead_q_quit:
     #!{{ ZSH_INIT }}
     REPLY=""
     echo "Press 'r' to restart or 'q' to exit..."
+    # concurrently does not give children a TTY on stdin; read the controlling terminal explicitly.
+    if [[ -r /dev/tty ]]; then
+        exec < /dev/tty
+    else
+        echo "_r_reloead_q_quit: no /dev/tty; cannot read keys (leave this job running or Ctrl+C the whole dev stack)" >&2
+        tail -f /dev/null
+    fi
     while read -k 1; [[ $REPLY != r ]] && [[ $REPLY != q ]]; do :; done
     [[ $REPLY == q ]] && exit 1
     exit 0
@@ -64,13 +74,40 @@ _watch_app_build:
     just _compile_dev_app "--watch"
 
 _compile_dev_app WATCH="":
-    cd packages/tao-cli && bun run --no-clear-screen \
+    #!/usr/bin/env bash
+    set -euo pipefail
+    ROOT="{{ justfile_dir() }}"
+    INSTANT_ENV="$ROOT/packages/local-instantdb/.env"
+    if [[ ! -f "$INSTANT_ENV" ]]; then
+      echo "Missing $INSTANT_ENV (needed for InstantDB provider overrides during compile)." >&2
+      exit 1
+    fi
+    set -a
+    # shellcheck disable=SC1091
+    source "$INSTANT_ENV"
+    set +a
+    : "${INSTANT_PORT:?}"
+    : "${APP_ID:?}"
+    if [[ -n "${TAO_DEV_HOST:-}" ]]; then
+      HOST="$TAO_DEV_HOST"
+    elif HOST_DETECTED=$(bash "$ROOT/packages/shared/scripts/lan-ipv4.sh"); then
+      HOST="$HOST_DETECTED"
+    else
+      echo "[_compile_dev_app] Could not detect LAN IPv4; using localhost for InstantDB provider URIs." >&2
+      HOST="localhost"
+    fi
+    cd "$ROOT/packages/tao-cli"
+    bun run --no-clear-screen \
         {{ WATCH }} \
-        ./tao-cli.ts compile "../../{{ env('TAO_DEV_APP') }}" \
+        ./tao-cli.ts compile "../../${TAO_DEV_APP:?}" \
             {{ WATCH }} \
             --runtime-dir "../expo-runtime" \
             --std-lib-root "../tao-std-lib" \
-            --verbose
+            --verbose \
+            --app provider.name=InstantDB \
+            --app "provider.appId=$APP_ID" \
+            --app "provider.apiURI=http://${HOST}:${INSTANT_PORT}" \
+            --app "provider.websocketURI=ws://${HOST}:${INSTANT_PORT}/runtime/session"
 
 # Run expo on port 8081
 _watch_runtime_reload:
@@ -78,7 +115,7 @@ _watch_runtime_reload:
     set -euo pipefail
     cd packages/expo-runtime
     echo "[runtime_reload] Expo web: http://localhost:8081/"
-    npx expo start --web --port 8081
+    BROWSER="Google Chrome" bunx expo start --web --ios --port 8081
 
 _watch_typecheck_extension:
     # One-shot build establishes composite outputs under `.builds/ts-packages/` before watch (avoids TS6305 after `just clean`).

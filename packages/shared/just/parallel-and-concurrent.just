@@ -12,6 +12,9 @@ CONCURRENTLY_HIDE_FMT_WATCHER := "--hide fmt_justfile"
 CONCURRENTLY_CMD := "./packages/shared/node_modules/.bin/concurrently"
 CONCURRENTLY_RUN_ALL_CMD := CONCURRENTLY_CMD + " " + CONCURRENTLY_COLORS + " " + CONCURRENTLY_SUCCESS_ALL + " " + CONCURRENTLY_KILL_ON_FAIL + " " + CONCURRENTLY_HIDE_FMT_WATCHER
 
+# First process to exit ends the group and kills siblings (used by `just dev` so `r` reload can restart the batch).
+CONCURRENTLY_DEV_WATCH_CMD := CONCURRENTLY_CMD + " " + CONCURRENTLY_COLORS + " --success first --kill-others " + CONCURRENTLY_HIDE_FMT_WATCHER
+
 # Watch tests: clock + suite name on every line (re-runs get new timestamps); no --hide/--group (group buffers until a process exits).
 
 CONCURRENTLY_WATCH_TESTS_CMD := CONCURRENTLY_CMD + " " + CONCURRENTLY_COLORS + " " + CONCURRENTLY_SUCCESS_FIRST + " " + CONCURRENTLY_EXIT_ALL_TOGETHER + " --pad-prefix --prefix \"[{time}] {name}\" --timestamp-format \"HH:mm:ss.SSS\""
@@ -58,5 +61,13 @@ _prefix_strip_parallel PREFIX *RECIPES:
     p="{{ PREFIX }}"; recipes=({{ RECIPES }})
     for r in "${recipes[@]}"; do cmds+=("just $r"); names+=("${r#$p}"); done
     exec {{ CONCURRENTLY_RUN_ALL_CMD }} \
+        --names "$(IFS=,; echo "${names[*]}")" \
+        "${cmds[@]}"
+
+_prefix_strip_parallel_dev PREFIX *RECIPES:
+    #!{{ ZSH_INIT }}
+    p="{{ PREFIX }}"; recipes=({{ RECIPES }})
+    for r in "${recipes[@]}"; do cmds+=("just $r"); names+=("${r#$p}"); done
+    exec {{ CONCURRENTLY_DEV_WATCH_CMD }} \
         --names "$(IFS=,; echo "${names[*]}")" \
         "${cmds[@]}"
