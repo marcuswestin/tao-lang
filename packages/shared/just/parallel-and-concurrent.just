@@ -3,6 +3,7 @@ import "./_shared-vars.just"
 CONCURRENTLY_COLORS := '--prefix-colors "#4FC3F7,#81C784,#FFD54F,#FF8A65,#BA68C8,#4DD0E1,#F06292,#AED581,#7986CB,#FFB74D"'
 CONCURRENTLY_SUCCESS_ALL := "--success all"
 CONCURRENTLY_SUCCESS_FIRST := "--success first"
+CONCURRENTLY_SUCCESS_DEV_CONTROL := "--success command-dev_control"
 CONCURRENTLY_KILL_ON_FAIL := "--kill-others-on-fail"
 CONCURRENTLY_EXIT_ALL_TOGETHER := "--kill-others --kill-others-on-fail"
 
@@ -11,9 +12,7 @@ CONCURRENTLY_EXIT_ALL_TOGETHER := "--kill-others --kill-others-on-fail"
 CONCURRENTLY_HIDE_FMT_WATCHER := "--hide fmt_justfile"
 CONCURRENTLY_CMD := "./packages/shared/node_modules/.bin/concurrently"
 CONCURRENTLY_RUN_ALL_CMD := CONCURRENTLY_CMD + " " + CONCURRENTLY_COLORS + " " + CONCURRENTLY_SUCCESS_ALL + " " + CONCURRENTLY_KILL_ON_FAIL + " " + CONCURRENTLY_HIDE_FMT_WATCHER
-
-# First process to exit ends the group and kills siblings (used by `just dev` so `r` reload can restart the batch).
-CONCURRENTLY_DEV_WATCH_CMD := CONCURRENTLY_CMD + " " + CONCURRENTLY_COLORS + " --success first --kill-others " + CONCURRENTLY_HIDE_FMT_WATCHER
+CONCURRENTLY_DEV_LOOP_CMD := CONCURRENTLY_CMD + " " + CONCURRENTLY_COLORS + " " + CONCURRENTLY_SUCCESS_DEV_CONTROL + " " + CONCURRENTLY_EXIT_ALL_TOGETHER + " " + CONCURRENTLY_HIDE_FMT_WATCHER
 
 # Watch tests: clock + suite name on every line (re-runs get new timestamps); no --hide/--group (group buffers until a process exits).
 
@@ -41,6 +40,19 @@ concurrently-exec-named *NAMES_AND_CMDS:
         --names "$(IFS=,; echo "${names[*]}")" \
         "${cmds[@]}"
 
+# Run named long-lived dev commands until `dev_control` exits (code 0 => restart loop, non-zero => stop).
+[positional-arguments]
+concurrently-exec-named-dev-loop *NAMES_AND_CMDS:
+    #!{{ ZSH_INIT }}
+    names=() && cmds=()
+    while (( {{ NUM_ARGS }} >= 2 )); do
+        names+=("$1") && cmds+=("$2")
+        shift 2
+    done
+    exec {{ CONCURRENTLY_DEV_LOOP_CMD }} \
+        --names "$(IFS=,; echo "${names[*]}")" \
+        "${cmds[@]}"
+
 # Same as concurrently-exec-named but with timestamped prefixes for long-running watch output.
 [positional-arguments]
 concurrently-exec-named-watch-tests *NAMES_AND_CMDS:
@@ -61,13 +73,5 @@ _prefix_strip_parallel PREFIX *RECIPES:
     p="{{ PREFIX }}"; recipes=({{ RECIPES }})
     for r in "${recipes[@]}"; do cmds+=("just $r"); names+=("${r#$p}"); done
     exec {{ CONCURRENTLY_RUN_ALL_CMD }} \
-        --names "$(IFS=,; echo "${names[*]}")" \
-        "${cmds[@]}"
-
-_prefix_strip_parallel_dev PREFIX *RECIPES:
-    #!{{ ZSH_INIT }}
-    p="{{ PREFIX }}"; recipes=({{ RECIPES }})
-    for r in "${recipes[@]}"; do cmds+=("just $r"); names+=("${r#$p}"); done
-    exec {{ CONCURRENTLY_DEV_WATCH_CMD }} \
         --names "$(IFS=,; echo "${names[*]}")" \
         "${cmds[@]}"

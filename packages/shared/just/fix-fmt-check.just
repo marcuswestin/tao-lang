@@ -8,7 +8,7 @@ DPRINT_CMD := "dprint"
 
 _fmt:
     just _fmt_just
-    cd packages/shared && just sort-package-json-files 1> /dev/null 2>&1
+    just shared sort-package-json-files 1> /dev/null 2>&1
     {{ DPRINT_CMD }} fmt --incremental=false 1> /dev/null 2>&1
     {{ OXLINT_CMD }} --fix 1> /dev/null 2>&1
     just tao fmt ./Apps/
@@ -65,7 +65,7 @@ _check:
         "headless-runtime" "cd packages/headless-test-runtime && tsc --noEmit --noUnusedLocals" \
         "ide-extension" "cd packages/ide-extension && tsc --noEmit --noUnusedLocals" \
         "expo-runtime" "cd packages/expo-runtime && tsc --noEmit --noUnusedLocals" \
-        "expo-lint" "cd packages/expo-runtime && just lint"
+        "expo-lint" "just expo-runtime lint"
 
 _lint:
     {{ OXLINT_CMD }}

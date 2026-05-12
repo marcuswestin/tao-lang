@@ -7,15 +7,11 @@ build: _deps
     bun build tao-cli.ts --compile --outfile ../../.builds/tao-cli
 
 build-lib OUTPUT_DIR:
+    # Hermes (expo runner) requires import.meta.url to be defined.
+    # It's a hack, and I'd like to make it cleaner.
     bun build cli-src/tao-cli-main.ts --keep-names \
         --outdir={{ OUTPUT_DIR }} --target=node \
         --define import.meta.url='"file:///__virtual__.js"'
-
-watch-lib OUTPUT_DIR:
-    bun build cli-src/tao-cli-main.ts --watch --keep-names \
-        --outdir={{ OUTPUT_DIR }} --target=node \
-        --define import.meta.url='"file:///__virtual__.js"'
-
 
 test *PATTERNS:
     bun test --reporter=dot {{ PATTERNS }}
