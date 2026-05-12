@@ -12,6 +12,10 @@ Format:
 
 ## Open
 
+### 2026-05-12 - `./agent` sometimes reports stale `.devenv` files during read commands.
+
+- While running simple `./agent cat`/`./agent git diff` commands, devenv intermittently failed or warned about missing `.devenv/load-exports` and stale `.devenv/gc/shell`; rerunning the command succeeded.
+
 ## Reviewed
 
 Move fixed or obsolete notes here with a short outcome.
