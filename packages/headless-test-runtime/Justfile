@@ -1,7 +1,4 @@
-set unstable := true
-set fallback := true
-set quiet := true
-
+import "../shared/just/_shared-vars.just"
 import "../shared/just/deps-helpers.just"
 
 # Matches packages/shared/just/parallel-and-concurrent.just so `just watch` can run two long-lived processes.

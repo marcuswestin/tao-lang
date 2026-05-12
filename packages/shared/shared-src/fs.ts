@@ -122,7 +122,7 @@ type WalkOptions = {
 }
 
 function shouldYield(path: string, opts: WalkOptions) {
-  const { includeHidden = false, includeOnlyExtensions = undefined } = opts
+  const { includeHidden = false, includeOnlyExtensions } = opts
   const name = basename(path)
   if (!includeHidden && name.startsWith('.')) {
     return false

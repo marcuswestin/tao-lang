@@ -7,10 +7,10 @@ Tao Lang is a programming language for building native and web apps.
 
 ### Get started
 
-Run this to get started:
+Run the bootstrap script:
 
 ```zsh
-zsh .config/automated-setup.zsh
+bash .config/bootstrap-dev-env.sh
 ```
 
 ### Extension Development

@@ -13,9 +13,14 @@ import {
   type TaoQueryResult,
 } from '../../tao-data-client'
 
+type CryptoLike = {
+  randomUUID?: () => string
+  getRandomValues?: (array: Uint8Array) => Uint8Array
+}
+
 /** randomRowId returns a v4 UUID using whichever `crypto` API the host exposes (RN polyfills `getRandomValues`; modern Node/web give `randomUUID`). */
 function randomRowId(): string {
-  const c = typeof crypto !== 'undefined' ? (crypto as Crypto & { randomUUID?: () => string }) : undefined
+  const c: CryptoLike | undefined = typeof crypto !== 'undefined' ? crypto : undefined
   if (c?.randomUUID) {
     return c.randomUUID()
   }

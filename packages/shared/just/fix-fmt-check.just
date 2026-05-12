@@ -4,12 +4,12 @@ import "./_shared-vars.just"
 ########################
 
 OXLINT_CMD := "oxlint --ignore-path .gitignore --type-aware --deny-warnings"
+DPRINT_CMD := "dprint"
 
 _fmt:
     just _fmt_just
-    cd packages/shared && just sort-package-json-files 1> /dev/null 2>&1
-    dprint fmt --incremental=false 1> /dev/null 2>&1
-    {{ MISE_CMD }} fmt 1> /dev/null 2>&1
+    just shared sort-package-json-files 1> /dev/null 2>&1
+    {{ DPRINT_CMD }} fmt --incremental=false 1> /dev/null 2>&1
     {{ OXLINT_CMD }} --fix 1> /dev/null 2>&1
     just tao fmt ./Apps/
     just _fmt_newlines
@@ -37,7 +37,7 @@ _fmt_newlines:
 # Run ts-autofix for a package and filters output
 [private]
 _ts_autofix_package PACKAGE:
-    (cd "packages/{{ PACKAGE }}" && ts-autofix fix --tsCliArgs --noUnusedLocals 2>&1 | grep -v 'Processing code fixes for')
+    (cd "packages/{{ PACKAGE }}" && ../shared/node_modules/.bin/ts-autofix fix --tsCliArgs --noUnusedLocals 2>&1 | grep -v 'Processing code fixes for')
 
 [no-quiet]
 _fix: _fmt
@@ -56,7 +56,7 @@ _fix: _fmt
 _check:
     just concurrently-exec-named \
         "lint" "just lint" \
-        "dprint" "dprint check --incremental=false" \
+        "dprint" "{{ DPRINT_CMD }} check --incremental=false" \
         "compiler-build" "cd packages/compiler && tsc -b --force"
     just concurrently-exec-named \
         "compiler" "cd packages/compiler && tsc --noEmit --noUnusedLocals" \
@@ -65,7 +65,7 @@ _check:
         "headless-runtime" "cd packages/headless-test-runtime && tsc --noEmit --noUnusedLocals" \
         "ide-extension" "cd packages/ide-extension && tsc --noEmit --noUnusedLocals" \
         "expo-runtime" "cd packages/expo-runtime && tsc --noEmit --noUnusedLocals" \
-        "expo-lint" "cd packages/expo-runtime && just lint"
+        "expo-lint" "just expo-runtime lint"
 
 _lint:
     {{ OXLINT_CMD }}

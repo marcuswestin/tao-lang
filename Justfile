@@ -8,17 +8,8 @@ alias d := dev
 alias t := test
 alias w := watch
 
-# Dev Environment Setup
-#######################
-
 # Print available commands
 help: _print_help
-
-# Create "enter-tao" dev environment
-create-dev-env: _create_dev_env
-
-# Update the dev environment
-update-dev-env: _update_dev_env
 
 # Setup repo for development
 setup: _setup_git_repo
@@ -29,9 +20,13 @@ setup: _setup_git_repo
 DEV_APP := "./Apps/Test Apps/Data Schema/Data Schema.tao"
 BUN_TEST_ROOTS := "packages/shared packages/parser packages/formatter packages/compiler packages/tao-cli packages/ide-extension packages/tao-std-lib"
 
-# Run all components in watch mode.
-@dev:
-    export TAO_DEV_APP="{{ DEV_APP }}" && just _dev
+# Run all components in watch mode (Expo web + Metro; iOS Simulator then physical iPhone after Metro is up via launcher).
+@dev DEVICE="roPhone" APP=DEV_APP:
+    just _dev "{{ DEVICE }}" "{{ APP }}"
+
+# Run the Tao Expo runtime on a physical iOS device only (no full `just dev` stack).
+iphone DEVICE="roPhone":
+    just expo-runtime device "{{ DEVICE }}"
 
 # Run full battery of checks and builds to prepare for commit.
 prep-commit: _prep_commit
@@ -53,7 +48,7 @@ ensure-repo-clean: _ensure_repo_clean
 test *FILTER: gen
     bun test {{ BUN_TEST_ROOTS }} --reporter=dot --test-name-pattern '{{ FILTER }}'
     just headless-test-runtime test '{{ FILTER }}'
-    cd packages/expo-runtime && just test '{{ FILTER }}'
+    just expo-runtime test '{{ FILTER }}'
 
 theadless *FILTER: gen
     just headless-test-runtime test '{{ FILTER }}'
@@ -107,24 +102,31 @@ build:
 
 # Generate parser from grammar (skipped when `TAO_SKIP_GEN=1`)
 gen:
-    just _skip_if_env_eq TAO_SKIP_GEN 1 || (cd packages/parser && just gen)
+    just _skip_if_env_eq TAO_SKIP_GEN 1 || just parser gen
 
 # Build and install the extension to cursor and vscode
 extension-build-package-and-install:
-    cd packages/ide-extension && just build-package-and-install
+    just ide-extension build-package-and-install
 
-# Drop build outputs and local caches. Does not remove node_modules — use `clean-full` for that.
+# Drop build outputs and local caches. Does not stop local InstantDB or remove node_modules.
 clean:
+    echo "Removing all build artifacts ..."
     rm -rf .builds
     find . -type d -name '_gen*' -prune -exec rm -rf {} +
     find . -type f -name '*.tsbuildinfo' -delete
+    echo "Removing all node_modules/.cache directories ..."
     find . -type d -path '*/node_modules/.cache' -prune -exec rm -rf {} +
-    (cd packages/expo-runtime && just clean)
+    @ just expo-runtime clean
 
-# Like `clean`, plus all `node_modules` directories.
+# Like `clean`, plus all node_modules and Expo native directories/caches.
 clean-full: clean
+    echo "Removing all node_modules directories ..."
     find . -name node_modules -type d -prune -exec rm -rf {} +
-    (cd packages/expo-runtime && just clean-full)
+    @ just expo-runtime clean-full
+
+stop:
+    echo "Stopping local InstantDB Docker stack ..."
+    just instantdb-local down
 
 # Code navigation helpers
 #########################
@@ -132,37 +134,54 @@ clean-full: clean
 search PATTERN DIR=".":
     rg --line-number --no-heading --color=never "{{ PATTERN }}" {{ DIR }} || true
 
-# Package command runners
-# #######################
+# Package command runners (alphabetically by `packages/<name>`)
+# ############################################################
 
-parser *ARGS:
-    cd {{ justfile_dir() }}/packages/parser && just {{ ARGS }}
-
+# packages/compiler
 compiler *ARGS:
     cd {{ justfile_dir() }}/packages/compiler && just {{ ARGS }}
 
-formatter *ARGS:
-    cd {{ justfile_dir() }}/packages/formatter && just {{ ARGS }}
-
+# packages/expo-runtime
 expo-runtime *ARGS:
     cd {{ justfile_dir() }}/packages/expo-runtime && just {{ ARGS }}
 
+# packages/formatter
+formatter *ARGS:
+    cd {{ justfile_dir() }}/packages/formatter && just {{ ARGS }}
+
+# packages/headless-test-runtime
 headless-test-runtime *ARGS:
     cd {{ justfile_dir() }}/packages/headless-test-runtime && just {{ ARGS }}
 
+# packages/ide-extension
 ide-extension *ARGS:
     cd {{ justfile_dir() }}/packages/ide-extension && just {{ ARGS }}
 
+# packages/local-instantdb
+instantdb-local *ARGS:
+    cd {{ justfile_dir() }}/packages/local-instantdb && APP_ID="{{ LOCAL_INSTANTDB_APP_ID }}" just {{ ARGS }}
+
+# packages/parser
+parser *ARGS:
+    cd {{ justfile_dir() }}/packages/parser && just {{ ARGS }}
+
+# packages/shared
 shared *ARGS:
     cd {{ justfile_dir() }}/packages/shared && just {{ ARGS }}
 
+# packages/tao-cli
 cli *ARGS:
     cd {{ justfile_dir() }}/packages/tao-cli && just {{ ARGS }}
 
+# Helper commands
+#################
+
 # Build and run Tao CLI with given arguments
+[no-cd]
 [positional-arguments]
 tao *ARGS:
-    cd {{ justfile_dir() }} && just _tao "$@"
+    just --justfile {{ justfile_dir() }}/Justfile cli build
+    {{ justfile_dir() }}/.builds/tao-cli "$@"
 
 [no-cd]
 q-dev *ARGS:

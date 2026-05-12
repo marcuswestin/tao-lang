@@ -37,6 +37,7 @@ action CreateEvent {
 app DataSchemaApp {
    provider InstantDB {
       appId "9faf89c0-c15c-49b4-bf3f-3b5b2cd9a19f"
+      // just dev overrides these with the local LAN IP
       adminToken "90200000-0000-4000-8000-000000000003"
       apiURI "http://localhost:9020"
       websocketURI "ws://localhost:9020/runtime/session"

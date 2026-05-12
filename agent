@@ -1,8 +1,15 @@
 #!/bin/bash
 set -euo pipefail
 
-if [ -x "${HOME}/.local/bin/mise" ]; then
-  eval "$("${HOME}/.local/bin/mise" activate bash)"
+TAO_REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+if [ -z "${TAO_DEVENV:-}" ] && command -v devenv >/dev/null 2>&1; then
+  exec devenv shell -- "$TAO_REPO_ROOT/agent" "$@"
+fi
+
+if ! command -v just >/dev/null 2>&1; then
+  echo "just not found. Install devenv, run 'direnv allow', or enter 'devenv shell'." >&2
+  exit 127
 fi
 
 case "${1:-help}" in

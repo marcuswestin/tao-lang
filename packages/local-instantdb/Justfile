@@ -21,29 +21,42 @@ bootstrap:
 image: bootstrap
   {{compose}} build instant
 
-up: image
+# `compose up -d` starts detached containers; stopping the terminal or `just dev` does not stop them.
+# If /health already responds, skip image/build/wait/seed so rerunning `just dev` is fast.
+up:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  url="http://127.0.0.1:${INSTANT_PORT:?}/health"
+  if curl -fsS --connect-timeout 2 --max-time 6 --retry 2 --retry-delay 1 --retry-all-errors "$url" >/dev/null 2>&1; then
+    echo "[local-instantdb] Already healthy at ${url}; skipping image/build/up/wait/seed."
+    exit 0
+  fi
+  just image
   {{compose}} up -d
-  just wait
-  just seed
+  just _wait-for-local-instantdb
+  just _seed
 
-wait:
-  @printf 'Waiting for InstantDB on http://127.0.0.1:%s/health' "$INSTANT_PORT"
-  @attempt=0; \
-  until curl -fsS "http://127.0.0.1:$INSTANT_PORT/health" >/dev/null; do \
-    attempt=$((attempt + 1)); \
-    if [ "$attempt" -gt 120 ]; then \
-      echo; \
-      echo "Timed out waiting for InstantDB"; \
-      {{compose}} ps; \
-      {{compose}} logs --tail 120 instant; \
-      exit 1; \
-    fi; \
-    printf '.'; \
-    sleep 2; \
-  done; \
+_wait-for-local-instantdb:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  url="http://127.0.0.1:${INSTANT_PORT:?}/health"
+  echo "Waiting for InstantDB on ${url}"
+  attempt=0
+  until curl -fsS --connect-timeout 1 --max-time 2 --retry 2 --retry-delay 2 --retry-all-errors "$url" >/dev/null 2>&1; do
+    attempt=$((attempt + 1))
+    if [ "$attempt" -gt 120 ]; then
+      echo
+      echo "Timed out waiting for InstantDB"
+      {{compose}} ps || true
+      {{compose}} logs --tail 120 instant || true
+      exit 1
+    fi
+    printf '.'
+    sleep 1
+  done
   echo ' ready'
 
-seed:
+_seed:
   {{compose}} exec -T postgres psql \
     -U "$POSTGRES_USER" \
     -d "$POSTGRES_DB" \
