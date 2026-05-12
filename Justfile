@@ -20,11 +20,11 @@ setup: _setup_git_repo
 DEV_APP := "./Apps/Test Apps/Data Schema/Data Schema.tao"
 BUN_TEST_ROOTS := "packages/shared packages/parser packages/formatter packages/compiler packages/tao-cli packages/ide-extension packages/tao-std-lib"
 
-# Run all components in watch mode.
+# Run all components in watch mode (Expo web + Metro; iOS Simulator then physical iPhone after Metro is up via launcher).
 @dev DEVICE="roPhone" APP=DEV_APP:
     just _dev "{{ DEVICE }}" "{{ APP }}"
 
-# Run the Tao Expo runtime on a physical iOS device.
+# Run the Tao Expo runtime on a physical iOS device only (no full `just dev` stack).
 iphone DEVICE="roPhone":
     just expo-runtime device "{{ DEVICE }}"
 

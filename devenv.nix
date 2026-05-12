@@ -83,5 +83,9 @@ in
     exec = ''just watch "$@"'';
     description = "just watch";
   };
+  scripts.cfd = {
+    exec = ''just clean-full && just dev "$@"'';
+    description = "just clean-full && just dev";
+  };
 
 }
