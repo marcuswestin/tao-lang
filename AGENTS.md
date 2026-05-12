@@ -8,6 +8,12 @@ When starting in a new worktree (or fresh repo clone), the very first thing you 
 2. Run setup if bootstrap was skipped because tools already exist: `./agent setup`.
 3. Create a new appropriately named branch: `./agent git-create-branch <branch-name>`.
 
+## Dev environment (Nix / devenv)
+
+Repo-wide development dependencies come from **Nix** via **[devenv](https://devenv.sh)**; see **`devenv.nix`**. Bootstrap installs Nix (if needed), **devenv**, and **direnv**, then runs **`devenv shell -- ./agent setup`**. With **direnv** allowed in this repo, shells load **`TAO_DEVENV=1`**.
+
+Use **`skills/nix-devenv`** when adding shared CLI packages, or when debugging **PATH** / compiler mix-ups (for example Xcode versus Nix **clang** on macOS).
+
 ## Command Safety
 
 - `./agent` is the only supported way for agents to interact with this repo.
@@ -35,6 +41,7 @@ Tao Lang is a programming language for building native and web apps.
 - Read existing files before writing, and re-read before editing if the file may have changed.
 - Be thorough in reasoning and concise in user-facing output.
 - Avoid loading large files wholesale unless required; use targeted search or chunks first.
+- If one issue takes multiple failed or partial approaches, use `skills/multi-pass-debugging`, keep a working notes document, and re-research the owning layer before adding more shims.
 - When you notice repo, tooling, documentation, workflow, or performance problems during normal work, use `skills/repo-issue-notes` and add a brief dated note to `agent-issues.md` before finishing. Do not derail the current task for non-blocking cleanup.
 - Do not use sycophantic openers, closing fluff, emojis, or em dashes.
 - Do not guess APIs, versions, flags, commit SHAs, package names, or command behavior. Verify by reading repo code, local docs, or official docs before asserting.
@@ -63,7 +70,3 @@ Tao Lang is a programming language for building native and web apps.
 - Remote, rebase, checkout, switch, pull, and push operations are intentionally not exposed as general agent commands. Add an explicit `./agent` recipe before making those agent-driven workflows routine.
 - After merging or rebasing `main` into a feature branch, run `./agent prep-commit` until green before treating the branch as merge-ready.
 - Use `skills/git-workflow` for staging, committing, batch commits, and merge preparation.
-
-## Skills
-
-Canonical agent workflows live in `skills/`. Use the relevant skill for task-specific procedures such as code review, TODO work, git workflow, compiler work, Langium formatting/scoping, and agent-system maintenance.
