@@ -19,6 +19,9 @@
     "**/node_modules": true,
     "**/tsconfig.tsbuildinfo": true
   },
+  "search.exclude": {
+    "**/bun.lock": true
+  },
   "editor.defaultFormatter": "dprint.dprint",
   "dprint.path": ".devenv/profile/bin/dprint",
   // Code Formatting: Tao Lang's extension, for .tao files.
