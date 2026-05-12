@@ -9,7 +9,6 @@ READ_COMMANDS := "ls|cat|head|tail|wc|tree|less|bat|grep|rg|find|fd|sort|uniq|cu
 DIAGNOSTIC_COMMANDS := "tsc|dprint|oxlint"
 WRITE_COMMANDS := "mkdir|touch"
 AGENT_COMMANDS := READ_COMMANDS + "|" + DIAGNOSTIC_COMMANDS + "|" + WRITE_COMMANDS
-GIT_COMMANDS := "log|status|diff|show|branch|tag|rev-parse|ls-files|blame|shortlog|remote|describe|name-rev|for-each-ref|reflog|cat-file|rev-list|add|commit|stash|restore|merge"
 
 # Command recipes
 #################
@@ -28,8 +27,7 @@ help:
     echo 'Write commands:'
     echo '{{ WRITE_COMMANDS }}' | sed "s/|/ /g" | sed 's/^/    /'
     echo
-    echo 'Git commands: ./agent git <subcommand> <args>'
-    echo '{{ GIT_COMMANDS }}' | sed "s/|/ /g" | fold -s -w 76 | sed 's/^/    /'
+    echo 'Git: ./agent git <args> — forwards to git (same as running git with those arguments).'
     echo
     echo 'Branch creation: ./agent git-create-branch <branch-name>'
     echo
@@ -103,44 +101,16 @@ git-create-branch BRANCH_NAME:
     #!{{ ZSH_INIT }}
     exec git checkout -b "$1"
 
-# Run an allowed git subcommand.
+# Run git with the given arguments (forwarding pass-through).
 [positional-arguments]
 git SUB_CMD *ARGS:
     #!{{ ZSH_INIT }}
-    just {{ AGENT_JUSTFILE }} _check_allowed_git_subcommand "$1"
-    if [ "$1" = "commit" ]; then
-        needs_prep=0
-        if ! git diff --cached --quiet --exit-code; then
-            needs_prep=1
-        else
-            for arg in "${@:2}"; do
-                if [[ "$arg" = "--all" || ( "$arg" != "--"* && "$arg" = -*a* ) ]]; then
-                    if ! git diff --quiet --exit-code; then needs_prep=1; fi
-                    break
-                fi
-            done
-        fi
-
-        if [ "$needs_prep" = "1" ]; then
-            just {{ AGENT_JUSTFILE }} prep-commit
-        else
-            echo "> No staged commit content; skipping pre-commit prep."
-        fi
-    fi
     exec git "$@"
 
 [positional-arguments]
 _run-command EXEC_CMD *ARGS:
     #!{{ ZSH_INIT }}
     just {{ AGENT_JUSTFILE }} _execute_whitelisted_command "$1" "${@:2}"
-
-_check_allowed_git_subcommand SUB_CMD:
-    #!{{ ZSH_INIT }}
-    if ! echo "|{{ GIT_COMMANDS }}|" | grep -Fq "|{{ SUB_CMD }}|"; then
-        echo "git {{ SUB_CMD }} not allowed." >&2
-        echo "Run ./agent help for allowed git subcommands (./agent git <sub>)." >&2
-        exit 1
-    fi
 
 [positional-arguments]
 _execute_whitelisted_command EXEC_CMD *ARGS:

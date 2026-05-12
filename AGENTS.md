@@ -19,6 +19,7 @@ Use **`skills/nix-devenv`** when adding shared CLI packages, or when debugging *
 - `./agent` is the only supported way for agents to interact with this repo.
 - Start every session with `./agent help`.
 - Use the named commands exposed by `./agent help`, for example `./agent rg <pattern>`, `./agent cat <path>`, and `./agent git status`.
+- Git: use **`./agent git …`** (same arguments you would pass to `git`; `./agent git` forwards to the `git` CLI).
 - `./agent` is the effective whitelist of allowed commands for agents in this repo.
 - Do not run repo commands directly through `just`, `bun`, `npm`, `git`, or other tools.
 - Do not edit `agent.Justfile` unless the user explicitly asks for agent command changes.
@@ -66,7 +67,8 @@ Tao Lang is a programming language for building native and web apps.
 
 ## Git Safety
 
-- Safe git browsing, staging, commits, and local merge prep go through `./agent git status|diff|log|add|commit|merge`.
-- Remote, rebase, checkout, switch, pull, and push operations are intentionally not exposed as general agent commands. Add an explicit `./agent` recipe before making those agent-driven workflows routine.
+- Use **`./agent git …`** for all git operations (see Command Safety).
+- You **MUST** run **`./agent prep-commit`** before **`./agent git commit`** (or any other commit-creating git invocation, such as `git commit` via `./agent git`) unless the user explicitly instructs you to skip it.
+- Remote, rebase, checkout, switch, pull, and push are not separate `./agent` recipes; if you use them via `./agent git`, do so only when the user or an agreed workflow requires it.
 - After merging or rebasing `main` into a feature branch, run `./agent prep-commit` until green before treating the branch as merge-ready.
 - Use `skills/git-workflow` for staging, committing, batch commits, and merge preparation.
