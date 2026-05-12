@@ -37,10 +37,9 @@ action CreateEvent {
 app DataSchemaApp {
    provider InstantDB {
       appId "9faf89c0-c15c-49b4-bf3f-3b5b2cd9a19f"
-      // apiURI "http://localhost:9020"
-      // websocketURI "ws://localhost:9020/runtime/session"
-      apiURI "http://192.168.50.102:9020"
-      websocketURI "ws://192.168.50.102:9020/runtime/session"
+      // just dev override these with the local LAN IP
+      apiURI "http://localhost:9020"
+      websocketURI "ws://localhost:9020/runtime/session"
    }
    ui RootView
 }
