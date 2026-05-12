@@ -1,6 +1,6 @@
 ---
 name: expo-ios-dev-client
-description: Guides Tao Expo physical-iPhone workflow: Metro startup, app install/open flow, dev-client URL routing, launcher patching, and iOS native config gotchas.
+description: "Guides Tao Expo physical-iPhone workflow: Metro startup, app install/open flow, dev-client URL routing, launcher patching, and iOS native config gotchas."
 ---
 
 # Expo iOS Dev Client
