@@ -3,6 +3,6 @@ import "../shared/just/all-imports.just"
 build: _deps gen
 
 gen:
-    bunx langium generate --mode=development > /dev/null
+    bunx langium-cli generate --mode=development > /dev/null
 
 _deps: _bun_deps
