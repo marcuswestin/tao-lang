@@ -1,11 +1,5 @@
 import "./_shared-vars.just"
 
-[no-cd]
-[positional-arguments]
-_tao *ARGS:
-    cd "{{ justfile_dir() }}/packages/tao-cli" && just build
-    {{ justfile_dir() }}/.builds/tao-cli "$@"
-
 _stash_unstaged_changes:
     echo "> Stashing non-staged changes..." && git stash --keep-index --include-untracked
     echo "\n> Stashing complete.\n"
@@ -50,13 +44,13 @@ _build_all:
     export TAO_DEPS_BATCHED=1
     just deps
     just concurrently-exec-named \
-        "shared" "cd packages/shared && just build" \
-        "parser" "cd packages/parser && just build"
+        "shared" "just shared build" \
+        "parser" "just parser build"
     just concurrently-exec-named \
-        "formatter" "cd packages/formatter && just build" \
-        "compiler" "cd packages/compiler && just build"
-    (cd packages/tao-cli && just build)
+        "formatter" "just formatter build" \
+        "compiler" "just compiler build"
+    just cli build
     just concurrently-exec-named \
-        "headless-runtime" "cd packages/headless-test-runtime && just build" \
-        "expo-runtime" "cd packages/expo-runtime && just build" \
-        "ide-extension" "cd packages/ide-extension && TAO_SKIP_COMPILER_BUILD=1 just build"
+        "headless-runtime" "just headless-test-runtime build" \
+        "expo-runtime" "just expo-runtime build" \
+        "ide-extension" "TAO_SKIP_COMPILER_BUILD=1 just ide-extension build"

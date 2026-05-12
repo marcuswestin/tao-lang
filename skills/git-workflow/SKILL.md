@@ -15,10 +15,10 @@ description: Handles Tao Lang git status, staging, commits, batch commits, and m
 ## Steps
 
 1. Inspect state with `./agent git status` and the relevant `diff` or `log` command.
-2. Before the first commit of a session, run `./agent prep-commit` unless the user explicitly opts out.
+2. Before any commit, run `./agent prep-commit` unless the user explicitly instructs you to skip it (`./agent git` forwards to `git` and does not run prep for you).
 3. Stage only intentional files with `./agent git add <paths>`.
-4. Commit with `./agent git commit -m "<message>"`, which runs `./agent prep-commit` first.
-5. For batch commits, still use `./agent git commit` for each coherent staged piece unless the user explicitly asks to add a narrower fast-commit recipe.
+4. Commit with `./agent git commit -m "<message>"` after prep is green.
+5. For batch commits, run `./agent prep-commit` only before the first commit unless any changes are made after that.
 6. Use commit messages shaped as `type(scope): short summary`, with a body for non-trivial commits. Types: `feat`, `bugfix`, `docs`, `cleanup`, `refactor`, `performance`, `tests`, `chore`, `revert`.
 7. Use `./agent git merge <branch>` for local merge prep when the user asks to prepare a branch for integration.
 8. Remote, rebase, checkout, switch, pull, and push operations are not exposed as general agent commands. Add an explicit `./agent` recipe before making those agent-driven workflows routine.

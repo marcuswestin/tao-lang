@@ -1,11 +1,4 @@
 {
-  // Code appearance
-  "editor.fontSize": 12.5,
-  "editor.lineHeight": 17,
-  // "window.zoomLevel": 1.5, // Monitor extra large
-  // "window.zoomLevel": 1.3, // Monitor large
-  "window.zoomLevel": 0.8, // Monitor medium
-  // "window.zoomLevel": 0.15, // Laptop
   // Use compiler typescript version, for langium generated code to typecheck properly
   "typescript.tsdk": "packages/compiler/node_modules/typescript/lib",
   // Build extension and restart host (requires extension ryuta46.multi-command).
@@ -26,54 +19,15 @@
     "**/node_modules": true,
     "**/tsconfig.tsbuildinfo": true
   },
-  "editor.codeActionsOnSave": {
-    "source.addMissingImports": "explicit",
-    "source.organizeImports": "explicit"
+  "search.exclude": {
+    "**/bun.lock": true
   },
-  // Code Formatting: DPrint, by default.
-  "editor.formatOnSave": true,
-  "editor.formatOnPaste": true,
-  "editor.formatOnType": true,
   "editor.defaultFormatter": "dprint.dprint",
   "dprint.path": ".devenv/profile/bin/dprint",
-  "files.insertFinalNewline": true,
-  "files.trimFinalNewlines": true,
-  "files.trimTrailingWhitespace": true,
   // Code Formatting: Tao Lang's extension, for .tao files.
   "[tao]": {
     "editor.defaultFormatter": "tao.tao-ide-extension"
   },
   // Langium and App Lang configs
-  "langium.config": "packages/parser/langium-config.json",
-  // "typescript.inlayHints.functionLikeReturnTypes.enabled": true,
-  // "typescript.inlayHints.parameterNames.enabled": "all",
-  "typescript.suggest.completeJSDocs": true,
-  // Formatting
-  "typescript.format.enable": true,
-  "typescript.format.insertSpaceAfterCommaDelimiter": true,
-  "typescript.format.insertSpaceAfterConstructor": true,
-  "typescript.format.insertSpaceAfterFunctionKeywordForAnonymousFunctions": true,
-  "typescript.format.insertSpaceAfterKeywordsInControlFlowStatements": true,
-  "typescript.format.insertSpaceAfterOpeningAndBeforeClosingEmptyBraces": true,
-  "typescript.format.insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces": true,
-  "typescript.format.insertSpaceAfterOpeningAndBeforeClosingNonemptyParenthesis": true,
-  "typescript.format.insertSpaceAfterOpeningAndBeforeClosingNonemptyBrackets": true,
-  "typescript.format.insertSpaceAfterOpeningAndBeforeClosingTemplateStringBraces": true,
-  "typescript.format.insertSpaceAfterSemicolonInForStatements": true,
-  "typescript.format.insertSpaceBeforeAndAfterBinaryOperators": true,
-  "typescript.format.placeOpenBraceOnNewLineForControlBlocks": false,
-  "typescript.format.placeOpenBraceOnNewLineForFunctions": false,
-  // Suggestions/IntelliSense
-  "typescript.suggest.autoImports": true,
-  "typescript.suggest.completeFunctionCalls": true,
-  "typescript.suggest.enabled": true,
-  "typescript.suggest.includeCompletionsForImportStatements": true,
-  // General features
-  // "typescript.referencesCodeLens.enabled": true,
-  "typescript.implementationsCodeLens.enabled": true,
-  "typescript.updateImportsOnFileMove.enabled": "always",
-  "typescript.check.npmIsInstalled": true,
-  "[jsonc]": {
-    "editor.defaultFormatter": "vscode.json-language-features"
-  }
+  "langium.config": "packages/parser/langium-config.json"
 }

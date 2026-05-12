@@ -17,15 +17,3 @@ Langium grammar and generated AST for Tao Lang.
 ## Entry point
 
 `src/parser.ts` — imported as `@parser` via tsconfig paths.
-
-## Testing
-
-Parser has no local test files. Grammar correctness is verified through `packages/compiler/compiler-tests/` (stages 1-2: lexer and parser tests). This is intentional — the parser's only consumer is the compiler, so testing at the integration boundary is more valuable than unit-testing generated code.
-
-## Regenerating
-
-```sh
-just gen
-```
-
-Or directly: `bunx langium generate --mode=development` from this directory.
