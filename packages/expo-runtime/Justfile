@@ -2,34 +2,36 @@ import "../shared/just/all-imports.just"
 
 release-prep: _deps prebuild test
 
-prebuild: build install-ios-platform
+prebuild:
+    #!{{ ZSH_INIT }}
+    if [[ -d ios ]]; then echo "prebuild already done"; exit 0; fi
+    just build install-ios-platform
     bunx expo prebuild
 
 build: _deps
-    # Hermes (expo runner) requires import.meta.url to be defined.
-    # It's a hack, and I'd like to make it cleaner.
     just cli build-lib {{ justfile_directory() }}/_gen-tao-lib
 
-watch-lib: _deps
-    just cli watch-lib {{ justfile_directory() }}/_gen-tao-lib
-
 install-ios-platform:
-    if command -v xcodebuild >/dev/null; then xcodebuild -downloadPlatform iOS; else echo "xcodebuild not found; skipping iOS platform install"; fi
-
-run: _deps
-    BROWSER="none" bunx expo start --web --ios --android
+    xcodebuild -downloadPlatform iOS
 
 web: _deps
-    BROWSER="none" bunx expo start --web
+    open -a "Google Chrome"
+    BROWSER="Google Chrome" bunx expo start --web
 
 ios: _deps
-    BROWSER="none" bunx expo start --ios
+    bunx expo start --ios
 
-device: _deps install-ios-platform
-    BROWSER="none" bunx expo run:ios --device
+device DEVICE="": _deps install-ios-platform
+    npx expo run:ios --device "{{ DEVICE }}"
+
+# Print the dev-client URL for the launcher's `Enter URL manually` fallback.
+device-url:
+    #!{{ ZSH_INIT }}
+    ip=$(bash "{{ justfile_directory() }}/../shared/scripts/lan-ipv4.sh")
+    echo "exp+tao-expo-runtime://expo-development-client/?url=http%3A%2F%2F${ip}%3A{{ DEV_METRO_PORT }}"
 
 android: _deps
-    BROWSER="none" bunx expo start --android
+    bunx expo start --android
 
 clean:
     rm -rf .expo
@@ -39,7 +41,6 @@ clean:
 clean-full: clean
     rm -rf ./node_modules ./ios ./android
     rm -rf ~/.expo
-    watchman watch-del {{ justfile_directory() }}/../.. && watchman watch-project '{{ justfile_directory() }}'/../..
 
 JEST_ARGS := "--detectOpenHandles --watchman=false"
 JEST_WATCH_ARGS := JEST_ARGS + " --watch --silent --reporter=dot"

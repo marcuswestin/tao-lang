@@ -18,6 +18,8 @@ description: Guides Tao Expo runtime, React Native tests, and compile-to-runtime
 3. Put platform branching in the Expo/runtime layer or a clearly named runtime helper, not inline throughout generated Tao app code.
 4. When changing compile-to-run paths, environment, or spawn behavior, compare with `packages/headless-test-runtime/` so the runtimes do not drift silently.
 5. Keep generated Tao output portable unless the runtime layer explicitly owns a platform split.
+6. Use **`skills/expo-ios-dev-client`** for physical iPhone installs, Metro/dev-client startup, `just dev roPhone`, `expo-dev-launcher` patching, or Xcode/CocoaPods command workflow.
+7. Use **`skills/nix-devenv`** when failures point to Nix/devenv PATH, compiler, SDK, or Xcode toolchain selection.
 
 ## Validation
 
