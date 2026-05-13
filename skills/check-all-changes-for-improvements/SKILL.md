@@ -80,3 +80,15 @@ Do **not** stage changes: never run `git add` (or equivalent) as part of this wo
 - Focus on the _diff_, not the entire file — unless surrounding context reveals an issue.
 - When in doubt about whether something is an improvement, include it but note it as low priority.
 - If there are no meaningful improvements to suggest, say so clearly and don't invent busywork.
+- The best documentation is well written code.
+
+## Things to look out for
+
+Add these categories to check, in addition to what you already think to check for:
+
+- unused exports
+- duplicated code
+- architectural integrity
+- inconsistency with repo
+- ugly/lacking thoughtfulness
+- opaque/unclear/relying on comments when names and code flow could suffice
