@@ -6,8 +6,14 @@ import {
   queryFieldPathSegments,
 } from '../../query/query-model'
 import { makeValidater, type Reporter } from '../ValidationReporter'
+import {
+  isUnderViewDeclaration,
+  validateDuplicateIdentifier,
+  validateUppercaseIdentifierName,
+} from './validation-utils'
 
 export const queryValidationMessages = {
+  queryNotInViewOrFile: '`query` may only appear at file level or directly inside a view body.',
   queryOneNeedsUniqueWhere: '`get one` queries must filter by `id` or a `unique` field with `is` / `=`.',
   queryPathUnknownField: (field: string, entity: string) => `Unknown query field '${field}' on entity '${entity}'.`,
   queryPathCannotTraverseScalar: (field: string) => `Query path cannot traverse through scalar field '${field}'.`,
@@ -21,6 +27,9 @@ export const queryValidationMessages = {
 
 export const queryValidator: Pick<langium.ValidationChecks<AST.TaoLangAstType>, 'QueryDeclaration'> = {
   QueryDeclaration: makeValidater((node, report) => {
+    validateDuplicateIdentifier(node, report)
+    validateUppercaseIdentifierName(node, report)
+    validateQueryPlacement(node, report)
     validateGetOneHasUniqueWhere(node, report)
     validateQueryPaths(node, report)
     validateQueryOrderDepth(node, report)
@@ -34,6 +43,14 @@ type QueryPathResolution = {
   readonly finalField: AST.DataFieldDeclaration | undefined
   readonly finalTarget: AST.DataEntityDeclaration | undefined
   readonly error?: { readonly message: string; readonly node: AST.QueryFieldPath }
+}
+
+/** validateQueryPlacement allows top-level queries or queries inside a view body (not inside actions/apps). */
+function validateQueryPlacement(node: AST.QueryDeclaration, report: Reporter<AST.QueryDeclaration>): void {
+  if (AST.isTaoFile(node.$container) || isUnderViewDeclaration(node)) {
+    return
+  }
+  report.error(queryValidationMessages.queryNotInViewOrFile, node)
 }
 
 /** validateGetOneHasUniqueWhere enforces singleton reads to target `id` or a unique field. */

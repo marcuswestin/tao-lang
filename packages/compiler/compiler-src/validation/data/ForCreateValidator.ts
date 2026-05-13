@@ -1,7 +1,7 @@
 import type { LGM as langium } from '@parser'
 import { AST } from '@parser/parser'
 import { makeValidater } from '../ValidationReporter'
-import { isUnderViewDeclaration } from './QueryGuardOnValidator'
+import { isUnderViewDeclaration } from './validation-utils'
 
 /** forCreateMessages are diagnostics for `for` and `create` data statements. */
 export const forCreateMessages = {
