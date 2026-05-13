@@ -139,7 +139,7 @@ describe('codegen — app provider selection and overrides:', () => {
     const out = result.files.map(f => f.content).join('\n')
     expect(out).toContain('createTaoDataClient("InstantDB")')
     expect(out).toContain('getTaoData("HarnessData").open({"appId":"00000000-0000-0000-0000-000000000001"})')
-    expect(out).toMatch(/providers\/instantdb\/client\/InstantDBTaoClient/)
+    expect(out).toMatch(/providers\/all/)
   })
 
   test('data schema runtime shape includes non-primitive fields for provider insert validation', async () => {

@@ -1,17 +1,19 @@
 import * as React from 'react'
 import {
-  buildQueryResult,
-  evaluateQueryPlan,
   evaluateRecordFields,
   registerTaoDataProvider,
   type TaoDataClient,
   type TaoDataProviderParams,
   type TaoDatasetShape,
+} from '../../tao-data-client'
+import {
+  buildQueryResult,
+  evaluateQueryPlan,
   taoQueryIdentity,
   type TaoQueryPlan,
   type TaoQueryPredicate,
   type TaoQueryResult,
-} from '../../tao-data-client'
+} from '../../tao-query'
 
 type CryptoLike = {
   randomUUID?: () => string

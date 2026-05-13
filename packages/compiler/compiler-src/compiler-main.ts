@@ -75,20 +75,11 @@ export async function compileTao(opts: CompileOpts): Promise<CompileResult> {
       toRelativePath: FS.joinPath('use', '@tao', 'tao-runtime'),
     },
     {
-      fromAbsolutePath: FS.joinPath(__dirname, '../../tao-std-lib/tao/data/providers/instantdb/client'),
-      toRelativePath: FS.joinPath('use', '@tao', 'data', 'providers', 'instantdb', 'client'),
-    },
-    {
-      fromAbsolutePath: FS.joinPath(__dirname, '../../tao-std-lib/tao/data/providers/in-memory/client'),
-      toRelativePath: FS.joinPath('use', '@tao', 'data', 'providers', 'in-memory', 'client'),
+      fromAbsolutePath: FS.joinPath(__dirname, '../../tao-std-lib/tao/data/providers'),
+      toRelativePath: FS.joinPath('use', '@tao', 'data', 'providers'),
     },
   ]
-  const copyFiles = [
-    {
-      fromAbsolutePath: FS.joinPath(__dirname, '../../tao-std-lib/tao/data/providers/tao-data-client.ts'),
-      toRelativePath: FS.joinPath('use', '@tao', 'data', 'providers', 'tao-data-client.ts'),
-    },
-  ]
+  const copyFiles: { fromAbsolutePath: string; toRelativePath: string }[] = []
   return {
     ok: true,
     errorReport: parsed.errorReport,

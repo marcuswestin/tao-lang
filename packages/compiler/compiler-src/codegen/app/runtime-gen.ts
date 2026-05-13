@@ -19,14 +19,12 @@ import { Assert, Stream, switch_safe } from '@shared'
 import { throwUnexpectedBehaviorError } from '@shared/TaoErrors'
 import {
   collectionSlugFromPlural,
-  normalizedQueryFieldPathSegments,
   queryDeclarationAliasName,
-  queryDeclarationCardinality,
-  queryDeclarationEntity,
 } from '../../query/query-model'
 import { decodeTaoTemplateTextChunk } from '../tao-template-text-chunk'
 import type { TaoAppConfig, TaoAppConfigObject } from './app-config'
 import { dataDeclarationToSerializedSchema } from './data-schema-serialization'
+import { compileQueryDeclaration, compileQueryMemberAccessExpression } from './query-plan-gen'
 
 /** TaoResolvedAppProvider is the provider selected for the compiled app after Tao source + compile overrides. */
 export type TaoResolvedAppProvider = {
@@ -214,7 +212,7 @@ class RuntimeGen {
   MemberAccessExpression(node: AST.MemberAccessExpression): Compiled {
     const root = node.root.ref
     if (root && AST.isQueryDeclaration(root)) {
-      return this.queryMemberAccessExpression(node, root)
+      return compileQueryMemberAccessExpression(node, root)
     }
     const rootExpr = compileNode(node)`_Scope.${node.root.$refText}`
     if (node.properties.length === 0) {
@@ -222,15 +220,6 @@ class RuntimeGen {
     }
     const pathList = node.properties.map(p => `'${p}'`).join(', ')
     return compileNode(node)`TR.MemberAccess(${rootExpr}, [${pathList}])`
-  }
-
-  private queryMemberAccessExpression(node: AST.MemberAccessExpression, query: AST.QueryDeclaration): Compiled {
-    const alias = queryDeclarationAliasName(query)
-    if (node.properties.length === 0) {
-      return compileNode(node)`TR.QueryData(_Scope.${alias})`
-    }
-    const pathList = node.properties.map(p => `'${p}'`).join(', ')
-    return compileNode(node)`TR.MemberAccess(TR.QueryData(_Scope.${alias}), [${pathList}])`
   }
 
   ObjectProperty(property: AST.ObjectProperty): Compiled {
@@ -740,104 +729,7 @@ class RuntimeGen {
 
   /** QueryDeclaration binds `_Scope.<Alias>` via `getTaoData('Schema').peekQuery` (file) or `useLiveQuery` (view hook). */
   QueryDeclaration(node: AST.QueryDeclaration): Compiled {
-    const schema = refResolved(node.schema, 'QueryDeclaration.schema')
-    const entity = queryDeclarationEntity(node)
-    Assert(entity, 'QueryDeclaration entity must resolve after validation.', {
-      source: node.source.$type,
-    })
-    const alias = queryDeclarationAliasName(node)
-    const collection = collectionSlugFromPlural(entity.pluralName)
-    const schemaLit = JSON.stringify(schema.name)
-    const plan = this.queryPlan(node, schema.name, collection, entity)
-    if (AST.isTaoFile(node.$container)) {
-      return compileNode(node)`
-        _Scope.${alias} = getTaoData(${schemaLit}).peekQuery(${plan})
-      `
-    }
-    return compileNode(node)`
-      _Scope.${alias} = getTaoData(${schemaLit}).useLiveQuery(${plan})
-    `
-  }
-
-  private queryPlan(
-    node: AST.QueryDeclaration,
-    schema: string,
-    collection: string,
-    entity: AST.DataEntityDeclaration,
-  ): Compiled {
-    const where = node.steps.filter(AST.isQueryWhereStep)
-    const order = node.steps.filter(AST.isQueryOrderStep)
-    const includes = node.steps.filter(AST.isQueryIncludeStep).flatMap(step => step.paths)
-    return compileNode(node)`{
-      schema: ${JSON.stringify(schema)},
-      collection: ${JSON.stringify(collection)},
-      cardinality: ${JSON.stringify(queryDeclarationCardinality(node))},
-      where: [
-        ${compileIndentedNodeList(where, step => this.queryWhereStep(step, entity))}
-      ],
-      order: [
-        ${compileIndentedNodeList(order, step => this.queryOrderStep(step, entity))}
-      ],
-      includes: [
-        ${compileIndentedNodeList(includes, path => this.queryPathArray(path, entity))}
-      ],
-    }`
-  }
-
-  private queryWhereStep(step: AST.QueryWhereStep, entity: AST.DataEntityDeclaration): Compiled {
-    return compileNode(step)`${this.queryPredicate(step.predicate, entity)},`
-  }
-
-  private queryOrderStep(step: AST.QueryOrderStep, entity: AST.DataEntityDeclaration): Compiled {
-    return compileNode(step)`{ path: ${this.queryPathArray(step.path, entity)}, direction: ${
-      JSON.stringify(step.direction)
-    } },`
-  }
-
-  private queryPredicate(predicate: AST.QueryPredicate, entity: AST.DataEntityDeclaration): Compiled {
-    return switch_safe.type(predicate, {
-      QueryComparisonPredicate: node => {
-        const op = this.queryComparisonOperator(node)
-        const ignoreCase = node.ignoreCase ? 'ignoreCase: true,' : ''
-        return compileNode(node)`{
-          kind: 'compare',
-          path: ${this.queryPathArray(node.path, entity)},
-          op: ${JSON.stringify(op)},
-          value: ${this.Expression(node.value)},
-          ${ignoreCase}
-        }`
-      },
-      QueryLogicalPredicate: node =>
-        compileNode(node)`{
-        kind: ${JSON.stringify(node.op)},
-        left: ${this.queryPredicate(node.left, entity)},
-        right: ${this.queryPredicate(node.right, entity)},
-      }`,
-      QueryNotPredicate: node =>
-        compileNode(node)`{
-        kind: 'not',
-        predicate: ${this.queryPredicate(node.operand, entity)},
-      }`,
-    })
-  }
-
-  private queryComparisonOperator(node: AST.QueryComparisonPredicate): string {
-    if (node.op) {
-      return node.op
-    }
-    if (node.membership) {
-      return 'in'
-    }
-    if (node.stringOperator) {
-      return queryStringOperatorName(node.stringOperator)
-    }
-    return node.not ? 'isNot' : 'is'
-  }
-
-  private queryPathArray(path: AST.QueryFieldPath, entity: AST.DataEntityDeclaration): Compiled {
-    return compileNode(path)`[${
-      normalizedQueryFieldPathSegments(path, entity).map(segment => JSON.stringify(segment)).join(', ')
-    }]`
+    return compileQueryDeclaration(node, expression => this.Expression(expression))
   }
 
   /** dataDeclarationRuntime creates the app-selected provider client and declares the dataset shape at module load. */
@@ -932,16 +824,6 @@ function stripTsFenceFromTsCodeBlock(content: string): string {
   s = s.replace(/^```ts\s*\n?/im, '')
   s = s.replace(/\n?```\s*$/m, '')
   return s.trim()
-}
-
-function queryStringOperatorName(op: string): 'contains' | 'startsWith' | 'endsWith' {
-  if (op.startsWith('starts')) {
-    return 'startsWith'
-  }
-  if (op.startsWith('ends')) {
-    return 'endsWith'
-  }
-  return 'contains'
 }
 
 /** runtimeProviderParams strips admin-only keys (secrets that must not appear in the client bundle) from provider config before embedding in generated app code. Add new admin-only keys here when introduced. */

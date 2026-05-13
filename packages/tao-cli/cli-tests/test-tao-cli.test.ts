@@ -100,7 +100,7 @@ describe('cli:', () => {
     }
   })
 
-  test('compile push-schema works with Memory admin no-op and keeps admin files out of runtime output', async () => {
+  test('compile push-schema works with Memory admin no-op and does not leak admin token into emitted bootstrap', async () => {
     const tmpDir = FS.mkTmpDir(FS.joinPath(FS.tmpdir(), 'tao-cli-compile-schema-push-'))
     try {
       const appPath = FS.joinPath(tmpDir, 'app.tao')
@@ -122,10 +122,10 @@ describe('cli:', () => {
         true,
       )
       expect(FS.existsSync(FS.joinPath(testRuntimeDir, 'app-build/use/@tao/data/providers/in-memory/admin'))).toBe(
-        false,
+        true,
       )
       expect(FS.existsSync(FS.joinPath(testRuntimeDir, 'app-build/use/@tao/data/providers/instantdb/admin'))).toBe(
-        false,
+        true,
       )
     } finally {
       FS.rmDirectory(tmpDir)

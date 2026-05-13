@@ -1,6 +1,4 @@
-import { isKnownTaoAppDataProviderName } from '@compiler'
 import { AST, LGM } from '@parser'
-import { throwUserInputRejectionError } from '@shared/TaoErrors'
 import {
   getSameModuleUris,
   isSameModuleImport,
@@ -9,7 +7,6 @@ import {
 } from '../../resolution/ModuleResolution'
 import { refResolved } from '../codegen-util'
 import { emitRelativeImport } from './gen-output-paths'
-import type { TaoCodegenOpts } from './runtime-gen'
 
 /** taoFileNeedsTaoDataRuntime returns true when generated code will reference `getTaoData("…")` (data blocks, queries, guard, create). */
 export function taoFileNeedsTaoDataRuntime(taoFile: AST.TaoFile): boolean {
@@ -44,7 +41,7 @@ export function taoFileReferencesDataClientInInjectedTs(taoFile: AST.TaoFile): b
   return false
 }
 
-/** taoFileNeedsTaoDataImport is true when the emitted TS module should import from `tao-data-client`. */
+/** taoFileNeedsTaoDataImport is true when the emitted TS module should import from `providers/all`. */
 export function taoFileNeedsTaoDataImport(taoFile: AST.TaoFile): boolean {
   return taoFileNeedsTaoDataRuntime(taoFile) || taoFileReferencesDataClientInInjectedTs(taoFile)
 }
@@ -60,11 +57,10 @@ export function taoFileHasTopLevelDataDeclaration(taoFile: AST.TaoFile): boolean
   return false
 }
 
-/** buildRuntimePreambleImports returns React / tao-data-client / InstantDB preamble lines for an emitted Tao RN module. */
+/** buildRuntimePreambleImports returns React / `providers/all` preamble lines for an emitted Tao RN module. */
 export function buildRuntimePreambleImports(
   taoFile: AST.TaoFile,
   importBase: string,
-  codegenOpts: TaoCodegenOpts,
 ): { reactImport: string; taoDataImport: string } {
   const taoDataImport = taoFileNeedsTaoDataImport(taoFile)
     ? (() => {
@@ -72,26 +68,11 @@ export function buildRuntimePreambleImports(
       if (taoFileHasTopLevelDataDeclaration(taoFile)) {
         names.push('createTaoDataClient', 'setTaoData')
       }
-      const fromClient = `import { ${names.join(', ')} } from '${importBase}use/@tao/data/providers/tao-data-client'\n`
-      const providerRegistration = taoFileHasTopLevelDataDeclaration(taoFile)
-        ? providerRegistrationImport(importBase, codegenOpts.appProvider.name)
-        : ''
-      return `${fromClient}${providerRegistration}`
+      return `import { ${names.join(', ')} } from '${importBase}use/@tao/data/providers/all'\n`
     })()
     : ''
   const reactImport = taoFileUsesForLoop(taoFile) ? `import * as React from 'react'\n` : ''
   return { reactImport, taoDataImport }
-}
-
-/** providerRegistrationImport returns the side-effect import that registers a known std-lib provider factory. */
-function providerRegistrationImport(importBase: string, provider: string): string {
-  const normalizedProvider = provider ? provider.toLowerCase() : 'memory'
-  if (!isKnownTaoAppDataProviderName(normalizedProvider)) {
-    throwUserInputRejectionError(`Unknown app data provider '${provider}'.`)
-  }
-  return normalizedProvider === 'instantdb'
-    ? `import '${importBase}use/@tao/data/providers/instantdb/client/InstantDBTaoClient'\n`
-    : `import '${importBase}use/@tao/data/providers/in-memory/client/in-memory'\n`
 }
 
 /** buildUriToTaoMap maps document URI string to TaoFile AST. */

@@ -1,8 +1,6 @@
 import * as IDB from '@instantdb/react-native'
 import { Assert } from '../../../../tao-runtime/runtime-utils'
 import {
-  buildQueryResult,
-  evaluateQueryPlan,
   evaluateRecordFields,
   registerTaoDataProvider,
   type TaoDataClient,
@@ -11,10 +9,14 @@ import {
   type TaoDatasetFieldShape,
   taoDatasetFieldType,
   type TaoDatasetShape,
+} from '../../tao-data-client'
+import {
+  buildQueryResult,
+  evaluateQueryPlan,
   type TaoQueryPlan,
   type TaoQueryPredicate,
   type TaoQueryResult,
-} from '../../tao-data-client'
+} from '../../tao-query'
 import { createTaoIDBClient } from './TaoIDBClient'
 
 type InstantDb = ReturnType<typeof IDB.init>

@@ -123,7 +123,7 @@ function compileOneTaoFileModule(
   const result = new CompositeGeneratorNode()
   const dirCount = FS.splitPath(relativePath).length
   const importBase = '../'.repeat(dirCount - 1)
-  const { reactImport, taoDataImport } = buildRuntimePreambleImports(taoFile, importBase, codegenOpts)
+  const { reactImport, taoDataImport } = buildRuntimePreambleImports(taoFile, importBase)
   result.append(compileNode(taoFile)`
     import { _TaoRuntime, TR } from '${importBase}use/@tao/tao-runtime/tao-runtime'
     ${reactImport}${taoDataImport}${importHeader} // ${taoFile.$document!.uri}
