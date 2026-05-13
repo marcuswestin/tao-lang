@@ -756,11 +756,6 @@ class RuntimeGen {
   /** taoFileDataProviderInits exports a bootstrap hook that opens this module's data providers. */
   taoFileDataProviderInits(taoFile: AST.TaoFile): Compiled {
     const openCalls = this.taoDataOpenCalls(taoFile)
-    if (openCalls.length === 0) {
-      return compileNode(taoFile)`
-        export function _taoOpenDataProviders() {}
-      `
-    }
     return compileNode(taoFile)`
       export function _taoOpenDataProviders() {
         ${openCalls.join('\n')}
@@ -778,11 +773,6 @@ class RuntimeGen {
       } else if (AST.isAppDeclaration(stmt)) {
         this.collectOnInits(stmt, onInits)
       }
-    }
-    if (queryInits.length === 0 && onInits.length === 0) {
-      return compileNode(taoFile)`
-        export function _taoRunAppInits() {}
-      `
     }
     return compileNode(taoFile)`
       export function _taoRunAppInits() {
