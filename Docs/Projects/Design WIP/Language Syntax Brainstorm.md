@@ -8,7 +8,7 @@ Moved from `Docs/Tao Lang Roadmap.md`:
 
 - Parse functions, with positional arguments.
 - Decide on outer vs inner parameters syntax.
-- Decide how render functions are passed in as arguments to a view.
+- Decide how render functions are passed in as arguments to a view. Current focused design notes live in [View Slots and Renderers](../View%20Slots%20and%20Renderers/Design%20Notes.md).
   - View definition: e.g. `List` view.
   - View rendering examples:
     - `List items: blogPosts { view BlogPost blogPost { ListItem { Text blogPost.title }} }`
@@ -109,7 +109,8 @@ Use this doc for raw syntax ideas that do not yet have dedicated project docs (`
 
 - [Tao Lang Roadmap](../../Tao%20Lang%20Roadmap.md)
 - [Error Handling](Error%20Handling.md)
-- [UI Layout and Styling](UI%20Layout%20and%20Styling.md)
+- [UI Layout Design Doc](../UI%20-%20Layout%20and%20Styling/UI%20Layout%20Design%20Doc.md)
+- [UI Styling Design Doc](../UI%20-%20Layout%20and%20Styling/UI%20Styling%20Design%20Doc.md)
 
 ---
 
@@ -172,6 +173,7 @@ Verbatim excerpt: old roadmap lines **197–301** (`## Imported List from App La
       - Enforce layout and styles before view statements
       - Allow for layout inside block?
       - Allow for styles outside block?
+      - Current UI layout decision is narrower: `[ ... ]` is layout only, one clause per render statement, raw values first, no theme or styling in v1.
       `if/for/switch { <VIEW STATEMENTs> }`
 - [ ] Design Event Handler statements
       `<STATE VAR> = <EXPRESSION>`

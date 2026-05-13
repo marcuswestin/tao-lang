@@ -1,4 +1,10 @@
+# 
+
 # UI Layout and Styling
+
+Preserve this file. It is the durable discussion/archive for UI layout and styling syntax exploration, including options that are not chosen in the current preferred design. Do not delete or compress it into only current decisions; authoritative docs should link here when they need prior reasoning, rejected vocabulary, or open alternatives.
+
+For a compressed and organized version of the approaches represented here, see [UI Layout Syntax Exploration](../UI%20-%20Layout%20and%20Styling/UI%20Layout%20Syntax%20Exploration.md). The styling, theming, color/spacing/radius scale, and design-system counterpart is [UI Styling and Theme Syntax Exploration](../UI%20-%20Layout%20and%20Styling/UI%20Styling%20Syntax%20Exploration.md).
 
 Batch-moved notes from `Docs/Tao Lang Roadmap.md` (especially the long "Design UI Appearance" section). Intentionally rough and comprehensive; refine later.
 
@@ -39,18 +45,20 @@ Row [align bottom spread] {}
 
 ## Size model candidates
 
-- Width/height syntax still open.
-- Candidate forms:
-  - `width fill-parent`, `height 40px`
-  - Percent + grow/shrink combinations
-  - Basis semantics mapped to axis (`Row` basis -> width, `Col` basis -> height)
-- Notes to preserve:
-  - Clarify `fill-parent` vs `hug-content`.
-  - Keep warnings/errors for impossible axis combinations.
+Width/height syntax still open.
+Candidate forms:
+
+- `width fill-parent`, `height 40px`
+- Percent + grow/shrink combinations
+- Basis semantics mapped to axis (`Row` basis -> width, `Col` basis -> height)
+  Notes to preserve:
+- Clarify `fill-parent` vs `hug-content`.
+- Keep warnings/errors for impossible axis combinations.
 
 ## Spacing, border, margin, padding
 
-- Border/padding/margin syntax and consistency are open.
+Border/padding/margin syntax and consistency are open.
+
 - Candidate compact forms:
   - `[border 4]`
   - `[border 6, 10]`
@@ -70,23 +78,25 @@ Row [align bottom spread] {}
 
 ## Additional layout concerns
 
-- Overflow and clipping:
-  - `[clip hide/scroll]`
-- Wrapping behavior and defaults.
-- Min/max width and height.
-- Offset vs margin semantics.
-- z-index/layering and optional 3d-ish ordering.
-- Flow direction and localization (`ltr`/`rtl`).
-- Absolute positioning behavior.
-- Optional `order`, `reverse`, `display: contents`, `aspectRatio`, measure functions.
+Overflow and clipping:
+
+- `[clip hide/scroll]`
+  Wrapping behavior and defaults.
+  Min/max width and height.
+  Offset vs margin semantics.
+  z-index/layering and optional 3d-ish ordering.
+  Flow direction and localization (`ltr`/`rtl`).
+  Absolute positioning behavior.
+  Optional `order`, `reverse`, `display: contents`, `aspectRatio`, measure functions.
 
 ## Themes and design system notes
 
-- Theme tokens for colors, spacing, and radius.
-- Naming hierarchy for token application (e.g. semantic slots like icon/brand/pressed).
+Theme tokens for colors, spacing, and radius.
+Naming hierarchy for token application (e.g. semantic slots like icon/brand/pressed).
+
 - Possible default spacing/radius scales:
-  - spacers (`0`, `4`, `8`, `16`, ...).
-  - radii (`small`, `medium`, `large`, `full`).
+- spacers (`0`, `4`, `8`, `16`, ...).
+- radii (`small`, `medium`, `large`, `full`).
 - Related references in moved notes include Figma workflow and design-system links.
 
 ## Styling spec backlog
@@ -107,253 +117,6 @@ Source: `git show HEAD:Docs/Tao Lang Roadmap.md` lines 302–612 (`### Design UI
 
 ### Design UI Appearance: Layout, Design, Styling, Animations
 
-- [ ] Design ANIMATIONs and TRANSITIONs
-- [ ] Design Layout and Styling
-  - [ ] CONSIDER: DIFFERENT Syntax for self alignment and child alignment??
-    ```tao
-    row [strech, spread, gap 10] <pad 40, aligned left stretched, fill>
-    col <width fill-parent, height 40px> {
-      row <height 40px 50% 20%, width fill-parent>
-    }
-    ```
-  - [ ] Implement. Current choice:
-        ~~ `Row [items <stretched/spread> <vert/horz>]`~~
-        ~~ `Row [items bottom right]`~~
-        ~~ `Row [items stretch left]`~~
-        ~~ `Row [items stretch left]`~~
-        ~~ `Row [items spread-hug top]`~~
-        ~~ `Row [items spread-hug-tight top]`~~
-        ~~ `Row [items baseline left]`~~
-        `Col [items baseline left] // warning (error?): baseline only applies to Row (RN doesn't have text-direction for Vert flow of text)`
-        `Row [items spread left] // warning (error?): Row spread overwrites horizontal alignment (left)`
-        `Row [items stretch top] // warning (error?): Row stretch overwrites vertical alignment (top)`
-        `Col [items stretch bottom] // warning (error?): Col stretch overwrites vertical alignment (bottom)`
-        `Col [items spread right] // warning (error?): Col spread overwrites horizontal alignment (right)`
-        `Col [items spread top]`
-        `Col [items spread-hug-tight left]`
-        `Row [items spread top]`
-  - [ ] align-self: `aligned` and `stretched`
-    ```tao
-    Col [items top left] {
-      View [aligned right]
-      Row [aligned center]
-      View [stretched]
-    }
-    Row [items top] {
-      View [aligned bottom]
-    }
-    ```
-  - [ ] width/height:
-    - Possible syntaxes:
-      ```tao
-      // REJECTED:`[HORZ VERT]`:
-      row [fill hug]
-      // THIS ISN'T GREAT:
-      row [100px 50% 20% 20px] // basis 100px grow 0.5 shrink 0.2; width 20px
-      [width HORZ, height VERT]:
-      // <number+(px, rem, %)>, fill-parent, hug-content
-      col [width fill-parent, height 40px] {
-        col [height 40px 50% 20%, width fill-parent]
-        col [width 40rem 30%] // warning (error?): parent is COL, can only grow/shrink cross-axis (height)
-      }
-      ```
-  - [ ] border, padding and margin -- all the same?
-    - pixel units only,
-      `[border 4]`
-      `[border 6, 10]`
-    - `[border/pad(ding)/margin top right bottom left]`
-      - also: `[pad VH]`, `[pad V Right0]`, `[pad Top H Bottom]`, `[pad Top Right Bottom Left]`
-      - This doesn't feel completely good to me
-  - [ ] gaps:
-        `[gap VH]` OR `[gap V H]`
-        `[gap 10] // 10 px unit gap`
-  - [ ] Review: Layout: Choice Exploration, Thinking, Justification
-    - ALIGNMENT
-      - This is governed by align-items and justify-content
-        ~~- What if we combine them?~~
-        ~~- `[align top left]`, `[align center]`, `[align center right]`, `[align bottom]`~~
-        ~~- ## What are other possible names?~~
-        ~~- What of align-items stretch?~~
-        ~~- What of justify-content space-between, space-around, space-evenly?~~
-        ~~- How about call it spread/spread-hug/spread-hug-tight~~
-
-        - Observations
-          - BASIS is the SAME AS WIDTH inside a Row
-          - BASIS is the SAME AS HEIGHT inside a Col
-          - GROW/SHRINK only applies to WIDTH inside a Row
-          - GROW/SHRINK only applies to HEIGHT inside a Col
-          - In RN, views hug content TO 0 by default
-            - If two children with flexGrow = 1/3, they will take up only 2/3 of parent size
-          - In a Row with non-0 height:
-            - a child FILLES parent height (because alignItems=stretch by default)
-          - In a row with 0 height:
-            - A child HUGS and becomes its own content's height
-          - In a row with alignItems: 'flex-start':
-            - A child HUGS and becomes its own content's height
-          - If a row child
-            - height is set to 50 w/o, it will be 50 no matter what
-            - width is set to 50
-          - In a WRAPPED row
-            - Each line becomes its own "mini flex container on the main axis"
-
-        Row
-        Vertical: align-items (top, bottom, center, stretch, baseline)
-        When WRAPPED
-        Each wrapped LINE is a MINI FLEXBOX container
-        Align-Content distributes space BETWEEN/AROUND lines
-        RN Default is "flex-start" instead of "stretch"!
-
-        - Alignment spec:
-          - What are ALL THE LAYOUT properties to consider?
-            - align, wrap, basis/width/height, minW/H, flexGrow/Shrink, margin, padding, border\*Width, offset, gap, position, aspectRatio, (zIndex), display:none, overflow hidden/scroll/visible, transform*, translate*, scale*, rotate*, boxSizing, writingDirection, text: (lineHeight, numberOfLines, textAlign), Android:elevation, iOS:direction, flexWrap, alignItems, measure(),
-            - flexDirection
-              •	flexWrap
-              •	justifyContent
-              •	alignItems
-              •	alignContent
-              •	gap
-            - results: hug-content, fill-parent, align-items, spread-items, align-self, 3d
-            - Concepts to consider:
-              - Fill-ratio/-space, claim-ratio/-space, resize-ratio
-          - TODO!
-            - alignContent:
-              - only applies when wrap is true
-              - in a row, when items wrap to second line, align-content distributes items on each row
-              - in a col, for wrapped items in second col, align-content distributes items on each col
-              - how do we support this in our layout system?
-                - Syntax
-                - Default (should it be CENTER, vs rn START or web STRETCH?)
-                  - this means in web, a row has rows of wrapped items _stretch out to fill container_
-                  - and in react native, rows of wrapped items _pack to the top or left_ of container
-                  - center would have all wrapped rows items cluster in center
-          - React Native behavior:
-            - Without flex-grow or a width/height, empty views disappear in the UI!
-              - They are `hug` by default
-              - They expand only if e.g `flex: 1`, `width: 100%`, or `alignSelf: stretch`, etc
-            - RN Defaults:
-              - flexDirection is column (instead of row in web)
-              - alignContent is flex-start (instead of stretch in web)
-              - alignItems is stretch
-              - flexShrink is 0 (instead of 1 in web)
-              - `flex` property supports only one single number
-            - OUR Defaults:
-              - It would be nice if elements are ALWAYS visible by default
-                - This will require
-                  - flexGrow > 0
-                  - OR, empty elements are special cased with min widht/height
-                  - OR, there are multiple modes:
-                    - a PRODUCTION mode, in which empty elements can be hidden
-                    - a LAYOUT DEVELOPMENT mode, in which empty elements are grow 1 or minWH
-                  - OR, CONTAINER elements like Row and Col MUST HAVE CONTENT and are otherwise parse validation error.
-                - In Figma, this is achieved by ALWAYS HAVING A WIDTH AND HEIGHT for an item, even when hugging, and if it is empty then it uses its W/H
-                  - However, this is because it is VISUAL and needs to be this way
-                  - We COULD do this too, and require that elements are set to INVISIBLE if needed to be fully empty
-                  - Should we EVER have a fully empty Row/Col visible?
-          - Property name: `align`
-          - Positioning: `top`, `bottom`, `left`, `right`, `center`, `baseline` (row only)
-          - Distribution: `stretch` and `spread-*`
-          - Examples:
-            - `Row [top left wrap gap10 width20]`
-            - `Row [align top left, wrap, gap 10, width 20]`
-            - Basic directional alignments:
-            - `Row [align top left] {}`
-              - Items hug their content, are stacked left, and aligned to top edge
-            - `Row [align left top] {}`
-              - Same
-            - `Row [align left center] {}`
-              - Items hug their content, are stacked left, and centered vertically
-            - `Row [align top] {}`
-              - Possibilities:
-                - Vertical:
-                  - Either Stretched (Fill parent)
-                  - Orrrrr Hug their content vertically and align to top edge
-                    - (For Vertically stretched AND text baseline-aligned, LLM says you need to wrap each child and set baseline alignment on them)
-                - Horizontal: (Hug their content by default?)
-                  - Either Stacked left
-                  - Orrrrr Squished together center
-                  - Orrrrr Stacked right
-                  - Orrrrr Spread from Left Edge to Right Edge (could spread/-hug/hug-tight too)
-            - `Row [align right] {}`
-            - `Row [align left] {}`
-            - `Row [align center center] {}`
-            - `Row [align center] {}` // equivalent to `[center center]`
-            - Stretched and spread alignments:
-            - `Col [align top stretch] {}`
-            - `Col [align spread left] {}`
-            - `Row [align bottom spread] {}`
-            - `Row [align right stretch] {}`
-            - `Row/Col
-            - // ERROR - no Col vertical stretch: `Col [align left stretch] {}`
-            - // ERROR - no Col horizontal spread: `Col [align top spread] {}`
-            - // ERROR - no Row vertical spread: `Row [align left spread] {}`
-            - // ERROR - no Row horizontal stretch: `Row [align left spread] {}`
-          - Self-alignment:
-            - In Rows, `aligned top/center/bottom` or `stretched` (never both)
-            - In Cols, `aligned left/center/right` or `stretched` (never both)
-          - Restrictions:
-            - Row: No VERTICAL SPREAD; no HORIZONTAL STRETCH
-            - Col: No VERTICAL STRETCH; no HORIZONTAL SPREAD; no BASELINE positioning
-            - Row children: No `aligned left/right`
-            - Col children: No `aligned top/bottom`
-        - Default value of align-items is STRETCH
-        - We say `spread`/`spread-hug`/`spread-hug-tight` for justify-content space-between/space-around/ space-evenly.
-        - `Col [items top spread]` is impossible. Shows WARNING, and ERROR in strict.
-          - (`top` claims vertical alignment, and you can't `spread` a column's content horizontally.)
-            ~~- Possible names for~~
-            ~~- property name: parent alignment of children: ~~
-            ~~- items, align, layout, flow, distribute, gravity, content `[top left]`, `[right bottom]`~~
-            ~~- value names: distribution of children:~~
-            ~~- stretch, stretched, distribute, distributed, spread/-hug/-hug-tight~~
-            ~~- What of `[Col top spread]`? Impossible value (can't "justify-content" row's horizontal items)~~
-            ~~ - Show this as a warning, and error in strict?~~
-            ~~- What about `[align top/center/bottom]`, and `[distribute left/center/right/space-*]`~~
-            ~~- Or: Row center/left/right/space-* `[align top]`~~
-            ~~- values to distribute items: stretched, distributed; spread, spread-hug, spread-hug-tight for space-between (default), space-around, space-evenly~~
-      - child self alignment: aligned VH + stretched (no "spread")
-      - Parent align children vertically/horizontally.
-        `Row [align top] // Row (arranged left-to-right) all pushed to the top and left of Row's edges`
-        `Row [align top, spread] // Row, items all pushed to the top of row, and spread from left to right edges`
-        `Row [align top, spread space-around] // Row, items up top, and spread, w space left+right of items to edges`
-        `Row [align left, stretch] // items fill vertical space of Row`
-        `Row [stretch, spread]`
-        `Row [align left, spread] // warning (error?): spread overwrites horizontal alignment for Row (left)`
-        `Row [align top, stretch]`
-        `Col [align top, spread]`
-        `Col [align left, stretch] // warning`
-        `Col [align top left]`
-        `Col [align right, spread]`
-        `Col [align center, spread] // spread vertically, bunched in center`
-      - Variation:
-        `Row [items top left]`
-        `Col [items spread top]`
-        `Col [items top spread]`
-        `Row [content top left]`
-        `Row [items left stretched]`
-        `Row [items spread stretched]`
-        `Col [items left top]`
-      - Variation: just alignment names, possibly north/west/south
-        `Row [top left]`
-        `Row [tr]`
-        `Row [t, stretch]`
-        `Row [north west]`
-        `Row [nw]`
-        `Row [align top/bot/center left/right/center/spread, spread space-between/space-around/space-evenly]`
-        SPREAD overwrites left/right/center for Row, and top/bottom/center for Col
-    - items: `[align-items row: top/bottom/center and/or left/right/center]`. Or `[flow ...]`
-    - pos: `[pos ...? align self ...? ]` (align self)
-    - distribute: `[distribute start/center/space-between] (justify-content)`
-    - This is basically, for row (and reverse for col):
-      - JUSTIFY CONTENT: Left, Center, Right; PLUS spread from center (space-between, -around, -evenly). Left, Center, Spread, Right?
-      - ALIGN ITEMS: Top, Bottom, FILL (Flex value: Stretch - Move to something else?), Center (middle of child on torso middle of parent), or ALIGN BY TEXT, e.g items are moved vertically to align first line of text. ONLY ALLOWED FOR ROWS
-        - https://css-tricks.com/snippets/css/a-guide-to-flexbox/#aa-align-items
-    - flex, sets flexGrow and flexShrink
-    - ? `[resize [width/height, restricted to parent direction] [grow] 0/10/10%/100%/auto [shrink]]`
-    - `[claim-space [width/height] X%]`
-    - `[claim-ratio ...]`
-    - `[resize-ratio]`
-      - Should resize and width/height both be allowed at the same time?
-    - `[width (sets flexBasis in Row) px/%/auto 0/10/10%/100%/auto]`
-    - `[height (sets flexBasis in Col) ---=----]`
 - [ ] Design: Beautiful By Default
   - [ ] Nice default styles
   - [ ] Easy layout
@@ -416,10 +179,6 @@ Source: `git show HEAD:Docs/Tao Lang Roadmap.md` lines 302–612 (`### Design UI
       - Is there a better name for the semantics here?
         `[box-layout content]`
         // defaults to border
-
-## RAW TRANSFER — roadmap “Next and Advanced” layout note (git `HEAD`)
-
-Single bullet preserved from old `Docs/Tao Lang Roadmap.md` **§ Next and Advanced** (line ~684) that is explicitly about **layout/measure**, not duplicated in the UI Appearance appendix above:
 
 - [ ] Learn about MEASURE FUNCTIONS: https://reactnative.dev/docs/layout-props#aspectratio
 
