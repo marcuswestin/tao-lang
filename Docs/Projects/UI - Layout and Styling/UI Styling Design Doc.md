@@ -86,6 +86,8 @@ Once that exists, styling can cover the full React Native style surface without 
 
 The theme model is now documented in [UI Theme Design Doc](./UI%20Theme%20Design%20Doc.md). Core decisions: the theme is a dictionary of named primitive values (not view-aware), values propagate down the view tree with compile-time checking, views own their styling and reference tokens by bare name, and the adaptation mechanism uses a fallback override model.
 
+TODO: decide style/theme override hierarchy. Working model: an app has one base app theme; library components reference color/style names without declaring separate themes; view-local declarations or inline values can be more specific; the deepest applicable view/value wins for the child being considered. We still need examples that prove when overriding is required, whether explicit override syntax is needed, and how conflicts are diagnosed.
+
 When styling resumes, theme values should be typed:
 
 - `color`

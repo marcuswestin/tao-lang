@@ -13,7 +13,7 @@ Implement layout first, by itself.
 - Layout values are actual values: words such as `top`, `left`, `stretch`, and raw numeric React Native point values such as `gap 12` or `pad 16`.
 - One layout clause is allowed per view render for v1.
 - Top-level layout statements inside a view body are not allowed for v1.
-- Generated code should emit Tao layout property names and values into a runtime helper at the render site. The runtime helper owns conversion to React Native style props.
+- Generated code should emit the parsed Tao layout parameters and values into a runtime helper at the render site. The runtime helper owns conversion to React Native style props.
 
 The goal is a compact, Figma-adjacent vocabulary that remains deterministic enough to validate before codegen.
 
@@ -140,6 +140,20 @@ Button "Save", Save [width 120, height 44, centered]
 ```
 
 Later grammar may allow declaration-level default root layout, but implementation should start with render-site layout because it directly maps to generated runtime props.
+
+## Frozen V1 Surface
+
+The first implementation should not keep expanding while it is being built. V1 is the set below:
+
+- Flow: `row`, `column`, `wrap`, `nowrap`.
+- Children arrangement: `top`, `right`, `bottom`, `left`, `center`, `stretch`, `pack`, `spread`, `around`, `evenly`.
+- Spacing: `gap`, `row_gap`, `column_gap`, `pad`, side-specific `pad`, `margin`, side-specific `margin`.
+- Size and flex: `width`, `height`, `min_width`, `max_width`, `min_height`, `max_height`, `grow`, `shrink`, `basis`.
+- Self layout: `centered`, `stretched`, `packed`.
+- Position and layering: `relative`, `absolute`, `top`, `right`, `bottom`, `left`, `z`.
+- Values: lowercase layout words, raw numeric React Native logical pixels/points, and percentages for size, basis, and offsets.
+
+Everything else in the catalog is preserved for design continuity but is not part of the first build.
 
 ## Vocabulary Principles
 
@@ -770,22 +784,22 @@ Target shape:
 ```tsx
 <Row
   _taoLayout={TR.Layout.resolve({
-    align: ['center', 'spread'],
+    values: ['center', 'spread'],
     gap: 12,
   })}
 >
-  <Text _taoLayout={TR.Layout.resolve({ self: ['centered'] })} />
+  <Text _taoLayout={TR.Layout.resolve({ values: ['centered'] })} />
 </Row>
 ```
 
-The exact prop name is implementation detail. The important rule is that generated code passes structured layout names and values to Tao runtime functions at the render site. The runtime translates them to React Native style arrays or props.
+The exact prop name is implementation detail. The important rule is that generated code passes the validated layout parameters and values to Tao runtime functions at the render site. The runtime translates those Tao parameters and values to React Native style arrays or props.
 
 This keeps grammar/codegen lean:
 
 - Parser recognizes bracketed layout syntax.
 - Validation checks property names, values, duplicates, and axis constraints.
-- Codegen emits structured data.
-- Runtime maps valid structured data to React Native Flexbox styles.
+- Codegen emits the layout parameters and values.
+- Runtime maps valid layout parameters and values to React Native Flexbox styles.
 
 ## Validation Rules
 
@@ -873,6 +887,7 @@ These were found in prior notes and are not yet fully addressed by layout v1.
 - RTL and logical start/end spacing should be designed with accessibility, localization, and adaptation rather than patched onto physical `left`/`right` syntax.
 - Non-identifiable list keys are deferred. Tao lists are expected to mostly use persisted database items with IDs.
 - **Offset vs margin**: `margin` belongs in layout because it affects outside geometry and pushes siblings. `offset` belongs in styling because it displaces a view visually without affecting the layout of siblings, similar to a transform translation. The `offset` entry in [Position And Layering](#position-and-layering) is marked as styling.
+- **Custom view container roles**: v1 can axis-validate known built-ins such as `Row`, `Col`, and explicit `row`/`column`. Future custom views need a way to declare whether their root lays out children, and on which axis, so bare child-arrangement words can be validated without guessing.
 
 ## Static Analysis For Empty Containers
 

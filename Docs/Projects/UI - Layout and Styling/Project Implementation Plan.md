@@ -20,8 +20,8 @@ Scope:
 - Do not implement themes, named tokens, styling, transforms, animation, or interaction syntax.
 - Allow one layout clause per render statement.
 - Reject top-level layout statements in view bodies.
-- Generate structured layout data at the render site.
-- Convert structured layout data to React Native Flexbox styles in the Tao runtime.
+- Generate the parsed layout parameters and values at the render site.
+- Convert those layout parameters and values to React Native Flexbox styles in the Tao runtime.
 
 Primary docs:
 
@@ -36,8 +36,18 @@ Implementation details:
 - AST: represent layout as typed nodes, not unstructured strings.
 - Validation: check known property names, known values, duplicate values, axis conflicts, and React Native support.
 - Formatter: preserve canonical bracket formatting.
-- Codegen: pass structured layout data to a Tao runtime helper at each render site.
-- Runtime: translate Tao layout specs to React Native style props and merge them with existing view styles.
+- Codegen: pass the validated layout parameters and values to a Tao runtime helper at each render site.
+- Runtime: translate Tao layout parameters and values to React Native style props and merge them with existing view styles.
+
+Frozen v1 surface:
+
+- Flow: `row`, `column`, `wrap`, `nowrap`.
+- Children arrangement: `top`, `right`, `bottom`, `left`, `center`, `stretch`, `pack`, `spread`, `around`, `evenly`.
+- Spacing: `gap`, `row_gap`, `column_gap`, `pad`, side-specific `pad`, `margin`, side-specific `margin`.
+- Size and flex: `width`, `height`, `min_width`, `max_width`, `min_height`, `max_height`, `grow`, `shrink`, `basis`.
+- Self layout: `centered`, `stretched`, `packed`.
+- Position and layering: `relative`, `absolute`, `top`, `right`, `bottom`, `left`, `z`.
+- Percent values are included for size, basis, and offsets in v1; raw numeric values remain React Native logical pixels/points.
 
 Exit criteria:
 
@@ -62,6 +72,7 @@ Scope:
 - Decide how app defaults are selected or generated while preserving the core tenet that everything works out of the box.
 - Decide whether theme values are compile-time constants, runtime-resolved values, or both.
 - Decide how adaptation modes such as dark mode, platform, screen size, text scale, reduced motion, and locale affect theme values.
+- TODO: decide style/theme override hierarchy. Working model: an app has one base app theme; library components reference color/style names without declaring separate themes; view-local declarations or inline values can be more specific; the deepest applicable view/value wins for the child being considered. We still need to prove when overriding is necessary, how explicit it should be, and how diagnostics explain conflicts.
 
 Primary docs:
 
@@ -162,3 +173,4 @@ Initial direction:
 - Styling should not start until theme values and typed token flow are decided; otherwise styling will recreate that model ad hoc.
 - Empty views can collapse in React Native; debug defaults or validation can be considered after core layout works.
 - Older docs and examples may still show historical theme or styling syntax. Preserve the exploration in the WIP archive, but make new implementation work follow the authoritative layout and styling docs.
+- TODO: custom views need a future way to declare their container/layout role so bare child-arrangement words can be axis-validated outside known built-ins such as `Row`, `Col`, and explicit `row`/`column`.

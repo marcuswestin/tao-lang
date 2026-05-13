@@ -188,8 +188,8 @@ Project: ` /create-project Lets create a project for "Basic Functions":
 ### UI styling
 
 - [ ] Parse view layout first: bracketed raw layout values only. See [UI Layout Design Doc](../../Projects/UI%20-%20Layout%20and%20Styling/UI%20Layout%20Design%20Doc.md).
-- [ ] Parse view styling after layout. See [UI Styling Design Doc](../../Projects/UI%20-%20Layout%20and%20Styling/UI%20Styling%20Design%20Doc.md).
-- [ ] Parse UI theme definitions after the raw layout and styling boundaries are stable.
+- [ ] Design UI themes and typed values after raw layout, before styling. See [UI Theme Design Doc](../../Projects/UI%20-%20Layout%20and%20Styling/UI%20Theme%20Design%20Doc.md).
+- [ ] Parse view styling after the theme/value model is clear. See [UI Styling Design Doc](../../Projects/UI%20-%20Layout%20and%20Styling/UI%20Styling%20Design%20Doc.md).
 
 ### Error handling
 
@@ -214,7 +214,7 @@ Project: ` /create-project Lets create a project for "Basic Functions":
 
 - [ ] ui: Views, Layout, Styling, Themes. Layout comes first and targets React Native Flexbox through Tao runtime helpers.
 - [ ] data: Data sources, queries, caching
-- [ ] common: currency, time, locale, left-to-right, light/dark mode, accessibility, internationalization,, resizing text for sight, etc
+- [ ] common: currency, time, locale, left-to-right, light/dark mode, accessibility, internationalization, resizing text for sight, etc
 - [ ] API for programmatic compiler functionality: parse, compile, type check, format, documentation, etc
 
 ### Concurrency
