@@ -1,11 +1,5 @@
 {
   // Code appearance
-  "editor.fontSize": 12.5,
-  "editor.lineHeight": 17,
-  // "window.zoomLevel": 1.5, // Monitor extra large
-  // "window.zoomLevel": 1.3, // Monitor large
-  // "window.zoomLevel": 0.8, // Monitor medium
-  "window.zoomLevel": 0.15, // Laptop
   "vim.normalModeKeyBindingsNonRecursive": [
     {
       "before": [
