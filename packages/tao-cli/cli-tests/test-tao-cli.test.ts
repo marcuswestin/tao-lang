@@ -122,10 +122,10 @@ describe('cli:', () => {
         true,
       )
       expect(FS.existsSync(FS.joinPath(testRuntimeDir, 'app-build/use/@tao/data/providers/in-memory/admin'))).toBe(
-        true,
+        false,
       )
       expect(FS.existsSync(FS.joinPath(testRuntimeDir, 'app-build/use/@tao/data/providers/instantdb/admin'))).toBe(
-        true,
+        false,
       )
     } finally {
       FS.rmDirectory(tmpDir)

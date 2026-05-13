@@ -16,6 +16,7 @@ import {
   type TaoQueryPlan,
   type TaoQueryPredicate,
   type TaoQueryResult,
+  useReactiveQueryPlan,
 } from '../../tao-query'
 import { createTaoIDBClient } from './TaoIDBClient'
 
@@ -203,7 +204,7 @@ export class InstantDBTaoClient implements TaoDataClient {
 
   /** useLiveQuery delegates to InstantDB `useQuery` — must run only inside a React component. */
   useLiveQuery(plan: TaoQueryPlan): TaoQueryResult {
-    const normalized = evaluateQueryPlan(plan)
+    const normalized = useReactiveQueryPlan(plan)
     if (!this.db) {
       return fallbackResult(normalized)
     }

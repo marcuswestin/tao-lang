@@ -13,6 +13,7 @@ import {
   type TaoQueryPlan,
   type TaoQueryPredicate,
   type TaoQueryResult,
+  useReactiveQueryPlan,
 } from '../../tao-query'
 
 type CryptoLike = {
@@ -60,7 +61,7 @@ export class MemoryTaoData implements TaoDataClient {
 
   /** useLiveQuery subscribes to in-memory row updates for one query plan — must run only inside a React component. */
   useLiveQuery(plan: TaoQueryPlan): TaoQueryResult {
-    const normalized = evaluateQueryPlan(plan)
+    const normalized = useReactiveQueryPlan(plan)
     const collection = normalized.collection
     const identity = taoQueryIdentity(normalized)
     const [, bump] = React.useState(0)

@@ -38,7 +38,12 @@ export type TaoQueryResult = {
   error: unknown
 }
 
-type RuntimeExprLike = { evaluate?: () => { jsValue: unknown } }
+type RuntimeExprLike = {
+  evaluate?: () => { jsValue: unknown }
+  useReactiveHandle?: () => unknown
+}
+
+type QueryValueEvaluator = (value: unknown) => unknown
 
 /** evaluateQueryValue converts a possible Tao runtime expression to a plain JS value. */
 export function evaluateQueryValue(value: unknown): unknown {
@@ -55,7 +60,15 @@ export function evaluateQueryValue(value: unknown): unknown {
 export function evaluateQueryPlan(plan: TaoQueryPlan): TaoQueryPlan {
   return {
     ...plan,
-    where: plan.where.map(evaluateQueryPredicate),
+    where: plan.where.map(predicate => evaluateQueryPredicate(predicate)),
+  }
+}
+
+/** useReactiveQueryPlan subscribes expression-valued query params before converting them to plain JS. */
+export function useReactiveQueryPlan(plan: TaoQueryPlan): TaoQueryPlan {
+  return {
+    ...plan,
+    where: plan.where.map(predicate => evaluateQueryPredicate(predicate, useReactiveQueryValue)),
   }
 }
 
@@ -77,16 +90,29 @@ export function buildQueryResult(
   }
 }
 
-function evaluateQueryPredicate(predicate: TaoQueryPredicate): TaoQueryPredicate {
+function evaluateQueryPredicate(
+  predicate: TaoQueryPredicate,
+  evaluateValue: QueryValueEvaluator = evaluateQueryValue,
+): TaoQueryPredicate {
   if (predicate.kind === 'compare') {
-    return { ...predicate, value: evaluateQueryValue(predicate.value) }
+    return { ...predicate, value: evaluateValue(predicate.value) }
   }
   if (predicate.kind === 'not') {
-    return { ...predicate, predicate: evaluateQueryPredicate(predicate.predicate) }
+    return { ...predicate, predicate: evaluateQueryPredicate(predicate.predicate, evaluateValue) }
   }
   return {
     ...predicate,
-    left: evaluateQueryPredicate(predicate.left),
-    right: evaluateQueryPredicate(predicate.right),
+    left: evaluateQueryPredicate(predicate.left, evaluateValue),
+    right: evaluateQueryPredicate(predicate.right, evaluateValue),
   }
+}
+
+function useReactiveQueryValue(value: unknown): unknown {
+  if (value && typeof value === 'object') {
+    const expr = value as RuntimeExprLike
+    if (typeof expr.useReactiveHandle === 'function') {
+      expr.useReactiveHandle()
+    }
+  }
+  return evaluateQueryValue(value)
 }
