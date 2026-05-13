@@ -72,3 +72,8 @@ Tao Lang is a programming language for building native and web apps.
 - Remote, rebase, checkout, switch, pull, and push are not separate `./agent` recipes; if you use them via `./agent git`, do so only when the user or an agreed workflow requires it.
 - After merging or rebasing `main` into a feature branch, run `./agent prep-commit` until green before treating the branch as merge-ready.
 - Use `skills/git-workflow` for staging, committing, batch commits, and merge preparation.
+- **Merging into `main`:** Always **squash merge** feature branches into `main`. The squash commit message must include (in order): **one subject line**, a **short overview bullet list** (no fine-grained detail), then the **full `Squashed commit of the following:` appendix** with every original squashed commit exactly as Git’s default squash message includes them—see **`skills/git-workflow`** (“Squash merge into `main`”).
+
+## Skills
+
+Canonical agent workflows live in `skills/`. Use the relevant skill for task-specific procedures such as code review, TODO work, git workflow, compiler work, Langium formatting/scoping, and agent-system maintenance.

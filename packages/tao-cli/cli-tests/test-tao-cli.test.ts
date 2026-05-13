@@ -99,6 +99,38 @@ describe('cli:', () => {
       FS.rmDirectory(tmpDir)
     }
   })
+
+  test('compile push-schema works with Memory admin no-op and does not leak admin token into emitted bootstrap', async () => {
+    const tmpDir = FS.mkTmpDir(FS.joinPath(FS.tmpdir(), 'tao-cli-compile-schema-push-'))
+    try {
+      const appPath = FS.joinPath(tmpDir, 'app.tao')
+      const testRuntimeDir = FS.joinPath(tmpDir, 'runtime')
+      FS.writeFile(appPath, getDataApp('Memory'))
+      FS.mkdir(testRuntimeDir)
+      await TaoSDK_compile({
+        path: appPath,
+        runtimeDir: testRuntimeDir,
+        stdLibRoot,
+        outputFileName: 'app-build/output.tsx',
+        app: { provider: { adminToken: 'compile-time-secret' } },
+        pushSchema: true,
+      })
+      expect(FS.readTextFile(FS.joinPath(testRuntimeDir, 'app-build/output.tsx'))).not.toContain(
+        'compile-time-secret',
+      )
+      expect(FS.isDirectory(FS.joinPath(testRuntimeDir, 'app-build/use/@tao/data/providers/in-memory/client'))).toBe(
+        true,
+      )
+      expect(FS.existsSync(FS.joinPath(testRuntimeDir, 'app-build/use/@tao/data/providers/in-memory/admin'))).toBe(
+        false,
+      )
+      expect(FS.existsSync(FS.joinPath(testRuntimeDir, 'app-build/use/@tao/data/providers/instantdb/admin'))).toBe(
+        false,
+      )
+    } finally {
+      FS.rmDirectory(tmpDir)
+    }
+  })
 })
 
 function getRandomUI() {
@@ -113,4 +145,27 @@ function getRandomUI() {
     }
   `
   return { code, needle }
+}
+
+function getDataApp(provider: 'Memory' | 'InstantDB') {
+  const providerBlock = provider === 'InstantDB'
+    ? 'provider InstantDB { appId "00000000-0000-0000-0000-000000000001" }'
+    : 'provider Memory { }'
+  return `
+    use Text from @tao/ui
+
+    data HarnessData {
+      Items Item {
+        Name text,
+        Ordering number indexed,
+      }
+    }
+
+    app HarnessApp {
+      ${providerBlock}
+      ui HarnessRoot
+    }
+
+    view HarnessRoot { Text "Harness" }
+  `
 }

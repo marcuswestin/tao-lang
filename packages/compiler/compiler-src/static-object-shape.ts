@@ -74,6 +74,8 @@ export function isKnownNonObjectExpr(expr: AST.Expression | AST.ObjectLiteral): 
   if (
     AST.isStringTemplateExpression(expr)
     || AST.isNumberLiteral(expr)
+    || AST.isBooleanLiteral(expr)
+    || AST.isNullLiteral(expr)
     || AST.isBinaryExpression(expr)
     || AST.isUnaryExpression(expr)
     || AST.isActionExpression(expr)

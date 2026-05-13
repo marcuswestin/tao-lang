@@ -2,6 +2,7 @@ import { isKnownTaoAppDataProviderName, unknownTaoAppDataProviderMessage } from 
 import type { LGM as langium } from '@parser'
 import { AST } from '@parser/parser'
 import { Assert, switch_safe } from '@shared'
+import { queryDeclarationCardinality } from '../query/query-model'
 import { resolveShorthandParameterType } from '../tao-type-shapes'
 import {
   dataSchemaValidationMessages,
@@ -9,10 +10,13 @@ import {
   findForBodyHookViolations,
   forCreateMessages,
   forCreateValidator,
+  identifierValidationMessages,
   isForStatementPlacementOk,
-  isQueryPlacementOk,
-  queryGuardOnMessages,
   queryGuardOnValidator,
+  queryValidationMessages,
+  queryValidator,
+  validateDuplicateIdentifier,
+  validateUppercaseIdentifierName,
 } from './data'
 import { typeSystemValidationMessages, typeSystemValidator } from './TypeSystemValidator'
 import { makeValidater, type Reporter } from './ValidationReporter'
@@ -27,13 +31,14 @@ export const validationMessages = {
   unknownAppDataProvider: unknownTaoAppDataProviderMessage,
   duplicateObjectProperty: (name: string) => `Duplicate object property '${name}'.`,
   setTargetMustBeState: (kind: string) => `'set' can only target a state binding, not a '${kind}'.`,
-  nameMustBeUppercase: (name: string) => `Name '${name}' must begin with an uppercase letter.`,
   legacyIDBInjection:
     '`IDB` is no longer available in injected TypeScript; use compiled data/query/create statements or getTaoData instead.',
   parameterShorthandNotAType: (name: string) =>
     `Parameter shorthand '${name}' must match a local type declaration in this file/scope. Use '<name> <type>' for explicit type references (including imported types).`,
+  ...identifierValidationMessages,
   ...typeSystemValidationMessages,
   ...dataSchemaValidationMessages,
+  ...queryValidationMessages,
 } as const
 
 export const validator: langium.ValidationChecks<AST.TaoLangAstType> = {
@@ -70,14 +75,6 @@ export const validator: langium.ValidationChecks<AST.TaoLangAstType> = {
     validateParameterShorthandType(param, report)
   }),
 
-  QueryDeclaration: makeValidater((node, report) => {
-    validateDuplicateIdentifier(node, report)
-    validateUppercaseIdentifierName(node, report)
-    if (!isQueryPlacementOk(node)) {
-      report.error(queryGuardOnMessages.queryNotInViewOrFile, node)
-    }
-  }),
-
   ForStatement: makeValidater((node, report) => {
     validateDuplicateIdentifier(node, report)
     validateUppercaseIdentifierName(node, report)
@@ -92,7 +89,7 @@ export const validator: langium.ValidationChecks<AST.TaoLangAstType> = {
       report.error(forCreateMessages.forCollectionNotQuery, { node, property: 'collection' })
       return
     }
-    if (coll.first) {
+    if (queryDeclarationCardinality(coll) === 'one') {
       report.error(forCreateMessages.forCollectionNotListQuery, { node, property: 'collection' })
     }
     for (const v of findForBodyHookViolations(node)) {
@@ -166,6 +163,7 @@ export const validator: langium.ValidationChecks<AST.TaoLangAstType> = {
   ...dataSchemaValidator,
   ...queryGuardOnValidator,
   ...forCreateValidator,
+  ...queryValidator,
 }
 
 /** validateDuplicateObjectPropertyNames reports when an object literal repeats the same property name. */
@@ -251,112 +249,6 @@ function validateParameterShorthandType(
       { node: param, property: 'name' },
     )
   }
-}
-
-/** validateUppercaseIdentifierName reports when a declaration / parameter name does not start with an
- * uppercase letter. Tao keywords are matched by dedicated grammar rules (not `name=ID`) so they are
- * naturally excluded. */
-function validateUppercaseIdentifierName<NodeT extends AST.Node & { name?: string }>(
-  node: NodeT,
-  report: Reporter<NodeT>,
-): void {
-  const name = node.name
-  if (name === undefined) {
-    return
-  }
-  const first = name.charAt(0)
-  if (first && first === first.toLowerCase() && first !== first.toUpperCase()) {
-    report.error(
-      validationMessages.nameMustBeUppercase(name),
-      { node, property: 'name' as AST.NodePropName<NodeT> },
-    )
-  }
-}
-
-/** validateDuplicateIdentifier reports when another binding in scope shares the same name. */
-function validateDuplicateIdentifier<NodeT extends AST.Referenceable>(
-  binding: NodeT,
-  report: Reporter<NodeT>,
-): void {
-  const duplicates = getDuplicateIdentifiers(binding)
-  if (duplicates.length > 0) {
-    const message = `Duplicate identifier '${binding.name}'.`
-    const property = 'name' as AST.NodePropName<NodeT>
-    report.error(message, { node: binding, property }, {
-      alsoCheck: () => duplicates.map(node => ({ node, message })),
-    })
-  }
-}
-
-/** getDuplicateIdentifiers returns parameters and sibling declarations that conflict with the binding name. */
-function getDuplicateIdentifiers(binding: AST.Referenceable): AST.Node[] {
-  const siblingAliases = getDuplicateSiblingDeclarations(binding)
-  const paramOwner = findParameterizedDeclaration(binding)
-  const matchingParams = paramOwner?.parameterList?.parameters.filter(
-    p => p !== binding && p.name === binding.name,
-  ) ?? []
-
-  return [...matchingParams, ...siblingAliases]
-}
-
-/** getSiblingStatements returns sibling nodes in the appropriate scope of the binding. */
-function getSiblingStatements(binding: AST.Referenceable): AST.Node[] {
-  const container = binding.$container
-  if (AST.isParameterList(container)) {
-    const parent = container.$container
-    if (AST.isBlockDeclaration(parent)) {
-      return parent.block.statements
-    }
-    return []
-  }
-  if (AST.isModuleDeclaration(container)) {
-    const taoFile = container.$container
-    if (AST.isTaoFile(taoFile)) {
-      return flattenTopLevelDeclarations(taoFile.statements)
-    }
-    return []
-  }
-  if (AST.isTaoFile(container)) {
-    return flattenTopLevelDeclarations(container.statements)
-  }
-  if (AST.isBlock(container)) {
-    return container.statements
-  }
-  return []
-}
-
-/** flattenTopLevelDeclarations returns file-level declaration nodes (unwraps `ModuleDeclaration`). */
-function flattenTopLevelDeclarations(statements: readonly AST.Statement[]): AST.Node[] {
-  const out: AST.Node[] = []
-  for (const s of statements) {
-    if (AST.isModuleDeclaration(s)) {
-      out.push(s.declaration)
-    } else {
-      out.push(s)
-    }
-  }
-  return out
-}
-
-/** getDuplicateSiblingDeclarations returns same-scope declarations with the same name as the binding. */
-function getDuplicateSiblingDeclarations(binding: AST.Referenceable): AST.Node[] {
-  return getSiblingStatements(binding).filter(node => {
-    return AST.isReferenceable(node) && node.name === binding.name && node !== binding
-  })
-}
-
-/** findParameterizedDeclaration returns the nearest enclosing view or action that may own parameters. */
-function findParameterizedDeclaration(
-  binding: AST.Referenceable,
-): AST.ViewDeclaration | AST.ActionDeclaration | undefined {
-  let current: AST.Node | undefined = binding.$container
-  while (current) {
-    if (AST.isBlockDeclaration(current)) {
-      return current
-    }
-    current = current.$container
-  }
-  return undefined
 }
 
 /** removeItemFrom returns a copy of the array without the first matching item reference. */

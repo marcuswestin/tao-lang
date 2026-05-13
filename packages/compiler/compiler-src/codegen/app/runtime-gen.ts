@@ -15,10 +15,16 @@ import {
 import { parameterName } from '@compiler/tao-type-shapes'
 import { resolveArgumentBindings } from '@compiler/typing/tao-argument-bindings'
 import { AST } from '@parser/parser'
-import { Assert, Iterable as _Iterable, Stream, switch_safe } from '@shared'
+import { Assert, Stream, switch_safe } from '@shared'
 import { throwUnexpectedBehaviorError } from '@shared/TaoErrors'
+import {
+  collectionSlugFromPlural,
+  queryDeclarationAliasName,
+} from '../../query/query-model'
 import { decodeTaoTemplateTextChunk } from '../tao-template-text-chunk'
 import type { TaoAppConfig, TaoAppConfigObject } from './app-config'
+import { dataDeclarationToSerializedSchema } from './data-schema-serialization'
+import { compileQueryDeclaration, compileQueryMemberAccessExpression } from './query-plan-gen'
 
 /** TaoResolvedAppProvider is the provider selected for the compiled app after Tao source + compile overrides. */
 export type TaoResolvedAppProvider = {
@@ -59,6 +65,7 @@ class RuntimeGen {
       ${this.taoFileScope(taoFile)}
       ${compileNodeListProperty(taoFile, 'statements', wireUseStatement)}
       ${compileNodeListProperty(taoFile, 'statements', stmt => this.Statement(stmt))}
+      ${this.taoFileDataProviderInits(taoFile)}
       ${this.taoFileAppInits(taoFile)}
     `
 
@@ -149,6 +156,12 @@ class RuntimeGen {
       NumberLiteral: (node) => {
         return compileNode(node)`TR.Literal(${node.number})`
       },
+      BooleanLiteral: (node) => {
+        return compileNode(node)`TR.Literal(${node.value === 'true' ? 'true' : 'false'})`
+      },
+      NullLiteral: (node) => {
+        return compileNode(node)`TR.Literal(null)`
+      },
       StringTemplateExpression: (node) => this.StringTemplateExpression(node),
       MemberAccessExpression: (node) => this.MemberAccessExpression(node),
       ActionExpression: (node) => this.ActionExpression(node),
@@ -198,6 +211,10 @@ class RuntimeGen {
 
   /** MemberAccessExpression compiles `Name` or `Name.a.b.c` against the current scope. Bare names (empty path) resolve directly; chains wrap with `TR.MemberAccess`. */
   MemberAccessExpression(node: AST.MemberAccessExpression): Compiled {
+    const root = node.root.ref
+    if (root && AST.isQueryDeclaration(root)) {
+      return compileQueryMemberAccessExpression(node, root)
+    }
     const rootExpr = compileNode(node)`_Scope.${node.root.$refText}`
     if (node.properties.length === 0) {
       return rootExpr
@@ -472,7 +489,7 @@ class RuntimeGen {
       'ForStatement collection must resolve to a query declaration after validation.',
       { collection: node.collection.$refText },
     )
-    const alias = coll.name
+    const alias = queryDeclarationAliasName(coll)
     const binding = node.name
     const inner = compileNodeList(node.block.statements, stmt => this.viewFragmentStatement(stmt))
     return compileNode(node)`
@@ -508,7 +525,7 @@ class RuntimeGen {
 
   /** viewGuardLoadingExpr emits query-result `isLoading` checks for in-view live queries used by `guard`. */
   private viewGuardLoadingExpr(anchor: AST.ViewDeclaration, queries: readonly AST.QueryDeclaration[]): Compiled {
-    const aliases = [...new Set(queries.map(q => q.name).filter(Boolean))]
+    const aliases = [...new Set(queries.map(queryDeclarationAliasName).filter(Boolean))]
     if (aliases.length === 0) {
       return compileNode(anchor)`false`
     }
@@ -711,54 +728,44 @@ class RuntimeGen {
     return compileNoop()
   }
 
-  /** QueryDeclaration binds `_Scope.<Alias>` via `getTaoData('Schema').peekQuery` (file) or `useLiveQuery` (view hook). */
+  /** QueryDeclaration binds `_Scope.<Alias>` via `useLiveQuery` in view hooks. File-level queries are deferred until after all providers open. */
   QueryDeclaration(node: AST.QueryDeclaration): Compiled {
-    const schema = refResolved(node.schema, 'QueryDeclaration.schema')
-    const entity = refResolved(node.entity, 'QueryDeclaration.entity')
-    const collection = collectionSlugFromPlural(entity.pluralName)
-    const firstLit = node.first ? 'true' : 'false'
-    const schemaLit = JSON.stringify(schema.name)
-    const collLit = JSON.stringify(collection)
     if (AST.isTaoFile(node.$container)) {
-      return compileNode(node)`
-        _Scope.${node.name} = getTaoData(${schemaLit}).peekQuery(${collLit}, { first: ${firstLit} })
-      `
+      return compileNoop()
     }
-    return compileNode(node)`
-      _Scope.${node.name} = getTaoData(${schemaLit}).useLiveQuery(${collLit}, { first: ${firstLit} })
-    `
+    return compileQueryDeclaration(node, expression => this.Expression(expression))
+  }
+
+  /** fileLevelQueryDeclaration binds `_Scope.<Alias>` from a non-reactive provider snapshot during app init. */
+  private fileLevelQueryDeclaration(node: AST.QueryDeclaration): Compiled {
+    return compileQueryDeclaration(node, expression => this.Expression(expression))
   }
 
   /** dataDeclarationRuntime creates the app-selected provider client and declares the dataset shape at module load. */
   dataDeclarationRuntime(decl: AST.DataDeclaration): Compiled {
-    const entities = decl.dataStatements.filter(AST.isDataEntityDeclaration)
+    const schema = dataDeclarationToSerializedSchema(decl)
 
     return compileNode(decl)`
       setTaoData(${JSON.stringify(decl.name)}, createTaoDataClient(${
       JSON.stringify(this.codegenOpts.appProvider.name)
     }))
-      getTaoData(${JSON.stringify(decl.name)}).declareDataset({
-        entities: {
-          ${compileIndentedNodeList(entities, ent => this.dataEntitySchemaEntry(ent))}
-        },
-        links: {},
-      })
+      getTaoData(${JSON.stringify(decl.name)}).declareDataset(${JSON.stringify(schema.shape)})
     `
   }
 
-  /** dataEntitySchemaEntry emits one `entities` entry for `declareDataset`. */
-  private dataEntitySchemaEntry(entity: AST.DataEntityDeclaration): Compiled {
-    const key = collectionSlugFromPlural(entity.pluralName)
-    const inner = entity.fields
-      .map((f) => ({ f, t: dataFieldToInstantFieldType(f) }))
-      .map(x => `${x.f.name}: ${JSON.stringify(x.t)}`)
-      .join(', ')
-    return compileNode(entity)`${key}: { ${inner} },`
+  /** taoFileDataProviderInits exports a bootstrap hook that opens this module's data providers. */
+  taoFileDataProviderInits(taoFile: AST.TaoFile): Compiled {
+    const openCalls = this.taoDataOpenCalls(taoFile)
+    return compileNode(taoFile)`
+      export function _taoOpenDataProviders() {
+        ${openCalls.join('\n')}
+      }
+    `
   }
 
-  /** taoFileAppInits exports a bootstrap hook that opens the data provider then runs compiled `on init` handlers. */
+  /** taoFileAppInits exports a bootstrap hook that runs file-level queries and compiled `on init` handlers after every provider is open. */
   taoFileAppInits(taoFile: AST.TaoFile): Compiled {
-    const openCalls = this.taoDataOpenCalls(taoFile)
+    const queryInits = taoFile.statements.filter(AST.isQueryDeclaration)
     const onInits: AST.OnStatement[] = []
     for (const stmt of taoFile.statements) {
       if (AST.isModuleDeclaration(stmt) && AST.isAppDeclaration(stmt.declaration)) {
@@ -767,14 +774,9 @@ class RuntimeGen {
         this.collectOnInits(stmt, onInits)
       }
     }
-    if (openCalls.length === 0 && onInits.length === 0) {
-      return compileNode(taoFile)`
-        export function _taoRunAppInits() {}
-      `
-    }
     return compileNode(taoFile)`
       export function _taoRunAppInits() {
-        ${openCalls.join('\n')}
+        ${compileNodeList(queryInits, n => this.fileLevelQueryDeclaration(n))}
         ${compileNodeList(onInits, n => this.Block(n.handler.block))}
       }
     `
@@ -783,13 +785,14 @@ class RuntimeGen {
   /** taoDataOpenCalls emits provider `open(...)` calls for every data block in this Tao module. */
   private taoDataOpenCalls(taoFile: AST.TaoFile): string[] {
     const calls: string[] = []
+    const providerParams = runtimeProviderParams(this.codegenOpts.appProvider.params)
     for (const stmt of taoFile.statements) {
       const decl = AST.isModuleDeclaration(stmt) ? stmt.declaration : stmt
       if (!AST.isDataDeclaration(decl)) {
         continue
       }
       const name = JSON.stringify(decl.name)
-      calls.push(`getTaoData(${name}).open(${JSON.stringify(this.codegenOpts.appProvider.params)})`)
+      calls.push(`getTaoData(${name}).open(${JSON.stringify(providerParams)})`)
     }
     return calls
   }
@@ -824,29 +827,6 @@ function isBlockWithStatements(block: AST.Block | undefined): block is BlockWith
   return block !== undefined && block.statements.length > 0
 }
 
-/** collectionSlugFromPlural maps entity plural names (e.g. `People`) to IDB collection keys (e.g. `people`). */
-function collectionSlugFromPlural(pluralName: string): string {
-  if (pluralName.length === 0) {
-    return pluralName
-  }
-  return pluralName.charAt(0).toLowerCase() + pluralName.slice(1)
-}
-
-/** dataFieldToInstantFieldType maps Tao data fields to Instant entity JSON types. */
-function dataFieldToInstantFieldType(field: AST.DataFieldDeclaration): 'string' | 'number' | 'boolean' | 'any' {
-  const ft = field.type
-  if (!ft || ft.primitiveType === undefined) {
-    return 'any'
-  }
-  return switch_safe(ft.primitiveType, {
-    text: () => 'string',
-    number: () => 'number',
-    boolean: () => 'boolean',
-    action: () => 'any',
-    view: () => 'any',
-  })
-}
-
 /** isNestedDeclaration returns true when the declaration lives inside another declaration (not at file/module level). */
 function isNestedDeclaration(decl: AST.Declaration): boolean {
   return AST.isBlock(decl.$container)
@@ -858,4 +838,17 @@ function stripTsFenceFromTsCodeBlock(content: string): string {
   s = s.replace(/^```ts\s*\n?/im, '')
   s = s.replace(/\n?```\s*$/m, '')
   return s.trim()
+}
+
+/** runtimeProviderParams strips admin-only keys (secrets that must not appear in the client bundle) from provider config before embedding in generated app code. Add new admin-only keys here when introduced. */
+function runtimeProviderParams(params: TaoAppConfigObject): TaoAppConfigObject {
+  const adminOnlyKeys = new Set(['adminToken'])
+  const runtimeParams: TaoAppConfigObject = {}
+  for (const [key, value] of Object.entries(params)) {
+    if (adminOnlyKeys.has(key)) {
+      continue
+    }
+    runtimeParams[key] = value
+  }
+  return runtimeParams
 }

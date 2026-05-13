@@ -1,14 +1,34 @@
+import type { TaoQueryPlan, TaoQueryResult } from './tao-query'
+
 /** TaoDatasetShape describes the entity/field layout declared by a compiled `data` block. */
+export type TaoDatasetFieldShape = string | {
+  type: string
+  optional?: boolean
+  unique?: boolean
+  indexed?: boolean
+}
+
 export type TaoDatasetShape = {
-  entities: Record<string, Record<string, string>>
+  entities: Record<string, Record<string, TaoDatasetFieldShape>>
   links: Record<string, unknown>
 }
 
-/** TaoQueryOpts controls singular vs collection reads. */
-export type TaoQueryOpts = { first: boolean }
+export type TaoSerializedDataSchema = {
+  name: string
+  shape: TaoDatasetShape
+}
 
-/** TaoQueryResult mirrors the { data, isLoading, error } contract consumed by guards and for-loops. */
-export type TaoQueryResult = { data: unknown; isLoading: boolean; error: unknown }
+export type TaoDataAdminPushSchemaInput = {
+  schemas: TaoSerializedDataSchema[]
+  params: TaoDataProviderParams
+  overwrite: boolean
+}
+
+/** TaoDataAdmin is the compile-time/admin provider interface for schema management. */
+export interface TaoDataAdmin {
+  /** pushSchema pushes serialized Tao data schema metadata into the backing provider. */
+  pushSchema(input: TaoDataAdminPushSchemaInput): Promise<unknown>
+}
 
 /** TaoDataProviderParams carries untyped runtime config passed from app bootstrap into provider init. */
 export type TaoDataProviderParams = Record<string, unknown>
@@ -23,9 +43,9 @@ export interface TaoDataClient {
   /** open initialises the provider with runtime params (e.g. InstantDB appId); called from app bootstrap. */
   open(params: TaoDataProviderParams): void
   /** useLiveQuery subscribes to collection data — must only run inside a React component (see {@link useTaoDataLiveQuery}). */
-  useLiveQuery(collection: string, opts: TaoQueryOpts): TaoQueryResult
+  useLiveQuery(plan: TaoQueryPlan): TaoQueryResult
   /** peekQuery reads current data without subscription (file-level scope or snapshot). */
-  peekQuery(collection: string, opts: TaoQueryOpts): TaoQueryResult
+  peekQuery(plan: TaoQueryPlan): TaoQueryResult
   /** isBusy returns true while the provider is still loading data. */
   isBusy(): boolean
   /** insert appends a row to the collection (local-first, then syncs for cloud providers). */
@@ -51,6 +71,16 @@ export function evaluateRecordFields(record: Record<string, unknown>): Record<st
     out[key] = value
   }
   return out
+}
+
+/** taoDatasetFieldType returns the primitive provider type from either legacy or structured field shape. */
+export function taoDatasetFieldType(field: TaoDatasetFieldShape): string {
+  return typeof field === 'string' ? field : field.type
+}
+
+/** taoDatasetFieldIsIndexed returns true when provider schema metadata should mark the field indexed. */
+export function taoDatasetFieldIsIndexed(field: TaoDatasetFieldShape): boolean {
+  return typeof field !== 'string' && (field.indexed === true || field.unique === true)
 }
 
 /** setTaoData installs the data client for one compiled `data` declaration. */
@@ -80,3 +110,13 @@ export function createTaoDataClient(provider: string): TaoDataClient {
   }
   return factory()
 }
+
+export type {
+  TaoQueryCardinality,
+  TaoQueryComparisonOperator,
+  TaoQueryOrder,
+  TaoQueryOrderDirection,
+  TaoQueryPlan,
+  TaoQueryPredicate,
+  TaoQueryResult,
+} from './tao-query'

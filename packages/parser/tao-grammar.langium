@@ -122,7 +122,70 @@ DataEntityDeclaration:
     pluralName=ID name=ID '{' (fields+=DataFieldDeclaration (',' fields+=DataFieldDeclaration)* ','?)? '}';
 
 QueryDeclaration:
-    'query' schema=[DataDeclaration:ID] 'get' first?='first'? entity=[DataEntityDeclaration:ID] 'as' name=ID;
+    'query' schema=[DataDeclaration:ID] source=QuerySource ('as' name=ID)? steps+=QueryPipelineStep*;
+
+QuerySource:
+    QueryCollectionSource | QueryOneSource | QueryLegacySource;
+
+QueryCollectionSource:
+    'for' collection=[DataEntityDeclaration:ID];
+
+QueryOneSource:
+    'get' 'one' entity=[DataEntityDeclaration:ID];
+
+// Legacy query source kept so existing apps keep compiling while the V1 surface moves to
+// `for <Plural>` / `get one <Singular>`.
+QueryLegacySource:
+    'get' first?='first'? entity=[DataEntityDeclaration:ID];
+
+QueryPipelineStep:
+    QueryWhereStep | QueryOrderStep | QueryIncludeStep;
+
+QueryWhereStep:
+    '>' 'where' predicate=QueryPredicate;
+
+QueryOrderStep:
+    '>' 'order' path=QueryFieldPath direction=QueryOrderDirection;
+
+QueryIncludeStep:
+    '>' 'include' paths+=QueryFieldPath (',' paths+=QueryFieldPath)*;
+
+QueryOrderDirection returns string:
+    'asc' | 'desc';
+
+QueryPredicate:
+    QueryOrPredicate;
+
+QueryOrPredicate infers QueryPredicate:
+    QueryAndPredicate ({infer QueryLogicalPredicate.left=current} op='or' right=QueryAndPredicate)*;
+
+QueryAndPredicate infers QueryPredicate:
+    QueryNotPredicate ({infer QueryLogicalPredicate.left=current} op='and' right=QueryNotPredicate)*;
+
+QueryNotPredicate infers QueryPredicate:
+    {infer QueryNotPredicate} op='not' operand=QueryPredicateAtom
+    | QueryPredicateAtom;
+
+QueryPredicateAtom infers QueryPredicate:
+    QueryComparisonPredicate | '(' QueryPredicate ')';
+
+QueryComparisonPredicate:
+    path=QueryFieldPath
+    (
+        (is?='is' not?='not'? value=Expression)
+        | op=QuerySymbolPredicateOperator value=Expression
+        | membership?='in' value=Expression
+        | stringOperator=QueryStringPredicateOperator value=Expression (ignoreCase?='ignoring' 'case')?
+    );
+
+QuerySymbolPredicateOperator returns string:
+    '=' | '!=' | '<=' | '>=' | '<' | '>';
+
+QueryStringPredicateOperator returns string:
+    'contains' | 'starts' 'with' | 'ends' 'with';
+
+QueryFieldPath:
+    segments+=ID ('.' segments+=ID)*;
 
 GuardStatement:
     'guard' block=Block;
@@ -150,7 +213,7 @@ DataFieldType:
 DataFieldMetadata:
     kind=DataFieldMetadataKind (value=Expression)?;
 
-DataFieldMetadataKind returns string: 'optional' | 'unique' | 'default';
+DataFieldMetadataKind returns string: 'optional' | 'unique' | 'indexed' | 'default';
 
 // Cross-reference target for data field types: entities and data-scoped types within the same
 // `data` block, plus top-level declarations (for referencing types declared outside the data block).
@@ -260,7 +323,7 @@ MemberAccessExpression:
 
 // PostfixExpression covers non-reference atoms and grouped expressions (no `.prop` suffix here; use `MemberAccessExpression` for `name.prop`).
 PostfixExpression infers Expression:
-    '(' Expression ')' | StringTemplateExpression | NumberLiteral | ActionExpression;
+    '(' Expression ')' | StringTemplateExpression | NumberLiteral | BooleanLiteral | NullLiteral | ActionExpression;
 
 // ObjectLiteral shares `{` `}` with `Block` — see invariant comment on `Block`.
 ObjectLiteral:
@@ -271,6 +334,15 @@ ObjectProperty:
 
 NumberLiteral:
     number=NUMBER;
+
+BooleanLiteral:
+    value=BooleanLiteralValue;
+
+BooleanLiteralValue returns string:
+    'true' | 'false';
+
+NullLiteral:
+    value='null';
 
 // StringTemplateExpression is a `"…"` literal with optional `${ Expression }` interpolation holes. All strings
 // (even without interpolation) parse as this single node; codegen collapses the trivial text-only case to a `Literal`.

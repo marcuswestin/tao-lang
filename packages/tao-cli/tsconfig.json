@@ -1,11 +1,16 @@
 {
   "extends": "../tsconfig.base.json",
   "references": [
-    { "path": "../compiler" }
+    {
+      "path": "../compiler"
+    }
   ],
   "include": [
     "cli-src/**/*",
     "cli-tests/**/*",
+    "../tao-std-lib/tao/data/providers/tao-data-client.ts",
+    "../tao-std-lib/tao/data/providers/tao-query.ts",
+    "../tao-std-lib/tao/data/providers/*/admin/**/*.ts",
     "tao-cli.ts"
   ],
   "compilerOptions": {

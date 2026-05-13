@@ -11,11 +11,25 @@ It provides:
 
 ## Commands
 
+Start server, wait for `/health`, and seed the deterministic app:
+
 ```sh
 just instantdb-local up
 ```
 
 Starts Postgres, builds/runs InstantDB, waits for `/health`, and seeds the deterministic app.
+
+Useful dev commands:
+
+```sh
+just config
+just image
+just status
+just logs
+just down
+just reset
+just reset-caches
+```
 
 For the full Expo + Tao compile/watch loop from the repository root:
 
@@ -24,6 +38,16 @@ just dev roPhone "./Apps/DevApp/DevApp.tao"
 ```
 
 The first argument is the iOS device name/UDID and the second argument is the Tao app path. Use `just dev` for the default `roPhone` + Data Schema app.
+
+## Local App Configuration
+
+The seeded app uses:
+
+```txt
+appId=9faf89c0-c15c-49b4-bf3f-3b5b2cd9a19f
+apiURI=http://localhost:9020
+websocketURI=ws://localhost:9020/runtime/session
+```
 
 ## Notes
 

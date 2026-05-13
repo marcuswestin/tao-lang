@@ -1,4 +1,4 @@
-import { dataSchemaValidationMessages, forCreateMessages } from '@compiler/validation/data'
+import { dataSchemaValidationMessages, forCreateMessages, queryValidationMessages } from '@compiler/validation/data'
 import { validationMessages } from '@compiler/validation/tao-lang-validator'
 import { expectHumanMessagesContain } from './test-utils/diagnostics'
 import { describe, parseASTWithErrors, parseTaoFully, test } from './test-utils/test-harness'
@@ -258,5 +258,114 @@ describe('validation — for / create:', () => {
       view V { }
     `)
     expectHumanMessagesContain(report, validationMessages.legacyIDBInjection)
+  })
+})
+
+describe('validation — V1 data queries:', () => {
+  test('get one with unique equality passes validation', async () => {
+    await parseTaoFully(`
+      data D {
+        People Person {
+          Email text unique,
+          Name text,
+        }
+      }
+      query D get one Person
+        > where Email = "ro@example.test"
+      app A { ui V }
+      view V { }
+    `)
+  })
+
+  test('get one with id equality passes validation', async () => {
+    await parseTaoFully(`
+      data D {
+        People Person {
+          Email text,
+          Name text,
+        }
+      }
+      query D get one Person
+        > where id = "00000000-0000-0000-0000-000000000001"
+      app A { ui V }
+      view V { }
+    `)
+  })
+
+  test('get one without id or unique equality fails validation', async () => {
+    const report = await parseASTWithErrors(`
+      data D {
+        People Person {
+          Email text,
+          Name text,
+        }
+      }
+      query D get one Person
+        > where Name = "Ro"
+      app A { ui V }
+      view V { }
+    `)
+    expectHumanMessagesContain(report, queryValidationMessages.queryOneNeedsUniqueWhere)
+  })
+
+  test('get one does not accept unique equality hidden behind or', async () => {
+    const report = await parseASTWithErrors(`
+      data D {
+        People Person {
+          Email text unique,
+          Name text,
+        }
+      }
+      query D get one Person
+        > where Email = "ro@example.test" or Name = "Ro"
+      app A { ui V }
+      view V { }
+    `)
+    expectHumanMessagesContain(report, queryValidationMessages.queryOneNeedsUniqueWhere)
+  })
+
+  test('nested relationship path requires include', async () => {
+    const report = await parseASTWithErrors(`
+      data D {
+        People Person { Name text }
+        Events Event { Host Person }
+      }
+      query D for Events
+        > where Host.Name = "Ro"
+      app A { ui V }
+      view V { }
+    `)
+    expectHumanMessagesContain(
+      report,
+      queryValidationMessages.queryNestedRelationshipNeedsInclude('Host.Name', 'Host'),
+    )
+  })
+
+  test('nested relationship path with include passes validation', async () => {
+    await parseTaoFully(`
+      data D {
+        People Person { Name text }
+        Events Event { Host Person }
+      }
+      query D for Events
+        > include Host
+        > where Host.Name = "Ro"
+      app A { ui V }
+      view V { }
+    `)
+  })
+
+  test('direct relationship identity predicate does not require include', async () => {
+    await parseTaoFully(`
+      data D {
+        People Person { Name text }
+        Events Event { Host Person }
+      }
+      query D get first Person as CurrentUser
+      query D for Events
+        > where Host is CurrentUser
+      app A { ui V }
+      view V { }
+    `)
   })
 })

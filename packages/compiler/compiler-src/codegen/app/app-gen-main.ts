@@ -37,6 +37,7 @@ export function generateTypescriptReactNativeApp(
   fileNodes: { relativePath: string; node: GeneratorNode }[]
   bootstrapNode: GeneratorNode
   bootstrapRelativePath: string
+  codegenOpts: TaoCodegenOpts
 } {
   const allTaoFiles = dedupeTaoFilesByUri([mainTaoFile, ...importedTaoFiles])
   const resolvedCodegen = buildMergedEntryCodegenOpts(mainTaoFile, codegenInputOpts)
@@ -77,6 +78,7 @@ export function generateTypescriptReactNativeApp(
     fileNodes,
     bootstrapNode,
     bootstrapRelativePath: BOOTSTRAP_RELATIVE_PATH,
+    codegenOpts: resolvedCodegen,
   }
 }
 
@@ -121,7 +123,7 @@ function compileOneTaoFileModule(
   const result = new CompositeGeneratorNode()
   const dirCount = FS.splitPath(relativePath).length
   const importBase = '../'.repeat(dirCount - 1)
-  const { reactImport, taoDataImport } = buildRuntimePreambleImports(taoFile, importBase, codegenOpts)
+  const { reactImport, taoDataImport } = buildRuntimePreambleImports(taoFile, importBase)
   result.append(compileNode(taoFile)`
     import { _TaoRuntime, TR } from '${importBase}use/@tao/tao-runtime/tao-runtime'
     ${reactImport}${taoDataImport}${importHeader} // ${taoFile.$document!.uri}
@@ -222,14 +224,18 @@ function compileBootstrapNode(initImportPaths: string[], appUIViewModulePath: st
   const n = new CompositeGeneratorNode()
   const appUiImport = `import { AppUIView } from '${appUIViewModulePath}'`
   const initImports = initImportPaths
-    .map((path, idx) => `import { _taoRunAppInits as _taoRunAppInits${idx} } from '${path}'`)
+    .map((path, idx) =>
+      `import { _taoOpenDataProviders as _taoOpenDataProviders${idx}, _taoRunAppInits as _taoRunAppInits${idx} } from '${path}'`
+    )
     .join('\n')
+  const dataProviderInitCalls = initImportPaths.map((_, idx) => `_taoOpenDataProviders${idx}()`).join('\n')
   const initCalls = initImportPaths.map((_, idx) => `_taoRunAppInits${idx}()`).join('\n')
   n.append(`// @ts-nocheck
 import * as RN from 'react-native'
 ${appUiImport}
 ${initImports}
 
+${dataProviderInitCalls}
 ${initCalls}
 
 const _compiledTaoAppRootViewStyle = { flex: 1, backgroundColor: 'black' }

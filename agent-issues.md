@@ -16,6 +16,12 @@ Format:
 
 - While running simple `./agent cat`/`./agent git diff` commands, devenv intermittently failed or warned about missing `.devenv/load-exports` and stale `.devenv/gc/shell`; rerunning the command succeeded.
 
+### 2026-05-04 - `./agent prep-commit` can fail inside compiler `ts-autofix`.
+
+- Saw `TypeError: context.host.getCompilationSettings is not a function` from `ts-autofix` during the compiler autofix step after the build phase passed.
+
+### 2026-05-03 - `./agent fd` is listed in help but is not available.
+
 ## Reviewed
 
 Move fixed or obsolete notes here with a short outcome.

@@ -1,14 +1,23 @@
 import * as IDB from '@instantdb/react-native'
-import { Assert } from '../../../tao-runtime/runtime-utils'
+import { Assert } from '../../../../tao-runtime/runtime-utils'
 import {
   evaluateRecordFields,
   registerTaoDataProvider,
   type TaoDataClient,
   type TaoDataProviderParams,
+  taoDatasetFieldIsIndexed,
+  type TaoDatasetFieldShape,
+  taoDatasetFieldType,
   type TaoDatasetShape,
-  type TaoQueryOpts,
+} from '../../tao-data-client'
+import {
+  buildQueryResult,
+  evaluateQueryPlan,
+  type TaoQueryPlan,
+  type TaoQueryPredicate,
   type TaoQueryResult,
-} from '../tao-data-client'
+  useReactiveQueryPlan,
+} from '../../tao-query'
 import { createTaoIDBClient } from './TaoIDBClient'
 
 type InstantDb = ReturnType<typeof IDB.init>
@@ -26,18 +35,31 @@ const iTypeFns: Record<string, () => ReturnType<typeof IDB.i.string>> = {
   boolean: () => IDB.i.boolean(),
 }
 
+/** buildInstantAttr turns Tao field metadata into InstantDB attr metadata. */
+function buildInstantAttr(field: TaoDatasetFieldShape): ReturnType<typeof IDB.i.string> {
+  const factory = iTypeFns[taoDatasetFieldType(field)]
+  let attr = factory ? factory() : IDB.i.any()
+  if (typeof field !== 'string') {
+    if (field.optional === true) {
+      attr = attr.optional()
+    }
+    if (field.unique === true) {
+      attr = attr.unique()
+    }
+    if (taoDatasetFieldIsIndexed(field)) {
+      attr = attr.indexed()
+    }
+  }
+  return attr
+}
+
 /** buildInstantSchema constructs an `IDB.i.schema(...)` from the plain TaoDatasetShape so InstantDB gets full type info. */
 function buildInstantSchema(shape: TaoDatasetShape) {
   const entities: Record<string, ReturnType<typeof IDB.i.entity>> = {}
   for (const [collection, fields] of Object.entries(shape.entities)) {
     const attrs: Record<string, ReturnType<typeof IDB.i.string>> = {}
-    for (const [fieldName, fieldType] of Object.entries(fields)) {
-      const factory = iTypeFns[fieldType]
-      if (factory) {
-        attrs[fieldName] = factory()
-      } else {
-        attrs[fieldName] = IDB.i.any()
-      }
+    for (const [fieldName, field] of Object.entries(fields)) {
+      attrs[fieldName] = buildInstantAttr(field)
     }
     entities[collection] = IDB.i.entity(attrs)
   }
@@ -154,7 +176,7 @@ function instantEndpointConfig(apiURI: string | undefined, websocketURI: string 
 }
 
 /** InstantTaoData implements TaoDataClient using the published InstantDB React Native client package. */
-export class InstantTaoData implements TaoDataClient {
+export class InstantDBTaoClient implements TaoDataClient {
   private shape: TaoDatasetShape | undefined
   // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents -- `init` return is wide upstream; `undefined` is intentional until `open`.
   private db: InstantDb | undefined
@@ -181,30 +203,33 @@ export class InstantTaoData implements TaoDataClient {
   }
 
   /** useLiveQuery delegates to InstantDB `useQuery` — must run only inside a React component. */
-  useLiveQuery(collection: string, opts: TaoQueryOpts): TaoQueryResult {
+  useLiveQuery(plan: TaoQueryPlan): TaoQueryResult {
+    const normalized = useReactiveQueryPlan(plan)
     if (!this.db) {
-      return fallbackResult(opts)
+      return fallbackResult(normalized)
     }
-    const result = this.db.useQuery({ [collection]: {} } as Parameters<InstantDb['useQuery']>[0])
-    const rows = getCollectionRows(result.data, collection)
-    if (opts.first) {
-      return { data: rows[0] ?? null, isLoading: result.isLoading, error: result.error ?? null }
+    const query = instantQueryShape(normalized)
+    const result = this.db.useQuery(query as Parameters<InstantDb['useQuery']>[0])
+    const rows = getCollectionRows(result.data, normalized.collection)
+    if (normalized.cardinality === 'one') {
+      return buildQueryResult(rows[0] ?? null, result.isLoading, result.error ?? null)
     }
-    return { data: rows, isLoading: result.isLoading, error: result.error ?? null }
+    return buildQueryResult(rows, result.isLoading, result.error ?? null)
   }
 
   /** peekQuery reads the InstantDB reactor cache without subscribing; uses non-public Instant APIs — may return loading until `open` completes. */
-  peekQuery(collection: string, opts: TaoQueryOpts): TaoQueryResult {
+  peekQuery(plan: TaoQueryPlan): TaoQueryResult {
+    const normalized = evaluateQueryPlan(plan)
     if (!this.db) {
-      return fallbackResult(opts)
+      return fallbackResult(normalized)
     }
-    const q = coerceQueryShape({ [collection]: {} })
+    const q = coerceQueryShape(instantQueryShape(normalized))
     const prev = getInstantPreviousQueryResult(this.db, q)
-    const rows = getCollectionRows(prev, collection)
-    if (opts.first) {
-      return { data: rows[0] ?? null, isLoading: !prev, error: null }
+    const rows = getCollectionRows(prev, normalized.collection)
+    if (normalized.cardinality === 'one') {
+      return buildQueryResult(rows[0] ?? null, !prev, null)
     }
-    return { data: rows, isLoading: !prev, error: null }
+    return buildQueryResult(rows, !prev, null)
   }
 
   isBusy(): boolean {
@@ -224,16 +249,120 @@ export class InstantTaoData implements TaoDataClient {
 
   /** instantMergedEntityFieldTypes mirrors `open`’s shallow merge of `entities` so insert checks match the Instant schema. */
   private instantMergedEntityFieldTypes(collection: string): Record<string, string> {
-    return this.shape?.entities[collection] ?? {}
+    const fields = this.shape?.entities[collection] ?? {}
+    return Object.fromEntries(Object.entries(fields).map(([name, field]) => [name, taoDatasetFieldType(field)]))
   }
 }
 
-registerTaoDataProvider('InstantDB', () => new InstantTaoData())
+registerTaoDataProvider('InstantDB', () => new InstantDBTaoClient())
 
-function fallbackResult(opts: TaoQueryOpts): TaoQueryResult {
-  return opts.first
-    ? { data: null, isLoading: true, error: null }
-    : { data: [], isLoading: true, error: null }
+function fallbackResult(plan: TaoQueryPlan): TaoQueryResult {
+  return buildQueryResult(plan.cardinality === 'one' ? null : [], true, null)
+}
+
+function instantQueryShape(plan: TaoQueryPlan): Record<string, unknown> {
+  const body = includeTree(plan.includes)
+  const queryOptions: Record<string, unknown> = {}
+  const where = instantWhere(plan.where)
+  if (where) {
+    queryOptions['where'] = where
+  }
+  const order = instantOrder(plan)
+  if (order) {
+    queryOptions['order'] = order
+  }
+  if (Object.keys(queryOptions).length > 0) {
+    body['$'] = queryOptions
+  }
+  return { [plan.collection]: body }
+}
+
+function includeTree(includes: readonly string[][]): Record<string, unknown> {
+  const root: Record<string, unknown> = {}
+  for (const include of includes) {
+    let current = root
+    for (const segment of include) {
+      const next = current[segment]
+      if (next && typeof next === 'object') {
+        current = next as Record<string, unknown>
+      } else {
+        const created: Record<string, unknown> = {}
+        current[segment] = created
+        current = created
+      }
+    }
+  }
+  return root
+}
+
+function instantWhere(predicates: readonly TaoQueryPredicate[]): unknown {
+  if (predicates.length === 0) {
+    return undefined
+  }
+  const compiled = predicates.map(instantPredicate)
+  if (compiled.length === 1) {
+    return compiled[0]
+  }
+  return { and: compiled }
+}
+
+function instantPredicate(predicate: TaoQueryPredicate): Record<string, unknown> {
+  if (predicate.kind === 'and' || predicate.kind === 'or') {
+    const left = instantPredicate(predicate.left)
+    const right = instantPredicate(predicate.right)
+    return { [predicate.kind]: [left, right] }
+  }
+  if (predicate.kind === 'not') {
+    const inner = instantPredicate(predicate.predicate)
+    return { not: inner }
+  }
+  return { [`${predicate.path.join('.')}`]: instantPredicateValue(predicate) }
+}
+
+function instantPredicateValue(predicate: Extract<TaoQueryPredicate, { kind: 'compare'; path: string[] }>): unknown {
+  switch (predicate.op) {
+    case 'is':
+    case '=':
+      return predicate.value
+    case 'isNot':
+    case '!=':
+      return { $ne: predicate.value }
+    case '<':
+      return { $lt: predicate.value }
+    case '<=':
+      return { $lte: predicate.value }
+    case '>':
+      return { $gt: predicate.value }
+    case '>=':
+      return { $gte: predicate.value }
+    case 'in':
+      return { $in: predicate.value }
+    case 'contains':
+      return { [predicate.ignoreCase ? '$ilike' : '$like']: `%${String(predicate.value)}%` }
+    case 'startsWith':
+      return { [predicate.ignoreCase ? '$ilike' : '$like']: `${String(predicate.value)}%` }
+    case 'endsWith':
+      return { [predicate.ignoreCase ? '$ilike' : '$like']: `%${String(predicate.value)}` }
+  }
+}
+
+function instantOrder(plan: TaoQueryPlan): Record<string, unknown> | undefined {
+  if (plan.order.length === 0) {
+    return undefined
+  }
+  const entries: [string, string][] = []
+  for (const order of plan.order) {
+    if (order.path.length !== 1) {
+      console.warn(
+        `[Tao/InstantDB] Nested order path '${
+          order.path.join('.')
+        }' is not supported by InstantDB and will be ignored.`,
+      )
+      continue
+    }
+    entries.push([order.path[0]!, order.direction])
+  }
+  return entries.length > 0 ? Object.fromEntries(entries) : undefined
 }
 
 /** instantStoreConfig returns optional Instant storage overrides requested by provider params. */

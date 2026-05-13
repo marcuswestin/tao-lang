@@ -2,36 +2,35 @@
 
 ## Summary
 
-Build the MVP of Tao's data layer: schema, queries, view control flow, and data writes — compiling to the app-selected provider using a **thin** shared runtime: a **`TaoDataClient`** interface in std lib (`getTaoData()` / `setTaoData()`, `createTaoDataClient`, `declareDataset`, `open`, `peekQuery`, `liveQuery`, `isBusy`, `insert`) plus short generated snippets. The app data provider is specified in `app { provider Name { key "value" } }`; every app has one, and **Memory** is the default when unspecified. Provider key-value pairs are passed through to provider init untyped; only providers validate their own params. This is **not** a generic multi-backend datasource product; **`MemoryTaoData`** exists for in-memory harnesses and default local apps, and **`InstantTaoData`** backs InstantDB apps. Auth is faked (`first Person as CurrentUser`). The [Queries MVP Target App](./Queries%20MVP%20Target%20App.tao) is the authoritative goal: when that app compiles and runs, the MVP is done.
+Build the MVP of Tao's data layer: schema, queries, view control flow, and data writes — compiling to the app-selected provider using a **thin** shared runtime: a **`TaoDataClient`** interface in std lib (`getTaoData()` / `setTaoData()`, `createTaoDataClient`, `declareDataset`, `open`, `peekQuery`, `useLiveQuery`, `isBusy`, `insert`) plus short generated snippets. The app data provider is specified in `app { provider Name { key "value" } }`; every app has one, and **Memory** is the default when unspecified. Provider key-value pairs are passed through to provider init untyped; only providers validate their own params. This is **not** a generic multi-backend datasource product; **`MemoryTaoData`** exists for in-memory harnesses and default local apps, and **`InstantTaoData`** backs InstantDB apps. Auth is faked with `get one Person as CurrentUser` over a unique field such as `Email`. The [Queries MVP Target App](./Queries%20MVP%20Target%20App.tao) is the authoritative goal: when that app compiles and runs, the MVP is done.
 
 **Approach:** an incremental test app in `Apps/Test Apps/` starts minimal and grows with each milestone. Each milestone's first step is adding the new syntax to the test app, then making it compile and run. When a milestone is complete, the test app should be able to compile and run, and pass the headless test runtime scenario where the harness supports it, along with `prep-commit`.
 
 **Codegen:** prefer **short generated snippets** that call the **shared `TaoDataClient`** in the std lib (see M2). Avoid emitting large InstantDB boilerplate per app; keep generated output readable and stable.
 
 ---
-
 ## Goals
 
 - **Schema:** `data` blocks with entities, relationships, and field metadata parse, validate, and compile; app-level `provider` selects runtime data access.
-- **Queries:** first **raw** queries (`query Data get [first] Entity as Alias` — no `where` / `order` / `take`); **collection** queries without `first` parse and wire in **M2**; **M3** makes list results **`for`-iterable** and type-aligned for element binding, then **pipeline** steps and dotted paths (M4).
+- **Queries:** first **raw** queries (`query Data get [first] Entity as Alias` — no `where` / `order`); **collection** queries without `first` parse and wire in **M2**; **M3** makes list results **`for`-iterable** and type-aligned for element binding; **M4** landed V1 query plans with `for <Plural>`, `get one <Singular>`, `where`, `order`, and `include`.
 - **View control flow:** `guard` (Suspense fallback); `for` (iteration) over list-shaped query aliases (M3); `if`/`else` (conditionals) in views (M5).
-- **Data writes:** `create` in actions (M3); `update` and remaining write polish (M6) compile to InstantDB `transact` via `getTaoData().insert(...)` on **`InstantTaoData`** (and in-memory rows on **`MemoryTaoData`**).
+- **Data writes:** `create` in actions (M3) currently compiles through `getTaoData().insert(...)`; `update` and remaining write polish (M6) should compile through thin `TaoDataClient` write helpers backed by InstantDB `transact` and in-memory row updates.
 - **Working app:** the [target app](./Queries%20MVP%20Target%20App.tao) compiles and runs against InstantDB, end-to-end (**M8**).
+- **Schema push:** provider admin implementations can push serialized Tao data schemas during CLI compile/dev workflows. Providers temporarily live in `packages/tao-std-lib/tao/data/providers`, split into `client/` and `admin/` folders.
 
 ## Non-goals (this branch)
 
 - A **generic** pluggable datasource layer (REST/GraphQL adapters, swappable drivers). **In scope:** a small **`TaoDataClient`** contract with **`InstantTaoData`** (real `@instantdb/react-native`) and **`MemoryTaoData`** (no Instant) — see M2.
 - `Loadable<T>` or generic async wrapper types (MVP uses `guard` + Suspense per [Preferred §3.6](./Process%20Docs/Queries%20Design%20-%20Preferred.md#async-model)).
 - REST, GraphQL, Supabase, or TanStack-only providers.
-- Real auth / session model (fake auth via `first Person`).
-- Projections / partial selection, `delete`, aggregations.
+- Real auth / session model (fake auth via `get one Person` over a unique field).
+- Projections / partial selection, limiting/pagination, `delete`, aggregations.
 - Migrations, schema diffing, offline/sync, optimistic updates.
-
 ---
 
 ## Milestones
 
-**Status:** M1-M3.5 are complete. The current implementation parses and validates `data` blocks, supports raw queries, view `guard`, list-shaped query aliases, `for`, `create`, app/provider overrides, provider factory registration, and grouped data validators under [`validation/data/`](../../../packages/compiler/compiler-src/validation/data/). The active next milestones are **M4** (pipeline queries and dotted paths), **M5** (`if`/`else`), **M6** (`update`), **M7** (relationship-heavy staging app), and **M8** (literal target app).
+**Status:** M1-M4 are complete. The current implementation parses and validates `data` blocks, supports raw and structured queries, view `guard`, list-shaped query aliases, `for`, `create`, app/provider overrides, provider factory registration, grouped data validators under [`validation/data/`](../../../packages/compiler/compiler-src/validation/data/), structured query plan codegen, and Memory/InstantDB query execution. The active next milestones are **M5** (`if`/`else`), **M6** (`update`), **M7** (relationship-heavy staging app), and **M8** (literal target app).
 
 ### Completed milestones
 
@@ -39,28 +38,35 @@ Build the MVP of Tao's data layer: schema, queries, view control flow, and data 
 - **M2:** raw `query`, `guard`, app provider configuration, `TaoDataClient`, Memory/Instant providers, short generated `declareDataset` / `open` / query calls, and harness app overrides landed.
 - **M3:** list-shaped queries, `for`, `create`, `getTaoData().insert`, Data Schema scenario coverage, parser/validator/formatter/codegen tests, and visible list-growth behavior landed.
 - **M3.5:** `createTaoDataClient`, per-provider registration imports, trimmed `TaoDataClient` signatures, removal of legacy DB bootstrap `.tao` files, `validation/data/` grouping, and app-config-driven runtime imports landed.
+- **M4:** pipeline query syntax and structured plans landed: `for <Plural>`, `get one <Singular>`, `where`, `order`, `include`, root-prefixed field-path normalization, built-in `id` singleton validation, and Memory/InstantDB execution.
 
-### M4 — Query pipeline: `where`, `order`, `take`, dotted paths
+### M4 — Complete: query pipeline and provider execution
 
-M3.5 has landed (factory + trimmed client API + `validation/data/` + bootstrap `.tao` removal + `app-config` codegen). M3 behavior unchanged; **no** pipeline syntax required until M4.
+The compiler now emits structured `TaoQueryPlan` objects into `TaoDataClient.useLiveQuery` / `peekQuery`, keeping generated call sites short while giving providers enough shape to execute and later validate capabilities.
 
-Test app extends queries toward the [target app](./Queries%20MVP%20Target%20App.tao) shape, e.g.:
+Landed scope:
 
-- `get Event as MyEvents > where Host is CurrentUser > order Ordering asc`.
-- Dotted field paths in clauses where needed (e.g. `Rsvp.Event.Ordering`).
+- Query sources: `query Data for People [as Alias]`, `query Data get one Person [as Alias]`, with default aliases from plural/singular schema names.
+- Pipeline steps: `> where field is expr`, `> where field = expr`, `> where field contains expr [ignoring case]`, `> order field asc/desc`, `> include Relation.Path`.
+- Dotted field paths in `where` / `order` / `include`, with root entity prefixes normalized before provider execution.
+- `get one` accepts the built-in provider `id` and declared `unique` fields as singleton keys.
+- `get one` does not accept uniqueness satisfied only under an `or` branch.
+- Memory and InstantDB providers execute the shared query plan without limiting or pagination.
 
-New grammar (deferred from M2/M3):
+Follow-up polish:
 
-- Pipeline steps: `> where field is expr`, `> where field is not expr`, `> order field asc/desc`, `> take N`.
-- Dotted field paths in `where` / `order` (relationship traversal).
+- Add provider capability manifests so unsupported nested ordering, include depth, operators, limiting, and pagination modes fail at compile time.
+- Add focused provider/runtime unit coverage around query identity and InstantDB query-shape lowering.
+- Revisit limiting/pagination only after the provider capability model can express provider-specific modes.
 
-Work:
+### Recommended next work
 
-- [ ] Grammar: pipeline continuation on `query`.
-- [ ] Validator: clause targets resolve through relationships; `order` / `where` fields valid for InstantDB mapping or documented client-side fallback.
-- [ ] Formatter: pipeline queries.
-- [ ] Codegen: map pipeline to InstantDB query shapes (or `IDB` helpers that compose filters), keeping generated sites small.
-- [ ] Tests: parse, validate, compile; extend running test app once M3 list + create path is stable.
+1. **Provider capability validation:** add provider manifests first, then reject unsupported nested ordering, include depth, unsupported operators, limiting, and pagination modes during validation. This gives the target app clearer failures before relationship-heavy work increases the surface area.
+2. **M5 conditionals:** implement `if` / `else`, `.isEmpty`, and expression-space `is` / `is not` in views next. The target app needs conditionals before the RSVP flows can feel complete.
+3. **M6 updates:** after conditionals, add `update` so RSVP status changes can exercise reads and writes together.
+4. **Relationship/provider modeling:** tighten InstantDB relationship/link lowering and decide which nested paths are supported directly versus rejected until denormalized.
+5. **Provider environments and secrets:** split admin/runtime provider params so `adminToken` and future secrets do not travel through the app runtime config path.
+6. **Runtime coverage:** add provider-level tests for query identity and InstantDB query-shape serialization before adding more app scenarios.
 
 ### M5 — `if` / `else` conditionals in views
 
@@ -74,16 +80,16 @@ New grammar:
 
 Work:
 
-- [ ] Grammar rules for `if`/`else`.
-- [ ] Grammar/expression support for `is`, `is not`, `.isEmpty`.
-- [ ] Validator: condition is boolean-typed expression.
-- [ ] Codegen: `if`/`else` → conditional rendering in JSX.
-- [ ] Formatter handles `if`/`else`.
-- [ ] Tests: parse, validate, compile conditionals.
+- Grammar rules for `if`/`else`.
+- Grammar/expression support for `is`, `is not`, `.isEmpty`.
+- Validator: condition is boolean-typed expression.
+- Codegen: `if`/`else` → conditional rendering in JSX.
+- Formatter handles `if`/`else`.
+- Tests: parse, validate, compile conditionals.
 
 ### M6 — `update` and additional writes
 
-Test app adds **`update`** and any extra write patterns needed for the target app: e.g. `SetRsvpStatus`, `CreateRsvp` (if not already covered by M3 `create` shapes).
+Test app adds `update` and any extra write patterns needed for the target app: e.g. `SetRsvpStatus`, `CreateRsvp` (if not already covered by M3 `create` shapes).
 
 New grammar:
 
@@ -91,11 +97,11 @@ New grammar:
 
 Work:
 
-- [ ] Grammar rules for `update`.
-- [ ] Validator: entity exists, fields match, values type-check; relationship to `create` rules.
-- [ ] Codegen: `update` → thin `IDB` / `transact` patterns — avoid large per-statement generated blobs.
-- [ ] Formatter handles `update`.
-- [ ] Tests: parse, validate, compile `update`; exercise in test app alongside M3 `create`.
+- Grammar rules for `update`.
+- Validator: entity exists, fields match, values type-check; relationship to `create` rules.
+- Codegen: `update` → thin `IDB` / `transact` patterns — avoid large per-statement generated blobs.
+- Formatter handles `update`.
+- Tests: parse, validate, compile `update`; exercise in test app alongside M3 `create`.
 
 ### M7 — Staging: relationship-heavy app (not yet the literal target file)
 
@@ -103,10 +109,10 @@ Work:
 
 Work:
 
-- [ ] Models and queries matching target relationships (Person, Event, Rsvp, etc.).
-- [ ] Actions: create/update flows the target demonstrates.
-- [ ] Compiles and runs against InstantDB (dev app id as in target or unified dev project).
-- [ ] Headless and/or Expo verification for the expanded scenario.
+- Models and queries matching target relationships (Person, Event, Rsvp, etc.).
+- Actions: create/update flows the target demonstrates.
+- Compiles and runs against InstantDB (dev app id as in target or unified dev project).
+- Headless and/or Expo verification for the expanded scenario.
 
 ### M8 — Done: literal target app compiles and runs
 
@@ -114,10 +120,10 @@ Work:
 
 Work:
 
-- [ ] Full target `.tao` compiles and runs end-to-end.
-- [ ] Target app id `meetup-lite-dev` unless unified with the M2 dev project.
-- [ ] Verify in headless test runtime and Expo runtime.
-- [ ] Demonstrates: define schema → query data (including pipeline where required) → mutate data → see updated view.
+- Full target `.tao` compiles and runs end-to-end.
+- Target app id `meetup-lite-dev` unless unified with the M2 dev project.
+- Verify in headless test runtime and Expo runtime.
+- Demonstrates: define schema → query data (including pipeline where required) → mutate data → see updated view.
 
 ---
 
@@ -129,8 +135,10 @@ Work:
 - App `on init action { … }` and bootstrap `_taoRunAppInits()` (module-load; no hook in generated shell).
 - View rendering with arguments (`Button "text", handler`).
 - File-level and in-view raw `query …`; view `guard { … }` with `IDB.isLoading`-driven fallback JSX.
-- **`for`** over list-shaped query aliases; **`create Schema.Entity { … }`** in actions; **`getTaoData().insert`** on **`MemoryTaoData`** / **`InstantTaoData`**.
-- **`createTaoDataClient`** with per-provider factory registration; nested **`app`** / **`provider`** overrides on **`TaoSDK_compile`** and **`tao compile`** CLI flags.
+- `for` over list-shaped query aliases; `create Schema.Entity { … }` in actions; `getTaoData().insert` on `MemoryTaoData` / `InstantTaoData`.
+- Structured query plans for `for`, `get one`, `where`, `order`, and `include`, with normalized root field paths, built-in `id`, and singleton validation.
+- `createTaoDataClient` with per-provider factory registration; nested `app` / `provider` overrides on `TaoSDK_compile` and `tao compile` CLI flags.
+- `TaoDataAdmin.pushSchema` with `tao schema push`, `tao compile --push-schema`, and local InstantDB dev-loop schema push. This currently accepts provider admin params such as `adminToken` directly in provider config.
 - String templates with `${...}` interpolation, binary ops (`+`).
 - `type X is Y` declarations (at top level — data-scoped variant is new).
 
@@ -138,21 +146,22 @@ Work:
 
 ## Risks / open questions
 
-- **`is` keyword overload (M4 pipeline, M5):** `is` is already used in type declarations (`type X is Y`) and parameters (`Title is text`). Using it as a comparison operator (`where Host is CurrentUser`, `if X is Y`) needs careful grammar disambiguation.
-- **Dotted paths in query clauses (M4):** `> order Rsvp.Event.Ordering asc` traverses relationships — confirm InstantDB supports this or codegen/`IDB` must decompose it.
+- **`is` keyword overload (M5):** `is` is already used in type declarations (`type X is Y`), parameters (`Title is text`), and M4 `where` comparisons. Reusing it inside general `if` expressions still needs careful grammar disambiguation.
+- **Dotted paths in query clauses:** root entity/plural prefixes now normalize correctly, and built-in `id` works as a scalar. Nested relationship ordering is still provider-sensitive; InstantDB should reject, denormalize, or handle it through an explicit provider strategy once capability validation lands.
 - **`for` variable shadowing (M3):** `for Event in MyEvents` binds `Event` which may shadow the entity type name from the schema. Scoping rules need to be clear.
-- **List vs `first` (M3, extends M2):** M2 already distinguishes collection vs singleton queries; M3 must keep validator, types, and `IDB.peekQuery` / `useQuery` aligned so **no-`first`** aliases are consistently list-shaped and **`for`** element types match the entity row type.
-- **InstantDB query shape limits (M4):** some `where` patterns (e.g. `where Host is not CurrentUser`) may not map directly to InstantDB's query API — may need client-side filtering inside `IDB` helpers.
+- **Legacy `first`:** `get one` is now the singleton path for real queries. `get first` remains compatibility-only and should not be used for fake auth or target-app examples.
+- **InstantDB query shape limits:** V1 maps supported top-level `where`, `order`, and `include` to InstaQL. Provider manifests still need to reject unsupported nested order, unsupported operators, unsupported include depth, and any future limiting/pagination assumptions.
 - **`create` + list refresh (M3):** ensure query subscriptions or cache invalidation after `transact` so the button-driven flow shows a new row without a full reload.
-- **Stale docs:** [Alternatives §Loadable](./Process%20Docs/Queries%20Design%20-%20Alternatives.md#loadable-vs-guard-and-check) still frames a `Loadable<T>`-first row as “preferred” while [Preferred §3.6](./Process%20Docs/Queries%20Design%20-%20Preferred.md#async-model) rejects `Loadable` for MVP — reconcile table labels and cross-links when next editing Alternatives.
+- **Provider packaging:** providers currently live under `tao-std-lib` for this branch. A later provider-package milestone should move them to `packages/providers/<Provider>/client` and `packages/providers/<Provider>/admin`, each with its own package dependencies so runtime clients do not inherit compile-time admin packages.
+- **Provider environments and secrets:** V1 passes admin credentials such as `adminToken` through provider params. The next environment milestone should support multiple named environments, separate provider configs per environment, and encrypted secret provider fields.
 
 ---
 
 ## References
 
 - [Queries MVP Target App](./Queries%20MVP%20Target%20App.tao) — authoritative MVP target (the app that must compile and run)
-- [`TMP_taodev/`](../../../TMP_taodev/) — working reference app for InstantDB wiring (`src/lib/db.ts`, `src/instant.schema.ts`, etc.); not part of the shipped Tao toolchain, but the template for behavior and file responsibilities.
-- Std lib (M2/M3.5): `packages/tao-std-lib/tao/data/providers/instantdb/instantdb.ts`, `in-memory/in-memory.ts`, and `tao-data-client.ts` — thin provider contract; copied under emitted `use/@tao/data/providers/` with the app.
+- `[TMP_taodev/](../../../TMP_taodev/)` — working reference app for InstantDB wiring (`src/lib/db.ts`, `src/instant.schema.ts`, etc.); not part of the shipped Tao toolchain, but the template for behavior and file responsibilities.
+- Std lib (M2/M3.5): `packages/tao-std-lib/tao/data/providers/instantdb/client/instantdb.ts`, `in-memory/client/in-memory.ts`, provider `admin/` folders, and `tao-data-client.ts` — thin provider contracts; only shared/client files are copied under emitted `use/@tao/data/providers/` with the app.
 - [Queries Design - Preferred](./Process%20Docs/Queries%20Design%20-%20Preferred.md) — design decisions
 - [Queries Design - Alternatives](./Process%20Docs/Queries%20Design%20-%20Alternatives.md) — deferred forks
 - [Runtime - TanStack Query and InstantDB](./Process%20Docs/Runtime%20-%20TanStack%20Query%20and%20InstantDB.md) — InstantDB mapping notes

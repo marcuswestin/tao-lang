@@ -25,13 +25,13 @@ data MeetupData {
   type RsvpStatus is enum going maybe no
 }
 
-// Named parameterized query — stable identity includes Host + steps
-query MeetupData get Events for Host Person as HostedEvents
-  > where Host is Host
+// Named parameterized queries are deferred; this sketch uses in-scope values.
+query MeetupData for Events as HostedEvents
+  > where Host is CurrentUser
   > order StartsAt asc
 
-query MeetupData get Rsvps for ForEvent Event as EventRsvps
-  > where ForEvent is ForEvent
+query MeetupData for Rsvps as EventRsvps
+  > where ForEvent is SelectedEvent
 
 mutation CreateEvent Host Person, Title EventTitle, StartsAt instant {
   MeetupData.Events.create {
@@ -90,7 +90,7 @@ view EventRow Ev Event {
 }
 
 view RsvpPanel Ev Event {
-  query MeetupData get Rsvps for ForEvent Event as List
+  query MeetupData for Rsvps as List
     > where ForEvent is Ev
   RsvpList List
 }

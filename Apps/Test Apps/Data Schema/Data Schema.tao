@@ -11,7 +11,7 @@ data MeetupData {
    Events Event {
       Title text,
       Host Person,
-      Ordering number,
+      Ordering number indexed,
       Rsvps [Rsvp],
    }
    Rsvps Rsvp {
@@ -37,7 +37,8 @@ action CreateEvent {
 app DataSchemaApp {
    provider InstantDB {
       appId "9faf89c0-c15c-49b4-bf3f-3b5b2cd9a19f"
-      // just dev override these with the local LAN IP
+      // just dev overrides these with the local LAN IP
+      adminToken "90200000-0000-4000-8000-000000000003"
       apiURI "http://localhost:9020"
       websocketURI "ws://localhost:9020/runtime/session"
    }
@@ -45,7 +46,8 @@ app DataSchemaApp {
 }
 
 view RootView {
-   query MeetupData get Event as MyEvents
+   query MeetupData for Events as MyEvents
+   > order Ordering desc
    guard {
       Text "Loading..."
    }

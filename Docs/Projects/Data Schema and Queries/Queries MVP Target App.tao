@@ -23,7 +23,7 @@ data MeetupData {
   Events Event {
     Title text,
     Host Person,
-    Ordering number,
+    Ordering number indexed,
     Rsvps [Rsvp], // inferred inverse of Rsvp.Event?
   }
 
@@ -36,7 +36,8 @@ data MeetupData {
 // Auth & App Setup
 ///////////////////
 
-query MeetupData get first Person as CurrentUser
+query MeetupData get one Person as CurrentUser
+  > where Email = "host@example.test"
 
 app MeetupLite {
   provider InstantDB { appId "meetup-lite-dev" }
@@ -48,7 +49,7 @@ app MeetupLite {
 // App
 //////
 
-use Text, Col from @tao/ui
+use Text, Col, Button from @tao/ui
 
 view AppRoot {
   guard { Text "Loading MeetupLite..." }
@@ -69,16 +70,17 @@ view AppRoot {
 ////////////
 
 view MyHostedEvents {
-  query MeetupData get Events as MyEvents
+  query MeetupData for Events as MyEvents
+    > include Host
     > where Host is CurrentUser
     > order Ordering asc
 
   guard { Text "Loading your events..." }
 
   Col {
-    Text "Hosted by you"
-    Button "Create Event", CreateEvent // <- Type-matches to OnPress
-    EventsList MyEvents
+    Text "Hosted by you" {}
+    Button "Create Event", CreateEvent {} // <- Type-matches to OnPress
+    EventsList MyEvents {}
 } }
 
 state Ordering 0
@@ -93,12 +95,13 @@ action CreateEvent {
 ///////////
 
 view MyRsvps {
-  query MeetupData get Rsvps
+  query MeetupData for Rsvps
     // MVP Defer: explicit `with` for batching / N+1 control.
     // Until then: traversing `Rsvp.Event` in `order` / templates implies
     // loading that edge (provider resolves FK → Event row for sort + display).
-    > where Rsvp.Person is CurrentUser
-    > order Rsvp.Event.Ordering asc
+    > include Event
+    > where Person is CurrentUser
+    > order Event.Ordering asc
 
   guard { Text "Loading your RSVPs..." }
 
@@ -112,11 +115,11 @@ view MyRsvps {
 /////////////////////////////
 
 view EventFeed {
-  query MeetupData get Events
+  query MeetupData for Events
+    > include Host
     > where Host is not CurrentUser
     // TODO: This is probably not doable: > where CurrentUser is not in .Rsvps
     > order Ordering asc
-    > take 50
 
   Col {
     Text "Upcoming events"
@@ -141,18 +144,18 @@ view EventCard Event {
 
 view EventRsvpsList Event {
   // Everyone's Rsvps for this event (loop + "others" rows).
-  query MeetupData get Rsvps as EventRsvps
-    > where Rsvp.Event is Event
+  query MeetupData for Rsvps as EventRsvps
+    > include Person
+    > where Event is Event
     // TODO: Enable `query Event get .Rsvps`
 
   // At most one row: current user's Rsvp for this event, if any.
-  query MeetupData get Rsvps as MyRsvps
-    > where Rsvp.Event is Event
-    > where Rsvp.Person is CurrentUser
-    > take 1
-  // TODO, Enable:
-  //  query Event get first Rsvp
-  //    > where Rsvp.Person is CurrentUser
+  query MeetupData for Rsvps as MyRsvps
+    > where Event is Event
+    > where Person is CurrentUser
+  // TODO: Enable relationship-scoped singleton queries or composite unique predicates.
+  //  query Event get one Rsvp
+  //    > where Person is CurrentUser
 
   guard { Text "Loading Rsvps..." }
 

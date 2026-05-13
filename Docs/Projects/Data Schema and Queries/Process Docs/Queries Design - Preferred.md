@@ -63,6 +63,8 @@ data Data {
 
 **Provider binding in app (preferred stance):** An `app` block may include `provider Name { key "value" }` while `data` stays schema-only. Every app has a provider; omitted provider defaults to Memory. Provider key-value pairs are passed through to provider init untyped, and only provider implementations validate their own params. Field metadata (`unique`, `indexed`, `optional`, `default`, cascades) remains schema metadata for codegen/provider use. _Alternatives_ (config only in TS, split files, …) → [Alternatives](./Queries%20Design%20-%20Alternatives.md#provider-config-placement).
 
+InstantDB-backed queries that push down ordering should mark ordered primitive fields `indexed`, for example `Ordering number indexed`.
+
 ---
 
 ### 2. Providers (backend binding) {#providers}
@@ -94,20 +96,29 @@ Schema → Provider → Runtime → Views
 **Preferred:** pipeline-based queries (KQL/LINQ-inspired). _Block-shaped query syntax_ → [Alternatives](./Queries%20Design%20-%20Alternatives.md#query-flow-pipeline-vs-block).
 
 ```tao
-query Data get Tasks as CompletedTasks
+query Data for Tasks as CompletedTasks
   > where Completed is true
   > where Owner is CurrentUser
-  > take 10
+  > order Title asc
+
+query Data get one Person as CurrentUser
+  > where Email = SessionEmail
 ```
 
-**Characteristics:** pipeline-based, order-dependent, extensible (`select`, `order`, `group`, …).
+**Characteristics:** pipeline-based, order-dependent, extensible (`include`, `select`, `group`, …). Collection reads use the schema plural (`for Tasks`) and default the result name to that plural when `as` is omitted. Singleton reads use the singular (`get one Person`) and must be constrained by equality on the queried entity's built-in provider `id` or a `unique` field in the conjunctive portion of the predicate.
 
 ---
 
 ### 3.2 Query semantics {#query-semantics}
 
 - Operate in **Tao expression space** (e.g. `where Owner is CurrentUser`).
-- **Preferred:** no string interpolation in `where` — RHS is a normal expression. _`${…}` form_ → [Alternatives](./Queries%20Design%20-%20Alternatives.md#query-clauses-and-interpolation).
+- **Preferred:** no string interpolation in `where` — RHS values are normal expressions passed to providers as structured values. _`${…}` form_ → [Alternatives](./Queries%20Design%20-%20Alternatives.md#query-clauses-and-interpolation).
+- Repeated `where` clauses are ANDed; individual predicates may use `and`, `or`, and `not`.
+- For `get one`, the qualifying `id` / `unique` equality must be outside any `or` branch; `where Email = SessionEmail and Active is true` is singleton-safe, while `where Email = SessionEmail or Name = "Ro"` is rejected.
+- Equality supports both `is` / `is not` and `=` / `!=`. V1 also supports comparisons, `in`, `is null`, `is not null`, and semantic string matching (`contains`, `starts with`, `ends with`, optional `ignoring case`).
+- Field paths may be written with the root entity singular/plural prefix (`Person.Email`, `People.Email`) or directly (`Email`); the query plan normalizes the root prefix away before provider execution. The built-in `id` can be used as a scalar field without declaring it in the schema.
+- Related entity loading is explicit with `> include Host, Rsvps.Person`. Nested relationship paths in query clauses must be backed by an include, including nested row-id checks such as `where Host.id = HostId`; direct relationship identity checks such as `where Host is CurrentUser` and root row-id checks such as `where id = CurrentUserId` do not require one.
+- Limiting and pagination are deferred. Query result aliases currently expose the full provider result set for the supported `where` / `order` / `include` shape.
 
 **Name resolution**
 
@@ -121,16 +132,14 @@ query Data get Tasks as CompletedTasks
 
 ### 3.3 Query parameters {#query-parameters}
 
-Queries may define parameters:
+Parameterized named queries are deferred. Query clauses can still use normal in-scope values:
 
 ```tao
-query Data get Tasks for Owner Person as UserTasks
-  > where Owner is ${Owner}
+query Data for Tasks as UserTasks
+  > where Owner is CurrentUser
 ```
 
-**Model:** parameters are named, typed, in scope for all clauses, bound into Tao expressions.
-
-For query parameter values, we use ${ ... } just the same as in string interpolation
+**Model:** values are typed expressions in scope for all clauses. Codegen emits a structured query plan and providers receive evaluated values separately from the query shape.
 
 ---
 
@@ -139,7 +148,7 @@ For query parameter values, we use ${ ... } just the same as in string interpola
 Each query compiles to a **stable identity**:
 
 ```text
-queryKey = [ schema, collection, parameters, pipeline steps ]
+queryKey = [ schema, collection, cardinality, parameters, where, order, includes ]
 ```
 
 **Requirements:** deterministic, parameter-sensitive, order-sensitive (pipeline).
@@ -177,7 +186,7 @@ The MVP **does not** introduce `Loadable<T>` or any generic wrapper type. Instea
 
 ```tao
 view TodoList {
-  query Data get Tasks as AllTasks
+  query Data for Tasks as AllTasks
 
   guard { Text "Loading..." }
 
@@ -282,7 +291,7 @@ Schema
 
 **Caching:** done by the **provider’s runtime/SDK** (TanStack Query’s cache, InstantDB’s client, etc.). Tao’s generated layer invokes those APIs; it does not implement a separate cache.
 
-**Datasource bridge:** Tao generates query structure, stable query identity (for keys / dedup where applicable), and write-call shape; TypeScript supplies `queryFn`, auth, and provider-specific logic — details in [Runtime - TanStack Query and InstantDB.md](./Runtime%20-%20TanStack%20Query%20and%20InstantDB.md).
+**Datasource bridge:** Tao generates a structured `TaoQueryPlan`, stable query identity (for keys / dedup where applicable), and write-call shape; TypeScript supplies `queryFn`, auth, and provider-specific logic — details in [Runtime - TanStack Query and InstantDB.md](./Runtime%20-%20TanStack%20Query%20and%20InstantDB.md).
 
 ---
 
@@ -325,7 +334,7 @@ Single unified pipeline targets may include: InstantDB schema, REST/OpenAPI, Gra
 
 ## Provider capability validation {#provider-capability-validation}
 
-The compiler should verify whether a provider supports a query shape and fail early when unsupported (e.g. REST may not support joins; InstantDB may not support aggregations). _Matrix / examples_ → [Alternatives](./Queries%20Design%20-%20Alternatives.md#provider-capability-matrix).
+Deferred. The V1 runtime handles the shared query plan for Memory and InstantDB, including built-in `id`, normalized root field prefixes, and top-level `where` / `order` / `include`. The plan shape is intentionally explicit enough for later provider manifests to reject unsupported operators, nested ordering, include depth, pagination modes, limiting, or aggregation. _Matrix / examples_ → [Alternatives](./Queries%20Design%20-%20Alternatives.md#provider-capability-matrix).
 
 ---
 
@@ -335,15 +344,16 @@ The compiler should verify whether a provider supports a query shape and fail ea
 
 - Schema (entities + relationships + `source` + minimal field metadata)
 - Codegen targets the app provider through the thin `TaoDataClient` runtime; InstantDB apps import `@instantdb/*`, while omitted providers default to Memory
-- Basic queries + `create` / `update` write statements in actions
+- Structured read queries (`for`, `get one`, `where`, `order`, `include`) + `create` / `update` write statements in actions
 - View control flow: `for` (iteration), `if`/`else` (conditionals)
 - `guard { … }` Suspense boundaries for async data in views (no `Loadable<T>`, no generics)
-- Fake auth (`query Data get first Person as CurrentUser`); no session model
+- Fake auth should use `query Data get one Person as CurrentUser` with a unique predicate such as `Email = SessionEmail` or a built-in `id` predicate. Legacy `get first` remains compatibility-only.
 
 ### Phase 2 — Runtime datasource interface + REST/TanStack
 
 - **Runtime TS interface:** widen the MVP-thin provider contract into a typed datasource contract (`DataSource<Schema>` or similar) with query, mutate, subscribe methods as additional provider families land.
 - Typed query results: map schema entity types through pipeline clauses to output type at the interface boundary.
+- Provider capability manifests and compile-time provider query-shape checks.
 - REST provider; query → TanStack Query mapping (`queryKey` + `queryFn`); key derivation from [§3.4](#query-identity).
 - Basic projections / `select { … }`.
 - `Loadable<T>` wrapper type (`loading | error | ready`) or richer `guard` variants — see [§3.6 future direction](#async-model).
@@ -379,7 +389,7 @@ Detailed forks for each bullet live in **[Queries Design - Alternatives.md](./Qu
 
 **Runtime abstraction (MVP-thin, broader surface deferred):** MVP compiles to a small `TaoDataClient` provider interface for Memory and InstantDB. Phase 2 may widen that into a typed `DataSource<Schema>` contract with query/mutate/subscribe methods for REST/TanStack and other providers. See [Phase 2](#implementation-phases).
 
-**Query and language:** aggregation/grouping; ordering semantics; pagination model; further query-reuse vs co-location strategy.
+**Query and language:** limiting/pagination; aggregation/grouping; projections; query-on-query / alias-as-source desugaring; provider capability manifests and compile-time provider query-shape checks.
 
 **Writes and data flow:** `delete` statement; multi-step transactions; optimistic updates; dedicated `mutation` keyword / top-level declarations; write return values.
 

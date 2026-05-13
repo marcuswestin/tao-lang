@@ -5,6 +5,7 @@
   "module": "tao-cli.ts",
   "dependencies": {
     "@commander-js/extra-typings": "^14.0.0",
+    "@instantdb/platform": "^0.21.30",
     "chokidar": "^5.0.0",
     "picocolors": "^1.1.1"
   },

@@ -38,7 +38,7 @@ describe('parse — data schema:', () => {
       data MyData {
         Events Event {
           Title text,
-          Ordering number,
+          Ordering number indexed,
         }
       }
     `)
@@ -81,17 +81,19 @@ describe('parse — data schema:', () => {
     })
   })
 
-  test('parses field metadata: optional, unique, default', async () => {
+  test('parses field metadata: optional, unique, indexed, default', async () => {
     const doc = await parseAST(`
       data MyData {
         People Person {
           Email text optional unique,
+          Ordering number indexed,
           Status text default "active",
         }
       }
     `)
     doc.statements.first.as_DataDeclaration.dataStatements[0].as_DataEntityDeclaration.fields.match([
       { name: 'Email', metadata: [{ kind: 'optional' }, { kind: 'unique' }] },
+      { name: 'Ordering', metadata: [{ kind: 'indexed' }] },
       { name: 'Status', metadata: [{ kind: 'default', value: defined }] },
     ])
   })
@@ -185,5 +187,39 @@ describe('parse — data schema:', () => {
     const add = doc.statements[2].as_ActionDeclaration
     const create = add.block.statements[0].as_CreateStatement
     create.fields[0].match({ field: 'N' })
+  })
+
+  test('parses V1 query sources, default aliases, and pipeline steps', async () => {
+    const doc = await parseAST(`
+      data D {
+        Households Household { Name text }
+        People Person {
+          Age number,
+          Status text,
+          Email text,
+          Household Household,
+        }
+      }
+      query D for People
+        > where Age >= 18 and Status is not "blocked"
+        > where Email contains "@school.edu" ignoring case
+        > order Age asc
+        > include Household
+      query D get one Person as CurrentPerson
+        > where Email = "a@b.test"
+    `)
+    const collectionQuery = doc.statements[1].as_QueryDeclaration
+    collectionQuery.expect('name').toBeUndefined()
+    collectionQuery.source.as_QueryCollectionSource.collection.expect('pluralName').toBe('People')
+    collectionQuery.steps.match([
+      { $type: 'QueryWhereStep' },
+      { $type: 'QueryWhereStep' },
+      { $type: 'QueryOrderStep' },
+      { $type: 'QueryIncludeStep' },
+    ])
+
+    const oneQuery = doc.statements[2].as_QueryDeclaration
+    oneQuery.expect('name').toBe('CurrentPerson')
+    oneQuery.source.as_QueryOneSource.entity.expect('name').toBe('Person')
   })
 })

@@ -965,4 +965,38 @@ describe('Formatter — data schema:', () => {
       }
 
     `)
+
+  testFormatter('formats V1 query pipeline')
+    .format(`
+      data D {
+        Households Household { Name text }
+        People Person { Age number, Status text, Email text, Household Household }
+      }
+      query   D   for   People   as   Youth   >   where   Age>=18 and Status is not "blocked" > where Email contains "@school.edu" ignoring case > order Age asc > include Household
+      query D get one Person > where Email = "ro@example.test"
+    `)
+    .equals(`
+
+      data D {
+          Households Household {
+              Name text
+          }
+          People Person {
+              Age number,
+              Status text,
+              Email text,
+              Household Household
+          }
+      }
+
+      query D for People as Youth
+      > where Age >= 18 and Status is not "blocked"
+      > where Email contains "@school.edu" ignoring case
+      > order Age asc
+      > include Household
+
+      query D get one Person
+      > where Email = "ro@example.test"
+
+    `)
 })
