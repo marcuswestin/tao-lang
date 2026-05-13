@@ -224,14 +224,18 @@ function compileBootstrapNode(initImportPaths: string[], appUIViewModulePath: st
   const n = new CompositeGeneratorNode()
   const appUiImport = `import { AppUIView } from '${appUIViewModulePath}'`
   const initImports = initImportPaths
-    .map((path, idx) => `import { _taoRunAppInits as _taoRunAppInits${idx} } from '${path}'`)
+    .map((path, idx) =>
+      `import { _taoOpenDataProviders as _taoOpenDataProviders${idx}, _taoRunAppInits as _taoRunAppInits${idx} } from '${path}'`
+    )
     .join('\n')
+  const dataProviderInitCalls = initImportPaths.map((_, idx) => `_taoOpenDataProviders${idx}()`).join('\n')
   const initCalls = initImportPaths.map((_, idx) => `_taoRunAppInits${idx}()`).join('\n')
   n.append(`// @ts-nocheck
 import * as RN from 'react-native'
 ${appUiImport}
 ${initImports}
 
+${dataProviderInitCalls}
 ${initCalls}
 
 const _compiledTaoAppRootViewStyle = { flex: 1, backgroundColor: 'black' }

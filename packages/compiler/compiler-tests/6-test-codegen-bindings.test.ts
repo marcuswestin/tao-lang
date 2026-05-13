@@ -227,6 +227,40 @@ describe('codegen — app provider selection and overrides:', () => {
     expect(out).toContain('getTaoData("SecondData").open({})')
   })
 
+  test('file-level queries are initialized after data providers open', async () => {
+    const tmpDir = FS.mkTmpDir(FS.joinPath(FS.tmpdir(), 'tao-codegen-data-provider-'))
+    const mainPath = FS.joinPath(tmpDir, 'app.tao')
+    FS.writeFile(
+      FS.joinPath(tmpDir, 'db.tao'),
+      `
+      share data SharedData {
+        Items Item { T text }
+      }
+    `,
+    )
+    FS.writeFile(
+      mainPath,
+      `
+      use SharedData from ./db
+      query SharedData get Item as Rows
+      app HarnessApp { ui HarnessRoot }
+      view HarnessRoot { }
+    `,
+    )
+    const result = await compileTao({ file: mainPath, stdLibRoot: STD_LIB_ROOT })
+    if (!result.ok) {
+      throw new Error(`Compile failed:\n${formatParseErrorHumanMessages(result.errorReport)}`)
+    }
+    const out = result.files.map(f => f.content).join('\n')
+    const bootstrap = result.files.find(f => f.relativePath === result.entryRelativePath)?.content ?? ''
+    expect(out).toMatch(
+      /export function _taoRunAppInits\(\) \{[\s\S]*_Scope\.Rows = getTaoData\("SharedData"\)\.peekQuery/,
+    )
+    expect(bootstrap).toMatch(
+      /_taoOpenDataProviders0\(\)[\s\S]*_taoOpenDataProviders1\(\)[\s\S]*_taoRunAppInits0\(\)[\s\S]*_taoRunAppInits1\(\)/,
+    )
+  })
+
   test('query pipeline emits structured query plan with dynamic values', async () => {
     const out = await writeAndCompile(`
       data D {
@@ -305,6 +339,8 @@ describe('codegen — app provider selection and overrides:', () => {
       throw new Error(`Compile failed:\n${formatParseErrorHumanMessages(result.errorReport)}`)
     }
     const bootstrap = result.files.find(f => f.relativePath === result.entryRelativePath)?.content ?? ''
+    expect(bootstrap).toContain('_taoOpenDataProviders0()')
+    expect(bootstrap).toContain('_taoOpenDataProviders1()')
     expect(bootstrap).toContain('_taoRunAppInits0()')
     expect(bootstrap).toContain('_taoRunAppInits1()')
   })

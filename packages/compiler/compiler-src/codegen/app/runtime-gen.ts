@@ -65,6 +65,7 @@ class RuntimeGen {
       ${this.taoFileScope(taoFile)}
       ${compileNodeListProperty(taoFile, 'statements', wireUseStatement)}
       ${compileNodeListProperty(taoFile, 'statements', stmt => this.Statement(stmt))}
+      ${this.taoFileDataProviderInits(taoFile)}
       ${this.taoFileAppInits(taoFile)}
     `
 
@@ -727,8 +728,16 @@ class RuntimeGen {
     return compileNoop()
   }
 
-  /** QueryDeclaration binds `_Scope.<Alias>` via `getTaoData('Schema').peekQuery` (file) or `useLiveQuery` (view hook). */
+  /** QueryDeclaration binds `_Scope.<Alias>` via `useLiveQuery` in view hooks. File-level queries are deferred until after all providers open. */
   QueryDeclaration(node: AST.QueryDeclaration): Compiled {
+    if (AST.isTaoFile(node.$container)) {
+      return compileNoop()
+    }
+    return compileQueryDeclaration(node, expression => this.Expression(expression))
+  }
+
+  /** fileLevelQueryDeclaration binds `_Scope.<Alias>` from a non-reactive provider snapshot during app init. */
+  private fileLevelQueryDeclaration(node: AST.QueryDeclaration): Compiled {
     return compileQueryDeclaration(node, expression => this.Expression(expression))
   }
 
@@ -744,9 +753,24 @@ class RuntimeGen {
     `
   }
 
-  /** taoFileAppInits exports a bootstrap hook that opens the data provider then runs compiled `on init` handlers. */
-  taoFileAppInits(taoFile: AST.TaoFile): Compiled {
+  /** taoFileDataProviderInits exports a bootstrap hook that opens this module's data providers. */
+  taoFileDataProviderInits(taoFile: AST.TaoFile): Compiled {
     const openCalls = this.taoDataOpenCalls(taoFile)
+    if (openCalls.length === 0) {
+      return compileNode(taoFile)`
+        export function _taoOpenDataProviders() {}
+      `
+    }
+    return compileNode(taoFile)`
+      export function _taoOpenDataProviders() {
+        ${openCalls.join('\n')}
+      }
+    `
+  }
+
+  /** taoFileAppInits exports a bootstrap hook that runs file-level queries and compiled `on init` handlers after every provider is open. */
+  taoFileAppInits(taoFile: AST.TaoFile): Compiled {
+    const queryInits = taoFile.statements.filter(AST.isQueryDeclaration)
     const onInits: AST.OnStatement[] = []
     for (const stmt of taoFile.statements) {
       if (AST.isModuleDeclaration(stmt) && AST.isAppDeclaration(stmt.declaration)) {
@@ -755,14 +779,14 @@ class RuntimeGen {
         this.collectOnInits(stmt, onInits)
       }
     }
-    if (openCalls.length === 0 && onInits.length === 0) {
+    if (queryInits.length === 0 && onInits.length === 0) {
       return compileNode(taoFile)`
         export function _taoRunAppInits() {}
       `
     }
     return compileNode(taoFile)`
       export function _taoRunAppInits() {
-        ${openCalls.join('\n')}
+        ${compileNodeList(queryInits, n => this.fileLevelQueryDeclaration(n))}
         ${compileNodeList(onInits, n => this.Block(n.handler.block))}
       }
     `

@@ -19,9 +19,6 @@ import { formatFile } from './tao-sdk/sdk-format'
 
 const ENABLE_SOURCE_MAPS = false
 
-/** Fixed staging emit root: wiped before each compile, then moved to `dirname(targetOutputPath)`. */
-const TAO_SDK_STAGING_EMIT_ROOT = '/tmp/tao/builds/_gen'
-
 /** taoCliMain runs the Tao CLI via Commander (`process.argv`).
  * Today this registers only `compile`; see that command’s options for watch and paths. */
 export function taoCliMain() {
@@ -128,51 +125,55 @@ type PlannedEmitFile = CompileOutputFile & { dest: string }
 type TaoSDK_compilePaths = {
   /** Final bootstrap path after the staging directory is moved into place. */
   targetOutputPath: string
-  /** Wiped before compile; emit layout mirrors `dirname(targetOutputPath)`. */
-  stagedEmitRoot: string
 }
 
 /** TaoSDK_compile compiles `path` into the runtime package at {@link resolveTaoRuntimeBootstrapAbsolutePath} by default, or `runtimeDir`/`outputFileName` when tests pass an override.
  * - `runtimeDir` must exist as a directory.
- * - Emits into `/tmp/tao/builds/_gen` (wiped first), copies `compileTao`’s `copyDirs` under that same staging root, then replaces `dirname(targetOutputPath)` by moving the staging directory there.
+ * - Emits into a fresh OS temp staging directory (`mkdtemp`), copies `compileTao`’s `copyDirs` under that staging root, then replaces `dirname(targetOutputPath)` by moving the staging directory there so concurrent compiles do not share one path.
  * - Compile or validation failures become `UserInputRejectionError` with the human-readable report message. */
 export async function TaoSDK_compile(opts: TaoSDK_compileOpts): Promise<TaoSDK_compileResult> {
-  const { targetOutputPath, stagedEmitRoot } = resolveCompilePaths(opts)
-  FS.rmDirectory(stagedEmitRoot)
-  const targetEmitRoot = FS.dirname(targetOutputPath)
-  const stagedOutputPath = FS.resolvePath(stagedEmitRoot, FS.relativePath(targetEmitRoot, targetOutputPath))
+  const { targetOutputPath } = resolveCompilePaths(opts)
+  const stagedEmitRoot = FS.mkTmpDir(FS.joinPath(FS.tmpdir(), 'tao-sdk-staging-'))
+  try {
+    const targetEmitRoot = FS.dirname(targetOutputPath)
+    const stagedOutputPath = FS.resolvePath(stagedEmitRoot, FS.relativePath(targetEmitRoot, targetOutputPath))
 
-  const result = await compileTao({
-    file: opts.path,
-    stdLibRoot: opts.stdLibRoot,
-    app: opts.app,
-  })
-  if (!result.ok) {
-    FS.writeFile(stagedOutputPath, result.code)
+    const result = await compileTao({
+      file: opts.path,
+      stdLibRoot: opts.stdLibRoot,
+      app: opts.app,
+    })
+    if (!result.ok) {
+      FS.writeFile(stagedOutputPath, result.code)
+      replaceTargetEmitRoot(stagedEmitRoot, targetEmitRoot)
+      throwUserInputRejectionError(result.errorReport.getHumanErrorMessage())
+    }
+    const emitFiles = planTaoSdkEmitFiles(result.files, result.entryRelativePath, stagedOutputPath)
+    for (const f of emitFiles) {
+      writePlannedEmitFile(f)
+    }
+    for (const { fromAbsolutePath, toRelativePath } of result.copyDirs) {
+      FS.copyDirectory(
+        fromAbsolutePath,
+        FS.resolvePath(stagedEmitRoot, toRelativePath),
+      )
+    }
+    for (const { fromAbsolutePath, toRelativePath } of result.copyFiles) {
+      const dest = FS.resolvePath(stagedEmitRoot, toRelativePath)
+      FS.mkdir(FS.dirname(dest))
+      FS.copyFile(fromAbsolutePath, dest)
+    }
+
     replaceTargetEmitRoot(stagedEmitRoot, targetEmitRoot)
-    throwUserInputRejectionError(result.errorReport.getHumanErrorMessage())
+    if (opts.pushSchema === true || opts.pushSchemaOverwrite === true) {
+      await pushCompiledSchema(result, opts.pushSchemaOverwrite === true)
+    }
+    return { outputPath: targetOutputPath, files: emitFiles }
+  } finally {
+    if (FS.isDirectory(stagedEmitRoot)) {
+      FS.rmDirectory(stagedEmitRoot)
+    }
   }
-  const emitFiles = planTaoSdkEmitFiles(result.files, result.entryRelativePath, stagedOutputPath)
-  for (const f of emitFiles) {
-    writePlannedEmitFile(f)
-  }
-  for (const { fromAbsolutePath, toRelativePath } of result.copyDirs) {
-    FS.copyDirectory(
-      fromAbsolutePath,
-      FS.resolvePath(stagedEmitRoot, toRelativePath),
-    )
-  }
-  for (const { fromAbsolutePath, toRelativePath } of result.copyFiles) {
-    const dest = FS.resolvePath(stagedEmitRoot, toRelativePath)
-    FS.mkdir(FS.dirname(dest))
-    FS.copyFile(fromAbsolutePath, dest)
-  }
-
-  replaceTargetEmitRoot(stagedEmitRoot, targetEmitRoot)
-  if (opts.pushSchema === true || opts.pushSchemaOverwrite === true) {
-    await pushCompiledSchema(result, opts.pushSchemaOverwrite === true)
-  }
-  return { outputPath: targetOutputPath, files: emitFiles }
 }
 
 /** collectAppOverride parses repeatable `--app key=value` CLI assignments into a merged app config object. */
@@ -243,7 +244,7 @@ function planTaoSdkEmitFiles(
   }))
 }
 
-/** resolveCompilePaths validates `runtimeDir`/`stdLibRoot` and returns the final bootstrap path plus staging root. */
+/** resolveCompilePaths validates `runtimeDir`/`stdLibRoot` and returns the final bootstrap output path. */
 function resolveCompilePaths(opts: TaoSDK_compileOpts): TaoSDK_compilePaths {
   const runtimeDir = FS.resolvePath(opts.runtimeDir)
   if (!FS.isDirectory(runtimeDir)) {
@@ -256,5 +257,5 @@ function resolveCompilePaths(opts: TaoSDK_compileOpts): TaoSDK_compilePaths {
   const targetOutputPath = opts.outputFileName
     ? FS.resolvePath(runtimeDir, opts.outputFileName)
     : resolveTaoRuntimeBootstrapAbsolutePath(runtimeDir)
-  return { targetOutputPath, stagedEmitRoot: TAO_SDK_STAGING_EMIT_ROOT }
+  return { targetOutputPath }
 }
