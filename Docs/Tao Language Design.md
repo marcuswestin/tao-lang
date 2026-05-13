@@ -1,89 +1,13 @@
 # Tao Language Design
 
-## Data Description
+This document is a stub. The authoritative material lives in `CORE_TENETS.md` and the per-area project docs:
 
-Data is described with **declarative schemas** (entities, relationships, and where they are fetched), separate from UI. Views consume **typed** values produced by queries; async behavior is explicit (e.g. `Loadable`-shaped results in the intended design).
+- Core principles: [`CORE_TENETS.md`](../CORE_TENETS.md)
+- Data schema and queries: [Queries Design - Preferred](Projects/Data%20Schema%20and%20Queries/Process%20Docs/Queries%20Design%20-%20Preferred.md), [Queries Design - Alternatives](Projects/Data%20Schema%20and%20Queries/Process%20Docs/Queries%20Design%20-%20Alternatives.md)
+- UI layout and styling: [UI Layout Design Doc](Projects/UI%20-%20Layout%20and%20Styling/UI%20Layout%20Design%20Doc.md), [UI Styling Design Doc](Projects/UI%20-%20Layout%20and%20Styling/UI%20Styling%20Design%20Doc.md)
+- View slots and renderers: [Design Notes](Projects/View%20Slots%20and%20Renderers/Design%20Notes.md)
+- Interactions and events: [Design Questions](Projects/Interactions%20and%20Events/Design%20Questions.md)
+- Animations, transforms, and motion: [Design Questions](Projects/Animations%20Transformations%20and%20Motion/Design%20Questions.md)
+- Accessibility, internationalization, and localization: [Design Questions](Projects/A11y%20I18N%20and%20L10N/Design%20Questions.md)
 
-**Authoritative design (current preferred + alternatives + prior art + runtime notes):** see **[Queries Design - Preferred.md](Projects/Data%20Schema%20and%20Queries/Process%20Docs/Queries%20Design%20-%20Preferred.md)** in _Projects/Data Schema and Queries_, with **[Queries Design - Alternatives.md](Projects/Data%20Schema%20and%20Queries/Process%20Docs/Queries%20Design%20-%20Alternatives.md)** for forks not duplicated in the preferred doc.
-
-The sketch below is **historical / illustrative** only (older `model` / `Text` shape); it does **not** match the preferred `Tasks Task` / `X is Y` schema style in the linked project docs.
-
-```tao
-data MyBlog {
-    source graphql {
-        uri https://api.example.com/graphql
-        subscriptions wss://api.example.com/graphql-subscriptions
-        cache in-memory
-    }
-    auth http {
-        http-header Authorization
-        model Person
-    }
-    model Person {
-        name Text
-        friends [Person]
-        posts [Post]
-    }
-    model Post {
-        author Person
-        title Text
-        body Text
-        comments [Comment]
-    }
-    model Comment {
-        post Post
-        author Person
-        text Text
-    }
-}
-```
-
-## Authentication
-
-```tao
-session {
-    User Person
-}
-```
-
-## UI Themes
-
-```tao
-theme MyBlog {
-    spacing default {
-        thin 4px
-    }
-    spacing narrow {
-        when screen.width < 600px
-        thin 2px
-    }
-    spacing wide {
-        when screen.width > 1000px
-        thin 8px
-    }
-
-    variations {
-        narrow {
-            unit = 2px
-        }
-        wide {
-            unit = 4px
-        }
-    }
-}
-```
-
-## UI Views
-
-```tao
-view UserPosts {
-    Col [pad thin] {
-        List User.posts {
-            render Post {
-
-        }
-    }
-
-    }
-}
-```
+Aligning this document's data description with the preferred schema is tracked in [`TODO.md`](../TODO.md).

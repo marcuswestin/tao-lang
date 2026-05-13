@@ -131,6 +131,7 @@ Project: ` /create-project Lets create a project for "Basic Functions":
 - [ ] Parse functions, with positional arguments
 - [ ] Decide on outer vs inner parameters syntax
 - [ ] Decide how render functions are passed in as arguments to a view.
+  - Current focused design notes: [View Slots and Renderers](../../Projects/View%20Slots%20and%20Renderers/Design%20Notes.md).
   - [ ] View definition: E.g `List` view
   - [ ] View renderings: E.g `List items: blogPosts { view BlogPost blogPost { ListItem { Text blogPost.title }} }`
   - Type inferred? E.g List expects a view that returns ListItem, like in example on previous line.
@@ -186,9 +187,9 @@ Project: ` /create-project Lets create a project for "Basic Functions":
 
 ### UI styling
 
-- [ ] Parse ui theme definitions
-- [ ] Parse view layout
-- [ ] Parse view styling
+- [ ] Parse view layout first: bracketed raw layout values only. See [UI Layout Design Doc](../../Projects/UI%20-%20Layout%20and%20Styling/UI%20Layout%20Design%20Doc.md).
+- [ ] Parse view styling after layout. See [UI Styling Design Doc](../../Projects/UI%20-%20Layout%20and%20Styling/UI%20Styling%20Design%20Doc.md).
+- [ ] Parse UI theme definitions after the raw layout and styling boundaries are stable.
 
 ### Error handling
 
@@ -211,7 +212,7 @@ Project: ` /create-project Lets create a project for "Basic Functions":
 
 ### Standard library
 
-- [ ] ui: Views, Themes, Layout, Styling
+- [ ] ui: Views, Layout, Styling, Themes. Layout comes first and targets React Native Flexbox through Tao runtime helpers.
 - [ ] data: Data sources, queries, caching
 - [ ] common: currency, time, locale, left-to-right, light/dark mode, accessibility, internationalization,, resizing text for sight, etc
 - [ ] API for programmatic compiler functionality: parse, compile, type check, format, documentation, etc
