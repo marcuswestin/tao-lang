@@ -36,8 +36,10 @@ data MeetupData {
 // Auth & App Setup
 ///////////////////
 
-query MeetupData get one Person as CurrentUser
-  > where Email = "host@example.test"
+query MeetupData.Person as CurrentUser {
+  Email = "host@example.test",
+  Name,
+}
 
 app MeetupLite {
   provider InstantDB { appId "meetup-lite-dev" }
@@ -61,19 +63,15 @@ view AppRoot {
     EventFeed { }
 } }
 
-// // MVP Defer: Global queries
-// query MeetupData get Rsvp
-//   // MVP Defer: count
-//   > count as TotalRsvps
-
 // My events
 ////////////
 
 view MyHostedEvents {
-  query MeetupData for Events as MyEvents
-    > include Host
-    > where Host is CurrentUser
-    > order Ordering asc
+  query MeetupData.Events as MyEvents {
+    Title,
+    Ordering,
+    Host = CurrentUser,
+  }
 
   guard { Text "Loading your events..." }
 
@@ -95,13 +93,13 @@ action CreateEvent {
 ///////////
 
 view MyRsvps {
-  query MeetupData for Rsvps
-    // MVP Defer: explicit `with` for batching / N+1 control.
-    // Until then: traversing `Rsvp.Event` in `order` / templates implies
-    // loading that edge (provider resolves FK → Event row for sort + display).
-    > include Event
-    > where Person is CurrentUser
-    > order Event.Ordering asc
+  query MeetupData.Rsvps {
+    Event {
+      Title,
+    },
+    Person = CurrentUser,
+    Status,
+  }
 
   guard { Text "Loading your RSVPs..." }
 
@@ -115,11 +113,14 @@ view MyRsvps {
 /////////////////////////////
 
 view EventFeed {
-  query MeetupData for Events
-    > include Host
-    > where Host is not CurrentUser
-    // TODO: This is probably not doable: > where CurrentUser is not in .Rsvps
-    > order Ordering asc
+  query MeetupData.Events {
+    Title,
+    Ordering,
+    Host {
+      Name,
+    },
+    Host != CurrentUser,
+  }
 
   Col {
     Text "Upcoming events"
@@ -144,18 +145,21 @@ view EventCard Event {
 
 view EventRsvpsList Event {
   // Everyone's Rsvps for this event (loop + "others" rows).
-  query MeetupData for Rsvps as EventRsvps
-    > include Person
-    > where Event is Event
-    // TODO: Enable `query Event get .Rsvps`
+  query MeetupData.Rsvps as EventRsvps {
+    Person {
+      Name,
+    },
+    Event = Event,
+    Status,
+  }
 
   // At most one row: current user's Rsvp for this event, if any.
-  query MeetupData for Rsvps as MyRsvps
-    > where Event is Event
-    > where Person is CurrentUser
+  query MeetupData.Rsvps as MyRsvps {
+    Event = Event,
+    Person = CurrentUser,
+    Status,
+  }
   // TODO: Enable relationship-scoped singleton queries or composite unique predicates.
-  //  query Event get one Rsvp
-  //    > where Person is CurrentUser
 
   guard { Text "Loading Rsvps..." }
 

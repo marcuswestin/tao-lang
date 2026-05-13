@@ -932,7 +932,7 @@ describe('Formatter — data schema:', () => {
       data D {
         Items Item { N text }
       }
-      query D get Item as Rows
+      query D.Items as Rows { N }
       action A {
         create  D.Item  {  N  "a"  }
       }
@@ -950,7 +950,9 @@ describe('Formatter — data schema:', () => {
           }
       }
 
-      query D get Item as Rows
+      query D.Items as Rows {
+          N
+      }
 
       action A {
           create D.Item {
@@ -966,14 +968,15 @@ describe('Formatter — data schema:', () => {
 
     `)
 
-  testFormatter('formats V1 query pipeline')
+  testFormatter('formats selection-block queries')
     .format(`
       data D {
         Households Household { Name text }
         People Person { Age number, Status text, Email text, Household Household }
       }
-      query   D   for   People   as   Youth   >   where   Age>=18 and Status is not "blocked" > where Email contains "@school.edu" ignoring case > order Age asc > include Household
-      query D get one Person > where Email = "ro@example.test"
+      query   D  .  People   as   Everyone
+      query   D  .  People   as   Youth   {  Age>=18 , Email, Household { Name } }
+      query D.Person { Email = "ro@example.test", }
     `)
     .equals(`
 
@@ -989,14 +992,19 @@ describe('Formatter — data schema:', () => {
           }
       }
 
-      query D for People as Youth
-      > where Age >= 18 and Status is not "blocked"
-      > where Email contains "@school.edu" ignoring case
-      > order Age asc
-      > include Household
+      query D.People as Everyone
 
-      query D get one Person
-      > where Email = "ro@example.test"
+      query D.People as Youth {
+          Age >= 18,
+          Email,
+          Household {
+              Name
+          }
+      }
+
+      query D.Person {
+          Email = "ro@example.test",
+      }
 
     `)
 })

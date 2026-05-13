@@ -1,4 +1,5 @@
-// TARGET-ONLY FICTION — pipeline variant. See ../README.md.
+// TARGET-ONLY FICTION - superseded pipeline variant rewritten to current read-query syntax.
+// The old pipeline surface is intentionally removed.
 
 data MeetupData {
   type EventTitle is text
@@ -26,12 +27,17 @@ data MeetupData {
 }
 
 // Named parameterized queries are deferred; this sketch uses in-scope values.
-query MeetupData for Events as HostedEvents
-  > where Host is CurrentUser
-  > order StartsAt asc
+query MeetupData.Events as HostedEvents {
+  Title,
+  StartsAt,
+  Host = CurrentUser,
+}
 
-query MeetupData for Rsvps as EventRsvps
-  > where ForEvent is SelectedEvent
+query MeetupData.Rsvps as EventRsvps {
+  Guest { Name },
+  ForEvent = SelectedEvent,
+  Status,
+}
 
 mutation CreateEvent Host Person, Title EventTitle, StartsAt instant {
   MeetupData.Events.create {
@@ -64,7 +70,7 @@ session {
 
 view EventDashboard HostedEvents Loadable<Event[]> {
   guard HostedEvents loading {
-    Text "Loading your events…"
+    Text "Loading your events..."
   }
   guard HostedEvents error Err {
     Text "Could not load events."
@@ -90,13 +96,16 @@ view EventRow Ev Event {
 }
 
 view RsvpPanel Ev Event {
-  query MeetupData for Rsvps as List
-    > where ForEvent is Ev
+  query MeetupData.Rsvps as List {
+    Guest { Name },
+    ForEvent = Ev,
+    Status,
+  }
   RsvpList List
 }
 
 view RsvpList Rows Loadable<Rsvp[]> {
-  guard Rows loading { Text "…" }
+  guard Rows loading { Text "..." }
   guard Rows ready Items {
     For R in Items {
       Text "${R.Guest.Name}: ${R.Status}"

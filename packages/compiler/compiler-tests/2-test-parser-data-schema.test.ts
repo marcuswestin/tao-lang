@@ -171,7 +171,7 @@ describe('parse — data schema:', () => {
       data D {
         Items Item { N text }
       }
-      query D get Item as Rows
+      query D.Items as Rows { N }
       action Add {
         create D.Item { N "a" }
       }
@@ -189,7 +189,7 @@ describe('parse — data schema:', () => {
     create.fields[0].match({ field: 'N' })
   })
 
-  test('parses V1 query sources, default aliases, and pipeline steps', async () => {
+  test('parses selection-block query sources, default aliases, predicates, and nested selections', async () => {
     const doc = await parseAST(`
       data D {
         Households Household { Name text }
@@ -200,26 +200,31 @@ describe('parse — data schema:', () => {
           Household Household,
         }
       }
-      query D for People
-        > where Age >= 18 and Status is not "blocked"
-        > where Email contains "@school.edu" ignoring case
-        > order Age asc
-        > include Household
-      query D get one Person as CurrentPerson
-        > where Email = "a@b.test"
+      query D.People {
+        Age >= 18,
+        Email,
+        Household { Name },
+      }
+      query D.Person as CurrentPerson {
+        Email = "a@b.test",
+      }
+      query D.People as Everyone
     `)
     const collectionQuery = doc.statements[1].as_QueryDeclaration
     collectionQuery.expect('name').toBeUndefined()
-    collectionQuery.source.as_QueryCollectionSource.collection.expect('pluralName').toBe('People')
-    collectionQuery.steps.match([
-      { $type: 'QueryWhereStep' },
-      { $type: 'QueryWhereStep' },
-      { $type: 'QueryOrderStep' },
-      { $type: 'QueryIncludeStep' },
+    collectionQuery.target.expect('pluralName').toBe('People')
+    collectionQuery.selection.entries.match([
+      { path: { segments: ['Age'] }, op: '>=' },
+      { path: { segments: ['Email'] } },
+      { path: { segments: ['Household'] }, selection: defined },
     ])
 
     const oneQuery = doc.statements[2].as_QueryDeclaration
     oneQuery.expect('name').toBe('CurrentPerson')
-    oneQuery.source.as_QueryOneSource.entity.expect('name').toBe('Person')
+    oneQuery.target.expect('name').toBe('Person')
+
+    const defaultQuery = doc.statements[3].as_QueryDeclaration
+    defaultQuery.expect('name').toBe('Everyone')
+    expect(defaultQuery.unwrap().selection).toBeUndefined()
   })
 })

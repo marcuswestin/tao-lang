@@ -21,7 +21,10 @@ data MeetupData {
    }
 }
 
-query MeetupData get first Person as CurrentUser
+query MeetupData.Person as CurrentUser {
+   Email = "host@example.test",
+   Name,
+}
 
 state EventCount = 0
 
@@ -46,16 +49,57 @@ app DataSchemaApp {
 }
 
 view RootView {
-   query MeetupData for Events as MyEvents
-   > order Ordering desc
+   query MeetupData.Events as MyEvents {
+      Title,
+      Ordering,
+   }
+   query MeetupData.Events as EventDefaults
+   query MeetupData.People as PersonDefaults
+   query MeetupData.Event as EventWithBareLinks {
+      id = "example-event-id",
+      Host,
+      Rsvps,
+   }
+   query MeetupData.Events as EventsWithBareLinks {
+      Host,
+      Rsvps,
+   }
+   query MeetupData.Events as EventsWithSpecifiedLinks {
+      Title,
+      Ordering,
+      Host {
+         Name,
+         Email,
+      },
+      Rsvps {
+         Status,
+         Person,
+      },
+   }
    guard {
       Text "Loading..."
    }
    Button "Create Event ${ EventCount }", CreateEvent
    Col {
       Text "Data Schema Test App"
-      for Event in MyEvents {
-         Text "${ Event.Title}"
+      for MyEvent in MyEvents {
+         Text "${ MyEvent.Title }"
+      }
+      Text "All event defaults:"
+      for DefaultEvent in EventDefaults {
+         Text "${ DefaultEvent.Title }"
+      }
+      Text "All people defaults:"
+      for Person in PersonDefaults {
+         Text "${ Person.Name }"
+      }
+      Text "Bare-link feed:"
+      for BareLinkEvent in EventsWithBareLinks {
+         Text "Bare-link row"
+      }
+      Text "Specified-link feed:"
+      for SpecifiedLinkEvent in EventsWithSpecifiedLinks {
+         Text "${ SpecifiedLinkEvent.Title }"
       }
    }
 }

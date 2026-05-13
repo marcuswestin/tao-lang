@@ -1,5 +1,4 @@
 import { AST } from '@parser/parser'
-import { switch_safe } from '@shared'
 
 export type TaoQueryCardinality = 'many' | 'one'
 
@@ -8,38 +7,37 @@ export function queryDeclarationAliasName(node: AST.QueryDeclaration): string {
   if (node.name) {
     return node.name
   }
-  return switch_safe.type(node.source, {
-    QueryCollectionSource: source => source.collection.ref?.pluralName ?? source.collection.$refText,
-    QueryOneSource: source => source.entity.ref?.name ?? source.entity.$refText,
-    QueryLegacySource: source => source.entity.ref?.name ?? source.entity.$refText,
-  })
+  const targetRef = node.target
+  if (!targetRef) {
+    return '<invalid-query>'
+  }
+  const target = targetRef.ref
+  if (!target) {
+    return targetRef.$refText
+  }
+  return queryDeclarationCardinality(node) === 'many' ? target.pluralName : target.name
 }
 
-/** queryDeclarationCardinality returns whether a query produces many rows or one nullable row. */
+/** queryDeclarationCardinality returns whether a query produces many rows or one nullable row.
+ *
+ * Cardinality is discriminated by the spelling the author wrote (`Data.People` vs `Data.Person`),
+ * because the grammar reuses one `target` reference for both singular and plural entity names via
+ * the `'both'` scope (see `TaoScopeProvider.getDataSchemaEntityScope`). When the reference fails
+ * to resolve, callers either skip this check entirely (validation) or fall back to `'one'` — the
+ * codegen path is gated on a separate `entity` Assert that fires first. */
 export function queryDeclarationCardinality(node: AST.QueryDeclaration): TaoQueryCardinality {
-  return switch_safe.type(node.source, {
-    QueryCollectionSource: () => 'many',
-    QueryOneSource: () => 'one',
-    QueryLegacySource: source => source.first ? 'one' : 'many',
-  })
+  const target = node.target?.ref
+  return target && node.target.$refText === target.pluralName ? 'many' : 'one'
 }
 
-/** queryDeclarationEntity resolves the entity targeted by any supported query source. */
+/** queryDeclarationEntity resolves the entity targeted by a selection-block query. */
 export function queryDeclarationEntity(node: AST.QueryDeclaration): AST.DataEntityDeclaration | undefined {
-  return switch_safe.type(node.source, {
-    QueryCollectionSource: source => source.collection.ref,
-    QueryOneSource: source => source.entity.ref,
-    QueryLegacySource: source => source.entity.ref,
-  })
+  return node.target?.ref
 }
 
 /** queryDeclarationSourceText returns the source token text used when the entity reference is unresolved. */
 export function queryDeclarationSourceText(node: AST.QueryDeclaration): string {
-  return switch_safe.type(node.source, {
-    QueryCollectionSource: source => source.collection.$refText,
-    QueryOneSource: source => source.entity.$refText,
-    QueryLegacySource: source => source.entity.$refText,
-  })
+  return `${node.schema?.$refText ?? '<invalid-schema>'}.${node.target?.$refText ?? '<invalid-target>'}`
 }
 
 /** queryFieldPathSegments returns a plain segment array for a query field path. */
@@ -54,6 +52,25 @@ export function normalizedQueryFieldPathSegments(
 ): readonly string[] {
   const segments = queryFieldPathSegments(path)
   return segments[0] === entity.name || segments[0] === entity.pluralName ? segments.slice(1) : segments
+}
+
+/** dataFieldTargetEntity returns the data entity referenced by a relationship-like field. */
+export function dataFieldTargetEntity(field: AST.DataFieldDeclaration): AST.DataEntityDeclaration | undefined {
+  const dataDecl = field.$container.$container
+  if (!AST.isDataDeclaration(dataDecl)) {
+    return undefined
+  }
+  const fieldType = field.type
+  const target = fieldType?.namedRef?.ref ?? fieldType?.arrayRef?.ref
+  if (AST.isDataEntityDeclaration(target)) {
+    return target
+  }
+  if (!fieldType) {
+    return dataDecl.dataStatements
+      .filter(AST.isDataEntityDeclaration)
+      .find(entity => entity.name === field.name)
+  }
+  return undefined
 }
 
 /** collectionSlugFromPlural maps entity plural names (e.g. `People`) to provider collection keys (e.g. `people`). */

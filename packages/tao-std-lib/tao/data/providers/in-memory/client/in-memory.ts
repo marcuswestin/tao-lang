@@ -11,10 +11,10 @@ import {
   evaluateQueryPlan,
   taoQueryIdentity,
   type TaoQueryPlan,
-  type TaoQueryPredicate,
   type TaoQueryResult,
   useReactiveQueryPlan,
 } from '../../tao-query'
+import { evaluateTaoQueryPredicate, projectTaoQueryRow } from '../../tao-query-projection'
 
 type CryptoLike = {
   randomUUID?: () => string
@@ -114,16 +114,13 @@ export class MemoryTaoData implements TaoDataClient {
     return buildQueryResult([...list], false, null)
   }
 
-  /** applyPlan filters and sorts flat rows. `plan.includes` is intentionally ignored: the Memory store keeps rows as flat key-value maps with no relationship graph, so include-based expansion is not supported. */
+  /** applyPlan filters rows and projects the selected query shape. Relationship selections work when rows already contain nested object/array values. */
   private applyPlan(rows: readonly Record<string, unknown>[], plan: TaoQueryPlan): Record<string, unknown>[] {
     let out = [...rows]
     for (const predicate of plan.where) {
-      out = out.filter(row => evaluatePredicate(row, predicate))
+      out = out.filter(row => evaluateTaoQueryPredicate(row, predicate))
     }
-    for (const order of [...plan.order].reverse()) {
-      out.sort((a, b) => compareValues(valueAtPath(a, order.path), valueAtPath(b, order.path), order.direction))
-    }
-    return out
+    return out.map(row => projectTaoQueryRow(row, plan.select))
   }
 
   private notifyBucket(key: string): void {
@@ -138,76 +135,3 @@ export class MemoryTaoData implements TaoDataClient {
 }
 
 registerTaoDataProvider('Memory', () => new MemoryTaoData())
-
-function evaluatePredicate(row: Record<string, unknown>, predicate: TaoQueryPredicate): boolean {
-  if (predicate.kind === 'and') {
-    return evaluatePredicate(row, predicate.left) && evaluatePredicate(row, predicate.right)
-  }
-  if (predicate.kind === 'or') {
-    return evaluatePredicate(row, predicate.left) || evaluatePredicate(row, predicate.right)
-  }
-  if (predicate.kind === 'not') {
-    return !evaluatePredicate(row, predicate.predicate)
-  }
-  const actual = valueAtPath(row, predicate.path)
-  const expected = predicate.value
-  const actualString = typeof actual === 'string' ? normalizeString(actual, predicate.ignoreCase) : undefined
-  const expectedString = typeof expected === 'string' ? normalizeString(expected, predicate.ignoreCase) : undefined
-  switch (predicate.op) {
-    case 'is':
-    case '=':
-      return Object.is(actual, expected)
-    case 'isNot':
-    case '!=':
-      return !Object.is(actual, expected)
-    case '<':
-      return comparePrimitive(actual, expected) < 0
-    case '<=':
-      return comparePrimitive(actual, expected) <= 0
-    case '>':
-      return comparePrimitive(actual, expected) > 0
-    case '>=':
-      return comparePrimitive(actual, expected) >= 0
-    case 'in':
-      return Array.isArray(expected) && expected.some(item => Object.is(item, actual))
-    case 'contains':
-      return actualString !== undefined && expectedString !== undefined && actualString.includes(expectedString)
-    case 'startsWith':
-      return actualString !== undefined && expectedString !== undefined && actualString.startsWith(expectedString)
-    case 'endsWith':
-      return actualString !== undefined && expectedString !== undefined && actualString.endsWith(expectedString)
-  }
-}
-
-function valueAtPath(row: Record<string, unknown>, path: readonly string[]): unknown {
-  let current: unknown = row
-  for (const segment of path) {
-    if (!current || typeof current !== 'object') {
-      return undefined
-    }
-    current = (current as Record<string, unknown>)[segment]
-  }
-  return current
-}
-
-function compareValues(a: unknown, b: unknown, direction: 'asc' | 'desc'): number {
-  const result = comparePrimitive(a, b)
-  return direction === 'asc' ? result : -result
-}
-
-function comparePrimitive(a: unknown, b: unknown): number {
-  if (typeof a === 'number' && typeof b === 'number') {
-    return a - b
-  }
-  if (typeof a === 'string' && typeof b === 'string') {
-    return a.localeCompare(b)
-  }
-  if (typeof a === 'boolean' && typeof b === 'boolean') {
-    return Number(a) - Number(b)
-  }
-  return String(a).localeCompare(String(b))
-}
-
-function normalizeString(value: string, ignoreCase: boolean | undefined): string {
-  return ignoreCase ? value.toLocaleLowerCase() : value
-}

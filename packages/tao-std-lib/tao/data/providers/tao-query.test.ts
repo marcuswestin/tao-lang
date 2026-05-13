@@ -4,35 +4,17 @@ import { evaluateQueryPlan, type TaoQueryPlan, type TaoQueryPredicate, useReacti
 describe('tao query runtime helpers:', () => {
   test('useReactiveQueryPlan subscribes expression-valued predicate values before evaluating them', () => {
     const calls: string[] = []
-    const plan = makePlan({
-      kind: 'and',
-      left: {
-        kind: 'compare',
-        path: ['Age'],
-        op: '>',
-        value: makeRuntimeExpression(calls, 30),
-      },
-      right: {
-        kind: 'not',
-        predicate: {
-          kind: 'compare',
-          path: ['Name'],
-          op: '=',
-          value: 'Ada',
-        },
-      },
-    })
+    const plan = makePlan({ path: ['Age'], op: '>', value: makeRuntimeExpression(calls, 30) })
 
     const normalized = useReactiveQueryPlan(plan)
 
     expect(calls).toEqual(['reactive', 'evaluate'])
-    expect(compareLeft(normalized.where[0]).value).toBe(30)
+    expect(normalized.where[0]?.value).toBe(30)
   })
 
   test('evaluateQueryPlan does not subscribe predicate values for non-reactive reads', () => {
     const calls: string[] = []
     const plan = makePlan({
-      kind: 'compare',
       path: ['Age'],
       op: '>',
       value: makeRuntimeExpression(calls, 30),
@@ -41,7 +23,27 @@ describe('tao query runtime helpers:', () => {
     const normalized = evaluateQueryPlan(plan)
 
     expect(calls).toEqual(['evaluate'])
-    expect(compare(normalized.where[0]).value).toBe(30)
+    expect(normalized.where[0]?.value).toBe(30)
+  })
+
+  test('nested selection predicates are evaluated', () => {
+    const calls: string[] = []
+    const plan: TaoQueryPlan = {
+      schema: 'Data',
+      collection: 'People',
+      cardinality: 'many',
+      where: [],
+      select: [{
+        path: ['Friends'],
+        where: [{ path: ['Age'], op: '>', value: makeRuntimeExpression(calls, 18) }],
+        select: [{ path: ['Name'] }],
+      }],
+    }
+
+    const normalized = evaluateQueryPlan(plan)
+
+    expect(calls).toEqual(['evaluate'])
+    expect(normalized.select[0]?.where?.[0]?.value).toBe(18)
   })
 })
 
@@ -51,8 +53,7 @@ function makePlan(predicate: TaoQueryPredicate): TaoQueryPlan {
     collection: 'People',
     cardinality: 'many',
     where: [predicate],
-    order: [],
-    includes: [],
+    select: [],
   }
 }
 
@@ -67,14 +68,4 @@ function makeRuntimeExpression(calls: string[], value: unknown) {
       return { jsValue: value }
     },
   }
-}
-
-function compare(predicate: TaoQueryPredicate): Extract<TaoQueryPredicate, { kind: 'compare' }> {
-  expect(predicate.kind).toBe('compare')
-  return predicate as Extract<TaoQueryPredicate, { kind: 'compare' }>
-}
-
-function compareLeft(predicate: TaoQueryPredicate): Extract<TaoQueryPredicate, { kind: 'compare' }> {
-  expect(predicate.kind).toBe('and')
-  return compare((predicate as Extract<TaoQueryPredicate, { kind: 'and' }>).left)
 }

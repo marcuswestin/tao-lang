@@ -121,6 +121,10 @@ describe('cli:', () => {
       expect(FS.isDirectory(FS.joinPath(testRuntimeDir, 'app-build/use/@tao/data/providers/in-memory/client'))).toBe(
         true,
       )
+      expect(FS.existsSync(FS.joinPath(testRuntimeDir, 'app-build/use/@tao/data/providers/tao-query-projection.ts')))
+        .toBe(
+          true,
+        )
       expect(FS.existsSync(FS.joinPath(testRuntimeDir, 'app-build/use/@tao/data/providers/in-memory/admin'))).toBe(
         false,
       )

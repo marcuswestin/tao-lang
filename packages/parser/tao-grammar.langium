@@ -122,67 +122,16 @@ DataEntityDeclaration:
     pluralName=ID name=ID '{' (fields+=DataFieldDeclaration (',' fields+=DataFieldDeclaration)* ','?)? '}';
 
 QueryDeclaration:
-    'query' schema=[DataDeclaration:ID] source=QuerySource ('as' name=ID)? steps+=QueryPipelineStep*;
+    'query' schema=[DataDeclaration:ID] '.' target=[DataEntityDeclaration:ID] ('as' name=ID)? (selection=QuerySelectionBlock)?;
 
-QuerySource:
-    QueryCollectionSource | QueryOneSource | QueryLegacySource;
+QuerySelectionBlock:
+    '{' (entries+=QuerySelectionEntry (',' entries+=QuerySelectionEntry)* ','?)? '}';
 
-QueryCollectionSource:
-    'for' collection=[DataEntityDeclaration:ID];
+QuerySelectionEntry:
+    path=QueryFieldPath ((op=QueryComparisonOperator value=Expression) | selection=QuerySelectionBlock)?;
 
-QueryOneSource:
-    'get' 'one' entity=[DataEntityDeclaration:ID];
-
-// Legacy query source kept so existing apps keep compiling while the V1 surface moves to
-// `for <Plural>` / `get one <Singular>`.
-QueryLegacySource:
-    'get' first?='first'? entity=[DataEntityDeclaration:ID];
-
-QueryPipelineStep:
-    QueryWhereStep | QueryOrderStep | QueryIncludeStep;
-
-QueryWhereStep:
-    '>' 'where' predicate=QueryPredicate;
-
-QueryOrderStep:
-    '>' 'order' path=QueryFieldPath direction=QueryOrderDirection;
-
-QueryIncludeStep:
-    '>' 'include' paths+=QueryFieldPath (',' paths+=QueryFieldPath)*;
-
-QueryOrderDirection returns string:
-    'asc' | 'desc';
-
-QueryPredicate:
-    QueryOrPredicate;
-
-QueryOrPredicate infers QueryPredicate:
-    QueryAndPredicate ({infer QueryLogicalPredicate.left=current} op='or' right=QueryAndPredicate)*;
-
-QueryAndPredicate infers QueryPredicate:
-    QueryNotPredicate ({infer QueryLogicalPredicate.left=current} op='and' right=QueryNotPredicate)*;
-
-QueryNotPredicate infers QueryPredicate:
-    {infer QueryNotPredicate} op='not' operand=QueryPredicateAtom
-    | QueryPredicateAtom;
-
-QueryPredicateAtom infers QueryPredicate:
-    QueryComparisonPredicate | '(' QueryPredicate ')';
-
-QueryComparisonPredicate:
-    path=QueryFieldPath
-    (
-        (is?='is' not?='not'? value=Expression)
-        | op=QuerySymbolPredicateOperator value=Expression
-        | membership?='in' value=Expression
-        | stringOperator=QueryStringPredicateOperator value=Expression (ignoreCase?='ignoring' 'case')?
-    );
-
-QuerySymbolPredicateOperator returns string:
+QueryComparisonOperator returns string:
     '=' | '!=' | '<=' | '>=' | '<' | '>';
-
-QueryStringPredicateOperator returns string:
-    'contains' | 'starts' 'with' | 'ends' 'with';
 
 QueryFieldPath:
     segments+=ID ('.' segments+=ID)*;

@@ -114,9 +114,8 @@ export function createTaoDataClient(provider: string): TaoDataClient {
 export type {
   TaoQueryCardinality,
   TaoQueryComparisonOperator,
-  TaoQueryOrder,
-  TaoQueryOrderDirection,
   TaoQueryPlan,
   TaoQueryPredicate,
   TaoQueryResult,
+  TaoQuerySelection,
 } from './tao-query'

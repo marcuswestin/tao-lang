@@ -71,10 +71,10 @@ theme TodosTheme {
 app TodosApp {
     ui {
         state text = ""
-        let todos = query Todo get all
+        query Todo.Todos
         let peers = rooms Todos 'todos'
 
-        guard todos info {
+        guard Todos info {
             let color = #text-red-600 if info.error else null
             Col [items fill center] {
                 Text 'LOADING' <font 2xl bold color>
@@ -98,10 +98,10 @@ app TodosApp {
                                 text = ""
             }}}}}
             Col [border #black 4] {
-                if todos.isEmpty {
+                if Todos.isEmpty {
                     Text 'NO TASKS YET' <font lg bold #gray-400>
                 } else {
-                    List todos {
+                    List Todos {
                         |todo|
                         Row {
                             Checkbox todo.isCompleted {
@@ -113,17 +113,15 @@ app TodosApp {
                                 on click {
                                     deleteTodo(todo.id)
             }}}}}}
-            if !todos.isEmpty {
+            if !Todos.isEmpty {
                 Row {
                     Button 'TOGGLE ALL' {
                         on click {
-                            toggleAllTodos(todos)
+                            toggleAllTodos(Todos)
                 }}}
-                let completedTodoIds = todos |> filter isCompleted |> map(t => t.id)
+                let completedTodoIds = Todos |> filter isCompleted |> map(t => t.id)
                 if completedTodoIds.hasItems {
                     Button 'CLEAR DONE ${completedTodoIds.count}' {
                         on click {
                             deleteCompletedTodos(completedTodoIds)
 }}}}}}}
-
-

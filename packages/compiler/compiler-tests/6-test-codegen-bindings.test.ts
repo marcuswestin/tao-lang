@@ -25,6 +25,31 @@ async function writeAndCompile(code: string): Promise<string> {
   return result.files.map(f => f.content).join('\n')
 }
 
+/** slicePeekQueryPlanObject returns the `{ ... }` object literal passed to `peekQuery` for a scoped assignment prefix. */
+function slicePeekQueryPlanObject(source: string, assignmentPrefix: string): string {
+  const start = source.indexOf(assignmentPrefix)
+  if (start === -1) {
+    throw new Error(`missing peekQuery assignment: ${assignmentPrefix}`)
+  }
+  const braceStart = source.indexOf('{', start)
+  if (braceStart === -1) {
+    throw new Error('missing peekQuery opening brace')
+  }
+  let depth = 0
+  for (let i = braceStart; i < source.length; i++) {
+    const c = source[i]!
+    if (c === '{') {
+      depth++
+    } else if (c === '}') {
+      depth--
+      if (depth === 0) {
+        return source.slice(braceStart, i + 1)
+      }
+    }
+  }
+  throw new Error('unbalanced braces in peekQuery plan object')
+}
+
 describe('codegen — call-site argument bindings:', () => {
   test('ViewRender emits one JSX prop per parameter, keyed by parameter name', async () => {
     const out = await writeAndCompile(`
@@ -206,8 +231,8 @@ describe('codegen — app provider selection and overrides:', () => {
       data SecondData {
         SecondItems SecondItem { T text }
       }
-      query FirstData get FirstItem as FirstRows
-      query SecondData get SecondItem as SecondRows
+      query FirstData.FirstItems as FirstRows { T }
+      query SecondData.SecondItems as SecondRows { T }
       app HarnessApp { ui HarnessRoot }
       view HarnessRoot { }
     `,
@@ -242,7 +267,7 @@ describe('codegen — app provider selection and overrides:', () => {
       mainPath,
       `
       use SharedData from ./db
-      query SharedData get Item as Rows
+      query SharedData.Items as Rows { T }
       app HarnessApp { ui HarnessRoot }
       view HarnessRoot { }
     `,
@@ -261,7 +286,7 @@ describe('codegen — app provider selection and overrides:', () => {
     )
   })
 
-  test('query pipeline emits structured query plan with dynamic values', async () => {
+  test('selection-block query emits structured query plan with dynamic values', async () => {
     const out = await writeAndCompile(`
       data D {
         People Person {
@@ -270,12 +295,13 @@ describe('codegen — app provider selection and overrides:', () => {
         }
       }
       state MinAge = 18
-      query D for People as Youth
-        > where Person.Age >= MinAge
-        > where Email contains "@school.edu" ignoring case
-        > order People.Age asc
-      query D get one Person
-        > where Email = "ro@example.test"
+      query D.People as Youth {
+        Age >= MinAge,
+        Email,
+      }
+      query D.Person {
+        Email = "ro@example.test",
+      }
       app A { ui V }
       view V { }
     `)
@@ -288,10 +314,109 @@ describe('codegen — app provider selection and overrides:', () => {
     expect(out).not.toContain('path: ["People", "Age"]')
     expect(out).toContain('op: ">="')
     expect(out).toContain('value: _Scope.MinAge')
-    expect(out).toContain('op: "contains"')
-    expect(out).toContain('ignoreCase: true')
+    expect(out).toContain('select: [')
     expect(out).toContain('_Scope.Person = getTaoData("D").peekQuery({')
     expect(out).toContain('cardinality: "one"')
+  })
+
+  test('relationship identity predicates emit hidden-id comparison metadata', async () => {
+    const out = await writeAndCompile(`
+      data D {
+        People Person {
+          Email text unique,
+          Name text,
+        }
+        Events Event {
+          Title text,
+          Host Person,
+          Attendees [Person],
+        }
+      }
+      query D.Person as CurrentUser {
+        Email = "ro@example.test",
+      }
+      query D.Events as HostedEvents {
+        Title,
+        Host = CurrentUser,
+        Attendees != CurrentUser,
+      }
+      app A { ui V }
+      view V { }
+    `)
+    const queryPlan = slicePeekQueryPlanObject(out, '_Scope.HostedEvents = getTaoData("D").peekQuery(')
+    const selectBlock = queryPlan.slice(queryPlan.indexOf('select: ['), queryPlan.indexOf('where: ['))
+
+    expect(queryPlan).toContain('path: ["Host"]')
+    expect(queryPlan).toContain('path: ["Attendees"]')
+    expect(queryPlan).toContain('compareField: "id"')
+    expect(queryPlan).toContain('clientOnly: true')
+    expect(queryPlan).toContain('path: ["Title"]')
+    expect(selectBlock).not.toContain('path: ["Host"]')
+    expect(selectBlock).not.toContain('path: ["Attendees"]')
+  })
+
+  test('bare relationship selection emits scalar-only nested projection', async () => {
+    const out = await writeAndCompile(`
+      data D {
+        Tags Tag {
+          Name text,
+          Tasks [Task],
+        }
+        Tasks Task {
+          Title text,
+          Tags [Tag],
+        }
+        Todos Todo {
+          Description text,
+          Done boolean,
+          Tags [Tag],
+          Task,
+        }
+        Users User {
+          Name text,
+          Todos [Todo],
+        }
+      }
+      query D.Users {
+        Name,
+        Todos,
+      }
+      query D.Users as UsersWithTodoLinks {
+        Todos {
+          Task,
+          Description,
+          Tags,
+        },
+      }
+      app A { ui V }
+      view V { }
+    `)
+    expect(out).toMatch(/path: \["Todos"\][\s\S]*select: \[[\s\S]*path: \["Description"\][\s\S]*path: \["Done"\]/)
+    expect(out).toMatch(/path: \["Tags"\][\s\S]*select: \[[\s\S]*path: \["Name"\]/)
+    expect(out).not.toMatch(/path: \["Tags"\][\s\S]*path: \["Tasks"\]/)
+  })
+
+  test('empty entity selection emits root scalar fields only', async () => {
+    const out = await writeAndCompile(`
+      data D {
+        Tasks Task { Title text }
+        Users User {
+          Name text,
+          Todos [Task],
+        }
+      }
+      query D.Users as DefaultUsers
+      query D.Users as EmptyBlockUsers { }
+      app A { ui V }
+      view V { }
+    `)
+    const queryPlan = slicePeekQueryPlanObject(out, '_Scope.DefaultUsers = getTaoData("D").peekQuery(')
+    expect(queryPlan).toContain('path: ["Name"]')
+    expect(queryPlan).not.toContain('path: ["Todos"]')
+
+    const emptyQueryPlan = slicePeekQueryPlanObject(out, '_Scope.EmptyBlockUsers = getTaoData("D").peekQuery(')
+    expect(emptyQueryPlan).toContain('path: ["Name"]')
+    expect(emptyQueryPlan).not.toContain('path: ["Todos"]')
   })
 
   test('compile result exposes provider config and serialized data schemas', async () => {
@@ -329,7 +454,7 @@ describe('codegen — app provider selection and overrides:', () => {
       mainPath,
       `
       use SharedData from ./db
-      query SharedData get Item as Rows
+      query SharedData.Items as Rows { T }
       app HarnessApp { ui HarnessRoot }
       view HarnessRoot { }
     `,

@@ -158,7 +158,7 @@ describe('validation — for / create:', () => {
       data D {
         Items Item { N text }
       }
-      query D get Item as Rows
+      query D.Items as Rows { N }
       view V {
         create D.Item { N "x" }
       }
@@ -172,7 +172,7 @@ describe('validation — for / create:', () => {
       data D {
         Items Item { N text }
       }
-      query D get Item as Rows
+      query D.Items as Rows { N }
       action X {
         for I in Rows { }
       }
@@ -185,12 +185,12 @@ describe('validation — for / create:', () => {
     )
   })
 
-  test('for over first-query alias fails', async () => {
+  test('for over singular query alias fails', async () => {
     const report = await parseASTWithErrors(`
       data D {
         Items Item { N text }
       }
-      query D get first Item as One
+      query D.Item as One { id = "item-1", N }
       app A { ui V }
       view V {
         for X in One { Text "x" }
@@ -204,11 +204,11 @@ describe('validation — for / create:', () => {
       data D {
         Items Item { N text }
       }
-      query D get Item as Rows
+      query D.Items as Rows { N }
       app A { ui V }
       view V {
         for X in Rows {
-          query D get Item as Inner
+          query D.Items as Inner { N }
           Text "x"
         }
       }
@@ -221,7 +221,7 @@ describe('validation — for / create:', () => {
       data D {
         Items Item { N text }
       }
-      query D get Item as Rows
+      query D.Items as Rows { N }
       app A { ui V }
       view V {
         for X in Rows {
@@ -261,8 +261,8 @@ describe('validation — for / create:', () => {
   })
 })
 
-describe('validation — V1 data queries:', () => {
-  test('get one with unique equality passes validation', async () => {
+describe('validation — selection-block data queries:', () => {
+  test('singular query with unique equality passes validation', async () => {
     await parseTaoFully(`
       data D {
         People Person {
@@ -270,14 +270,32 @@ describe('validation — V1 data queries:', () => {
           Name text,
         }
       }
-      query D get one Person
-        > where Email = "ro@example.test"
+      query D.Person {
+        Email = "ro@example.test",
+      }
       app A { ui V }
       view V { }
     `)
   })
 
-  test('get one with id equality passes validation', async () => {
+  test('singular query with optional unique equality passes validation', async () => {
+    await parseTaoFully(`
+      data D {
+        People Person {
+          Email text optional unique,
+          Name text,
+        }
+      }
+      query D.Person {
+        Email = "ro@example.test",
+        Name,
+      }
+      app A { ui V }
+      view V { }
+    `)
+  })
+
+  test('singular query with id equality passes validation', async () => {
     await parseTaoFully(`
       data D {
         People Person {
@@ -285,14 +303,15 @@ describe('validation — V1 data queries:', () => {
           Name text,
         }
       }
-      query D get one Person
-        > where id = "00000000-0000-0000-0000-000000000001"
+      query D.Person {
+        id = "00000000-0000-0000-0000-000000000001",
+      }
       app A { ui V }
       view V { }
     `)
   })
 
-  test('get one without id or unique equality fails validation', async () => {
+  test('singular query without id or unique equality fails validation', async () => {
     const report = await parseASTWithErrors(`
       data D {
         People Person {
@@ -300,15 +319,16 @@ describe('validation — V1 data queries:', () => {
           Name text,
         }
       }
-      query D get one Person
-        > where Name = "Ro"
+      query D.Person {
+        Name = "Ro",
+      }
       app A { ui V }
       view V { }
     `)
     expectHumanMessagesContain(report, queryValidationMessages.queryOneNeedsUniqueWhere)
   })
 
-  test('get one does not accept unique equality hidden behind or', async () => {
+  test('singular query without a selection block fails validation', async () => {
     const report = await parseASTWithErrors(`
       data D {
         People Person {
@@ -316,40 +336,129 @@ describe('validation — V1 data queries:', () => {
           Name text,
         }
       }
-      query D get one Person
-        > where Email = "ro@example.test" or Name = "Ro"
+      query D.Person as CurrentPerson
       app A { ui V }
       view V { }
     `)
     expectHumanMessagesContain(report, queryValidationMessages.queryOneNeedsUniqueWhere)
   })
 
-  test('nested relationship path requires include', async () => {
+  test('singular query requires equality on the unique field', async () => {
+    const report = await parseASTWithErrors(`
+      data D {
+        People Person {
+          Email text unique,
+          Name text,
+        }
+      }
+      query D.Person {
+        Email != "ro@example.test",
+      }
+      app A { ui V }
+      view V { }
+    `)
+    expectHumanMessagesContain(report, queryValidationMessages.queryOneNeedsUniqueWhere)
+  })
+
+  test('nested relationship path requires a selection block', async () => {
     const report = await parseASTWithErrors(`
       data D {
         People Person { Name text }
-        Events Event { Host Person }
+        Events Event { Title text, Host Person }
       }
-      query D for Events
-        > where Host.Name = "Ro"
+      query D.Events {
+        Host.Name = "Ro",
+      }
       app A { ui V }
       view V { }
     `)
     expectHumanMessagesContain(
       report,
-      queryValidationMessages.queryNestedRelationshipNeedsInclude('Host.Name', 'Host'),
+      queryValidationMessages.queryNestedRelationshipPath('Host.Name'),
     )
   })
 
-  test('nested relationship path with include passes validation', async () => {
+  test('nested relationship block with predicate passes validation', async () => {
     await parseTaoFully(`
       data D {
         People Person { Name text }
-        Events Event { Host Person }
+        Events Event { Title text, Host Person }
       }
-      query D for Events
-        > include Host
-        > where Host.Name = "Ro"
+      query D.Events {
+        Title,
+        Host {
+          Name = "Ro",
+        },
+      }
+      app A { ui V }
+      view V { }
+    `)
+  })
+
+  test('bare relationship selection passes validation', async () => {
+    await parseTaoFully(`
+      data D {
+        Tasks Task { Title text }
+        People Person {
+          Name text,
+          Tasks [Task],
+        }
+      }
+      query D.People {
+        Name,
+        Tasks,
+      }
+      app A { ui V }
+      view V { }
+    `)
+  })
+
+  test('duplicate bare relationship selection fails validation', async () => {
+    const report = await parseASTWithErrors(`
+      data D {
+        Tasks Task { Title text }
+        People Person {
+          Name text,
+          Tasks [Task],
+        }
+      }
+      query D.People {
+        Tasks,
+        Tasks,
+      }
+      app A { ui V }
+      view V { }
+    `)
+    expectHumanMessagesContain(report, queryValidationMessages.queryDuplicateProjection('Tasks'))
+  })
+
+  test('scalar predicate followed by bare projection of the same field is a duplicate', async () => {
+    const report = await parseASTWithErrors(`
+      data D {
+        People Person {
+          Email text unique,
+          Name text,
+        }
+      }
+      query D.Person {
+        Email = "ro@example.test",
+        Email,
+      }
+      app A { ui V }
+      view V { }
+    `)
+    expectHumanMessagesContain(report, queryValidationMessages.queryDuplicateProjection('Email'))
+  })
+
+  test('plural query without a selection block passes validation', async () => {
+    await parseTaoFully(`
+      data D {
+        Tasks Task {
+          Title text,
+          Done boolean,
+        }
+      }
+      query D.Tasks
       app A { ui V }
       view V { }
     `)
@@ -359,11 +468,13 @@ describe('validation — V1 data queries:', () => {
     await parseTaoFully(`
       data D {
         People Person { Name text }
-        Events Event { Host Person }
+        Events Event { Title text, Host Person }
       }
-      query D get first Person as CurrentUser
-      query D for Events
-        > where Host is CurrentUser
+      query D.Person as CurrentUser { id = "person-1" }
+      query D.Events {
+        Title,
+        Host = CurrentUser,
+      }
       app A { ui V }
       view V { }
     `)

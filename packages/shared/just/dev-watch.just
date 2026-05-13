@@ -17,6 +17,7 @@ _dev DEVICE APP:
     just expo-runtime prebuild
     echo "start dev loops (press 'r' to restart or 'q' to quit)"
     while true; do
+        bash "$ROOT/packages/shared/scripts/assert-dev-metro-port-free.sh" "$DEV_METRO_PORT"
         just concurrently-exec-named-dev-loop \
             "grammar" "watchexec --restart --watch=packages/parser/tao-grammar.langium -- just gen" \
             "app_build" "just _compile_dev_app --watch" \

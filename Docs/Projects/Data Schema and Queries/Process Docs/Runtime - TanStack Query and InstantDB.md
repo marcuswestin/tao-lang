@@ -50,17 +50,17 @@ Open questions (also listed in [Alternatives — Datasource bridge](./Queries%20
 **Rough mapping from Tao:**
 
 - Tao `data` + app-level `provider InstantDB { … }` → generated InstantDB schema + thin wrappers.
-- Tao queries → structured `TaoQueryPlan` values passed through `TaoDataClient.useLiveQuery` / `peekQuery`; the Instant provider lowers supported plan pieces to InstaQL and keeps the plan shape available for future capability validation.
+- Tao queries → structured `TaoQueryPlan` values passed through `TaoDataClient.useLiveQuery` / `peekQuery`; the Instant provider pushes scalar root predicates to InstaQL `where` when they are not `clientOnly`, then applies **all** predicates (including relationship identity), nested filters, and the selection projection in JS on the returned rows.
 - Tao writes (`create` / `update`) → `transact` / update patterns, plus provider-driven invalidation or sync.
 
 ### Current V1 provider behavior
 
 - `id` is treated as the provider row id and can be queried without being declared as a Tao field.
 - Query field paths are normalized before execution: root prefixes such as `Person.Email` / `People.Email` become `Email`, while nested relationship paths remain explicit.
-- Memory applies the structured plan in-process. InstantDB lowers supported `where`, top-level `order`, and `include` clauses to InstaQL.
-- Limiting and pagination are intentionally not implemented in V1. They need a provider-capability design before Tao commits to a portable query-plan shape.
+- Memory applies the structured plan in-process. InstantDB V1 treats Tao relationships as `any` attributes (not link edges), so nested shape is not sent as an InstaQL include tree. Scalar predicates that are not `clientOnly` become InstaQL `where`; relationship identity predicates are `clientOnly` and run only in JS. The client then evaluates **every** root `where` entry, filters nested relationship `where` inside the selection tree, and projects. If **all** root predicates are `clientOnly`, InstaQL has no top-level `where` and the SDK may return **every row in that collection** before JS filtering, which is acceptable for dev-sized data but not a long-term large-table strategy.
+- Ordering, limiting, and pagination are intentionally not implemented in V1. They need a provider-capability design before Tao commits to a portable query-plan shape.
 
-Current limits: limiting/pagination, provider capability manifests, and strict compile-time rejection of provider-specific gaps are still deferred. In particular, nested relationship ordering should be rejected, denormalized, or handled by a provider-specific strategy before being treated as generally supported.
+Current limits: ordering, limiting/pagination, provider capability manifests, and strict compile-time rejection of provider-specific gaps are still deferred. Nested relationship loading is provider-sensitive and should be rejected, denormalized, or handled by a provider-specific strategy before deeper traversal is treated as generally portable.
 
 ---
 

@@ -72,15 +72,8 @@ export default class TaoFormatter extends AbstractFormatter {
       DataFieldType: (n) => this.formatDataFieldType(n),
       DataFieldMetadata: (n) => this.formatDataFieldMetadata(n),
       QueryDeclaration: (n) => this.formatQueryDeclaration(n),
-      QueryCollectionSource: (n) => this.formatQueryCollectionSource(n),
-      QueryOneSource: (n) => this.formatQueryOneSource(n),
-      QueryLegacySource: (n) => this.formatQueryLegacySource(n),
-      QueryWhereStep: (n) => this.formatQueryWhereStep(n),
-      QueryOrderStep: (n) => this.formatQueryOrderStep(n),
-      QueryIncludeStep: (n) => this.formatQueryIncludeStep(n),
-      QueryComparisonPredicate: (n) => this.formatQueryComparisonPredicate(n),
-      QueryLogicalPredicate: (n) => this.formatQueryLogicalPredicate(n),
-      QueryNotPredicate: (n) => this.formatQueryNotPredicate(n),
+      QuerySelectionBlock: (n) => this.formatQuerySelectionBlock(n),
+      QuerySelectionEntry: (n) => this.formatQuerySelectionEntry(n),
       QueryFieldPath: (n) => this.formatQueryFieldPath(n),
       GuardStatement: (n) => this.formatGuardStatement(n),
       ForStatement: (n) => this.formatForStatement(n),
@@ -247,91 +240,35 @@ export default class TaoFormatter extends AbstractFormatter {
   private formatQueryDeclaration(node: AST.QueryDeclaration): void {
     const f = this.getNodeFormatter(node)
     f.keyword('query').append(Formatting.oneSpace())
-    f.property('schema').append(Formatting.oneSpace())
-    f.node(node.source)
+    f.keyword('.').prepend(Formatting.noSpace()).append(Formatting.noSpace())
     if (node.name) {
       f.keyword('as').prepend(Formatting.oneSpace()).append(Formatting.oneSpace())
-      f.property('name')
     }
-    for (const step of node.steps) {
-      f.node(step).prepend(Formatting.newLine())
+    if (node.selection) {
+      const lastBefore = node.name ? f.property('name') : f.property('target')
+      lastBefore.append(Formatting.oneSpace())
+      f.node(node.selection)
     }
   }
 
-  private formatQueryCollectionSource(node: AST.QueryCollectionSource): void {
+  private formatQuerySelectionBlock(node: AST.QuerySelectionBlock): void {
     const f = this.getNodeFormatter(node)
-    f.keyword('for').append(Formatting.oneSpace())
-    f.property('collection')
-  }
-
-  private formatQueryOneSource(node: AST.QueryOneSource): void {
-    const f = this.getNodeFormatter(node)
-    f.keyword('get').append(Formatting.oneSpace())
-    f.keyword('one').append(Formatting.oneSpace())
-    f.property('entity')
-  }
-
-  private formatQueryLegacySource(node: AST.QueryLegacySource): void {
-    const f = this.getNodeFormatter(node)
-    f.keyword('get').append(Formatting.oneSpace())
-    if (node.first) {
-      f.keyword('first').append(Formatting.oneSpace())
-    }
-    f.property('entity')
-  }
-
-  private formatQueryWhereStep(node: AST.QueryWhereStep): void {
-    const f = this.getNodeFormatter(node)
-    f.keyword('>').append(Formatting.oneSpace())
-    f.keyword('where').append(Formatting.oneSpace())
-  }
-
-  private formatQueryOrderStep(node: AST.QueryOrderStep): void {
-    const f = this.getNodeFormatter(node)
-    f.keyword('>').append(Formatting.oneSpace())
-    f.keyword('order').append(Formatting.oneSpace())
-    f.node(node.path).append(Formatting.oneSpace())
-  }
-
-  private formatQueryIncludeStep(node: AST.QueryIncludeStep): void {
-    const f = this.getNodeFormatter(node)
-    f.keyword('>').append(Formatting.oneSpace())
-    f.keyword('include').append(Formatting.oneSpace())
+    this._indentBlock(node, 'entries')
     this._spaceBetweenCommaSeperatedItems(node)
+    for (const entry of node.entries) {
+      f.node(entry).prepend(Formatting.indent())
+    }
   }
 
-  private formatQueryComparisonPredicate(node: AST.QueryComparisonPredicate): void {
+  private formatQuerySelectionEntry(node: AST.QuerySelectionEntry): void {
     const f = this.getNodeFormatter(node)
-    f.node(node.path).append(Formatting.oneSpace())
-    if (node.is) {
-      f.keyword('is').append(Formatting.oneSpace())
-    }
-    if (node.not) {
-      f.keyword('not').append(Formatting.oneSpace())
-    }
+    f.node(node.path)
     if (node.op) {
       f.property('op').surround(Formatting.oneSpace())
     }
-    if (node.membership) {
-      f.keyword('in').surround(Formatting.oneSpace())
+    if (node.selection) {
+      f.node(node.selection).prepend(Formatting.oneSpace())
     }
-    if (node.stringOperator) {
-      f.property('stringOperator').surround(Formatting.oneSpace())
-    }
-    if (node.ignoreCase) {
-      f.keyword('ignoring').surround(Formatting.oneSpace())
-      f.keyword('case').prepend(Formatting.oneSpace())
-    }
-  }
-
-  private formatQueryLogicalPredicate(node: AST.QueryLogicalPredicate): void {
-    const f = this.getNodeFormatter(node)
-    f.property('op').surround(Formatting.oneSpace())
-  }
-
-  private formatQueryNotPredicate(node: AST.QueryNotPredicate): void {
-    const f = this.getNodeFormatter(node)
-    f.keyword('not').append(Formatting.oneSpace())
   }
 
   private formatQueryFieldPath(node: AST.QueryFieldPath): void {

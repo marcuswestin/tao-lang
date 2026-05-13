@@ -6,8 +6,7 @@ import { isUnderViewDeclaration } from './validation-utils'
 /** forCreateMessages are diagnostics for `for` and `create` data statements. */
 export const forCreateMessages = {
   forOnlyInView: '`for` may only appear directly inside a view body (not at file level or inside actions).',
-  forCollectionNotListQuery:
-    '`for` may only iterate a collection query (use `query … get <Entity> as Alias` without `first`).',
+  forCollectionNotListQuery: '`for` may only iterate a collection query (use `query Data.Plurals as Alias { ... }`).',
   forCollectionNotQuery: '`for` `in` must reference a query alias declared on this file or in the same view.',
   forBodyNoQuery: '`query` is not allowed inside a `for` block (queries call React hooks; hooks may not run in loops).',
   forBodyNoGuard: '`guard` is not allowed inside a `for` block — declare it directly under the view body.',

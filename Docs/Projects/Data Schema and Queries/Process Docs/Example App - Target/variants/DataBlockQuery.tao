@@ -1,5 +1,4 @@
-// TARGET-ONLY FICTION — block-query alternative for same domain. See ../README.md.
-// Compare: Queries Design - Alternatives.md #query-flow-pipeline-vs-block
+// TARGET-ONLY FICTION - current selection-block read-query variant.
 
 data MeetupData {
   // ... same entities as DataPipeline.tao (omitted duplicate for sketch)
@@ -11,10 +10,10 @@ app MeetupLite {
   }
 }
 
-// Illustrative block form — semantics TBD; may desugar to same IR as pipeline
-query MeetupData for Events as HostedEvents {
-  where Host is Host
-  order StartsAt asc
+query MeetupData.Events as HostedEvents {
+  Title,
+  StartsAt,
+  Host = CurrentUser,
 }
 
 session {

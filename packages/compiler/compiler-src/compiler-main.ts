@@ -96,6 +96,10 @@ export async function compileTao(opts: CompileOpts): Promise<CompileResult> {
       fromAbsolutePath: FS.joinPath(__dirname, '../../tao-std-lib/tao/data/providers/tao-query.ts'),
       toRelativePath: FS.joinPath('use', '@tao', 'data', 'providers', 'tao-query.ts'),
     },
+    {
+      fromAbsolutePath: FS.joinPath(__dirname, '../../tao-std-lib/tao/data/providers/tao-query-projection.ts'),
+      toRelativePath: FS.joinPath('use', '@tao', 'data', 'providers', 'tao-query-projection.ts'),
+    },
   ]
   return {
     ok: true,

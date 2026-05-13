@@ -2,12 +2,14 @@ import {
   type Compiled,
   compileIndentedNodeList,
   compileNode,
+  compileNoop,
   refResolved,
 } from '@compiler/codegen/codegen-util'
 import { AST } from '@parser/parser'
-import { Assert, switch_safe } from '@shared'
+import { Assert } from '@shared'
 import {
   collectionSlugFromPlural,
+  dataFieldTargetEntity,
   normalizedQueryFieldPathSegments,
   queryDeclarationAliasName,
   queryDeclarationCardinality,
@@ -24,7 +26,7 @@ export function compileQueryDeclaration(
   const schema = refResolved(node.schema, 'QueryDeclaration.schema')
   const entity = queryDeclarationEntity(node)
   Assert(entity, 'QueryDeclaration entity must resolve after validation.', {
-    source: node.source.$type,
+    target: node.target.$refText,
   })
   const alias = queryDeclarationAliasName(node)
   const collection = collectionSlugFromPlural(entity.pluralName)
@@ -60,81 +62,107 @@ function queryPlan(
   entity: AST.DataEntityDeclaration,
   compileExpression: TaoExpressionCompiler,
 ): Compiled {
-  const where = node.steps.filter(AST.isQueryWhereStep)
-  const order = node.steps.filter(AST.isQueryOrderStep)
-  const includes = node.steps.filter(AST.isQueryIncludeStep).flatMap(step => step.paths)
+  const selection = querySelectionBlock(node.selection, entity, compileExpression)
   return compileNode(node)`{
     schema: ${JSON.stringify(schema)},
     collection: ${JSON.stringify(collection)},
     cardinality: ${JSON.stringify(queryDeclarationCardinality(node))},
+    select: [
+      ${selection.select}
+    ],
     where: [
-      ${compileIndentedNodeList(where, step => queryWhereStep(step, entity, compileExpression))}
-    ],
-    order: [
-      ${compileIndentedNodeList(order, step => queryOrderStep(step, entity))}
-    ],
-    includes: [
-      ${compileIndentedNodeList(includes, path => queryPathArray(path, entity))}
+      ${selection.where}
     ],
   }`
 }
 
-function queryWhereStep(
-  step: AST.QueryWhereStep,
+function querySelectionBlock(
+  block: AST.QuerySelectionBlock | undefined,
+  entity: AST.DataEntityDeclaration,
+  compileExpression: TaoExpressionCompiler,
+): { select: Compiled; where: Compiled } {
+  if (!block || block.entries.length === 0) {
+    return {
+      select: queryDefaultEntitySelections(entity),
+      where: compileNoop(),
+    }
+  }
+  const projected = block.entries.filter(entry => queryEntryProjects(entry, entity))
+  const predicates = block.entries.filter(entry => entry.op !== undefined)
+  return {
+    select: compileIndentedNodeList(projected, entry => querySelectionEntry(entry, entity, compileExpression)),
+    where: compileIndentedNodeList(predicates, entry => queryPredicate(entry, entity, compileExpression)),
+  }
+}
+
+function querySelectionEntry(
+  entry: AST.QuerySelectionEntry,
   entity: AST.DataEntityDeclaration,
   compileExpression: TaoExpressionCompiler,
 ): Compiled {
-  return compileNode(step)`${queryPredicate(step.predicate, entity, compileExpression)},`
-}
-
-function queryOrderStep(step: AST.QueryOrderStep, entity: AST.DataEntityDeclaration): Compiled {
-  return compileNode(step)`{ path: ${queryPathArray(step.path, entity)}, direction: ${
-    JSON.stringify(step.direction)
-  } },`
+  const target = queryEntryTargetEntity(entry, entity)
+  const path = queryPathArray(entry.path, entity)
+  if (entry.selection && target) {
+    const nested = querySelectionBlock(entry.selection, target, compileExpression)
+    return compileNode(entry)`{
+      path: ${path},
+      select: [
+        ${nested.select}
+      ],
+      where: [
+        ${nested.where}
+      ],
+    },`
+  }
+  if (!entry.op && target) {
+    return compileNode(entry)`{
+      path: ${path},
+      select: [
+        ${queryDefaultEntitySelections(target)}
+      ],
+      where: [],
+    },`
+  }
+  return compileNode(entry)`{ path: ${path} },`
 }
 
 function queryPredicate(
-  predicate: AST.QueryPredicate,
+  entry: AST.QuerySelectionEntry,
   entity: AST.DataEntityDeclaration,
   compileExpression: TaoExpressionCompiler,
 ): Compiled {
-  return switch_safe.type(predicate, {
-    QueryComparisonPredicate: node => {
-      const op = queryComparisonOperator(node)
-      const ignoreCase = node.ignoreCase ? 'ignoreCase: true,' : ''
-      return compileNode(node)`{
-        kind: 'compare',
-        path: ${queryPathArray(node.path, entity)},
-        op: ${JSON.stringify(op)},
-        value: ${compileExpression(node.value)},
-        ${ignoreCase}
-      }`
-    },
-    QueryLogicalPredicate: node =>
-      compileNode(node)`{
-      kind: ${JSON.stringify(node.op)},
-      left: ${queryPredicate(node.left, entity, compileExpression)},
-      right: ${queryPredicate(node.right, entity, compileExpression)},
-    }`,
-    QueryNotPredicate: node =>
-      compileNode(node)`{
-      kind: 'not',
-      predicate: ${queryPredicate(node.operand, entity, compileExpression)},
-    }`,
-  })
+  const { op, value } = entry
+  Assert(op, 'Query predicate entry must have an operator.', { path: entry.path.segments.join('.') })
+  Assert(value, 'Query predicate entry must have a value.', { path: entry.path.segments.join('.') })
+  const relationshipIdentity = queryEntryTargetEntity(entry, entity) !== undefined
+  // Relationship identity uses provider `id` today. If the language compares to RHS values keyed by a
+  // declared `unique` field (not `id`), emit schema-driven `compareField` here instead of hardcoding `id`.
+  return compileNode(entry)`{
+    path: ${queryPathArray(entry.path, entity)},
+    op: ${JSON.stringify(op)},
+    value: ${compileExpression(value)},
+    ${relationshipIdentity ? 'compareField: "id",' : ''}
+    ${relationshipIdentity ? 'clientOnly: true,' : ''}
+  },`
 }
 
-function queryComparisonOperator(node: AST.QueryComparisonPredicate): string {
-  if (node.op) {
-    return node.op
+function queryEntryProjects(entry: AST.QuerySelectionEntry, entity: AST.DataEntityDeclaration): boolean {
+  if (entry.selection) {
+    return true
   }
-  if (node.membership) {
-    return 'in'
+  return entry.op === undefined || queryEntryTargetEntity(entry, entity) === undefined
+}
+
+function queryEntryTargetEntity(
+  entry: AST.QuerySelectionEntry,
+  entity: AST.DataEntityDeclaration,
+): AST.DataEntityDeclaration | undefined {
+  const path = normalizedQueryFieldPathSegments(entry.path, entity)
+  if (path.length !== 1) {
+    return undefined
   }
-  if (node.stringOperator) {
-    return queryStringOperatorName(node.stringOperator)
-  }
-  return node.not ? 'isNot' : 'is'
+  const field = entity.fields.find(f => f.name === path[0])
+  return field ? dataFieldTargetEntity(field) : undefined
 }
 
 function queryPathArray(path: AST.QueryFieldPath, entity: AST.DataEntityDeclaration): Compiled {
@@ -143,12 +171,9 @@ function queryPathArray(path: AST.QueryFieldPath, entity: AST.DataEntityDeclarat
   }]`
 }
 
-function queryStringOperatorName(op: string): 'contains' | 'startsWith' | 'endsWith' {
-  if (op.startsWith('starts')) {
-    return 'startsWith'
-  }
-  if (op.startsWith('ends')) {
-    return 'endsWith'
-  }
-  return 'contains'
+function queryDefaultEntitySelections(entity: AST.DataEntityDeclaration): Compiled {
+  const scalarFields = entity.fields.filter(field => dataFieldTargetEntity(field) === undefined)
+  return compileIndentedNodeList(scalarFields, field => {
+    return compileNode(field)`{ path: [${JSON.stringify(field.name)}] },`
+  })
 }

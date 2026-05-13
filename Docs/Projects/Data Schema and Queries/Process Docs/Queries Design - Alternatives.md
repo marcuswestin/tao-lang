@@ -29,15 +29,16 @@
 
 ---
 
-## Query flow: pipeline vs block {#query-flow-pipeline-vs-block}
+## Query flow: pipeline vs selection block {#query-flow-pipeline-vs-block}
 
-**Preferred:** pipeline (`>` steps) — [Preferred §3.1](./Queries%20Design%20-%20Preferred.md#query-shape).
+**Preferred:** selection block (`query Data.Plurals { Field, Relation { Field }, Field > value }`) — [Preferred §3.1](./Queries%20Design%20-%20Preferred.md#query-shape).
 
-| Option                                        | Status      | Notes                                                           |
-| --------------------------------------------- | ----------- | --------------------------------------------------------------- |
-| Pipeline `query Data for Tasks` + `> where …` | `preferred` | Order-sensitive; maps to execution pipeline; KQL/LINQ-inspired. |
-| Block `query Data for Tasks { where … }`      | `deferred`  | Same semantics, different surface; ergonomics TBD.              |
-| Hybrid (allow both)                           | `open`      | Parser + formatter cost; style guide needed.                    |
+| Option                                       | Status       | Notes                                                                  |
+| -------------------------------------------- | ------------ | ---------------------------------------------------------------------- |
+| Selection block `query Data.Tasks { Title }` | `preferred`  | Projects returned shape directly; nested blocks fetch relations.       |
+| Legacy pipeline query syntax                 | `superseded` | Removed from the language to avoid a second query surface.             |
+| Clause block with `where` entries            | `rejected`   | Same old clause model inside braces; less direct than projection.      |
+| Hybrid (allow both)                          | `rejected`   | Parser, formatter, and docs cost without a current compatibility goal. |
 
 **Example app:** swap via `variants/` in [Example App - Target](./Example%20App%20-%20Target/README.md) when added.
 
@@ -45,14 +46,14 @@
 
 ## Query clauses and interpolation {#query-clauses-and-interpolation}
 
-**Preferred:** `where Owner is CurrentUser` — RHS is Tao expression space; no `${}` — [Preferred §3.2](./Queries%20Design%20-%20Preferred.md#query-semantics).
+**Preferred:** field predicates inside selection blocks, for example `Owner = CurrentUser` or `Rating >= 4.5`; RHS is Tao expression space; no `${}` — [Preferred §3.2](./Queries%20Design%20-%20Preferred.md#query-semantics).
 
 | Option                                               | Status      | Notes                                                           |
 | ---------------------------------------------------- | ----------- | --------------------------------------------------------------- |
 | Expression-only RHS                                  | `preferred` | Aligns with Tao typing; no string holes.                        |
 | `${CurrentUser}` / template interpolation in clauses | `deferred`  | Familiar to web devs; complicates parsing and injection safety. |
 
-Open: identifier vs keyword disambiguation in clause heads.
+Open: expression-space identity operators for later non-query conditionals; read queries currently use comparison operators only.
 
 ---
 
@@ -85,11 +86,11 @@ Alias-as-source / query-on-query is `deferred`: later restricted desugar only wh
 
 ## Query granularity {#query-granularity}
 
-| Option                     | Status      | Notes                                           |
-| -------------------------- | ----------- | ----------------------------------------------- |
-| Full entity in Phase 1     | `preferred` | Simplest provider lowering.                     |
-| Projections / `select { }` | `deferred`  | Better payload size; typing for derived shapes. |
-| Hybrid                     | `open`      | Per-query or per-field defaults.                |
+| Option                      | Status       | Notes                                                                 |
+| --------------------------- | ------------ | --------------------------------------------------------------------- |
+| Selection-block projections | `preferred`  | Query result shape follows selected scalar and relationship entries.  |
+| Full entity by default      | `superseded` | Simpler early lowering, but no longer matches current query syntax.   |
+| Separate `select { }` block | `rejected`   | Duplicates the current selection block without improving the surface. |
 
 ---
 
@@ -172,7 +173,7 @@ V1 defers compiler enforcement and lets provider implementations accept the stru
 
 ## Strategic bundles {#strategic-bundles}
 
-High-level packages (from former _Query Language Design_). Tao may mix aspects over time; **Preferred** today leans **Bundle C** for reads/writes + **pipeline** surface, without committing to full EdgeQL or GraphQL-string passthrough.
+High-level packages (from former _Query Language Design_). Tao may mix aspects over time; **Preferred** today leans **Bundle C** for reads/writes plus a GraphQL-like selection tree for reads, without committing to full EdgeQL or GraphQL-string passthrough.
 
 ### Bundle A — GraphQL-shaped reads + named server mutations
 
@@ -202,9 +203,9 @@ High-level packages (from former _Query Language Design_). Tao may mix aspects o
 
 ### Debates (thesis / antithesis)
 
-1. **Tree-shaped reads vs filter-first:** UI trees vs list screens — both partially satisfied by pipeline + future `select { }`.
+1. **Tree-shaped reads vs filter-first:** UI trees vs list screens — current read queries choose tree-shaped projection with inline predicates.
 2. **One language read+write vs two:** industry often splits; Tao unifies surface but may split semantics by provider.
-3. **Pipes in Tao for app devs:** `preferred` lightly (pipeline queries); full KQL-like analytics language — `rejected` for core app layer for now.
+3. **Pipes in Tao for app devs:** removed for app read queries; full KQL-like analytics language remains `rejected` for the core app layer for now.
 4. **Client-defined writes vs server-named:** provider-dependent; both rows above.
 
 ---
@@ -242,4 +243,4 @@ Open: what is auto-generated vs hand-written; exact `queryKey` derivation; mutat
 ## Scratch / superseded sketches
 
 - Legacy `entity User { id: ID … }` / `schema TODOs { model … }` blocks from early working papers — **superseded** by `Tasks Task` + `X is Y` in [Preferred](./Queries%20Design%20-%20Preferred.md#schema).
-- `query currentUser = User.get(session.userId)` strawman — **superseded** by named `query` + pipeline direction; keep as historical comparison only.
+- `query currentUser = User.get(session.userId)` strawman and pipeline query sketches — **superseded** by named selection-block queries; keep as historical comparison only.

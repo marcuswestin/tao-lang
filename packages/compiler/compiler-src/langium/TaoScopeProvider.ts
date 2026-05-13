@@ -50,21 +50,8 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
       return this.createScope(this.getLocalScope(context, document))
     }
 
-    if (
-      context.property === 'collection'
-      && AST.isQueryCollectionSource(context.container)
-    ) {
-      return this.getDataSchemaEntityScope(context, 'plural')
-    }
-
-    if (
-      context.property === 'entity'
-      && (
-        AST.isQueryOneSource(context.container)
-        || AST.isQueryLegacySource(context.container)
-      )
-    ) {
-      return this.getDataSchemaEntityScope(context, 'singular')
+    if (context.property === 'target' && AST.isQueryDeclaration(context.container)) {
+      return this.getDataSchemaEntityScope(context, 'both')
     }
 
     if (context.property === 'entity' && AST.isCreateStatement(context.container)) {
@@ -183,7 +170,10 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
   }
 
   /** getDataSchemaEntityScope limits `query` / `create` entity links to entities declared on the referenced `data` schema. */
-  private getDataSchemaEntityScope(context: langium.ReferenceInfo, naming: 'singular' | 'plural'): langium.Scope {
+  private getDataSchemaEntityScope(
+    context: langium.ReferenceInfo,
+    naming: 'singular' | 'plural' | 'both',
+  ): langium.Scope {
     const stmt = this.getDataSchemaReferencingStatement(context.container)
     if (!stmt) {
       return this.createScope([])
@@ -200,7 +190,15 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
     }
     const descs = schema.dataStatements
       .filter(AST.isDataEntityDeclaration)
-      .map(e => this.descriptions.createDescription(e, naming === 'plural' ? e.pluralName : e.name, document))
+      .flatMap((e) => {
+        if (naming === 'both') {
+          return [
+            this.descriptions.createDescription(e, e.name, document),
+            this.descriptions.createDescription(e, e.pluralName, document),
+          ]
+        }
+        return [this.descriptions.createDescription(e, naming === 'plural' ? e.pluralName : e.name, document)]
+      })
     return this.createScope(descs)
   }
 
@@ -209,12 +207,8 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
     if (AST.isCreateStatement(node)) {
       return node
     }
-    if (
-      AST.isQueryCollectionSource(node)
-      || AST.isQueryOneSource(node)
-      || AST.isQueryLegacySource(node)
-    ) {
-      return node.$container
+    if (AST.isQueryDeclaration(node)) {
+      return node
     }
     return undefined
   }
