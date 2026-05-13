@@ -1,16 +1,4 @@
 {
-  // Code appearance
-  "vim.normalModeKeyBindingsNonRecursive": [
-    {
-      "before": [
-        "Q"
-      ],
-      "after": [
-        "@",
-        "@"
-      ]
-    }
-  ],
   // Use compiler typescript version, for langium generated code to typecheck properly
   "typescript.tsdk": "packages/compiler/node_modules/typescript/lib",
   // Build extension and restart host (requires extension ryuta46.multi-command).
