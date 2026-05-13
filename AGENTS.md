@@ -28,6 +28,8 @@ Use **`skills/nix-devenv`** when adding shared CLI packages, or when debugging *
 
 Tao Lang is a programming language for building native and web apps.
 
+- Required product principles live in `CORE_TENETS.md`. Read and preserve them for all design, implementation, documentation, and review work.
+- React Native and Expo are the runtime authority for Tao UI/app behavior. Layout, styling, transforms, animation, gestures, accessibility, navigation, media, and platform features must map to React Native/Expo support, a Tao-owned runtime helper, or an explicit validation/runtime error.
 - `packages/parser/` contains the Langium grammar and generated AST.
 - `packages/compiler/` contains validation, resolution, and code generation.
 - `packages/formatter/` contains Tao source formatting.

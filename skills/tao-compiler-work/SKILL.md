@@ -19,8 +19,9 @@ description: Guides Tao parser, validator, formatter, compiler, and runtime emis
 4. Prefer exhaustive `switch_safe` dispatch for grammar unions and single `AST.is*` checks for concrete type checks.
 5. Use `AST.is*` guards directly for optional AST values; generated guards return false for `null` and `undefined`.
 6. Use `name` for grammar properties that can be referenced.
-7. Update formatter behavior and tests when syntax shape changes.
-8. Feature new language/runtime behavior in at least one `Apps/Test Apps/` app.
+7. For UI/app-runtime features, verify the React Native/Expo target surface first. Unsupported behavior must become a validation error, a deliberate runtime error, or a clearly named Tao runtime helper instead of ad hoc generated code.
+8. Update formatter behavior and tests when syntax shape changes.
+9. Feature new language/runtime behavior in at least one `Apps/Test Apps/` app.
 
 ## Validation
 

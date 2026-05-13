@@ -14,3 +14,7 @@ backups
 TMP_taodev
 
 .claude
+
+# Stray patch/diff artifacts
+*.diff
+*.patch

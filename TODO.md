@@ -17,6 +17,7 @@ For each feature:
 
 ## Now
 
+- [ ] Collapse semiiicolons after!! See InstantTODOs.tao-todo for example formatted code
 - [ ] Split up grammar into multiple files.
 - [ ] Add instantdb skills: npx skills add instantdb/skills
 - [ ] Gather up libs to consider pulling in:
@@ -25,6 +26,7 @@ For each feature:
   - https://github.com/callstack/react-native-pager-view
   - https://www.callstack.com/open-source
 
+- [ ] RResearch RN measure function
 - [ ] Do this for entire repo: Let's pause, and take a moment. Enjoy where we are, and allow for lifting our eyes up a bit.
   - Review this plan thoroughly. Take a pause to consider where in the roadmap and this feature implementation stage we are. Take the timee to consider if now is the time to also tackle some transformations or simplifications that will structurally improve the codebase with respect to queries and data and mutations. For this milestone phase, allow us to do an architectural overview; and if we see meaningful opportunities, let's consider taking the time now to do them. It usually never gets simpler to do with time ..
   - This is an opportunitu! To make our project more beatuiful; and to help our future selves with less compliexity and more enjoyment
@@ -49,6 +51,7 @@ For each feature:
     - `Docs/Projects/Data Schema and Queries/Process Docs/Prior Art - Query Languages.md`
     - `Docs/Projects/Data Schema and Queries/Process Docs/Runtime - TanStack Query and InstantDB.md`
   - [ ] Align `Docs/Tao Language Design.md` data description with the preferred schema as grammar converges.
+  - [ ] Change query syntax to object inclusion + query: query Data.Person { Name, Id = 132, Friends { Name, Age > 30 } } and query Data.People { Name, Age > 30 }.
   - [ ] Implementation: schema, runtime interface, one provider.
 - [ ] Arrays/Lists and Tuples/Pairs.
 - [ ] Event and Handler Syntax.
@@ -76,6 +79,7 @@ For each feature:
   - Tracing/debug build: https://legendapp.com/open-source/state/v2/react/tracing/
 - [ ] Simplify validator boundaries so AST validity checks stay upstream (validator first, codegen trusts contract).
 - [ ] Greatly simplify test harness ergonomics (smaller tests, less boilerplate).
+- [ ] Split up TaoFormatter into merged objects, which the TaoFormatter actually calls.
 
 ## Backlog
 

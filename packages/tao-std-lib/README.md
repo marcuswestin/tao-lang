@@ -16,6 +16,8 @@ The `tao/` directory mirrors Tao's `use` import paths:
 
 The nested `tao/` prefix maps to the `use tao/...` import namespace in Tao source. The compiler resolves `use tao/ui Text` by looking up `<std-lib-root>/tao/ui/Views.tao`. The runtime path `tao/tao-runtime/` is imported by compiled output via a resolved absolute path from the compiler's `tao-runtime-bootstrap-path.ts`.
 
+Runtime helpers in `tao/tao-runtime/` must target React Native/Expo behavior for UI/app features. If a feature is not portable across Expo, headless React Native tests, and web through `react-native-web`, keep the split inside a clearly named helper and pair it with validation or an explicit fallback/error.
+
 ## Testing
 
 The standard library has no local tests. It is exercised through:
