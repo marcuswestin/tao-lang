@@ -17,8 +17,10 @@ setup: _setup_git_repo
 # Development
 #############
 
-DEV_APP := "./Apps/Test Apps/Data Schema/Data Schema.tao"
+# DEV_APP := "./Apps/Test Apps/Data Schema/Data Schema.tao"
 BUN_TEST_ROOTS := "packages/shared packages/parser packages/formatter packages/compiler packages/tao-cli packages/ide-extension packages/tao-std-lib"
+
+DEV_APP := "./Apps/Test Apps/Kitchen Sink/Kitchen Sink.tao"
 
 # Run all components in watch mode (Expo web + Metro; iOS Simulator then physical iPhone after Metro is up via launcher).
 @dev DEVICE="roPhone" APP=DEV_APP:

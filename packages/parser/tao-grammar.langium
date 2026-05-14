@@ -237,8 +237,29 @@ ActionDeclaration: type='action' name=ID parameterList=ParameterList? block=Bloc
 ///////////////////////
 
 ViewRender:
-    view=[Declaration:ID] argumentList=ArgumentList? block=Block?;
+    view=[Declaration:ID] argumentList=ArgumentList? layoutClause=LayoutClause? block=Block?;
 type RenderNode = ViewRender | Injection;
+
+// View Layout specs
+////////////////////
+
+LayoutClause:
+    '[' (entries+=LayoutEntry (',' entries+=LayoutEntry)* )? ','? ']';
+
+LayoutEntry:
+    terms+=LayoutTerm+;
+
+LayoutTerm:
+    LayoutWord | LayoutPercentLiteral | LayoutNumberLiteral;
+
+LayoutWord:
+    value=ID;
+
+LayoutNumberLiteral:
+    negative?='-'? value=NUMBER;
+
+LayoutPercentLiteral:
+    negative?='-'? value=NUMBER '%';
 
 // Action-only statements
 /////////////////////////

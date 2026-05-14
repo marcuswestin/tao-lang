@@ -38,6 +38,11 @@ export default class TaoFormatter extends AbstractFormatter {
       ViewDeclaration: (n) => this.formatViewDeclaration(n),
       ActionDeclaration: (n) => this.formatActionDeclaration(n),
       ViewRender: (n) => this.formatViewRender(n),
+      LayoutClause: (n) => this.formatLayoutClause(n),
+      LayoutEntry: (n) => this.formatLayoutEntry(n),
+      LayoutWord: (n) => this.formatLayoutWord(n),
+      LayoutNumberLiteral: (n) => this.formatLayoutNumberLiteral(n),
+      LayoutPercentLiteral: (n) => this.formatLayoutPercentLiteral(n),
       ActionRender: (n) => this.formatActionRender(n),
       Block: (n) => this.formatBlock(n),
       ArgumentList: (n) => this.formatArgumentList(n),
@@ -412,9 +417,36 @@ export default class TaoFormatter extends AbstractFormatter {
 
   private formatViewRender(node: AST.ViewRender): void {
     this._spaceBeforeProperty(node, 'argumentList')
+    this._spaceBeforeProperty(node, 'layoutClause')
     if (node.block) {
       this._spaceBeforeProperty(node, 'block')
     }
+  }
+
+  private formatLayoutClause(node: AST.LayoutClause): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('[').append(Formatting.noSpace())
+    f.keyword(']').prepend(Formatting.noSpace())
+    this._spaceBetweenCommaSeperatedItems(node)
+  }
+
+  private formatLayoutEntry(node: AST.LayoutEntry): void {
+    this._spaceBetweenNodesInList(node, 'terms')
+  }
+
+  private formatLayoutWord(_node: AST.LayoutWord): void {
+    // Layout words are atomic tokens.
+  }
+
+  private formatLayoutNumberLiteral(node: AST.LayoutNumberLiteral): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('-').append(Formatting.noSpace())
+  }
+
+  private formatLayoutPercentLiteral(node: AST.LayoutPercentLiteral): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('-').append(Formatting.noSpace())
+    f.keyword('%').prepend(Formatting.noSpace())
   }
 
   private formatActionRender(node: AST.ActionRender): void {

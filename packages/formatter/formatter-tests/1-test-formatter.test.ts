@@ -216,6 +216,29 @@ describe('Formatter', () => {
           }
       }
     `)
+  testFormatter('view render with layout clause')
+    .format(`view MyView {Row [ top   left , gap   8 ]{Child [ centered ]{}}}`)
+    .equals(`
+      view MyView {
+          Row [top left, gap 8] {
+              Child [centered] { }
+          }
+      }
+    `)
+  testFormatter('view render with multiline layout clause')
+    .format(`
+      view MyView {
+          Row [
+              center spread,
+              gap 12
+          ] {}
+      }
+    `)
+    .equals(`
+      view MyView {
+          Row [center spread, gap 12] { }
+      }
+    `)
   testFormatter('top level declarations separated')
     .format(`app MyApp {}view MyView {}`)
     .equals(`

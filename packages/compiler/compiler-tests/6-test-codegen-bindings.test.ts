@@ -39,6 +39,17 @@ describe('codegen — call-site argument bindings:', () => {
     expect(out).toMatch(/<Btn[\s\S]*?OnPress=\{/)
   })
 
+  test('ViewRender emits layout specs through the Tao runtime resolver', async () => {
+    const out = await writeAndCompile(`
+      app A { ui V }
+      view Row { }
+      view V {
+        Row [center spread, gap 12]
+      }
+    `)
+    expect(out).toContain('TR.Layout.resolve({"view":"Row","entries":[["center","spread"],["gap",12]]})')
+  })
+
   test('ActionRender invocation emits a props bag keyed by the resolved parameter names', async () => {
     const out = await writeAndCompile(`
       app A { ui V }

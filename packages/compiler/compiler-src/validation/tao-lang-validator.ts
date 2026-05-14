@@ -18,6 +18,7 @@ import {
   validateDuplicateIdentifier,
   validateUppercaseIdentifierName,
 } from './data'
+import { layoutValidationMessages, layoutValidator } from './LayoutValidator'
 import { typeSystemValidationMessages, typeSystemValidator } from './TypeSystemValidator'
 import { makeValidater, type Reporter } from './ValidationReporter'
 
@@ -36,6 +37,7 @@ export const validationMessages = {
   parameterShorthandNotAType: (name: string) =>
     `Parameter shorthand '${name}' must match a local type declaration in this file/scope. Use '<name> <type>' for explicit type references (including imported types).`,
   ...identifierValidationMessages,
+  ...layoutValidationMessages,
   ...typeSystemValidationMessages,
   ...dataSchemaValidationMessages,
   ...queryValidationMessages,
@@ -164,6 +166,28 @@ export const validator: langium.ValidationChecks<AST.TaoLangAstType> = {
   ...queryGuardOnValidator,
   ...forCreateValidator,
   ...queryValidator,
+
+  ViewRender: (node, accept, services) => {
+    runViewRenderChecks(typeSystemValidator.ViewRender, node, accept, services)
+    runViewRenderChecks(layoutValidator.ViewRender, node, accept, services)
+  },
+}
+
+type ViewRenderCheckFn = (node: AST.ViewRender, accept: AST.ValidationAcceptor, services: unknown) => void
+
+function runViewRenderChecks(
+  checks: langium.ValidationChecks<AST.TaoLangAstType>['ViewRender'],
+  node: AST.ViewRender,
+  accept: AST.ValidationAcceptor,
+  services: unknown,
+): void {
+  if (checks === undefined) {
+    return
+  }
+  for (const check of Array.isArray(checks) ? checks : [checks]) {
+    const runCheck = check as ViewRenderCheckFn
+    runCheck(node, accept, services)
+  }
 }
 
 /** validateDuplicateObjectPropertyNames reports when an object literal repeats the same property name. */

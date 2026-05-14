@@ -17,6 +17,7 @@ import { resolveArgumentBindings } from '@compiler/typing/tao-argument-bindings'
 import { AST } from '@parser/parser'
 import { Assert, Stream, switch_safe } from '@shared'
 import { throwUnexpectedBehaviorError } from '@shared/TaoErrors'
+import { serializeLayoutClause } from '../../layout/tao-layout'
 import {
   collectionSlugFromPlural,
   queryDeclarationAliasName,
@@ -602,14 +603,15 @@ class RuntimeGen {
           { callee: viewRender.view.$refText },
         )
         const argumentList = this.viewRenderArgumentList(viewRender, viewDecl)
+        const layoutProp = this.viewRenderLayoutSpec(viewRender, viewDecl)
         const scopeProp = this.viewScopeProp(viewDecl)
         if (!isBlockWithStatements(viewRender.block)) {
           return compileNode(viewRender)`
-            <${viewDecl.name}${scopeProp} ${argumentList}/>
+            <${viewDecl.name}${scopeProp} ${argumentList}${layoutProp}/>
           `
         } else {
           return compileNode(viewRender)`
-            <${viewDecl.name}${scopeProp} ${argumentList}>
+            <${viewDecl.name}${scopeProp} ${argumentList}${layoutProp}>
               ${compileNodeList(viewRender.block.statements, stmt => this.viewRenderBlockStatement(stmt))}
             </${viewDecl.name}>
           `
@@ -617,6 +619,17 @@ class RuntimeGen {
       },
       { requireResolved: true, diagnosticLabel: 'ViewRender.view' },
     )
+  }
+
+  /** viewRenderLayoutSpec emits the serialized layout spec for the runtime layout resolver. */
+  viewRenderLayoutSpec(viewRender: AST.ViewRender, viewDecl: AST.ViewDeclaration): Compiled {
+    if (viewRender.layoutClause === undefined) {
+      return compileNoop()
+    }
+    const spec = serializeLayoutClause(viewDecl.name, viewRender.layoutClause)
+    return compileNode(viewRender.layoutClause)`
+      _taoLayout={TR.Layout.resolve(${JSON.stringify(spec)})}
+    `.append(' ')
   }
 
   viewRenderBlockStatement(stmt: AST.Statement): Compiled {
