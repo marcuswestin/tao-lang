@@ -4,11 +4,11 @@ Batch-dump of raw language-surface notes moved out of active roadmap/todo lists.
 
 ## Functions and invocation shape
 
-Moved from `Docs/Tao Lang Roadmap.md`:
+Moved from older roadmap notes:
 
 - Parse functions, with positional arguments.
 - Decide on outer vs inner parameters syntax.
-- Decide how render functions are passed in as arguments to a view. Current focused design notes live in [View Slots and Renderers](../View%20Slots%20and%20Renderers/Design%20Notes.md).
+- Decide how render functions are passed in as arguments to a view. Current focused design notes live in [Named Renders Plan](../Projects/Views%20-%20Named%20Renders,%20Lambda%20View%20Arguments,%20View%20Children,%20Containers%20and%20Atoms/Named%20Renders%20Plan.md).
   - View definition: e.g. `List` view.
   - View rendering examples:
     - `List items: blogPosts { view BlogPost blogPost { ListItem { Text blogPost.title }} }`
@@ -26,7 +26,7 @@ Moved from `Docs/Tao Lang Roadmap.md`:
 
 ## Expressions and assignments
 
-Moved from `Docs/Tao Lang Roadmap.md`:
+Moved from older roadmap notes:
 
 - Simple operators and conditionals (`if/for/while`).
 - Object property access:
@@ -43,7 +43,7 @@ Text {
 
 ## Invocation, handler, and mutation notes
 
-Moved from `Docs/Tao Lang Roadmap.md`:
+Moved from older roadmap notes:
 
 - Design invocations.
 - Design UI view statements.
@@ -107,16 +107,16 @@ Use this doc for raw syntax ideas that do not yet have dedicated project docs (`
 
 ## Related docs
 
-- [Tao Lang Roadmap](../../Tao%20Lang%20Roadmap.md)
-- [Error Handling](Error%20Handling.md)
-- [UI Layout Design Doc](../UI%20-%20Layout%20and%20Styling/UI%20Layout%20Design%20Doc.md)
-- [UI Styling Design Doc](../UI%20-%20Layout%20and%20Styling/UI%20Styling%20Design%20Doc.md)
+- [Tao Features](../Tao%20Features.md)
+- [Error Handling](../Projects/Design%20WIP/Error%20Handling.md)
+- [UI Layout Design Doc](../Projects/UI%20-%20Layout%20and%20Styling/UI%20Layout/UI%20Layout%20Design%20Doc.md)
+- [UI Styling Design Doc](../Projects/UI%20-%20Layout%20and%20Styling/UI%20Styling/UI%20Styling%20Design%20Doc.md)
 
 ---
 
-## RAW TRANSFER (from `Docs/Tao Lang Roadmap.md` @ git `HEAD`)
+## RAW TRANSFER (from pre-cleanup roadmap notes)
 
-Verbatim excerpt: old roadmap lines **197–301** (`## Imported List from App Lang:` through **Design Types**, stopping before the **Design UI Appearance** section which lives in [UI Layout and Styling](UI%20Layout%20and%20Styling.md)).
+Verbatim excerpt: old roadmap lines **197-301** (`## Imported List from App Lang:` through **Design Types**, stopping before the **Design UI Appearance** section which lives in [UI Layout and Styling Raw Notes](UI%20Layout%20and%20Styling%20Raw%20Notes.md)).
 
 ## Imported List from App Lang:
 

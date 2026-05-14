@@ -1,4 +1,4 @@
-# Animations, Transformations, and Motion Design Questions
+# Animations Project Plan
 
 This document is a starting brief for Tao motion design: transforms, transitions, animations, durations, curves, and state changes over time.
 

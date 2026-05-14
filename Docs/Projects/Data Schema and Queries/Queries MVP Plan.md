@@ -21,7 +21,7 @@ Build the MVP of Tao's data layer: schema, queries, view control flow, and data 
 ## Non-goals (this branch)
 
 - A **generic** pluggable datasource layer (REST/GraphQL adapters, swappable drivers). **In scope:** a small **`TaoDataClient`** contract with **`InstantTaoData`** (real `@instantdb/react-native`) and **`MemoryTaoData`** (no Instant) — see M2.
-- `Loadable<T>` or generic async wrapper types (MVP uses `guard` + Suspense per [Preferred §3.6](./Process%20Docs/Queries%20Design%20-%20Preferred.md#async-model)).
+- `Loadable<T>` or generic async wrapper types (MVP uses `guard` + Suspense per [Data and Queries - Design §3.6](./Process%20Docs/Data%20and%20Queries%20-%20Design.md#async-model)).
 - REST, GraphQL, Supabase, or TanStack-only providers.
 - Real auth / session model (fake auth via `get one Person` over a unique field).
 - Projections / partial selection, limiting/pagination, `delete`, aggregations.
@@ -162,8 +162,7 @@ Work:
 - [Queries MVP Target App](./Queries%20MVP%20Target%20App.tao) — authoritative MVP target (the app that must compile and run)
 - `[TMP_taodev/](../../../TMP_taodev/)` — working reference app for InstantDB wiring (`src/lib/db.ts`, `src/instant.schema.ts`, etc.); not part of the shipped Tao toolchain, but the template for behavior and file responsibilities.
 - Std lib (M2/M3.5): `packages/tao-std-lib/tao/data/providers/instantdb/client/instantdb.ts`, `in-memory/client/in-memory.ts`, provider `admin/` folders, and `tao-data-client.ts` — thin provider contracts; only shared/client files are copied under emitted `use/@tao/data/providers/` with the app.
-- [Queries Design - Preferred](./Process%20Docs/Queries%20Design%20-%20Preferred.md) — design decisions
-- [Queries Design - Alternatives](./Process%20Docs/Queries%20Design%20-%20Alternatives.md) — deferred forks
+- [Data and Queries - Design](./Process%20Docs/Data%20and%20Queries%20-%20Design.md) — design decisions and deferred forks
 - [Runtime - TanStack Query and InstantDB](./Process%20Docs/Runtime%20-%20TanStack%20Query%20and%20InstantDB.md) — InstantDB mapping notes
 - `packages/parser/` — Langium grammar
 - `packages/compiler/` — validator and codegen

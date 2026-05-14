@@ -1,6 +1,6 @@
 # Runtime — TanStack Query and InstantDB
 
-Companion to **[Queries Design - Preferred.md](./Queries%20Design%20-%20Preferred.md)**. Execution details and **why** the datasource bridge splits Tao vs TypeScript.
+Companion to **[Data and Queries - Design.md](./Data%20and%20Queries%20-%20Design.md)**. Execution details and **why** the datasource bridge splits Tao vs TypeScript.
 
 ---
 
@@ -33,11 +33,11 @@ useQuery({
 })
 ```
 
-**Tao generates (design intent):** a structured `TaoQueryPlan`, **stable `queryKey` materialization** from [Preferred §3.4](./Queries%20Design%20-%20Preferred.md#query-identity), mutation structure for invalidation hooks.
+**Tao generates (design intent):** a structured `TaoQueryPlan`, **stable `queryKey` materialization** from [Data and Queries - Design §3.4](./Data%20and%20Queries%20-%20Design.md#query-identity), mutation structure for invalidation hooks.
 
-**TypeScript provides:** `queryFn`, transport, auth, provider-specific edge cases — see [Preferred — Declarative vs imperative](./Queries%20Design%20-%20Preferred.md#declarative-vs-imperative).
+**TypeScript provides:** `queryFn`, transport, auth, provider-specific edge cases — see [Data and Queries - Design — Declarative vs imperative](./Data%20and%20Queries%20-%20Design.md#declarative-vs-imperative).
 
-Open questions (also listed in [Alternatives — Datasource bridge](./Queries%20Design%20-%20Alternatives.md#datasource-bridge-open)): auto-generated vs hand-authored portions; mutation → invalidation mapping; how much dynamic shaping stays in TS by policy.
+Open questions (also listed in [Data and Queries - Design — Outstanding and deferred](./Data%20and%20Queries%20-%20Design.md#outstanding)): auto-generated vs hand-authored portions; mutation → invalidation mapping; how much dynamic shaping stays in TS by policy.
 
 ---
 
@@ -66,8 +66,8 @@ Current limits: limiting/pagination, provider capability manifests, and strict c
 
 ## Relationship loading and caching (runtime view)
 
-- **How** edges resolve (join vs batch vs N+1) is **provider- and strategy-dependent** — Tao schema does not encode loading strategy ([Preferred — Relationships](./Queries%20Design%20-%20Preferred.md#relationships)).
-- **Caching** is delegated to TanStack Query, Instant client, or other stacks — Tao does not reinvent cache internals unless a future invalidation DSL lands ([Alternatives](./Queries%20Design%20-%20Alternatives.md#cache-invalidation-strategies)).
+- **How** edges resolve (join vs batch vs N+1) is **provider- and strategy-dependent** — Tao schema does not encode loading strategy ([Data and Queries - Design — Relationships](./Data%20and%20Queries%20-%20Design.md#relationships)).
+- **Caching** is delegated to TanStack Query, Instant client, or other stacks — Tao does not reinvent cache internals unless a future invalidation DSL lands ([Data and Queries - Design — Outstanding and deferred](./Data%20and%20Queries%20-%20Design.md#outstanding)).
 
 ---
 
@@ -82,11 +82,11 @@ Apps may combine Legend State, TanStack Query, Instant subscriptions, React Susp
 - TanStack path: session and tokens in **TS** (or shared native module), not implied by `useQuery` itself.
 - Instant path: follow Instant’s auth/session integration for the chosen major version.
 
-Tao-level `CurrentUser` and session blocks are specified in [Preferred — Authentication](./Queries%20Design%20-%20Preferred.md#authentication) and forks in [Alternatives](./Queries%20Design%20-%20Alternatives.md#authentication-and-session).
+Tao-level `CurrentUser` and session blocks are specified in [Data and Queries - Design — Authentication](./Data%20and%20Queries%20-%20Design.md#authentication) and forks in [Outstanding and deferred](./Data%20and%20Queries%20-%20Design.md#outstanding).
 
 ---
 
-## RAW TRANSFER (from `Docs/Tao Lang Roadmap.md` @ git `HEAD`)
+## RAW TRANSFER (from pre-cleanup roadmap notes)
 
 Verbatim excerpt: old roadmap lines **618–677**. In the old file this block sat under **App Routing** with the heading `#### Layout: Choice exploration, thinking & justification` — the title was a misnomer; the content is **data sources, schema targets, and provider/driver brainstorming**. Preserved here next to TanStack/Instant runtime notes.
 

@@ -1,4 +1,17 @@
-# View Slots and Renderers Design Notes
+# Named Renders Plan
+
+- [ ] TODO: Consider requiring single view `render` statement
+  - If not, need to decide if of a view shows up in the render tree. And if functionally that becomes a fragment with all of its children.
+
+```tao
+view Header {
+  render Row {
+    ...
+  }
+}
+```
+
+## Named Renders And View Children Notes
 
 This captures the current discussion state for passing rendered child elements and child renderer functions into views. It supersedes the older short notes under the general language syntax brainstorm, but keeps those notes as historical background.
 

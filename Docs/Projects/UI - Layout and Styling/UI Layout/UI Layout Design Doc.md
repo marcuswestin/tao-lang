@@ -1,6 +1,6 @@
 # Tao UI Layout Design Doc
 
-This is the authoritative current design direction for Tao layout syntax. The compressed alternatives summary is [UI Layout Syntax Exploration](./UI%20Layout%20Syntax%20Exploration.md), and the preserved raw archive is [Design WIP - UI Layout and Styling](../Design%20WIP/UI%20Layout%20and%20Styling.md). The styling/theming counterpart is [UI Styling and Theme Syntax Exploration](./UI%20Styling%20Syntax%20Exploration.md). Use those as the source for alternatives, rejected vocabulary, and prior reasoning. Do not delete that archive when consolidating current decisions. Unresolved or deferred items are tracked in [Miscellaneous Points](#miscellaneous-points).
+This is the authoritative current design direction for Tao layout syntax. It contains the current decision, key/value catalog, validation rules, runtime target, and the compressed syntax/vocabulary rationale. The preserved raw archive is [UI Layout and Styling Raw Notes](../../../Archive/UI%20Layout%20and%20Styling%20Raw%20Notes.md). The styling/theming counterpart is [UI Styling and Theme Syntax Exploration](../UI%20Styling/UI%20Styling%20Syntax%20Exploration.md). Unresolved or deferred items are tracked in [Miscellaneous Points](#miscellaneous-points).
 
 ## Current Decision
 
@@ -308,9 +308,9 @@ This catalog is the single canonical reference for every layout concept Tao trac
 
 Other docs should link to this section rather than restating spellings:
 
-- [UI Layout Syntax Exploration](./UI%20Layout%20Syntax%20Exploration.md) covers the alternatives discussion and "why" reasoning; it does not enumerate spellings.
-- [UI Styling and Theme Syntax Exploration](./UI%20Styling%20Syntax%20Exploration.md) covers styling vocabulary and a small "Layout-Adjacent Material Not Captured Elsewhere" section that flags any RN layout surface still being considered. New RN layout props graduate from there into this catalog.
-- [Design WIP - UI Layout and Styling](../Design%20WIP/UI%20Layout%20and%20Styling.md) is the verbatim historical archive.
+- [Exploration And Vocabulary Rationale](#exploration-and-vocabulary-rationale) covers alternatives, rejected vocabulary, and the "why" behind current spelling decisions.
+- [UI Styling and Theme Syntax Exploration](../UI%20Styling/UI%20Styling%20Syntax%20Exploration.md) covers styling vocabulary and a small "Layout-Adjacent Material Not Captured Elsewhere" section that flags any RN layout surface still being considered. New RN layout props graduate from there into this catalog.
+- [UI Layout and Styling Raw Notes](../../../Archive/UI%20Layout%20and%20Styling%20Raw%20Notes.md) is the verbatim historical archive.
 
 Status meanings:
 
@@ -873,6 +873,100 @@ The validator resolves each bare alignment word to an along-the-flow or across-t
 - Accessibility, internationalization, localization, and adaptation.
 - Grid auto layout.
 - Scroll semantics hidden behind a layout word.
+
+## Exploration And Vocabulary Rationale
+
+This section preserves the useful reasoning from the former syntax and vocabulary exploration docs. It is not a second source of truth; new layout spellings belong in the [Layout Key And Value Catalog](#layout-key-and-value-catalog).
+
+### Syntax Alternatives
+
+`[ ... ]` is the chosen layout lane because it is compact, distinct from view arguments, easy to parse, and easy to format. It must stay layout-only so styling, themes, transforms, motion, interactions, and accessibility do not blur into geometry.
+
+Rejected or deferred shapes:
+
+- Separate self and children lanes, such as `View [centered] { <top left> }`, were explicit but too much syntax for v1.
+- Mixed layout/style delimiters, especially `< ... >`, were unstable because earlier sketches used them for both layout and visual styling.
+- Body-top layout statements put child layout near children but introduce a new statement form; v1 keeps layout on the render line only.
+- Positional size tuples such as `row [fill hug]` were rejected because meaning changes by slot and they blur width, height, basis, grow, and shrink.
+- Explicit `self ...` remains a possible fallback if adjective self words prove insufficient, but v1 does not need it.
+
+### Vocabulary Alternatives
+
+Bare child-arrangement words won because they are short and readable once axis rules are enforced: `Row [top left]`, `Row [center spread]`, `Col [right stretch]`.
+
+Rejected or deferred vocabulary:
+
+- `items` and `align` were clear but either too narrow or too vague for main-axis distribution.
+- Split `align`/`distribute` mapped neatly to React Native but was more verbose and less Figma-like.
+- Compass words and abbreviations were compact but less readable for new users.
+- Raw CSS names such as `space-between` are accurate but feel less Tao-specific than `spread`, `around`, and `evenly`.
+- `fill-parent` and `hug-content` were explicit but too wordy; `hug`, `fill`, and `fixed` remain later Figma-like candidates.
+- `claim_space`, `claim_ratio`, and `resize_ratio` were deferred naming explorations around grow/shrink/basis.
+- `offset` stays out of layout because it displaces a node visually without moving siblings; use margin for layout-affecting outside spacing.
+
+### Morphology Rationale
+
+The layout language uses word shape to identify target:
+
+- Bare verbs or locatives describe how a container arranges children: `center`, `stretch`, `pack`, `spread`, `top`, `left`.
+- Adjectives or participles describe a rendered node's own position in its parent: `centered`, `stretched`, `packed`.
+- Property-headed nouns are resolved by meaning: inward properties such as `gap` and `pad` affect the container interior, while outward properties such as `width`, `margin`, `basis`, `grow`, `absolute`, and offsets affect the rendered node itself.
+
+This is why Tao does not need a second delimiter or `self` keyword for common self-layout cases.
+
+Rules for future vocabulary:
+
+- New self-layout words should be adjectives or participles.
+- New children-arrangement words should be verbs, locatives, or inward property heads.
+- Property-headed numeric values should keep short lowercase heads: `gap 12`, `pad 16`, `width 320`, `basis 120`, `grow 1`, `z 2`.
+- Lowercase words inside `[ ... ]` are layout values or property names; uppercase names remain Tao references.
+- Prefer Figma/design vocabulary only when it maps cleanly to React Native or a Tao runtime helper.
+
+### Value Ordering And Shorthand Conventions
+
+Ordering inside `[ ... ]` is a readability convention, not a grammar rule: children arrangement, spacing, size, self alignment, then position.
+
+```tao
+Row [center spread, gap 12, pad 16, width 320, centered, absolute, top 8]
+```
+
+Directional shorthands follow CSS clockwise order:
+
+- One value sets all sides: `pad 16`, `margin 8`.
+- Two values set vertical then horizontal: `pad 12 16`.
+- Three and four value forms are deferred but would continue `top`, `right`, `bottom`, `left`.
+- Bare alignment words also read vertical then horizontal: `top left`, `center right`, `stretch spread`.
+
+### Decision Matrix
+
+| Area              | Preferred now                                | Preserved alternatives                                     |
+| ----------------- | -------------------------------------------- | ---------------------------------------------------------- |
+| Layout delimiter  | `[ ... ]`                                    | `< ... >`, body-top child layout                           |
+| Styling delimiter | deferred                                     | `< ... >`, `( ... )`, named `style`                        |
+| Child arrangement | bare `top left`, `center spread`, `gap 12`   | `items`, `align`, `content`, `distribute`, compass values  |
+| Self layout       | `centered`, `stretched`, `packed`            | `aligned center`, explicit `self`                          |
+| Distribution      | `spread`, `around`, `evenly`                 | `spread-hug`, `spread-hug-tight`, raw `space-*`            |
+| Size              | `width`, `height`, `basis`, `grow`, `shrink` | `fill-parent`, `hug-content`, positional tuples, `claim_*` |
+| Spacing           | `gap`, `pad`, `margin`                       | 3-4 value side shorthands, shared border/pad/margin syntax |
+| Scroll            | deferred                                     | `[clip scroll]`, `[overflow scroll]`                       |
+| RTL/logical       | deferred                                     | `flow ltr/rtl`, future `start/end`                         |
+| Defaults          | React Native-compatible runtime defaults     | dev-visible empty containers, empty-container diagnostics  |
+
+### Status Summary
+
+| Area             | V1                                                                        | Later                                                                   | Deferred or rejected                          |
+| ---------------- | ------------------------------------------------------------------------- | ----------------------------------------------------------------------- | --------------------------------------------- |
+| Children words   | bare positions, `center`, `stretch`, `pack`, `spread`, `around`, `evenly` | `baseline`, `lines ...`                                                 | `items`, `align`, compass, `distribute`       |
+| Self words       | `centered`, `stretched`, `packed`                                         |                                                                         | `aligned ...`, `self ...`                     |
+| Flow             | `row`, `column`, `wrap`, `nowrap`                                         | `reverse`, `wrap reverse`                                               |                                               |
+| Spacing          | `gap`, `pad`, `margin`                                                    | 3-4 value shorthands, logical/RTL values                                | `border` width in layout                      |
+| Size             | `width`, `height`, min/max, `basis`, `grow`, `shrink`                     | `hug`, `fill`, `fixed`, `percent`, `flex`, `aspect_ratio`, `box_sizing` | `fill-parent`, tuples, `claim_*`              |
+| Position         | `absolute`, `relative`, offsets, `z`                                      | `inset`, `start`/`end`, `stacking`                                      | `static`, `order`, `offset`, `3d`             |
+| Overflow/display |                                                                           | `overflow hidden/visible`, `hidden`, `display`                          | `overflow scroll`, `display contents`, `flow` |
+
+### Preserved Future Ideas
+
+Useful but deferred ideas include `hug`, `fill`, `fixed`, `aspect_ratio`, `lines ...` for wrapped-line alignment, logical `start`/`end` spacing, inset shorthands, `overflow hidden`, and a declarative custom-view container role. These should graduate only when validation can explain axis, React Native support, and layout/styling boundaries precisely.
 
 ## Miscellaneous Points
 

@@ -4,9 +4,9 @@
 
 Preserve this file. It is the durable discussion/archive for UI layout and styling syntax exploration, including options that are not chosen in the current preferred design. Do not delete or compress it into only current decisions; authoritative docs should link here when they need prior reasoning, rejected vocabulary, or open alternatives.
 
-For a compressed and organized version of the approaches represented here, see [UI Layout Syntax Exploration](../UI%20-%20Layout%20and%20Styling/UI%20Layout%20Syntax%20Exploration.md). The styling, theming, color/spacing/radius scale, and design-system counterpart is [UI Styling and Theme Syntax Exploration](../UI%20-%20Layout%20and%20Styling/UI%20Styling%20Syntax%20Exploration.md).
+For a compressed and organized version of the layout approaches represented here, see the [UI layout rationale](../Projects/UI%20-%20Layout%20and%20Styling/UI%20Layout/UI%20Layout%20Design%20Doc.md#exploration-and-vocabulary-rationale). The styling, theming, color/spacing/radius scale, and design-system counterpart is [UI Styling and Theme Syntax Exploration](../Projects/UI%20-%20Layout%20and%20Styling/UI%20Styling/UI%20Styling%20Syntax%20Exploration.md).
 
-Batch-moved notes from `Docs/Tao Lang Roadmap.md` (especially the long "Design UI Appearance" section). Intentionally rough and comprehensive; refine later.
+Batch-moved notes from older roadmap material, especially the long "Design UI Appearance" section. Intentionally rough and comprehensive; refine later.
 
 ## Layout and styling priorities
 
@@ -107,13 +107,13 @@ Naming hierarchy for token application (e.g. semantic slots like icon/brand/pres
 
 ## Related docs
 
-- [Tao Lang Roadmap](../../Tao%20Lang%20Roadmap.md)
-- [App Routing and Navigation](App%20Routing%20and%20Navigation.md)
-- [Error Handling](Error%20Handling.md)
+- [Tao Features](../Tao%20Features.md)
+- [App Routing and Navigation](../Projects/Design%20WIP/App%20Routing%20and%20Navigation.md)
+- [Error Handling](../Projects/Design%20WIP/Error%20Handling.md)
 
-## Appendix: verbatim from `Docs/Tao Lang Roadmap.md` (git HEAD, pre-cleanup)
+## Appendix: verbatim from pre-cleanup roadmap notes
 
-Source: `git show HEAD:Docs/Tao Lang Roadmap.md` lines 302–612 (`### Design UI Appearance` … before `### Design App Routing and Navigation`).
+Source: pre-cleanup roadmap lines 302-612 (`### Design UI Appearance` through the section before `### Design App Routing and Navigation`).
 
 ### Design UI Appearance: Layout, Design, Styling, Animations
 
@@ -182,4 +182,4 @@ Source: `git show HEAD:Docs/Tao Lang Roadmap.md` lines 302–612 (`### Design UI
 
 - [ ] Learn about MEASURE FUNCTIONS: https://reactnative.dev/docs/layout-props#aspectratio
 
-The rest of **Next and Advanced** and **Long-term Goals** from that roadmap lives under **RAW TRANSFER** in [Tao Features](../../../Tao%20Language%20Design/Features/Features.md).
+The rest of **Next and Advanced** and **Long-term Goals** from that roadmap lives under **RAW TRANSFER** in [Tao Features](../Tao%20Features.md).

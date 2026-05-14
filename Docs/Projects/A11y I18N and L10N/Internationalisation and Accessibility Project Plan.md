@@ -1,4 +1,4 @@
-# A11y, I18N, and L10N Design Questions
+# Internationalisation and Accessibility Project Plan
 
 This document is a starting brief for designing Tao accessibility, internationalization, and localization. It collects open questions raised while designing the UI runtime surface, especially the split between layout, styling, transforms, motion, interaction, semantics, and adaptation.
 

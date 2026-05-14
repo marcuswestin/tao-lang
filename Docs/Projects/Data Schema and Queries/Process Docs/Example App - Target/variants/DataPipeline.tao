@@ -1,4 +1,4 @@
-// TARGET-ONLY FICTION — pipeline variant. See ../README.md.
+// TARGET-ONLY FICTION — pipeline variant. See ../../Data and Queries - Design.md.
 
 data MeetupData {
   type EventTitle is text

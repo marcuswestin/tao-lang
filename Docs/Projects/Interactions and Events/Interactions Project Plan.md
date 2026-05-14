@@ -1,4 +1,4 @@
-# Interactions and Events Design Questions
+# Interactions Project Plan
 
 This document is a starting brief for Tao interaction and event design. It covers user interaction, time, network/data completion, subscriptions, action lifecycle, and runtime events.
 

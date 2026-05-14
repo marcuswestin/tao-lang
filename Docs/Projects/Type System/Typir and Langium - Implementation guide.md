@@ -30,11 +30,11 @@ How type systems are implemented in Langium using [Typir](https://github.com/Typ
 
 ### Langium + Typir examples
 
-- **Primary Langium+Typir reference implementation:** the LOX example’s [`examples/lox/src/language/lox-type-checking.ts`](https://github.com/TypeFox/typir/blob/main/examples/lox/src/language/lox-type-checking.ts) in the [Typir monorepo](https://github.com/TypeFox/typir) shows end-to-end wiring. README overview of packages and examples: [typir `README.md`](https://raw.githubusercontent.com/TypeFox/typir/main/README.md) (NPM: [`typir`](https://www.npmjs.com/package/typir), [`typir-langium`](https://www.npmjs.com/package/typir-langium)).
+- **Primary Langium+Typir reference implementation:** the LOX example’s [`examples/lox/src/language/lox-type-checking.ts`](https://github.com/TypeFox/typir/blob/main/examples/lox/src/language/lox-type-checking.ts) in the [Typir monorepo](https://github.com/TypeFox/typir) shows end-to-end wiring. Typir package docs cover packages and examples (NPM: [`typir`](https://www.npmjs.com/package/typir), [`typir-langium`](https://www.npmjs.com/package/typir-langium)).
 
 - **From that file, patterns to mirror (at a high level):** register primitives with inference from literals (and, in LOX, from `TypeReference`); share **binary** / **unary** `InferOperatorWithMultipleOperands` / `InferOperatorWithSingleOperand` config across operators; overload `+` for number and string; register validation on assignment-like operators with `ensureNodeIsAssignable`; add per-node validation for `if`/`while`/… conditions (`ensureNodeIsAssignable` to boolean); for references, if the ref is `undefined` **do not** infer—wait until linking is fixed. Register user-declared function types in `onNewAstNode` and wire call inference to `MemberCall` / declarations as LOX does for its grammar.
 
-- **Smaller core-only example:** the “Tiny Typir” walkthrough in the [Typir `README.md`](https://raw.githubusercontent.com/TypeFox/typir/main/README.md) (also summarized in [Announcing Typir](https://www.typefox.io/blog/typir-introduction/)) uses `createTypirServices` without Langium, useful for learning primitives, `Operators`, `Conversion`, and `validation.Collector` in isolation.
+- **Smaller core-only example:** the “Tiny Typir” walkthrough in the [Typir monorepo](https://github.com/TypeFox/typir) (also summarized in [Announcing Typir](https://www.typefox.io/blog/typir-introduction/)) uses `createTypirServices` without Langium, useful for learning primitives, `Operators`, `Conversion`, and `validation.Collector` in isolation.
 
 ---
 

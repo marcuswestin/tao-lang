@@ -1,6 +1,6 @@
 # App Routing and Navigation
 
-Batch-moved raw notes from `Docs/Tao Lang Roadmap.md` and related docs. Keep rough notes here until promoted into a dedicated project spec.
+Batch-moved raw notes from older roadmap material and related docs. Keep rough notes here until promoted into a dedicated project spec.
 
 ## Current direction
 
@@ -17,14 +17,14 @@ Batch-moved raw notes from `Docs/Tao Lang Roadmap.md` and related docs. Keep rou
 
 ## Related docs
 
-- [Tao Lang Roadmap](../../Tao%20Lang%20Roadmap.md)
+- [Tao Features](../../Tao%20Features.md)
 - [Error Handling](Error%20Handling.md)
-- [UI Layout and Styling](UI%20Layout%20and%20Styling.md)
+- [Layout and Styling Project Plan](../UI%20-%20Layout%20and%20Styling/Layout%20and%20Styling%20Project%20Plan.md)
 - [Runtime — TanStack Query and InstantDB](../Data%20Schema%20and%20Queries/Process%20Docs/Runtime%20-%20TanStack%20Query%20and%20InstantDB.md) (includes **RAW TRANSFER** data-source/provider notes that lived under routing in the old roadmap)
 
 ---
 
-## RAW TRANSFER (from `Docs/Tao Lang Roadmap.md` @ git `HEAD`)
+## RAW TRANSFER (from pre-cleanup roadmap notes)
 
 Verbatim excerpt: old roadmap lines **614–617** (routing bullets only). The long **data sources / driver** block that followed under `#### Layout: Choice exploration…` was misplaced in the old outline; it is archived under **RAW TRANSFER** in [Runtime — TanStack Query and InstantDB](../Data%20Schema%20and%20Queries/Process%20Docs/Runtime%20-%20TanStack%20Query%20and%20InstantDB.md).
 

@@ -1,8 +1,8 @@
 # UI Styling and Theme Syntax Exploration
 
-This is the compressed-but-thorough exploration of Tao styling, theming, and design-system vocabulary, sibling to the [UI Layout Syntax Exploration](./UI%20Layout%20Syntax%20Exploration.md). It absorbs the styling, theme, color, spacing/radius, and design-system material from the raw [Design WIP - UI Layout and Styling](../Design%20WIP/UI%20Layout%20and%20Styling.md) archive and organizes it without losing the original exploratory voice.
+This is the compressed-but-thorough exploration of Tao styling, theming, and design-system vocabulary, sibling to the [UI layout rationale](../UI%20Layout/UI%20Layout%20Design%20Doc.md#exploration-and-vocabulary-rationale). It absorbs the styling, theme, color, spacing/radius, and design-system material from the raw [UI Layout and Styling Raw Notes](../../../Archive/UI%20Layout%20and%20Styling%20Raw%20Notes.md) archive and organizes it without losing the original exploratory voice.
 
-The current authoritative direction is intentionally light and lives in [UI Styling Design Doc](./UI%20Styling%20Design%20Doc.md). Use this exploration doc when revisiting style vocabulary, deciding theme syntax, listing properties to cover, or planning the design-system surface. It is not implementation permission; the design doc and [Project Implementation Plan](./Project%20Implementation%20Plan.md) remain the source of truth.
+The current authoritative direction is intentionally light and lives in [UI Styling Design Doc](./UI%20Styling%20Design%20Doc.md). Use this exploration doc when revisiting style vocabulary, deciding theme syntax, listing properties to cover, or planning the design-system surface. It is not implementation permission; the design doc and [Layout and Styling Project Plan](../Layout%20and%20Styling%20Project%20Plan.md) remain the source of truth.
 
 Status meanings used below:
 
@@ -476,7 +476,7 @@ A standing principle from the WIP that styling and theming need to honor:
 
 - Apps should look nice with zero theme configuration.
 - Layouts should be easy to write without thinking about defaults.
-- Defaults should err on visible/readable rather than collapsed/invisible (see [Empty View And Defaults Problem](./UI%20Layout%20Syntax%20Exploration.md#empty-view-and-defaults-problem)).
+- Defaults should err on visible/readable rather than collapsed/invisible (see [Empty view and defaults problem](#empty-view-and-defaults-problem-cross-link-with-depth)).
 - Tasteful defaults per app or per theme are a dedicated design step, not an accident of values picked for the first sample.
 
 Open questions:
@@ -568,7 +568,7 @@ For distribution:
 - `flow ltr` / `flow rtl` was the early surface for direction.
 - Approach idea: try first to flip ALL physical properties under `flow rtl`; only mark explicit instances to ignore.
 - Logical layout terms `start`/`end` will likely come in alongside RTL design rather than retrofitted onto `left`/`right`.
-- Full localization story belongs to the [A11y, I18N, and L10N](../A11y%20I18N%20and%20L10N/Design%20Questions.md) track.
+- Full localization story belongs to the [Internationalisation and Accessibility Project Plan](../../A11y%20I18N%20and%20L10N/Internationalisation%20and%20Accessibility%20Project%20Plan.md) track.
 
 ### Aspect ratio and measure functions
 
@@ -577,7 +577,7 @@ For distribution:
 
 ### React Native layout props not yet captured in Tao layout vocabulary
 
-A pass over [React Native 0.81 Layout Props](https://reactnative.dev/docs/0.81/layout-props) surfaced these props that exist in RN but were not represented in the layout docs at the time of writing. The canonical per-key entries (with surface spellings, values, status, and examples) have since been added to the [Layout Key And Value Catalog](./UI%20Layout%20Design%20Doc.md#layout-key-and-value-catalog). The notes below preserve the rationale and the open questions so they are not lost as the catalog evolves.
+A pass over [React Native 0.81 Layout Props](https://reactnative.dev/docs/0.81/layout-props) surfaced these props that exist in RN but were not represented in the layout docs at the time of writing. The canonical per-key entries (with surface spellings, values, status, and examples) have since been added to the [Layout Key And Value Catalog](../UI%20Layout/UI%20Layout%20Design%20Doc.md#layout-key-and-value-catalog). The notes below preserve the rationale and the open questions so they are not lost as the catalog evolves.
 
 #### `flex` (single-number shorthand)
 
@@ -654,7 +654,7 @@ RN defaults that Tao codegen and validation should be conscious of (already note
 
 ### Empty view and defaults problem (cross-link with depth)
 
-The full problem statement and option set live in [Empty View And Defaults Problem](./UI%20Layout%20Syntax%20Exploration.md#empty-view-and-defaults-problem). Specific WIP options worth preserving here:
+The preserved empty-view problem statement and option set are summarized here. Specific WIP options worth preserving:
 
 - Force `flexGrow > 0` by default so empty containers stay visible.
 - Special-case empty elements with a `min_width`/`min_height`.
@@ -710,6 +710,6 @@ These are the styling/theme questions still on the table. The first six are the 
 ## How To Use This Doc
 
 - Treat this as the readable alternatives + theme/style backlog summary.
-- Keep the raw [Design WIP archive](../Design%20WIP/UI%20Layout%20and%20Styling.md) for full historical context and verbatim notes.
-- The current authoritative styling direction is [UI Styling Design Doc](./UI%20Styling%20Design%20Doc.md); the implementation order across both lanes is in the [Project Implementation Plan](./Project%20Implementation%20Plan.md).
+- Keep the raw [UI Layout and Styling Raw Notes](../../../Archive/UI%20Layout%20and%20Styling%20Raw%20Notes.md) for full historical context and verbatim notes.
+- The current authoritative styling direction is [UI Styling Design Doc](./UI%20Styling%20Design%20Doc.md); the implementation order across both lanes is in the [Layout and Styling Project Plan](../Layout%20and%20Styling%20Project%20Plan.md).
 - Do not treat anything here as implementation permission; styling waits on theme/value work.

@@ -2,7 +2,7 @@
 
 This is the intentionally light styling design doc. Layout is being implemented first; styling waits until layout syntax, theme values, and typed value flow are proven.
 
-The theme model and value propagation design lives in [UI Theme Design Doc](./UI%20Theme%20Design%20Doc.md). The full alternatives, style property catalog, theme/color/spacing exploration, and design-system references live in [UI Styling and Theme Syntax Exploration](./UI%20Styling%20Syntax%20Exploration.md). The preserved raw archive is [Design WIP - UI Layout and Styling](../Design%20WIP/UI%20Layout%20and%20Styling.md). Use those for prior reasoning; do not delete them when consolidating decisions.
+The theme model and value propagation design lives in [UI Theme Design Doc](../UI%20Themes/UI%20Theme%20Design%20Doc.md). The full alternatives, style property catalog, theme/color/spacing exploration, and design-system references live in [UI Styling and Theme Syntax Exploration](./UI%20Styling%20Syntax%20Exploration.md). The preserved raw archive is [UI Layout and Styling Raw Notes](../../../Archive/UI%20Layout%20and%20Styling%20Raw%20Notes.md). Use those for prior reasoning; do not delete them when consolidating decisions.
 
 ## Current Decision
 
@@ -84,7 +84,7 @@ Once that exists, styling can cover the full React Native style surface without 
 
 ## Theme Design
 
-The theme model is now documented in [UI Theme Design Doc](./UI%20Theme%20Design%20Doc.md). Core decisions: the theme is a dictionary of named primitive values (not view-aware), values propagate down the view tree with compile-time checking, views own their styling and reference tokens by bare name, and the adaptation mechanism uses a fallback override model.
+The theme model is now documented in [UI Theme Design Doc](../UI%20Themes/UI%20Theme%20Design%20Doc.md). Core decisions: the theme is a dictionary of named primitive values (not view-aware), values propagate down the view tree with compile-time checking, views own their styling and reference tokens by bare name, and the adaptation mechanism uses a fallback override model.
 
 TODO: decide style/theme override hierarchy. Working model: an app has one base app theme; library components reference color/style names without declaring separate themes; view-local declarations or inline values can be more specific; the deepest applicable view/value wins for the child being considered. We still need examples that prove when overriding is required, whether explicit override syntax is needed, and how conflicts are diagnosed.
 

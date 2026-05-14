@@ -1,6 +1,6 @@
 # Tao UI Theme Design Doc
 
-This document captures the core design decisions for the Tao theme system. It was produced through a structured design session narrowing down each decision point. The full style property catalogs, alternative syntaxes, and design-system references live in [UI Styling and Theme Syntax Exploration](./UI%20Styling%20Syntax%20Exploration.md). The styling boundary and syntax direction live in [UI Styling Design Doc](./UI%20Styling%20Design%20Doc.md).
+This document captures the core design decisions for the Tao theme system. It was produced through a structured design session narrowing down each decision point. The full style property catalogs, alternative syntaxes, and design-system references live in [UI Styling and Theme Syntax Exploration](../UI%20Styling/UI%20Styling%20Syntax%20Exploration.md). The styling boundary and syntax direction live in [UI Styling Design Doc](../UI%20Styling/UI%20Styling%20Design%20Doc.md).
 
 ## What A Theme Is
 

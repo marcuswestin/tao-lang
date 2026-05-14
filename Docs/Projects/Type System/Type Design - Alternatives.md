@@ -26,18 +26,18 @@ The authoritative list (Typir timeline vs `interface`, `set` AST unification, op
 
 ## Optional and auto-promotion {#optional-and-auto-promotion}
 
-| Option                                                                                   | Status                    | Notes                                                                                                                                              |
-| ---------------------------------------------------------------------------------------- | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Role?` postfix optional fields                                                          | `preferred`               | Matches execution plan examples; aligns with `is ?` arms.                                                                                          |
-| `optional Name` keyword style                                                            | `rejected` for new syntax | Still appears in older [Language surface - Type System Design](./Language%20surface%20-%20Type%20System%20Design.md) examples—treat as historical. |
-| Middle-ground auto-promotion (struct/action literals promote; primitive literals do not) | `preferred`               | See [Language surface](./Language%20surface%20-%20Type%20System%20Design.md) “Alternative approaches” / review pass.                               |
-| Full Rust-style (no auto-promotion)                                                      | `rejected` as global rule | Too much boilerplate for struct literals.                                                                                                          |
+| Option                                                                                   | Status                    | Notes                                                                                                                  |
+| ---------------------------------------------------------------------------------------- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `Role?` postfix optional fields                                                          | `preferred`               | Matches execution plan examples; aligns with `is ?` arms.                                                              |
+| `optional Name` keyword style                                                            | `rejected` for new syntax | Still appears in older [Tao Type System - Design](./Tao%20Type%20System%20-%20Design.md) examples—treat as historical. |
+| Middle-ground auto-promotion (struct/action literals promote; primitive literals do not) | `preferred`               | See [Tao Type System - Design](./Tao%20Type%20System%20-%20Design.md) “Alternative approaches” / review pass.          |
+| Full Rust-style (no auto-promotion)                                                      | `rejected` as global rule | Too much boilerplate for struct literals.                                                                              |
 
 ---
 
 ## Syntax sugar forks {#syntax-sugar-forks}
 
-Consolidated from the review pass in **Language surface - Type System Design** (tail sections):
+Consolidated from the review pass in **Tao Type System - Design** (tail sections):
 
 | Topic                                   | Preferred direction               | Status      |
 | --------------------------------------- | --------------------------------- | ----------- |
@@ -63,7 +63,7 @@ View-level **`guard` / `check`** for loading, missing, and reloading are **defer
 
 **[Type Implementation - Execution plan — Value guards (DEFER)](./Type%20Implementation%20-%20Execution%20plan.md#value-guards-async-loading-missing-defer)**
 
-Data-layer async results: **[Queries Design - Preferred](../Data%20Schema%20and%20Queries/Process%20Docs/Queries%20Design%20-%20Preferred.md)** (`Loadable<T>`). Cross-cutting UX: **[Queries Design - Alternatives](../Data%20Schema%20and%20Queries/Process%20Docs/Queries%20Design%20-%20Alternatives.md#loadable-vs-guard-and-check)**.
+Data-layer async results: **[Data and Queries - Design](../Data%20Schema%20and%20Queries/Process%20Docs/Data%20and%20Queries%20-%20Design.md#async-model)**. Cross-cutting UX: **[Outstanding and deferred](../Data%20Schema%20and%20Queries/Process%20Docs/Data%20and%20Queries%20-%20Design.md#outstanding)**.
 
 ---
 
@@ -78,4 +78,4 @@ Data-layer async results: **[Queries Design - Preferred](../Data%20Schema%20and%
 
 ## Other rejected bundles (short)
 
-Captured in **Language surface - Type System Design** “Alternative approaches to consider”: colon field separators, explicit tag syntax as default, split type/value namespaces, dual `with` parser forms, lowercased binding names — all **`rejected`** or **`deferred`** as documented there; this file avoids duplicating full prose—use the long doc for narrative rationale.
+Captured in **Tao Type System - Design** “Alternative approaches to consider”: colon field separators, explicit tag syntax as default, split type/value namespaces, dual `with` parser forms, lowercased binding names — all **`rejected`** or **`deferred`** as documented there; this file avoids duplicating full prose—use the long doc for narrative rationale.
