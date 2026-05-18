@@ -366,11 +366,11 @@ The Tao-level target remains the `Column` root and the row roots returned by
 
 Layout is split into three channels:
 
-| Channel | Meaning | Examples |
-| --- | --- | --- |
-| Self placement | How a root sits in its parent | `width`, `height`, `margin`, `grow`, `shrink`, `basis`, `centered`, `stretched`, `packed`, `absolute`, offsets, `z` |
-| Interior layout | How a root's box affects its content area | `pad`, future `overflow`, future `box_sizing` |
-| Child/container layout | How a root arranges child UI | `row`, `column`, `wrap`, `gap`, `top`, `left`, `center`, `stretch`, `pack`, `spread`, `around`, `evenly` |
+| Channel                | Meaning                                   | Examples                                                                                                            |
+| ---------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Self placement         | How a root sits in its parent             | `width`, `height`, `margin`, `grow`, `shrink`, `basis`, `centered`, `stretched`, `packed`, `absolute`, offsets, `z` |
+| Interior layout        | How a root's box affects its content area | `pad`, future `overflow`, future `box_sizing`                                                                       |
+| Child/container layout | How a root arranges child UI              | `row`, `column`, `wrap`, `gap`, `top`, `left`, `center`, `stretch`, `pack`, `spread`, `around`, `evenly`            |
 
 ### Custom `ui` Calls
 
@@ -893,19 +893,19 @@ language-level abstraction.
 
 ## Decision Matrix
 
-| Variant | Clarity | Validation quality | Layout safety | Syntax weight | Migration cost | RN/Expo fidelity | Extensibility |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| One `view` keyword | Medium | Medium | Medium | Low | Low | High with root model | Medium |
-| Real `ui` / `view` syntax | High | High | High | Medium | Medium | High | High |
-| Three-kind taxonomy | High | Very high | High | High | High | High | High |
-| Explicit root host | High | High | High | Medium | Medium | Very high | High |
-| Bare implied root | Medium | Medium | Medium | Low | Medium | Medium | Medium |
-| Declaration-level root | Medium | Medium | Medium | Low | Medium | Medium | Medium |
-| No slots on `ui` | High | High | High | Low | Medium | High | Medium |
-| Named slots on `ui` | High | High | High | Medium | Medium | High | High |
-| Unnamed default slot on `ui` | Medium | Medium | Medium | Low | Medium | High | Medium |
-| Tao-level fragments | Medium | Medium | Low for layout targets | High | High | Medium | Medium |
-| Internal fragments only | High | High | High | Low | Low | High | High |
+| Variant                      | Clarity | Validation quality | Layout safety          | Syntax weight | Migration cost | RN/Expo fidelity     | Extensibility |
+| ---------------------------- | ------- | ------------------ | ---------------------- | ------------- | -------------- | -------------------- | ------------- |
+| One `view` keyword           | Medium  | Medium             | Medium                 | Low           | Low            | High with root model | Medium        |
+| Real `ui` / `view` syntax    | High    | High               | High                   | Medium        | Medium         | High                 | High          |
+| Three-kind taxonomy          | High    | Very high          | High                   | High          | High           | High                 | High          |
+| Explicit root host           | High    | High               | High                   | Medium        | Medium         | Very high            | High          |
+| Bare implied root            | Medium  | Medium             | Medium                 | Low           | Medium         | Medium               | Medium        |
+| Declaration-level root       | Medium  | Medium             | Medium                 | Low           | Medium         | Medium               | Medium        |
+| No slots on `ui`             | High    | High               | High                   | Low           | Medium         | High                 | Medium        |
+| Named slots on `ui`          | High    | High               | High                   | Medium        | Medium         | High                 | High          |
+| Unnamed default slot on `ui` | Medium  | Medium             | Medium                 | Low           | Medium         | High                 | Medium        |
+| Tao-level fragments          | Medium  | Medium             | Low for layout targets | High          | High           | Medium               | Medium        |
+| Internal fragments only      | High    | High               | High                   | Low           | Low            | High                 | High          |
 
 ## Open Decisions
 

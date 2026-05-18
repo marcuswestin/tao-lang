@@ -20,11 +20,11 @@ view = ui | frame | layout
 
 The concrete declaration kind answers who supplies descendant views and what default layout pressure the declaration carries.
 
-| Kind | Caller unnamed children | Main role | Default self profile |
-|---|---:|---|---|
-| `ui` | no | presents a specific complete thing | `rigid + hug`, unless it declares a public size |
-| `frame` | yes, through `@@children` | frames caller-provided content as an object | `rigid + hug` |
-| `layout` | yes, through `@@children` | creates an expanding region and arranges caller-provided content | `compress + fill` |
+| Kind     |   Caller unnamed children | Main role                                                        | Default self profile                            |
+| -------- | ------------------------: | ---------------------------------------------------------------- | ----------------------------------------------- |
+| `ui`     |                        no | presents a specific complete thing                               | `rigid + hug`, unless it declares a public size |
+| `frame`  | yes, through `@@children` | frames caller-provided content as an object                      | `rigid + hug`                                   |
+| `layout` | yes, through `@@children` | creates an expanding region and arranges caller-provided content | `compress + fill`                               |
 
 The distinction is not "visible versus invisible." All three kinds may paint pixels. The load-bearing distinction is child ownership:
 

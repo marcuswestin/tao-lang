@@ -1,6 +1,6 @@
 # UI and View Distinction — Recommendation
 
-**Status.** Recommendation. Companion to `UI and View Distinction Design Doc.md`. That document records the fixed decisions, the full conceptual model, and the complete trade-off analysis of the three open forks (A: root structure; B: `ui` call-site block; C: padding ownership) *without recommending*. This document records the recommended resolution of each fork and the unified design that results.
+**Status.** Recommendation. Companion to `UI and View Distinction Design Doc.md`. That document records the fixed decisions, the full conceptual model, and the complete trade-off analysis of the three open forks (A: root structure; B: `ui` call-site block; C: padding ownership) _without recommending_. This document records the recommended resolution of each fork and the unified design that results.
 
 The fixed decisions (F1–F6) from the Design Doc are taken as background; this doc does not re-state them, only the resolutions and their consequences.
 
@@ -8,7 +8,7 @@ The fixed decisions (F1–F6) from the Design Doc are taken as background; this 
 
 ## 1. The decision criterion
 
-The criterion for resolving these forks is the one stated during design: **where layout parameters attach syntactically and conceptually.** The four-position 2×2 model (declaration × outside/inside) gives that criterion a sharp shape — *OUTSIDE body = outer-facing (S, parent-perspective); INSIDE body = inner-facing (C, container-perspective)* — and each pick below is selected to keep that 2×2 symmetric and predictable.
+The criterion for resolving these forks is the one stated during design: **where layout parameters attach syntactically and conceptually.** The four-position 2×2 model (declaration × outside/inside) gives that criterion a sharp shape — _OUTSIDE body = outer-facing (S, parent-perspective); INSIDE body = inner-facing (C, container-perspective)_ — and each pick below is selected to keep that 2×2 symmetric and predictable.
 
 ---
 
@@ -16,7 +16,7 @@ The criterion for resolving these forks is the one stated during design: **where
 
 ### 2.1 Variant A — root structure: **A2, unnamed `render [...] { ... }`**
 
-The `render` keyword is the body-boundary marker. Outside the keyword line (declaration position **b**) carries the renderer's outer-facing layout — self-placement defaults (S, maybe P). Inside the `render` clause (declaration position **a**) carries the renderer's inner-facing layout — container arrangement of its declared tree (C, maybe P). The `ui`/`view` keyword + name *is* the host node, so `<Header>` is what shows up in the React tree, not a named inner root.
+The `render` keyword is the body-boundary marker. Outside the keyword line (declaration position **b**) carries the renderer's outer-facing layout — self-placement defaults (S, maybe P). Inside the `render` clause (declaration position **a**) carries the renderer's inner-facing layout — container arrangement of its declared tree (C, maybe P). The `ui`/`view` keyword + name _is_ the host node, so `<Header>` is what shows up in the React tree, not a named inner root.
 
 At the call site the same boundary appears: `Card User [...] { [...] }` → outside the block is caller-set S, inside is caller-set C (where the renderer admits it). The call-site (c) ↔ (d) mirrors the declaration-side (b) ↔ (a-render) exactly. The frozen v1 morphology — `-ed` for self/outer, bare alignment words for container/inner — maps onto the boundary naturally, so reading layout becomes mechanical: where the clause sits tells you which channel it owns.
 
@@ -182,7 +182,7 @@ Concrete differences from today:
 
 - `view AppView` → `ui AppView` (its only caller is `app { ui AppView }`; no caller-supplied content).
 - The four-sibling body (three intro `Text`s + one `Col`) is wrapped into a single `render [...] { ... }`. The `Col` keyword is gone — `AppView` itself is the column-arranged container under A2.
-- All inner-facing words (`column`, `top left`, `gap 12`, `pad 16`) sit *inside* the `render` clause. All outer-facing words (`packed`, `centered`, `width 180`) sit outside their target's block.
+- All inner-facing words (`column`, `top left`, `gap 12`, `pad 16`) sit _inside_ the `render` clause. All outer-facing words (`packed`, `centered`, `width 180`) sit outside their target's block.
 - `Row [center spread, gap 8] { ... }` becomes `Row { [center spread, gap 8] ... }` — the C-words move into the inside position, matching the rule of thumb.
 - `Button … { }` loses its trailing empty block (Button is a `ui` with no slots).
 - `Divider { }`, `TypeMatching { }`, etc. lose their trailing empty blocks if they're declared as `ui`s with no slots; if they're declared as `view`s with an open block (e.g. `Divider` could remain a `view` for thematic chrome wrapping), they'd keep `{ ... }` for that reason — that is a separate declaration-by-declaration decision, not a Kitchen-Sink-level one.

@@ -95,6 +95,7 @@ And a view's child accepts _child_ layout render specs: `Text [pad 4] ...`
 ---
 
 ui vs view:
+
 - caller of a view can set its container layout specs
 - caller of a ui can NOT specify its container layout props
 
@@ -119,16 +120,18 @@ Passing in a rendered can only be done as a named render slot; or as a container
 - Is this what we want?
 
 views OFTEN paint no pixels
+
 - Consider: ENFORCE no pixels from views.
 - A background would require a ui wrapper. Ditto borders.
 - Should a `view` be called a `frame` and have NO pixels, only logic, structure and layout?
 - A view without content is a "No-Op" then.
-ui ALWAYS (actually? or usually) paints pixels
+  ui ALWAYS (actually? or usually) paints pixels
 
 "5. **Primary role.** `view` is a structural/layout construct (its job is to arrange)."
 "`ui` is a presentational construct (its job is to present a specific thing)."
 
 LAYOUT RESPONSIBILITIES
+
 - The CALLER of a VIEW is RESPONSIBLE FOR ITS CONTAINER LAYOUT SPECS
 -
 

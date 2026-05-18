@@ -51,11 +51,11 @@ native/atom injection | events | state | queries | named render slots | rich/edi
 view = ui | frame | layout
 ```
 
-| Kind | Keyword | Unnamed caller children | Required child splice | Default self profile | Container specs at call site |
-|---|---|---:|---|---|---|
-| UI | `ui` | no | none | `rigid + hug`, unless explicit public size | error |
-| Frame | `frame` | yes | exactly one static `@@children` | `rigid + hug` | allowed; targets `@@children` host |
-| Layout | `layout` | yes | exactly one static `@@children` | `compress + fill` | allowed; targets `@@children` host |
+| Kind   | Keyword  | Unnamed caller children | Required child splice           | Default self profile                       | Container specs at call site       |
+| ------ | -------- | ----------------------: | ------------------------------- | ------------------------------------------ | ---------------------------------- |
+| UI     | `ui`     |                      no | none                            | `rigid + hug`, unless explicit public size | error                              |
+| Frame  | `frame`  |                     yes | exactly one static `@@children` | `rigid + hug`                              | allowed; targets `@@children` host |
+| Layout | `layout` |                     yes | exactly one static `@@children` | `compress + fill`                          | allowed; targets `@@children` host |
 
 `ui`, `frame`, and `layout` are syntax keywords and type categories, not merely standard-library profiles.
 
@@ -72,12 +72,12 @@ All three may paint pixels.
 
 `Row`, `Col`, `Box`, `Stack`, and `WrappingRow` are standard-library views, not special syntax keywords or compiler-only built-ins. They are specified here because the shipped standard library must define them with these semantics. User code can define equivalent views using the same language mechanisms, including raw TypeScript injection where needed.
 
-| Name | Kind | Direction | Default self profile | Default `items` | Notes |
-|---|---|---|---|---|---|
-| `Row` | `layout` | horizontal | `compress + fill` | `baseline left` | normal horizontal region |
-| `Col` | `layout` | vertical | `compress + fill` | `top stretch` | normal vertical region |
-| `Box` | `frame` | horizontal | `rigid + hug` | `center left` | horizontal frame |
-| `Stack` | `frame` | vertical | `rigid + hug` | `top center` | vertical frame |
+| Name          | Kind     | Direction  | Default self profile                 | Default `items` | Notes                                  |
+| ------------- | -------- | ---------- | ------------------------------------ | --------------- | -------------------------------------- |
+| `Row`         | `layout` | horizontal | `compress + fill`                    | `baseline left` | normal horizontal region               |
+| `Col`         | `layout` | vertical   | `compress + fill`                    | `top stretch`   | normal vertical region                 |
+| `Box`         | `frame`  | horizontal | `rigid + hug`                        | `center left`   | horizontal frame                       |
+| `Stack`       | `frame`  | vertical   | `rigid + hug`                        | `top center`    | vertical frame                         |
 | `WrappingRow` | `layout` | horizontal | `compress + width fill + height hug` | `baseline left` | horizontal row that wraps to new lines |
 
 There is no directionless core `Box`. Normal-flow containers choose a direction.
@@ -119,10 +119,10 @@ Multiple layout clauses on one render site are not part of MVP.
 
 Each layout head belongs to one target category.
 
-| Category | Examples | Target |
-|---|---|---|
+| Category    | Examples                                                                                     | Target                                                        |
+| ----------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
 | Self layout | `pad`, `width`, `height`, `fill`, `hug`, `grow`, `compress`, `rigid`, `aligned`, `stretched` | the view's outer/public root as it participates in its parent |
-| Container | `gap`, `items` | the child-arranging host |
+| Container   | `gap`, `items`                                                                               | the child-arranging host                                      |
 
 Container layout means the way a view lays out its children.
 
@@ -177,76 +177,76 @@ Tao specifies deterministic lowering to React Native/Yoga. It does not re-specif
 
 View lowering:
 
-| Tao surface | React Native target |
-|---|---|
+| Tao surface                           | React Native target                                                 |
+| ------------------------------------- | ------------------------------------------------------------------- |
 | `ui` / `frame` / `layout` declaration | no implicit wrapper; public root is the declaration's `render` root |
-| `Row` | `View` with `flexDirection: "row"` |
-| `Col` | `View` with `flexDirection: "column"` |
-| `Box` | `View` with `flexDirection: "row"` |
-| `Stack` | `View` with `flexDirection: "column"` |
-| `WrappingRow` | `View` with `flexDirection: "row"` and `flexWrap: "wrap"` |
+| `Row`                                 | `View` with `flexDirection: "row"`                                  |
+| `Col`                                 | `View` with `flexDirection: "column"`                               |
+| `Box`                                 | `View` with `flexDirection: "row"`                                  |
+| `Stack`                               | `View` with `flexDirection: "column"`                               |
+| `WrappingRow`                         | `View` with `flexDirection: "row"` and `flexWrap: "wrap"`           |
 
 Container lowering:
 
-| Tao surface | React Native / Yoga target |
-|---|---|
-| horizontal container vertical slot | `alignItems` |
-| horizontal container horizontal slot | `justifyContent` |
-| vertical container vertical slot | `justifyContent` |
-| vertical container horizontal slot | `alignItems` |
-| `top` / `left` | `flex-start` |
-| `bottom` / `right` | `flex-end` |
-| `center` | `center` |
-| `stretch` | `stretch` |
-| `baseline` | `baseline` |
-| `spread` | `space-between` |
-| `spread-inset` | `space-around` |
-| `spread-balanced` | `space-evenly` |
-| `gap V` | `gap: V` |
+| Tao surface                          | React Native / Yoga target |
+| ------------------------------------ | -------------------------- |
+| horizontal container vertical slot   | `alignItems`               |
+| horizontal container horizontal slot | `justifyContent`           |
+| vertical container vertical slot     | `justifyContent`           |
+| vertical container horizontal slot   | `alignItems`               |
+| `top` / `left`                       | `flex-start`               |
+| `bottom` / `right`                   | `flex-end`                 |
+| `center`                             | `center`                   |
+| `stretch`                            | `stretch`                  |
+| `baseline`                           | `baseline`                 |
+| `spread`                             | `space-between`            |
+| `spread-inset`                       | `space-around`             |
+| `spread-balanced`                    | `space-evenly`             |
+| `gap V`                              | `gap: V`                   |
 
 Self-layout lowering:
 
-| Tao surface | React Native / Yoga target |
-|---|---|
-| `width V` | `width: V` |
-| `height V` | `height: V` |
-| `width min V` / `width max V` | `minWidth: V` / `maxWidth: V` |
-| `height min V` / `height max V` | `minHeight: V` / `maxHeight: V` |
+| Tao surface                                     | React Native / Yoga target                                      |
+| ----------------------------------------------- | --------------------------------------------------------------- |
+| `width V`                                       | `width: V`                                                      |
+| `height V`                                      | `height: V`                                                     |
+| `width min V` / `width max V`                   | `minWidth: V` / `maxWidth: V`                                   |
+| `height min V` / `height max V`                 | `minHeight: V` / `maxHeight: V`                                 |
 | `pad top V` / `right V` / `bottom V` / `left V` | `paddingTop` / `paddingRight` / `paddingBottom` / `paddingLeft` |
-| `pad horizontal V` | `paddingLeft: V`, `paddingRight: V` |
-| `pad vertical V` | `paddingTop: V`, `paddingBottom: V` |
-| `grow` | `flexGrow: 1` |
-| `grow N` | `flexGrow: N` |
-| `compress` | `flexShrink: 1` |
-| `rigid` | `flexShrink: 0` |
-| `stretched` | `alignSelf: "stretch"` |
-| `aligned top` / `left` | `alignSelf: "flex-start"` |
-| `aligned bottom` / `right` | `alignSelf: "flex-end"` |
-| `aligned center` | `alignSelf: "center"` |
-| `aligned baseline` | `alignSelf: "baseline"` |
-| default clipping on view roots | `overflow: "hidden"` |
+| `pad horizontal V`                              | `paddingLeft: V`, `paddingRight: V`                             |
+| `pad vertical V`                                | `paddingTop: V`, `paddingBottom: V`                             |
+| `grow`                                          | `flexGrow: 1`                                                   |
+| `grow N`                                        | `flexGrow: N`                                                   |
+| `compress`                                      | `flexShrink: 1`                                                 |
+| `rigid`                                         | `flexShrink: 0`                                                 |
+| `stretched`                                     | `alignSelf: "stretch"`                                          |
+| `aligned top` / `left`                          | `alignSelf: "flex-start"`                                       |
+| `aligned bottom` / `right`                      | `alignSelf: "flex-end"`                                         |
+| `aligned center`                                | `alignSelf: "center"`                                           |
+| `aligned baseline`                              | `alignSelf: "baseline"`                                         |
+| default clipping on view roots                  | `overflow: "hidden"`                                            |
 
 Fill and hug lowering:
 
-| Tao surface | React Native / Yoga target |
-|---|---|
-| `fill` | `flexGrow: 1`, `alignSelf: "stretch"` |
-| `width fill` in a horizontal parent | `flexGrow: 1` |
-| `width fill` in a vertical parent | `alignSelf: "stretch"` |
-| `height fill` in a horizontal parent | `alignSelf: "stretch"` |
-| `height fill` in a vertical parent | `flexGrow: 1` |
-| `hug` | omit fill/grow/stretch sizing for both axes; rely on RN/Yoga intrinsic/content sizing |
-| `width hug` | omit horizontal size/fill for that axis, subject to any `minWidth`/`maxWidth` |
-| `height hug` | omit vertical size/fill for that axis, subject to any `minHeight`/`maxHeight` |
+| Tao surface                          | React Native / Yoga target                                                            |
+| ------------------------------------ | ------------------------------------------------------------------------------------- |
+| `fill`                               | `flexGrow: 1`, `alignSelf: "stretch"`                                                 |
+| `width fill` in a horizontal parent  | `flexGrow: 1`                                                                         |
+| `width fill` in a vertical parent    | `alignSelf: "stretch"`                                                                |
+| `height fill` in a horizontal parent | `alignSelf: "stretch"`                                                                |
+| `height fill` in a vertical parent   | `flexGrow: 1`                                                                         |
+| `hug`                                | omit fill/grow/stretch sizing for both axes; rely on RN/Yoga intrinsic/content sizing |
+| `width hug`                          | omit horizontal size/fill for that axis, subject to any `minWidth`/`maxWidth`         |
+| `height hug`                         | omit vertical size/fill for that axis, subject to any `minHeight`/`maxHeight`         |
 
 Text lowering:
 
-| Tao view | React Native target |
-|---|---|
-| `Text Value` | `Text` with `numberOfLines={1}` and `ellipsizeMode="tail"` |
-| `TextLabel Value` | `Text` with `numberOfLines={1}` and `ellipsizeMode="clip"` |
-| `MultiLineText Value` | `Text` with no Tao-emitted `numberOfLines` or `ellipsizeMode` |
-| `MultiLineText Value Lines N` | `Text` with `numberOfLines={N}` and `ellipsizeMode="tail"` |
+| Tao view                      | React Native target                                           |
+| ----------------------------- | ------------------------------------------------------------- |
+| `Text Value`                  | `Text` with `numberOfLines={1}` and `ellipsizeMode="tail"`    |
+| `TextLabel Value`             | `Text` with `numberOfLines={1}` and `ellipsizeMode="clip"`    |
+| `MultiLineText Value`         | `Text` with no Tao-emitted `numberOfLines` or `ellipsizeMode` |
+| `MultiLineText Value Lines N` | `Text` with `numberOfLines={N}` and `ellipsizeMode="tail"`    |
 
 MVP layout assumes the default left-to-right React Native direction. Localization and physical/logical remapping are deferred.
 
@@ -271,26 +271,26 @@ spread-balanced -> justifyContent: space-evenly
 
 Slot claims:
 
-| Token | Horizontal containers | Vertical containers |
-|---|---|---|
-| `top` | vertical | vertical |
-| `bottom` | vertical | vertical |
-| `left` | horizontal | horizontal |
-| `right` | horizontal | horizontal |
-| `baseline` | vertical, horizontal containers only | error |
-| `stretch` | vertical | horizontal |
-| `spread*` | horizontal | vertical |
-| `center` | special; see normalization | special; see normalization |
+| Token      | Horizontal containers                | Vertical containers        |
+| ---------- | ------------------------------------ | -------------------------- |
+| `top`      | vertical                             | vertical                   |
+| `bottom`   | vertical                             | vertical                   |
+| `left`     | horizontal                           | horizontal                 |
+| `right`    | horizontal                           | horizontal                 |
+| `baseline` | vertical, horizontal containers only | error                      |
+| `stretch`  | vertical                             | horizontal                 |
+| `spread*`  | horizontal                           | vertical                   |
+| `center`   | special; see normalization           | special; see normalization |
 
 Defaults:
 
-| Container | Missing vertical slot | Missing horizontal slot |
-|---|---|---|
-| `Row` | `baseline` | `left` |
-| `Col` | `top` | `stretch` |
-| `Box` | `center` | `left` |
-| `Stack` | `top` | `center` |
-| `WrappingRow` | `baseline` | `left` |
+| Container     | Missing vertical slot | Missing horizontal slot |
+| ------------- | --------------------- | ----------------------- |
+| `Row`         | `baseline`            | `left`                  |
+| `Col`         | `top`                 | `stretch`               |
+| `Box`         | `center`              | `left`                  |
+| `Stack`       | `top`                 | `center`                |
+| `WrappingRow` | `baseline`            | `left`                  |
 
 Normalization is deterministic and order-insensitive:
 
@@ -348,10 +348,10 @@ aligned stretch = error
 
 Validity by parent direction:
 
-| Parent direction | Valid `aligned` values |
-|---|---|
-| horizontal | `top`, `center`, `bottom`, `baseline` |
-| vertical | `left`, `center`, `right` |
+| Parent direction | Valid `aligned` values                |
+| ---------------- | ------------------------------------- |
+| horizontal       | `top`, `center`, `bottom`, `baseline` |
+| vertical         | `left`, `center`, `right`             |
 
 `stretched` is valid in either direction and fills the relevant cross axis.
 
@@ -427,10 +427,10 @@ Examples:
 
 Physical fill lowering:
 
-| Parent | `width fill` | `height fill` |
-|---|---|---|
-| horizontal | claim horizontal main-axis space | stretch vertically |
-| vertical | stretch horizontally | claim vertical main-axis space |
+| Parent     | `width fill`                     | `height fill`                  |
+| ---------- | -------------------------------- | ------------------------------ |
+| horizontal | claim horizontal main-axis space | stretch vertically             |
+| vertical   | stretch horizontally             | claim vertical main-axis space |
 
 Runtime facts accounted for:
 
@@ -448,16 +448,16 @@ Each wrapped line behaves like a small flex container on the main axis.
 
 Pressure validation happens after defaults and overrides merge:
 
-| Combination | Result |
-|---|---|
-| `compress + rigid` | error |
-| `grow + rigid` | valid; may grow, resists shrinking |
-| `grow + compress` | valid; may grow and shrink |
-| `fill + rigid` | valid; fills when possible, resists shrinking |
-| `fill + compress` | valid; fills and may shrink |
-| `fill + width/height head in one clause` | error |
-| `stretched + cross-axis hug` | error |
-| `grow + main-axis hug` | valid as hug basis, then grow |
+| Combination                              | Result                                        |
+| ---------------------------------------- | --------------------------------------------- |
+| `compress + rigid`                       | error                                         |
+| `grow + rigid`                           | valid; may grow, resists shrinking            |
+| `grow + compress`                        | valid; may grow and shrink                    |
+| `fill + rigid`                           | valid; fills when possible, resists shrinking |
+| `fill + compress`                        | valid; fills and may shrink                   |
+| `fill + width/height head in one clause` | error                                         |
+| `stretched + cross-axis hug`             | error                                         |
+| `grow + main-axis hug`                   | valid as hug basis, then grow                 |
 
 `fill + compress` is the maximally flexible common item.
 
@@ -518,12 +518,12 @@ pad 10 horizontal 4 -> top 10, right 4, bottom 10, left 4
 
 Text pressure is handled by named views, not layout heads. Tao specifies the emitted React Native component and props, then inherits React Native text behavior unless Tao intentionally differs.
 
-| View | React Native lowering |
-|---|---|
-| `Text` | `Text` with `numberOfLines={1}` and `ellipsizeMode="tail"` |
-| `TextLabel` | `Text` with `numberOfLines={1}` and `ellipsizeMode="clip"` |
-| `MultiLineText` | `Text` with no Tao-emitted `numberOfLines` or `ellipsizeMode` |
-| `MultiLineText Lines N` | `Text` with `numberOfLines={N}` and `ellipsizeMode="tail"` |
+| View                    | React Native lowering                                         |
+| ----------------------- | ------------------------------------------------------------- |
+| `Text`                  | `Text` with `numberOfLines={1}` and `ellipsizeMode="tail"`    |
+| `TextLabel`             | `Text` with `numberOfLines={1}` and `ellipsizeMode="clip"`    |
+| `MultiLineText`         | `Text` with no Tao-emitted `numberOfLines` or `ellipsizeMode` |
+| `MultiLineText Lines N` | `Text` with `numberOfLines={N}` and `ellipsizeMode="tail"`    |
 
 `Lines N` is a typed expression argument, not layout syntax.
 
@@ -711,29 +711,29 @@ Overlay is the intended Tao abstraction over raw absolute positioning. Clipping 
 
 ## 18. MVP Contract Table
 
-| Surface | Target role | Merge behavior | Validation | Runtime lowering |
-|---|---|---|---|---|
-| `ui` | closed public view | kind defaults < declaration < call | rejects unnamed children and container specs | render-root-backed UI |
-| `frame` | child-receiving object | kind defaults < declaration < call | exactly one static `@@children` | render root plus child host |
-| `layout` | child-receiving region | kind defaults < declaration < call | exactly one static `@@children` | render root plus child host |
-| `Row` | horizontal standard-library layout | standard-library defaults < call | validates horizontal `items` claims | `View` with row direction |
-| `Col` | vertical standard-library layout | standard-library defaults < call | validates vertical `items` claims | `View` with column direction |
-| `Box` | horizontal standard-library frame | standard-library defaults < call | validates horizontal `items` claims | `View` with row direction |
-| `Stack` | vertical standard-library frame | standard-library defaults < call | validates vertical `items` claims | `View` with column direction |
-| `WrappingRow` | wrapping standard-library layout | standard-library defaults < call | raw `wrap` not exposed | `View` with row direction + wrap |
-| `items` | container arrangement | per key on container host | slot conflicts are errors | alignItems + justifyContent |
-| `aligned` | child cross-axis position | per key on child | invalid parent-axis value errors | alignSelf |
-| `stretched` | child cross-axis fill | per key on child | conflicts with cross-axis hug | alignSelf stretch |
-| `width`/`height` | physical size | per dimension key | malformed min/max errors | RN/Yoga width/height/min/max |
-| `fill` | main-axis claim + cross-axis fill | axis sizing shorthand | cannot share a clause with `width`/`height` | `flexGrow: 1` + `alignSelf: "stretch"` |
-| `hug` | content/intrinsic sizing | size key | conflicts with fill on same axis | intrinsic/content sizing |
-| `grow` | main-axis claim | pressure key | numeric value must be valid | flexGrow |
-| `compress` | main-axis shrink permission | pressure key | conflicts with rigid | `flexShrink: 1` |
-| `rigid` | main-axis shrink resistance | pressure key | conflicts with compress | `flexShrink: 0` |
-| `gap` | container spacing | per key on container host | requires one value | runtime gap |
-| `pad` | neutral inner spacing | per side after resolution | malformed target/value errors | padding sides |
-| `@@children` | caller child splice | host specs default < caller | exactly one static ref | child insertion point |
-| `Text` variants | text pressure | typed args, not layout | malformed `Lines N` errors | RN text props |
+| Surface          | Target role                        | Merge behavior                     | Validation                                   | Runtime lowering                       |
+| ---------------- | ---------------------------------- | ---------------------------------- | -------------------------------------------- | -------------------------------------- |
+| `ui`             | closed public view                 | kind defaults < declaration < call | rejects unnamed children and container specs | render-root-backed UI                  |
+| `frame`          | child-receiving object             | kind defaults < declaration < call | exactly one static `@@children`              | render root plus child host            |
+| `layout`         | child-receiving region             | kind defaults < declaration < call | exactly one static `@@children`              | render root plus child host            |
+| `Row`            | horizontal standard-library layout | standard-library defaults < call   | validates horizontal `items` claims          | `View` with row direction              |
+| `Col`            | vertical standard-library layout   | standard-library defaults < call   | validates vertical `items` claims            | `View` with column direction           |
+| `Box`            | horizontal standard-library frame  | standard-library defaults < call   | validates horizontal `items` claims          | `View` with row direction              |
+| `Stack`          | vertical standard-library frame    | standard-library defaults < call   | validates vertical `items` claims            | `View` with column direction           |
+| `WrappingRow`    | wrapping standard-library layout   | standard-library defaults < call   | raw `wrap` not exposed                       | `View` with row direction + wrap       |
+| `items`          | container arrangement              | per key on container host          | slot conflicts are errors                    | alignItems + justifyContent            |
+| `aligned`        | child cross-axis position          | per key on child                   | invalid parent-axis value errors             | alignSelf                              |
+| `stretched`      | child cross-axis fill              | per key on child                   | conflicts with cross-axis hug                | alignSelf stretch                      |
+| `width`/`height` | physical size                      | per dimension key                  | malformed min/max errors                     | RN/Yoga width/height/min/max           |
+| `fill`           | main-axis claim + cross-axis fill  | axis sizing shorthand              | cannot share a clause with `width`/`height`  | `flexGrow: 1` + `alignSelf: "stretch"` |
+| `hug`            | content/intrinsic sizing           | size key                           | conflicts with fill on same axis             | intrinsic/content sizing               |
+| `grow`           | main-axis claim                    | pressure key                       | numeric value must be valid                  | flexGrow                               |
+| `compress`       | main-axis shrink permission        | pressure key                       | conflicts with rigid                         | `flexShrink: 1`                        |
+| `rigid`          | main-axis shrink resistance        | pressure key                       | conflicts with compress                      | `flexShrink: 0`                        |
+| `gap`            | container spacing                  | per key on container host          | requires one value                           | runtime gap                            |
+| `pad`            | neutral inner spacing              | per side after resolution          | malformed target/value errors                | padding sides                          |
+| `@@children`     | caller child splice                | host specs default < caller        | exactly one static ref                       | child insertion point                  |
+| `Text` variants  | text pressure                      | typed args, not layout             | malformed `Lines N` errors                   | RN text props                          |
 
 ## 19. Explicit Deferrals
 
