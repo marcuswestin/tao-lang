@@ -24,15 +24,53 @@ describe('runtime:', () => {
   })
 
   test('maps Tao layout specs to React Native style props', () => {
-    expect(Layout.resolve({ view: 'Row', entries: [['top', 'spread'], ['gap', 8]] })).toMatchObject({
+    expect(Layout.resolve({ view: 'Row', entries: [['items', 'top', 'spread'], ['gap', 8]] })).toMatchObject({
       alignItems: 'flex-start',
       gap: 8,
       justifyContent: 'space-between',
+      overflow: 'hidden',
     })
 
-    expect(Layout.resolve({ view: 'Text', entries: [['centered'], ['width', 120]] })).toMatchObject({
+    expect(
+      Layout.resolve({ view: 'Text', parentDirection: 'row', entries: [['aligned', 'center'], ['width', 120]] }),
+    ).toMatchObject({
       alignSelf: 'center',
+      overflow: 'hidden',
       width: 120,
+    })
+
+    expect(Layout.resolve({ view: 'Col', entries: [] })).toMatchObject({
+      alignItems: 'stretch',
+      justifyContent: 'flex-start',
+      overflow: 'hidden',
+    })
+
+    expect(Layout.resolve({ view: 'Box', entries: [['items', 'center']] })).toMatchObject({
+      alignItems: 'center',
+      justifyContent: 'center',
+      overflow: 'hidden',
+    })
+
+    expect(Layout.resolve({ view: 'Row', entries: [['pad', 10, 'horizontal', 4]] })).toMatchObject({
+      paddingBottom: 10,
+      paddingLeft: 4,
+      paddingRight: 4,
+      paddingTop: 10,
+    })
+
+    expect(Layout.resolve({ view: 'Text', entries: [['fill'], ['rigid']] })).toMatchObject({
+      alignSelf: 'stretch',
+      flexGrow: 1,
+      flexShrink: 0,
+      overflow: 'hidden',
+    })
+
+    expect(
+      Layout.resolve({ view: 'Text', parentDirection: 'row', entries: [['width', 'fill', 'max', 400]] }),
+    ).toMatchObject({
+      flexGrow: 1,
+      maxWidth: 400,
+      overflow: 'hidden',
     })
   })
 

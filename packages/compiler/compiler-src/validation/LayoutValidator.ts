@@ -1,89 +1,108 @@
 import type { LGM as langium } from '@parser'
 import { AST } from '@parser/parser'
 import {
-  layoutChildWordAxis,
-  layoutSpacingReactNativeKey,
-  type TaoLayoutAxis,
+  defaultItemsForStandardContainer,
+  isKnownItemWord,
+  itemWordAxis,
+  standardContainerDirection,
   type TaoLayoutDirection,
+  type TaoLayoutItemAxis,
 } from '@shared/layout/layout-axis'
 import { layoutEntryText, layoutEntryValues, type TaoLayoutTermValue } from '../layout/tao-layout'
 import { makeValidater, type Reporter } from './ValidationReporter'
 
-type ParsedLayoutEntry =
-  | { kind: 'bare'; words: string[]; entry: AST.LayoutEntry }
-  | { kind: 'property'; keys: string[]; head: string; values: TaoLayoutTermValue[]; entry: AST.LayoutEntry }
-  | { kind: 'invalid'; message: string; entry: AST.LayoutEntry }
+type DimensionHead = 'width' | 'height'
+type DimensionMode = 'fill' | 'hug' | 'fixed'
 
-const directionWords = new Set(['row', 'column'])
-const wrapWords = new Set(['wrap', 'nowrap'])
-const childArrangementWords = new Set([
-  'top',
-  'right',
-  'bottom',
-  'left',
-  'center',
-  'stretch',
-  'pack',
-  'spread',
-  'around',
-  'evenly',
-])
-const selfAlignmentWords = new Set(['centered', 'stretched', 'packed'])
-const positionWords = new Set(['relative', 'absolute'])
-const numericPropertyHeads = new Set([
-  'gap',
-  'row_gap',
-  'column_gap',
-  'pad',
-  'margin',
+type ClauseState = {
+  items?: AST.LayoutEntry
+  bareFill?: AST.LayoutEntry
+  bareHug?: AST.LayoutEntry
+  alignSelf?: AST.LayoutEntry
+  stretched?: AST.LayoutEntry
+  grow?: AST.LayoutEntry
+  compress?: AST.LayoutEntry
+  rigid?: AST.LayoutEntry
+  gap?: AST.LayoutEntry
+  pad?: AST.LayoutEntry
+  dimensions: Map<DimensionHead, { entry: AST.LayoutEntry; mode?: DimensionMode; min?: number; max?: number }>
+}
+
+const layoutHeads = new Set([
+  'items',
+  'aligned',
+  'stretched',
   'width',
   'height',
+  'fill',
+  'hug',
+  'grow',
+  'compress',
+  'rigid',
+  'gap',
+  'pad',
+])
+
+const itemOnlyWords = new Set([
+  'top',
+  'bottom',
+  'left',
+  'right',
+  'center',
+  'baseline',
+  'stretch',
+  'spread',
+  'spread-inset',
+  'spread-balanced',
+])
+
+const removedLayoutWords = new Set([
+  'centered',
+  'packed',
+  'row',
+  'column',
+  'wrap',
+  'nowrap',
+  'margin',
+  'absolute',
+  'relative',
+  'row_gap',
+  'column_gap',
+  'shrink',
+  'basis',
+  'z',
+  'around',
+  'evenly',
+  'pack',
   'min_width',
   'max_width',
   'min_height',
   'max_height',
-  'grow',
-  'shrink',
-  'basis',
-  'z',
 ])
-const offsetPropertyHeads = new Set(['top', 'right', 'bottom', 'left'])
-const spacingSides = new Set(['horizontal', 'vertical', 'top', 'right', 'bottom', 'left'])
-const nonNegativeNumberKeys = new Set([
-  'gap',
-  'rowGap',
-  'columnGap',
-  'padding',
-  'paddingVertical',
-  'paddingHorizontal',
-  'paddingTop',
-  'paddingRight',
-  'paddingBottom',
-  'paddingLeft',
-  'width',
-  'height',
-  'minWidth',
-  'maxWidth',
-  'minHeight',
-  'maxHeight',
-  'flexGrow',
-  'flexShrink',
-  'flexBasis',
+
+const deferredLayoutWords = new Set([
+  'aspect_ratio',
+  'border',
+  'box_sizing',
+  'clip',
+  'display',
+  'fixed',
+  'flow',
+  'hidden',
+  'inset',
+  'lines',
+  'nudge',
+  'overlay',
+  'overflow',
+  'percent',
+  'reverse',
+  'self',
+  'stacking',
+  'start',
+  'end',
+  'static',
 ])
-const parentAxisPropertyHeads = new Set(['grow', 'shrink', 'basis'])
-const percentAllowedKeys = new Set([
-  'width',
-  'height',
-  'minWidth',
-  'maxWidth',
-  'minHeight',
-  'maxHeight',
-  'flexBasis',
-  'top',
-  'right',
-  'bottom',
-  'left',
-])
+
 const outOfLayoutWords = new Map([
   ['bg', 'styling'],
   ['color', 'styling'],
@@ -104,60 +123,38 @@ const outOfLayoutWords = new Map([
   ['access', 'accessibility'],
   ['when', 'interaction'],
 ])
-const deferredLayoutWords = new Set([
-  'align',
-  'aligned',
-  'aspect_ratio',
-  'baseline',
-  'border',
-  'box_sizing',
-  'clip',
-  'display',
-  'fill',
-  'fixed',
-  'flex',
-  'flow',
-  'hidden',
-  'hug',
-  'inset',
-  'items',
-  'lines',
-  'overflow',
-  'percent',
-  'reverse',
-  'self',
-  'stacking',
-  'start',
-  'end',
-  'static',
-])
 
-/** layoutValidationMessages holds stable user-facing diagnostics for layout v1. */
+/** layoutValidationMessages holds stable user-facing diagnostics for the layout MVP. */
 export const layoutValidationMessages = {
+  emptyClause: 'Layout clauses must contain at least one layout entry.',
   numericHead: 'Layout entries must start with a layout word.',
   unknownWord: (word: string) => `Unknown layout word '${word}'.`,
   wordMustBeLowercase: (word: string) => `Layout word '${word}' must be lowercase.`,
   outOfLayoutWord: (word: string, lane: string) => `Layout word '${word}' belongs to ${lane}, not layout.`,
-  unsupportedWord: (word: string) => `Layout word '${word}' is not supported in layout v1.`,
+  unsupportedWord: (word: string) => `Layout word '${word}' is not supported in the layout MVP.`,
+  itemWordOutsideItems: (word: string) => `Layout word '${word}' must be used inside an 'items' entry.`,
   malformedEntry: (entry: string) => `Malformed layout entry '${entry}'.`,
   duplicateProperty: (key: string) => `Duplicate layout property '${key}'.`,
-  mixedDirection: (first: string, second: string) => `Layout direction '${second}' conflicts with '${first}'.`,
-  mixedWrap: (first: string, second: string) => `Layout wrap '${second}' conflicts with '${first}'.`,
-  mixedPosition: (first: string, second: string) => `Layout position '${second}' conflicts with '${first}'.`,
-  childArrangementNeedsDirection: (words: string) =>
-    `Child layout word(s) '${words}' require a Row/Col view or an explicit row/column layout direction.`,
-  childAxisConflict: (word: string, existing: string, direction: TaoLayoutDirection, axis: TaoLayoutAxis) =>
-    `Layout word '${word}' conflicts with '${existing}' on the ${direction} ${axis} axis.`,
-  selfNeedsParentAxis: (word: string) =>
-    `Self layout word '${word}' requires a Row/Col parent or an explicit parent row/column direction.`,
-  offsetNeedsPosition: (word: string) =>
-    `Layout offset '${word}' requires 'absolute' or 'relative' in the same layout clause.`,
+  itemsNeedsDirection: (viewName: string) =>
+    `Layout 'items' requires a standard Row/Col/Box/Stack/WrappingRow container, not '${viewName}'.`,
+  itemAxisConflict: (word: string, existing: string, axis: TaoLayoutItemAxis) =>
+    `Layout item '${word}' conflicts with '${existing}' on the ${axis} slot.`,
+  itemNotAllowed: (word: string, direction: TaoLayoutDirection) =>
+    `Layout item '${word}' is not valid in a ${direction} container.`,
+  centerHasNoSlot: `Layout item 'center' has no empty slot to fill.`,
+  alignedNeedsParentAxis: (word: string) => `Self layout '${word}' requires a Row/Col/Box/Stack/WrappingRow parent.`,
+  invalidAligned: (word: string, direction: TaoLayoutDirection) =>
+    `Self layout 'aligned ${word}' is not valid in a ${direction} parent.`,
+  alignedStretch: `Use 'stretched' instead of 'aligned stretch'.`,
   negativeNotAllowed: (key: string) => `Layout property '${key}' does not allow negative values.`,
   percentOutOfRange: (key: string) => `Layout property '${key}' percent values must be between 0 and 100.`,
   percentNotAllowed: (key: string) => `Layout property '${key}' does not accept percent values.`,
   minGreaterThanMax: (minKey: string, maxKey: string) => `Layout '${minKey}' cannot be greater than '${maxKey}'.`,
-  overConstrainedAxis: (sizeKey: string, firstOffset: string, secondOffset: string) =>
-    `Layout '${sizeKey}' conflicts with both '${firstOffset}' and '${secondOffset}' offsets.`,
+  fillWithDimension: `Layout 'fill' cannot appear with 'width' or 'height' in the same clause.`,
+  hugWithDimension: `Layout 'hug' cannot appear with 'width' or 'height' in the same clause.`,
+  fillWithHug: `Layout 'fill' conflicts with 'hug' in the same clause.`,
+  compressRigid: `Layout 'compress' conflicts with 'rigid'.`,
+  stretchedHug: `Layout 'stretched' conflicts with cross-axis 'hug'.`,
 } as const
 
 export const layoutValidator: Pick<langium.ValidationChecks<AST.TaoLangAstType>, 'ViewRender'> = {
@@ -173,348 +170,475 @@ function validateViewRenderLayout(node: AST.ViewRender, report: Reporter<AST.Vie
     return
   }
   if (clause.entries.length === 0) {
+    report.error(layoutValidationMessages.emptyClause, clause)
     return
   }
 
-  const parsed = clause.entries.map(parseLayoutEntry)
-  for (const entry of parsed) {
-    if (entry.kind === 'invalid') {
-      report.error(entry.message, entry.entry)
-    }
+  const state: ClauseState = { dimensions: new Map() }
+  for (const entry of clause.entries) {
+    validateLayoutEntry(node, entry, state, report)
   }
-
-  validateDuplicateProperties(parsed, report)
-  validateBareWords(node, parsed, report)
-  validateNumericValues(parsed, report)
-  validatePositionOffsets(parsed, report)
+  validateClauseState(node, state, report)
 }
 
-function parseLayoutEntry(entry: AST.LayoutEntry): ParsedLayoutEntry {
+function validateLayoutEntry(
+  node: AST.ViewRender,
+  entry: AST.LayoutEntry,
+  state: ClauseState,
+  report: Reporter<AST.ViewRender>,
+): void {
   const values = layoutEntryValues(entry)
   const head = values[0]
   if (head === undefined) {
-    return { kind: 'bare', words: [], entry }
+    report.error(layoutValidationMessages.malformedEntry(layoutEntryText(entry)), entry)
+    return
   }
   if (typeof head !== 'string') {
-    return { kind: 'invalid', message: layoutValidationMessages.numericHead, entry }
+    report.error(layoutValidationMessages.numericHead, entry)
+    return
   }
-  if (head !== head.toLowerCase()) {
-    return { kind: 'invalid', message: layoutValidationMessages.wordMustBeLowercase(head), entry }
+  const uppercase = values.find(value => isLayoutWord(value) && value !== value.toLowerCase())
+  if (typeof uppercase === 'string') {
+    report.error(layoutValidationMessages.wordMustBeLowercase(uppercase), entry)
+    return
   }
-
-  if (values.every(isStringValue)) {
-    const words = values.filter(isStringValue)
-    const invalidWord = words.find(word => !isKnownBareWord(word))
-    if (invalidWord !== undefined) {
-      return { kind: 'invalid', message: unknownLayoutWordMessage(invalidWord), entry }
-    }
-    return { kind: 'bare', words, entry }
+  if (!layoutHeads.has(head)) {
+    report.error(unknownLayoutWordMessage(head), entry)
+    return
   }
 
-  if (offsetPropertyHeads.has(head)) {
-    return parseSingleValueProperty(head, [head], values, entry, true)
-  }
-  if (head === 'pad' || head === 'margin') {
-    return parseSpacingProperty(head, values, entry)
-  }
-  if (numericPropertyHeads.has(head)) {
-    const keys = runtimeKeysForSimpleProperty(head)
-    return parseSingleValueProperty(head, keys, values, entry, keys.some(key => percentAllowedKeys.has(key)))
-  }
-  return { kind: 'invalid', message: unknownLayoutWordMessage(head), entry }
-}
-
-function parseSingleValueProperty(
-  head: string,
-  keys: string[],
-  values: TaoLayoutTermValue[],
-  entry: AST.LayoutEntry,
-  allowPercent: boolean,
-): ParsedLayoutEntry {
-  if (values.length !== 2 || !isLayoutNumber(values[1], allowPercent)) {
-    return { kind: 'invalid', message: layoutValidationMessages.malformedEntry(layoutEntryText(entry)), entry }
-  }
-  return { kind: 'property', keys, head, values: [values[1]], entry }
-}
-
-function parseSpacingProperty(
-  head: 'pad' | 'margin',
-  values: TaoLayoutTermValue[],
-  entry: AST.LayoutEntry,
-): ParsedLayoutEntry {
-  if (values.length === 2 && isLayoutNumber(values[1], false)) {
-    return { kind: 'property', keys: [layoutSpacingReactNativeKey(head, 'all')], head, values: [values[1]], entry }
-  }
-  if (values.length === 3 && isLayoutNumber(values[1], false) && isLayoutNumber(values[2], false)) {
-    return {
-      kind: 'property',
-      keys: [layoutSpacingReactNativeKey(head, 'vertical'), layoutSpacingReactNativeKey(head, 'horizontal')],
-      head,
-      values: [values[1], values[2]],
-      entry,
-    }
-  }
-  if (
-    values.length === 3
-    && isStringValue(values[1])
-    && spacingSides.has(values[1])
-    && isLayoutNumber(values[2], false)
-  ) {
-    return { kind: 'property', keys: [layoutSpacingReactNativeKey(head, values[1])], head, values: [values[2]], entry }
-  }
-  return { kind: 'invalid', message: layoutValidationMessages.malformedEntry(layoutEntryText(entry)), entry }
-}
-
-function validateDuplicateProperties(
-  parsed: readonly ParsedLayoutEntry[],
-  report: Reporter<AST.ViewRender>,
-): void {
-  const seen = new Map<string, AST.LayoutEntry>()
-  for (const entry of parsed) {
-    if (entry.kind !== 'property') {
-      continue
-    }
-    for (const key of entry.keys) {
-      if (seen.has(key)) {
-        report.error(layoutValidationMessages.duplicateProperty(key), entry.entry)
-      } else {
-        seen.set(key, entry.entry)
-      }
-    }
-  }
-}
-
-function validateBareWords(
-  node: AST.ViewRender,
-  parsed: readonly ParsedLayoutEntry[],
-  report: Reporter<AST.ViewRender>,
-): void {
-  let direction: TaoLayoutDirection | undefined
-  let wrap: string | undefined
-  let position: string | undefined
-  let selfWord: string | undefined
-  const childWords: string[] = []
-  const selfAxisWords: string[] = []
-
-  for (const entry of parsed) {
-    if (entry.kind === 'property' && parentAxisPropertyHeads.has(entry.head)) {
-      selfAxisWords.push(entry.head)
-    }
-    if (entry.kind !== 'bare') {
-      continue
-    }
-    for (const word of entry.words) {
-      if (word === 'row' || word === 'column') {
-        if (direction !== undefined && direction !== word) {
-          report.error(layoutValidationMessages.mixedDirection(direction, word), entry.entry)
-        }
-        direction = word
-      } else if (wrapWords.has(word)) {
-        if (wrap !== undefined && wrap !== word) {
-          report.error(layoutValidationMessages.mixedWrap(wrap, word), entry.entry)
-        }
-        wrap = word
-      } else if (positionWords.has(word)) {
-        if (position !== undefined && position !== word) {
-          report.error(layoutValidationMessages.mixedPosition(position, word), entry.entry)
-        }
-        position = word
-      } else if (selfAlignmentWords.has(word)) {
-        if (selfWord !== undefined && selfWord !== word) {
-          report.error(layoutValidationMessages.duplicateProperty('alignSelf'), entry.entry)
-        }
-        selfWord = word
-        selfAxisWords.push(word)
-      } else if (childArrangementWords.has(word)) {
-        childWords.push(word)
-      }
-    }
-  }
-
-  if (childWords.length > 0) {
-    const containerDirection = layoutDirectionForViewRender(node)
-    if (containerDirection === undefined) {
-      report.error(layoutValidationMessages.childArrangementNeedsDirection(childWords.join(' ')), node.layoutClause)
-    } else {
-      validateChildAxisConflicts(childWords, containerDirection, node.layoutClause, report)
-    }
-  }
-
-  if (selfAxisWords.length > 0 && parentLayoutDirection(node) === undefined) {
-    report.error(layoutValidationMessages.selfNeedsParentAxis(selfAxisWords[0]!), node.layoutClause)
-  }
-}
-
-function validateChildAxisConflicts(
-  words: readonly string[],
-  direction: TaoLayoutDirection,
-  clause: AST.LayoutClause | undefined,
-  report: Reporter<AST.ViewRender>,
-): void {
-  let mainWord: string | undefined
-  let crossWord: string | undefined
-  let centerCount = 0
-
-  const setAxis = (axis: TaoLayoutAxis, word: string) => {
-    if (axis === 'main') {
-      if (mainWord !== undefined) {
-        report.error(layoutValidationMessages.childAxisConflict(word, mainWord, direction, axis), clause)
-      }
-      mainWord = word
+  switch (head) {
+    case 'items':
+      validateItemsEntry(node, entry, values, state, report)
       return
-    }
-    if (crossWord !== undefined) {
-      report.error(layoutValidationMessages.childAxisConflict(word, crossWord, direction, axis), clause)
-    }
-    crossWord = word
+    case 'aligned':
+      validateAlignedEntry(node, entry, values, state, report)
+      return
+    case 'stretched':
+      validateStretchedEntry(node, entry, values, state, report)
+      return
+    case 'width':
+    case 'height':
+      validateDimensionEntry(head, entry, values, state, report)
+      return
+    case 'fill':
+      validateBareModeEntry('fill', entry, values, state, report)
+      return
+    case 'hug':
+      validateBareModeEntry('hug', entry, values, state, report)
+      return
+    case 'grow':
+      validateGrowEntry(entry, values, state, report)
+      return
+    case 'compress':
+      validatePressureEntry('compress', entry, values, state, report)
+      return
+    case 'rigid':
+      validatePressureEntry('rigid', entry, values, state, report)
+      return
+    case 'gap':
+      validateSingleNumberEntry('gap', entry, values, state, report)
+      return
+    case 'pad':
+      validatePadEntry(entry, values, state, report)
+      return
+  }
+}
+
+function validateItemsEntry(
+  node: AST.ViewRender,
+  entry: AST.LayoutEntry,
+  values: TaoLayoutTermValue[],
+  state: ClauseState,
+  report: Reporter<AST.ViewRender>,
+): void {
+  if (state.items !== undefined) {
+    report.error(layoutValidationMessages.duplicateProperty('items'), entry)
+    return
+  }
+  state.items = entry
+
+  const terms = values.slice(1)
+  if (terms.length === 0 || terms.some(term => !isLayoutWord(term))) {
+    report.error(layoutValidationMessages.malformedEntry(layoutEntryText(entry)), entry)
+    return
+  }
+  const invalid = terms.find(term => typeof term === 'string' && !isKnownItemWord(term))
+  if (typeof invalid === 'string') {
+    report.error(unknownLayoutWordMessage(invalid), entry)
+    return
   }
 
-  for (const word of words) {
+  const viewName = node.view.$refText
+  const direction = viewDirection(node)
+  if (direction === undefined) {
+    report.error(layoutValidationMessages.itemsNeedsDirection(viewName), entry)
+    return
+  }
+  const defaults = defaultItemsForStandardContainer(viewName)
+  if (defaults === undefined) {
+    report.error(layoutValidationMessages.itemsNeedsDirection(viewName), entry)
+    return
+  }
+
+  const claimed = new Map<TaoLayoutItemAxis, string>()
+  let centerCount = 0
+  for (const word of terms as string[]) {
     if (word === 'center') {
       centerCount++
       continue
     }
-    setAxis(layoutChildWordAxis(word, direction), word)
-  }
-  for (let i = 0; i < centerCount; i++) {
-    if (mainWord === undefined && crossWord === undefined) {
-      mainWord = 'center'
-      crossWord = 'center'
-    } else if (mainWord !== undefined && crossWord === undefined) {
-      crossWord = 'center'
-    } else if (mainWord === undefined && crossWord !== undefined) {
-      mainWord = 'center'
-    } else {
-      report.error(layoutValidationMessages.childAxisConflict('center', mainWord!, direction, 'main'), clause)
-    }
-  }
-}
-
-function validateNumericValues(
-  parsed: readonly ParsedLayoutEntry[],
-  report: Reporter<AST.ViewRender>,
-): void {
-  const numericByKey = new Map<string, number>()
-
-  for (const entry of parsed) {
-    if (entry.kind !== 'property') {
+    const axis = itemWordAxis(word, direction)
+    if (axis === undefined) {
+      report.error(layoutValidationMessages.itemNotAllowed(word, direction), entry)
       continue
     }
-    entry.keys.forEach((key, idx) => {
-      const value = entry.values[Math.min(idx, entry.values.length - 1)]
-      if (value === undefined) {
-        return
-      }
-      if (typeof value === 'string') {
-        if (!percentAllowedKeys.has(key)) {
-          report.error(layoutValidationMessages.percentNotAllowed(key), entry.entry)
-          return
-        }
-        const percent = Number(value.replace('%', ''))
-        if (percent < 0 || percent > 100) {
-          report.error(layoutValidationMessages.percentOutOfRange(key), entry.entry)
-        }
-        return
-      }
-      if (nonNegativeNumberKeys.has(key) && value < 0) {
-        report.error(layoutValidationMessages.negativeNotAllowed(key), entry.entry)
-      }
-      numericByKey.set(key, value)
-    })
+    const existing = claimed.get(axis)
+    if (existing !== undefined) {
+      report.error(layoutValidationMessages.itemAxisConflict(word, existing, axis), entry)
+    } else {
+      claimed.set(axis, word)
+    }
   }
 
-  validateMinMax(numericByKey, parsed, 'minWidth', 'maxWidth', report)
-  validateMinMax(numericByKey, parsed, 'minHeight', 'maxHeight', report)
+  if (centerCount > 2) {
+    report.error(layoutValidationMessages.itemAxisConflict('center', 'center', 'horizontal'), entry)
+  } else if (centerCount === 2 && claimed.size > 0) {
+    report.error(layoutValidationMessages.centerHasNoSlot, entry)
+  } else if (centerCount === 1 && claimed.has('vertical') && claimed.has('horizontal')) {
+    report.error(layoutValidationMessages.centerHasNoSlot, entry)
+  }
 }
 
-function validatePositionOffsets(
-  parsed: readonly ParsedLayoutEntry[],
+function validateAlignedEntry(
+  node: AST.ViewRender,
+  entry: AST.LayoutEntry,
+  values: TaoLayoutTermValue[],
+  state: ClauseState,
   report: Reporter<AST.ViewRender>,
 ): void {
-  const offsetKeys = new Set<string>()
-  const propertyKeys = new Set<string>()
-  let hasPositionMode = false
-  for (const entry of parsed) {
-    if (entry.kind === 'bare' && entry.words.some(word => positionWords.has(word))) {
-      hasPositionMode = true
-    }
-    if (entry.kind === 'property') {
-      for (const key of entry.keys) {
-        propertyKeys.add(key)
-        if (offsetPropertyHeads.has(key)) {
-          offsetKeys.add(key)
-        }
-      }
-    }
+  if (values.length !== 2 || !isLayoutWord(values[1])) {
+    report.error(layoutValidationMessages.malformedEntry(layoutEntryText(entry)), entry)
+    return
   }
-
-  if (offsetKeys.size > 0 && !hasPositionMode) {
-    for (const key of offsetKeys) {
-      report.error(layoutValidationMessages.offsetNeedsPosition(key), reportLocationForProperty(parsed, key))
-    }
+  const word = values[1]
+  if (word === 'stretch') {
+    report.error(layoutValidationMessages.alignedStretch, entry)
+    return
   }
-  if (propertyKeys.has('width') && offsetKeys.has('left') && offsetKeys.has('right')) {
-    report.error(
-      layoutValidationMessages.overConstrainedAxis('width', 'left', 'right'),
-      reportLocationForProperty(parsed, 'width'),
-    )
+  const direction = parentViewDirection(node)
+  if (direction === undefined) {
+    report.error(layoutValidationMessages.alignedNeedsParentAxis('aligned'), entry)
+    return
   }
-  if (propertyKeys.has('height') && offsetKeys.has('top') && offsetKeys.has('bottom')) {
-    report.error(
-      layoutValidationMessages.overConstrainedAxis('height', 'top', 'bottom'),
-      reportLocationForProperty(parsed, 'height'),
-    )
+  const valid = direction === 'row'
+    ? ['top', 'center', 'bottom', 'baseline'].includes(word)
+    : ['left', 'center', 'right'].includes(word)
+  if (!valid) {
+    report.error(layoutValidationMessages.invalidAligned(word, direction), entry)
+    return
   }
+  validateOneAlignSelf(entry, state, report)
 }
 
-function validateMinMax(
-  values: ReadonlyMap<string, number>,
-  parsed: readonly ParsedLayoutEntry[],
-  minKey: string,
-  maxKey: string,
+function validateStretchedEntry(
+  node: AST.ViewRender,
+  entry: AST.LayoutEntry,
+  values: TaoLayoutTermValue[],
+  state: ClauseState,
   report: Reporter<AST.ViewRender>,
 ): void {
-  const min = values.get(minKey)
-  const max = values.get(maxKey)
-  if (min !== undefined && max !== undefined && min > max) {
-    const maxEntry = reportLocationForProperty(parsed, maxKey)
-    const minEntry = reportLocationForProperty(parsed, minKey)
-    report.error(layoutValidationMessages.minGreaterThanMax(minKey, maxKey), maxEntry ?? minEntry)
+  if (values.length !== 1) {
+    report.error(layoutValidationMessages.malformedEntry(layoutEntryText(entry)), entry)
+    return
+  }
+  if (parentViewDirection(node) === undefined) {
+    report.error(layoutValidationMessages.alignedNeedsParentAxis('stretched'), entry)
+    return
+  }
+  if (validateOneAlignSelf(entry, state, report)) {
+    state.stretched = entry
   }
 }
 
-function reportLocationForProperty(
-  parsed: readonly ParsedLayoutEntry[],
+function validateOneAlignSelf(
+  entry: AST.LayoutEntry,
+  state: ClauseState,
+  report: Reporter<AST.ViewRender>,
+): boolean {
+  if (state.alignSelf !== undefined) {
+    report.error(layoutValidationMessages.duplicateProperty('alignSelf'), entry)
+    return false
+  }
+  state.alignSelf = entry
+  return true
+}
+
+function validateDimensionEntry(
+  head: DimensionHead,
+  entry: AST.LayoutEntry,
+  values: TaoLayoutTermValue[],
+  state: ClauseState,
+  report: Reporter<AST.ViewRender>,
+): void {
+  if (state.dimensions.has(head)) {
+    report.error(layoutValidationMessages.duplicateProperty(head), entry)
+    return
+  }
+  const dim: { entry: AST.LayoutEntry; mode?: DimensionMode; min?: number; max?: number } = { entry }
+  state.dimensions.set(head, dim)
+  if (values.length === 1) {
+    report.error(layoutValidationMessages.malformedEntry(layoutEntryText(entry)), entry)
+    return
+  }
+  for (let i = 1; i < values.length; i++) {
+    const term = values[i]!
+    if (term === 'fill' || term === 'hug') {
+      setDimensionMode(dim, term, entry, report)
+      continue
+    }
+    if (term === 'min' || term === 'max') {
+      const next = values[++i]
+      if (!isLayoutNumber(next, true)) {
+        report.error(layoutValidationMessages.malformedEntry(layoutEntryText(entry)), entry)
+        return
+      }
+      validateNonNegativeNumber(`${head} ${term}`, next, entry, report)
+      validatePercent(`${head} ${term}`, next, entry, report)
+      if (typeof next === 'number') {
+        dim[term] = next
+      }
+      continue
+    }
+    if (isLayoutNumber(term, true)) {
+      validateNonNegativeNumber(head, term, entry, report)
+      validatePercent(head, term, entry, report)
+      setDimensionMode(dim, 'fixed', entry, report)
+      continue
+    }
+    report.error(layoutValidationMessages.malformedEntry(layoutEntryText(entry)), entry)
+    return
+  }
+  if (dim.min !== undefined && dim.max !== undefined && dim.min > dim.max) {
+    report.error(layoutValidationMessages.minGreaterThanMax(`${head} min`, `${head} max`), entry)
+  }
+}
+
+function setDimensionMode(
+  dim: { mode?: DimensionMode },
+  mode: DimensionMode,
+  entry: AST.LayoutEntry,
+  report: Reporter<AST.ViewRender>,
+): void {
+  if (dim.mode !== undefined && dim.mode !== mode) {
+    report.error(layoutValidationMessages.malformedEntry(layoutEntryText(entry)), entry)
+    return
+  }
+  if (dim.mode !== undefined) {
+    report.error(layoutValidationMessages.malformedEntry(layoutEntryText(entry)), entry)
+    return
+  }
+  dim.mode = mode
+}
+
+function validateBareModeEntry(
+  mode: 'fill' | 'hug',
+  entry: AST.LayoutEntry,
+  values: TaoLayoutTermValue[],
+  state: ClauseState,
+  report: Reporter<AST.ViewRender>,
+): void {
+  if (values.length !== 1) {
+    report.error(layoutValidationMessages.malformedEntry(layoutEntryText(entry)), entry)
+    return
+  }
+  if (mode === 'fill') {
+    if (state.bareFill !== undefined) {
+      report.error(layoutValidationMessages.duplicateProperty('fill'), entry)
+      return
+    }
+    state.bareFill = entry
+  } else {
+    if (state.bareHug !== undefined) {
+      report.error(layoutValidationMessages.duplicateProperty('hug'), entry)
+      return
+    }
+    state.bareHug = entry
+  }
+}
+
+function validateGrowEntry(
+  entry: AST.LayoutEntry,
+  values: TaoLayoutTermValue[],
+  state: ClauseState,
+  report: Reporter<AST.ViewRender>,
+): void {
+  if (state.grow !== undefined) {
+    report.error(layoutValidationMessages.duplicateProperty('grow'), entry)
+    return
+  }
+  state.grow = entry
+
+  if (values.length === 1) {
+    return
+  }
+  if (values.length !== 2 || !isLayoutNumber(values[1], false)) {
+    report.error(layoutValidationMessages.malformedEntry(layoutEntryText(entry)), entry)
+    return
+  }
+  validateNonNegativeNumber('grow', values[1], entry, report)
+}
+
+function validatePressureEntry(
+  head: 'compress' | 'rigid',
+  entry: AST.LayoutEntry,
+  values: TaoLayoutTermValue[],
+  state: ClauseState,
+  report: Reporter<AST.ViewRender>,
+): void {
+  if (values.length !== 1) {
+    report.error(layoutValidationMessages.malformedEntry(layoutEntryText(entry)), entry)
+    return
+  }
+  if (head === 'compress') {
+    if (state.compress !== undefined) {
+      report.error(layoutValidationMessages.duplicateProperty('compress'), entry)
+      return
+    }
+    state.compress = entry
+  } else {
+    if (state.rigid !== undefined) {
+      report.error(layoutValidationMessages.duplicateProperty('rigid'), entry)
+      return
+    }
+    state.rigid = entry
+  }
+}
+
+function validateSingleNumberEntry(
+  head: 'gap',
+  entry: AST.LayoutEntry,
+  values: TaoLayoutTermValue[],
+  state: ClauseState,
+  report: Reporter<AST.ViewRender>,
+): void {
+  if (state.gap !== undefined) {
+    report.error(layoutValidationMessages.duplicateProperty(head), entry)
+    return
+  }
+  state.gap = entry
+
+  if (values.length !== 2 || !isLayoutNumber(values[1], false)) {
+    report.error(layoutValidationMessages.malformedEntry(layoutEntryText(entry)), entry)
+    return
+  }
+  validateNonNegativeNumber(head, values[1], entry, report)
+}
+
+function validatePadEntry(
+  entry: AST.LayoutEntry,
+  values: TaoLayoutTermValue[],
+  state: ClauseState,
+  report: Reporter<AST.ViewRender>,
+): void {
+  if (state.pad !== undefined) {
+    report.error(layoutValidationMessages.duplicateProperty('pad'), entry)
+    return
+  }
+  state.pad = entry
+
+  if (values.length === 1) {
+    report.error(layoutValidationMessages.malformedEntry(layoutEntryText(entry)), entry)
+    return
+  }
+  for (let i = 1; i < values.length; i++) {
+    const term = values[i]!
+    if (isLayoutNumber(term, false)) {
+      validateNonNegativeNumber('pad', term, entry, report)
+      continue
+    }
+    if (isPadTarget(term)) {
+      const amount = values[++i]
+      if (!isLayoutNumber(amount, false)) {
+        report.error(layoutValidationMessages.malformedEntry(layoutEntryText(entry)), entry)
+        return
+      }
+      validateNonNegativeNumber(`pad ${term}`, amount, entry, report)
+      continue
+    }
+    report.error(layoutValidationMessages.malformedEntry(layoutEntryText(entry)), entry)
+    return
+  }
+}
+
+function validateClauseState(
+  node: AST.ViewRender,
+  state: ClauseState,
+  report: Reporter<AST.ViewRender>,
+): void {
+  if (state.bareFill !== undefined && state.dimensions.size > 0) {
+    report.error(layoutValidationMessages.fillWithDimension, state.bareFill)
+  }
+  if (state.bareHug !== undefined && state.dimensions.size > 0) {
+    report.error(layoutValidationMessages.hugWithDimension, state.bareHug)
+  }
+  if (state.bareFill !== undefined && state.bareHug !== undefined) {
+    report.error(layoutValidationMessages.fillWithHug, state.bareHug)
+  }
+  if (state.compress !== undefined && state.rigid !== undefined) {
+    report.error(layoutValidationMessages.compressRigid, state.rigid)
+  }
+  const parentDirection = parentViewDirection(node)
+  if (state.stretched !== undefined && parentDirection !== undefined && hasCrossAxisHug(parentDirection, state)) {
+    report.error(layoutValidationMessages.stretchedHug, state.stretched)
+  }
+}
+
+function hasCrossAxisHug(direction: TaoLayoutDirection, state: ClauseState): boolean {
+  if (state.bareHug !== undefined) {
+    return true
+  }
+  const crossAxis = direction === 'row' ? 'height' : 'width'
+  return state.dimensions.get(crossAxis)?.mode === 'hug'
+}
+
+function validateNonNegativeNumber(
   key: string,
-): AST.LayoutEntry | undefined {
-  const entry = parsed.find(candidate => candidate.kind === 'property' && candidate.keys.includes(key))
-  return entry?.entry
+  value: TaoLayoutTermValue,
+  entry: AST.LayoutEntry,
+  report: Reporter<AST.ViewRender>,
+): void {
+  if (typeof value === 'number' && value < 0) {
+    report.error(layoutValidationMessages.negativeNotAllowed(key), entry)
+  }
 }
 
-function layoutDirectionForViewRender(node: AST.ViewRender): TaoLayoutDirection | undefined {
-  const explicit = explicitLayoutDirection(node.layoutClause)
-  if (explicit !== undefined) {
-    return explicit
+function validatePercent(
+  key: string,
+  value: TaoLayoutTermValue,
+  entry: AST.LayoutEntry,
+  report: Reporter<AST.ViewRender>,
+): void {
+  if (!isPercentString(value)) {
+    return
   }
-  const view = node.view.ref
-  if (AST.isViewDeclaration(view)) {
-    if (view.name === 'Row') {
-      return 'row'
-    }
-    if (view.name === 'Col') {
-      return 'column'
-    }
+  const percent = Number(value.replace('%', ''))
+  if (percent < 0 || percent > 100) {
+    report.error(layoutValidationMessages.percentOutOfRange(key), entry)
   }
-  return undefined
 }
 
-function parentLayoutDirection(node: AST.ViewRender): TaoLayoutDirection | undefined {
+function viewDirection(node: AST.ViewRender): TaoLayoutDirection | undefined {
+  return standardContainerDirection(node.view.$refText)
+}
+
+function parentViewDirection(node: AST.ViewRender): TaoLayoutDirection | undefined {
   let current: AST.Node | undefined = node.$container
   while (current !== undefined) {
     if (AST.isBlock(current)) {
       const owner = current.$container as AST.Node
       if (AST.isViewRender(owner)) {
-        return layoutDirectionForViewRender(owner)
+        return viewDirection(owner)
       }
       current = owner
     } else {
@@ -524,74 +648,37 @@ function parentLayoutDirection(node: AST.ViewRender): TaoLayoutDirection | undef
   return undefined
 }
 
-function explicitLayoutDirection(clause: AST.LayoutClause | undefined): TaoLayoutDirection | undefined {
-  if (clause === undefined) {
-    return undefined
-  }
-  for (const entry of clause.entries) {
-    for (const value of layoutEntryValues(entry)) {
-      if (value === 'row' || value === 'column') {
-        return value
-      }
-    }
-  }
-  return undefined
-}
-
-function runtimeKeysForSimpleProperty(head: string): string[] {
-  switch (head) {
-    case 'row_gap':
-      return ['rowGap']
-    case 'column_gap':
-      return ['columnGap']
-    case 'min_width':
-      return ['minWidth']
-    case 'max_width':
-      return ['maxWidth']
-    case 'min_height':
-      return ['minHeight']
-    case 'max_height':
-      return ['maxHeight']
-    case 'grow':
-      return ['flexGrow']
-    case 'shrink':
-      return ['flexShrink']
-    case 'basis':
-      return ['flexBasis']
-    case 'z':
-      return ['zIndex']
-    default:
-      return [head]
-  }
-}
-
-function isKnownBareWord(word: string): boolean {
-  return directionWords.has(word)
-    || wrapWords.has(word)
-    || childArrangementWords.has(word)
-    || selfAlignmentWords.has(word)
-    || positionWords.has(word)
-}
-
 function unknownLayoutWordMessage(word: string): string {
   const lane = outOfLayoutWords.get(word)
   if (lane !== undefined) {
     return layoutValidationMessages.outOfLayoutWord(word, lane)
   }
-  if (deferredLayoutWords.has(word)) {
+  if (itemOnlyWords.has(word)) {
+    return layoutValidationMessages.itemWordOutsideItems(word)
+  }
+  if (removedLayoutWords.has(word) || deferredLayoutWords.has(word)) {
     return layoutValidationMessages.unsupportedWord(word)
   }
   return layoutValidationMessages.unknownWord(word)
 }
 
-function isLayoutNumber(value: TaoLayoutTermValue, allowPercent: boolean): boolean {
+function isLayoutNumber(value: TaoLayoutTermValue | undefined, allowPercent: boolean): boolean {
   return typeof value === 'number' || (allowPercent && isPercentString(value))
 }
 
-function isPercentString(value: TaoLayoutTermValue): value is string {
+function isPercentString(value: TaoLayoutTermValue | undefined): value is string {
   return typeof value === 'string' && /^-?\d+%$/.test(value)
 }
 
-function isStringValue(value: TaoLayoutTermValue): value is string {
+function isLayoutWord(value: TaoLayoutTermValue | undefined): value is string {
   return typeof value === 'string' && !isPercentString(value)
+}
+
+function isPadTarget(value: TaoLayoutTermValue): value is string {
+  return value === 'top'
+    || value === 'right'
+    || value === 'bottom'
+    || value === 'left'
+    || value === 'horizontal'
+    || value === 'vertical'
 }

@@ -254,7 +254,7 @@ LayoutTerm:
     LayoutWord | LayoutPercentLiteral | LayoutNumberLiteral;
 
 LayoutWord:
-    value=ID;
+    value=ID | value=('spread-inset' | 'spread-balanced');
 
 LayoutNumberLiteral:
     negative?='-'? value=NUMBER;

@@ -43,11 +43,17 @@ describe('codegen — call-site argument bindings:', () => {
     const out = await writeAndCompile(`
       app A { ui V }
       layout Row { }
+      ui Text Value text { }
       ui V {
-        Row [center spread, gap 12]
+        Row [items center spread, gap 12] {
+          Text "x" [aligned center, width fill max 400]
+        }
       }
     `)
-    expect(out).toContain('TR.Layout.resolve({"view":"Row","entries":[["center","spread"],["gap",12]]})')
+    expect(out).toContain('TR.Layout.resolve({"view":"Row","entries":[["items","center","spread"],["gap",12]]})')
+    expect(out).toContain(
+      'TR.Layout.resolve({"view":"Text","entries":[["aligned","center"],["width","fill","max",400]],"parentDirection":"row"})',
+    )
   })
 
   test('ActionRender invocation emits a props bag keyed by the resolved parameter names', async () => {

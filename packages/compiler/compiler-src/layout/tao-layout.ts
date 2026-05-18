@@ -1,18 +1,28 @@
 import { AST } from '@parser/parser'
+import type { TaoLayoutDirection } from '@shared/layout/layout-axis'
 
 export type TaoLayoutTermValue = string | number
 
 export type SerializedTaoLayoutSpec = {
   view: string
+  parentDirection?: TaoLayoutDirection
   entries: TaoLayoutTermValue[][]
 }
 
 /** serializeLayoutClause converts a parsed layout clause into the compact runtime layout spec. */
-export function serializeLayoutClause(viewName: string, clause: AST.LayoutClause): SerializedTaoLayoutSpec {
-  return {
+export function serializeLayoutClause(
+  viewName: string,
+  clause: AST.LayoutClause,
+  opts: { parentDirection?: TaoLayoutDirection } = {},
+): SerializedTaoLayoutSpec {
+  const spec: SerializedTaoLayoutSpec = {
     view: viewName,
     entries: clause.entries.map(entry => layoutEntryValues(entry)),
   }
+  if (opts.parentDirection !== undefined) {
+    spec.parentDirection = opts.parentDirection
+  }
+  return spec
 }
 
 /** layoutEntryValues returns every term in a layout entry as its runtime literal value. */

@@ -217,11 +217,11 @@ describe('Formatter', () => {
       }
     `)
   testFormatter('view render with layout clause')
-    .format(`ui MyView {Row [ top   left , gap   8 ]{Child [ centered ]{}}}`)
+    .format(`ui MyView {Row [ items   top   left , gap   8 ]{Child [ aligned   center ]{}}}`)
     .equals(`
       ui MyView {
-          Row [top left, gap 8] {
-              Child [centered] { }
+          Row [items top left, gap 8] {
+              Child [aligned center] { }
           }
       }
     `)
@@ -229,14 +229,14 @@ describe('Formatter', () => {
     .format(`
       ui MyView {
           Row [
-              center spread,
+              items center spread,
               gap 12
           ] {}
       }
     `)
     .equals(`
       ui MyView {
-          Row [center spread, gap 12] { }
+          Row [items center spread, gap 12] { }
       }
     `)
   testFormatter('top level declarations separated')

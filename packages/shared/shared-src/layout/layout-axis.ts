@@ -1,42 +1,125 @@
-/** Tao flex direction for resolving bare child-arrangement words. */
+/** Tao flex direction for resolving normal-flow layout. */
 export type TaoLayoutDirection = 'row' | 'column'
 
-/** Main vs cross flex axis. */
-export type TaoLayoutAxis = 'main' | 'cross'
+/** Tao physical item slot affected by an `items` token. */
+export type TaoLayoutItemAxis = 'vertical' | 'horizontal'
 
-/** layoutChildWordAxis maps a bare child-arrangement word to the axis it affects for the given flex direction. */
-export function layoutChildWordAxis(word: string, direction: TaoLayoutDirection): TaoLayoutAxis {
-  if (word === 'pack' || word === 'spread' || word === 'around' || word === 'evenly') {
-    return 'main'
-  }
-  if (word === 'stretch') {
-    return 'cross'
-  }
-  if (direction === 'row') {
-    return word === 'left' || word === 'right' ? 'main' : 'cross'
-  }
-  return word === 'top' || word === 'bottom' ? 'main' : 'cross'
+export type TaoLayoutItemSlots = {
+  vertical: string
+  horizontal: string
 }
 
-/** layoutSpacingReactNativeKey maps Tao `pad` / `margin` side names to React Native style property keys. */
-export function layoutSpacingReactNativeKey(head: 'pad' | 'margin', side: string): string {
-  const prefix = head === 'pad' ? 'padding' : 'margin'
-  switch (side) {
-    case 'all':
-      return prefix
-    case 'horizontal':
-      return `${prefix}Horizontal`
-    case 'vertical':
-      return `${prefix}Vertical`
-    case 'top':
-      return `${prefix}Top`
-    case 'right':
-      return `${prefix}Right`
+const standardContainerDirections: Record<string, TaoLayoutDirection> = {
+  Row: 'row',
+  Box: 'row',
+  WrappingRow: 'row',
+  Col: 'column',
+  Stack: 'column',
+}
+
+const standardContainerItemDefaults: Record<string, TaoLayoutItemSlots> = {
+  Row: { vertical: 'baseline', horizontal: 'left' },
+  Col: { vertical: 'top', horizontal: 'stretch' },
+  Box: { vertical: 'center', horizontal: 'left' },
+  Stack: { vertical: 'top', horizontal: 'center' },
+  WrappingRow: { vertical: 'baseline', horizontal: 'left' },
+}
+
+/** standardContainerDirection returns the normal-flow direction for a standard library layout container. */
+export function standardContainerDirection(viewName: string): TaoLayoutDirection | undefined {
+  return standardContainerDirections[viewName]
+}
+
+/** defaultItemsForStandardContainer returns the default vertical/horizontal item slots for a standard container. */
+export function defaultItemsForStandardContainer(viewName: string): TaoLayoutItemSlots | undefined {
+  return standardContainerItemDefaults[viewName]
+}
+
+/** isKnownItemWord returns true when `word` is legal inside an `items` layout entry. */
+export function isKnownItemWord(word: string): boolean {
+  return [
+    'top',
+    'bottom',
+    'left',
+    'right',
+    'center',
+    'baseline',
+    'stretch',
+    'spread',
+    'spread-inset',
+    'spread-balanced',
+  ].includes(word)
+}
+
+/** itemWordAxis returns the physical slot claimed by an `items` token for the given container direction. */
+export function itemWordAxis(word: string, direction: TaoLayoutDirection): TaoLayoutItemAxis | undefined {
+  if (word === 'center') {
+    return undefined
+  }
+  if (word === 'baseline') {
+    return direction === 'row' ? 'vertical' : undefined
+  }
+  if (word === 'stretch') {
+    return direction === 'row' ? 'vertical' : 'horizontal'
+  }
+  if (word === 'spread' || word === 'spread-inset' || word === 'spread-balanced') {
+    return direction === 'row' ? 'horizontal' : 'vertical'
+  }
+  if (word === 'top' || word === 'bottom') {
+    return 'vertical'
+  }
+  if (word === 'left' || word === 'right') {
+    return 'horizontal'
+  }
+  return undefined
+}
+
+/** itemAxisStyleKey returns the React Native style key for a physical item slot in a container direction. */
+export function itemAxisStyleKey(
+  direction: TaoLayoutDirection,
+  axis: TaoLayoutItemAxis,
+): 'alignItems' | 'justifyContent' {
+  if (direction === 'row') {
+    return axis === 'vertical' ? 'alignItems' : 'justifyContent'
+  }
+  return axis === 'vertical' ? 'justifyContent' : 'alignItems'
+}
+
+/** itemWordReactNativeValue maps a Tao item token to the corresponding React Native/Yoga value. */
+export function itemWordReactNativeValue(word: string): string {
+  switch (word) {
     case 'bottom':
-      return `${prefix}Bottom`
-    case 'left':
-      return `${prefix}Left`
+    case 'right':
+      return 'flex-end'
+    case 'center':
+      return 'center'
+    case 'stretch':
+      return 'stretch'
+    case 'baseline':
+      return 'baseline'
+    case 'spread':
+      return 'space-between'
+    case 'spread-inset':
+      return 'space-around'
+    case 'spread-balanced':
+      return 'space-evenly'
     default:
-      return prefix
+      return 'flex-start'
+  }
+}
+
+/** layoutPaddingReactNativeKey maps Tao `pad` side names to React Native style property keys. */
+export function layoutPaddingReactNativeKey(side: string): string {
+  switch (side) {
+    case 'top':
+      return 'paddingTop'
+    case 'right':
+      return 'paddingRight'
+    case 'bottom':
+      return 'paddingBottom'
+    case 'left':
+      return 'paddingLeft'
+    default:
+      return 'padding'
   }
 }

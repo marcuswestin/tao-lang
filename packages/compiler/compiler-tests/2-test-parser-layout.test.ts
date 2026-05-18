@@ -17,13 +17,13 @@ describe('layout syntax parser:', () => {
     const doc = await parseAST(`
       layout Row { }
       ui Root {
-        Row [top left]
+        Row [items top left]
       }
     `)
 
     const render = doc.statements.second.as_ViewDeclaration.block.statements.first.as_ViewRender
     const clause = render.layoutClause
-    clause.entries.match([{ terms: [{ value: 'top' }, { value: 'left' }] }])
+    clause.entries.match([{ terms: [{ value: 'items' }, { value: 'top' }, { value: 'left' }] }])
   })
 
   test('parses render with args and layout clause', async () => {
@@ -47,7 +47,7 @@ describe('layout syntax parser:', () => {
       ui Text Value text { }
       ui Root {
         Col [gap 8] {
-          Text "child" [centered]
+          Text "child" [aligned center]
         }
       }
     `)
@@ -55,7 +55,7 @@ describe('layout syntax parser:', () => {
     const col = doc.statements[2].as_ViewDeclaration.block.statements.first.as_ViewRender
     col.layoutClause.entries.first.terms.match([{ value: 'gap' }, { value: 8 }])
     const text = col.block.statements.first.as_ViewRender
-    text.layoutClause.entries.first.terms.match([{ value: 'centered' }])
+    text.layoutClause.entries.first.terms.match([{ value: 'aligned' }, { value: 'center' }])
   })
 
   test('parses multiline layout clause', async () => {
@@ -63,7 +63,7 @@ describe('layout syntax parser:', () => {
       layout Row { }
       ui Root {
         Row [
-          center spread,
+          items center spread,
           gap 12
         ]
       }
@@ -72,8 +72,24 @@ describe('layout syntax parser:', () => {
     const entries = doc.statements.second.as_ViewDeclaration.block.statements.first.as_ViewRender
       .layoutClause.entries
     expect(entries).toHaveLength(2)
-    entries.first.terms.match([{ value: 'center' }, { value: 'spread' }])
+    entries.first.terms.match([{ value: 'items' }, { value: 'center' }, { value: 'spread' }])
     entries.second.terms.match([{ value: 'gap' }, { value: 12 }])
+  })
+
+  test('parses MVP layout words with hyphenated items and dimension clauses', async () => {
+    const doc = await parseAST(`
+      layout Row { }
+      ui Root {
+        Row [items spread-inset, width fill max 400, pad 10 horizontal 4]
+      }
+    `)
+
+    const entries = doc.statements.second.as_ViewDeclaration.block.statements.first.as_ViewRender
+      .layoutClause.entries
+    expect(entries).toHaveLength(3)
+    entries.first.terms.match([{ value: 'items' }, { value: 'spread-inset' }])
+    entries.second.terms.match([{ value: 'width' }, { value: 'fill' }, { value: 'max' }, { value: 400 }])
+    entries[2].terms.match([{ value: 'pad' }, { value: 10 }, { value: 'horizontal' }, { value: 4 }])
   })
 
   test('reports malformed layout clause', async () => {

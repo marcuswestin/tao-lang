@@ -16,6 +16,7 @@ import { parameterName } from '@compiler/tao-type-shapes'
 import { resolveArgumentBindings } from '@compiler/typing/tao-argument-bindings'
 import { AST } from '@parser/parser'
 import { Assert, Stream, switch_safe } from '@shared'
+import { standardContainerDirection } from '@shared/layout/layout-axis'
 import { throwUnexpectedBehaviorError } from '@shared/TaoErrors'
 import { serializeLayoutClause } from '../../layout/tao-layout'
 import {
@@ -628,7 +629,9 @@ class RuntimeGen {
     if (viewRender.layoutClause === undefined) {
       return compileNoop()
     }
-    const spec = serializeLayoutClause(viewDecl.name, viewRender.layoutClause)
+    const spec = serializeLayoutClause(viewDecl.name, viewRender.layoutClause, {
+      parentDirection: parentViewDirection(viewRender),
+    })
     return compileNode(viewRender.layoutClause)`
       _taoLayout={TR.Layout.resolve(${JSON.stringify(spec)})}
     `.append(' ')
@@ -845,6 +848,23 @@ function isBlockWithStatements(block: AST.Block | undefined): block is BlockWith
 /** isNestedDeclaration returns true when the declaration lives inside another declaration (not at file/module level). */
 function isNestedDeclaration(decl: AST.Declaration): boolean {
   return AST.isBlock(decl.$container)
+}
+
+/** parentViewDirection returns the standard-container direction of the nearest render parent, when known. */
+function parentViewDirection(node: AST.ViewRender): ReturnType<typeof standardContainerDirection> {
+  let current: AST.Node | undefined = node.$container
+  while (current !== undefined) {
+    if (AST.isBlock(current)) {
+      const owner = current.$container as AST.Node
+      if (AST.isViewRender(owner)) {
+        return standardContainerDirection(owner.view.$refText)
+      }
+      current = owner
+    } else {
+      current = current.$container as AST.Node | undefined
+    }
+  }
+  return undefined
 }
 
 /** stripTsFenceFromTsCodeBlock removes outer ```ts / ``` fences from an embedded TS code block for executable emit. */

@@ -1,7 +1,13 @@
 import {
-  layoutChildWordAxis,
-  layoutSpacingReactNativeKey,
+  defaultItemsForStandardContainer,
+  itemAxisStyleKey,
+  itemWordAxis,
+  itemWordReactNativeValue,
+  layoutPaddingReactNativeKey,
+  standardContainerDirection,
   type TaoLayoutDirection,
+  type TaoLayoutItemAxis,
+  type TaoLayoutItemSlots,
 } from '@shared/layout/layout-axis'
 
 type TaoLayoutTerm = string | number
@@ -9,6 +15,7 @@ type TaoLayoutEntry = readonly TaoLayoutTerm[]
 
 export type TaoLayoutSpec = {
   readonly view: string
+  readonly parentDirection?: TaoLayoutDirection
   readonly entries: readonly TaoLayoutEntry[]
 }
 
@@ -21,11 +28,15 @@ export const Layout = {
 
 /** resolve converts a validated Tao layout spec into React Native style properties. */
 export function resolve(spec: TaoLayoutSpec): TaoResolvedLayoutStyle {
-  const style: TaoResolvedLayoutStyle = {}
-  const direction = layoutDirection(spec)
+  const style: TaoResolvedLayoutStyle = { overflow: 'hidden' }
+  const direction = standardContainerDirection(spec.view)
+  const defaults = defaultItemsForStandardContainer(spec.view)
+  if (direction !== undefined && defaults !== undefined) {
+    applyItems(style, direction, defaults)
+  }
 
   for (const entry of spec.entries) {
-    applyLayoutEntry(style, entry, direction)
+    applyLayoutEntry(style, spec, entry, direction)
   }
 
   return style
@@ -33,6 +44,7 @@ export function resolve(spec: TaoLayoutSpec): TaoResolvedLayoutStyle {
 
 function applyLayoutEntry(
   style: TaoResolvedLayoutStyle,
+  spec: TaoLayoutSpec,
   entry: TaoLayoutEntry,
   direction: TaoLayoutDirection | undefined,
 ): void {
@@ -40,198 +52,219 @@ function applyLayoutEntry(
   if (typeof head !== 'string') {
     return
   }
-  if (entry.every(term => typeof term === 'string' && !isPercentString(term))) {
-    for (const word of entry as readonly string[]) {
-      applyBareLayoutWord(style, word, direction)
-    }
-    return
-  }
-  if (head === 'pad' || head === 'margin') {
-    applySpacingEntry(style, head, entry)
-    return
-  }
-  applyNumericEntry(style, head, entry)
-}
-
-function applyBareLayoutWord(
-  style: TaoResolvedLayoutStyle,
-  word: string,
-  direction: TaoLayoutDirection | undefined,
-): void {
-  switch (word) {
-    case 'row':
-      style['flexDirection'] = 'row'
+  switch (head) {
+    case 'items':
+      if (direction !== undefined) {
+        applyItems(style, direction, normalizeItems(spec.view, direction, entry.slice(1)))
+      }
       return
-    case 'column':
-      style['flexDirection'] = 'column'
-      return
-    case 'wrap':
-    case 'nowrap':
-      style['flexWrap'] = word
-      return
-    case 'relative':
-    case 'absolute':
-      style['position'] = word
-      return
-    case 'centered':
-      style['alignSelf'] = 'center'
+    case 'aligned':
+      applyAligned(style, entry[1])
       return
     case 'stretched':
       style['alignSelf'] = 'stretch'
       return
-    case 'packed':
-      style['alignSelf'] = 'flex-start'
+    case 'width':
+    case 'height':
+      applyDimension(style, head, entry, spec.parentDirection)
       return
-    default:
-      applyChildArrangementWord(style, word, direction)
-  }
-}
-
-function applyChildArrangementWord(
-  style: TaoResolvedLayoutStyle,
-  word: string,
-  direction: TaoLayoutDirection | undefined,
-): void {
-  if (direction === undefined) {
-    return
-  }
-  if (word === 'center') {
-    applyCenter(style)
-    return
-  }
-  const axis = layoutChildWordAxis(word, direction)
-  const rnValue = childWordReactNativeValue(word)
-  if (axis === 'main') {
-    style['justifyContent'] = rnValue
-  } else {
-    style['alignItems'] = rnValue
-  }
-}
-
-function applyCenter(style: TaoResolvedLayoutStyle): void {
-  const hasMain = style['justifyContent'] !== undefined
-  const hasCross = style['alignItems'] !== undefined
-  if (!hasMain && !hasCross) {
-    style['justifyContent'] = 'center'
-    style['alignItems'] = 'center'
-  } else if (hasMain && !hasCross) {
-    style['alignItems'] = 'center'
-  } else if (!hasMain && hasCross) {
-    style['justifyContent'] = 'center'
-  }
-}
-
-function applyNumericEntry(style: TaoResolvedLayoutStyle, head: string, entry: TaoLayoutEntry): void {
-  const value = entry[1]
-  if (value === undefined) {
-    return
-  }
-  switch (head) {
-    case 'gap':
-      style['gap'] = value
-      return
-    case 'row_gap':
-      style['rowGap'] = value
-      return
-    case 'column_gap':
-      style['columnGap'] = value
-      return
-    case 'min_width':
-      style['minWidth'] = value
-      return
-    case 'max_width':
-      style['maxWidth'] = value
-      return
-    case 'min_height':
-      style['minHeight'] = value
-      return
-    case 'max_height':
-      style['maxHeight'] = value
+    case 'fill':
+      style['flexGrow'] = 1
+      style['alignSelf'] = 'stretch'
       return
     case 'grow':
-      style['flexGrow'] = value
+      style['flexGrow'] = typeof entry[1] === 'number' ? entry[1] : 1
       return
-    case 'shrink':
-      style['flexShrink'] = value
+    case 'compress':
+      style['flexShrink'] = 1
       return
-    case 'basis':
-      style['flexBasis'] = value
+    case 'rigid':
+      style['flexShrink'] = 0
       return
-    case 'z':
-      style['zIndex'] = value
+    case 'gap':
+      applySingleNumber(style, 'gap', entry[1])
       return
-    default:
-      style[head] = value
+    case 'pad':
+      applyPad(style, entry)
+      return
   }
 }
 
-function applySpacingEntry(
+function normalizeItems(
+  viewName: string,
+  direction: TaoLayoutDirection,
+  words: readonly TaoLayoutTerm[],
+): TaoLayoutItemSlots {
+  const defaults = defaultItemsForStandardContainer(viewName) ?? { vertical: 'top', horizontal: 'left' }
+  const result: Partial<TaoLayoutItemSlots> = {}
+  let centerCount = 0
+  for (const term of words) {
+    if (typeof term !== 'string') {
+      continue
+    }
+    if (term === 'center') {
+      centerCount++
+      continue
+    }
+    const axis = itemWordAxis(term, direction)
+    if (axis !== undefined) {
+      result[axis] = term
+    }
+  }
+  if (centerCount >= 2) {
+    result.vertical ??= 'center'
+    result.horizontal ??= 'center'
+  } else if (centerCount === 1) {
+    result.vertical ??= 'center'
+    result.horizontal ??= 'center'
+  }
+  return {
+    vertical: result.vertical ?? defaults.vertical,
+    horizontal: result.horizontal ?? defaults.horizontal,
+  }
+}
+
+function applyItems(
   style: TaoResolvedLayoutStyle,
-  head: 'pad' | 'margin',
-  entry: TaoLayoutEntry,
+  direction: TaoLayoutDirection,
+  items: TaoLayoutItemSlots,
 ): void {
-  if (entry.length === 2) {
-    const value = entry[1]
-    if (value === undefined) {
-      return
-    }
-    style[layoutSpacingReactNativeKey(head, 'all')] = value
-    return
-  }
-  if (entry.length === 3 && typeof entry[1] !== 'string') {
-    const vertical = entry[1]
-    const horizontal = entry[2]
-    if (vertical === undefined || horizontal === undefined) {
-      return
-    }
-    style[layoutSpacingReactNativeKey(head, 'vertical')] = vertical
-    style[layoutSpacingReactNativeKey(head, 'horizontal')] = horizontal
-    return
-  }
-  const side = entry[1]
-  const amount = entry[2]
-  if (typeof side === 'string' && amount !== undefined) {
-    style[layoutSpacingReactNativeKey(head, side)] = amount
-  }
+  applyItemSlot(style, direction, 'vertical', items.vertical)
+  applyItemSlot(style, direction, 'horizontal', items.horizontal)
 }
 
-function layoutDirection(spec: TaoLayoutSpec): TaoLayoutDirection | undefined {
-  for (const entry of spec.entries) {
-    for (const term of entry) {
-      if (term === 'row' || term === 'column') {
-        return term
-      }
-    }
-  }
-  if (spec.view === 'Row') {
-    return 'row'
-  }
-  if (spec.view === 'Col') {
-    return 'column'
-  }
-  return undefined
+function applyItemSlot(
+  style: TaoResolvedLayoutStyle,
+  direction: TaoLayoutDirection,
+  axis: TaoLayoutItemAxis,
+  word: string,
+): void {
+  style[itemAxisStyleKey(direction, axis)] = itemWordReactNativeValue(word)
 }
 
-function childWordReactNativeValue(word: string): string {
+function applyAligned(style: TaoResolvedLayoutStyle, word: TaoLayoutTerm | undefined): void {
+  if (typeof word !== 'string') {
+    return
+  }
   switch (word) {
-    case 'right':
     case 'bottom':
-      return 'flex-end'
-    case 'spread':
-      return 'space-between'
-    case 'around':
-      return 'space-around'
-    case 'evenly':
-      return 'space-evenly'
+    case 'right':
+      style['alignSelf'] = 'flex-end'
+      return
     case 'center':
-      return 'center'
-    case 'stretch':
-      return 'stretch'
+      style['alignSelf'] = 'center'
+      return
+    case 'baseline':
+      style['alignSelf'] = 'baseline'
+      return
     default:
-      return 'flex-start'
+      style['alignSelf'] = 'flex-start'
   }
 }
 
-function isPercentString(term: TaoLayoutTerm): boolean {
+function applyDimension(
+  style: TaoResolvedLayoutStyle,
+  head: 'width' | 'height',
+  entry: TaoLayoutEntry,
+  parentDirection: TaoLayoutDirection | undefined,
+): void {
+  for (let i = 1; i < entry.length; i++) {
+    const term = entry[i]
+    if (term === 'fill') {
+      applyPhysicalFill(style, head, parentDirection)
+    } else if (term === 'min' || term === 'max') {
+      const value = entry[++i]
+      if (value !== undefined) {
+        style[dimensionLimitKey(head, term)] = value
+      }
+    } else if (term !== 'hug' && term !== undefined) {
+      style[head] = term
+    }
+  }
+}
+
+function applyPhysicalFill(
+  style: TaoResolvedLayoutStyle,
+  head: 'width' | 'height',
+  parentDirection: TaoLayoutDirection | undefined,
+): void {
+  if (parentDirection === undefined) {
+    return
+  }
+  const mainAxisFill = (parentDirection === 'row' && head === 'width')
+    || (parentDirection === 'column' && head === 'height')
+  if (mainAxisFill) {
+    style['flexGrow'] = 1
+  } else {
+    style['alignSelf'] = 'stretch'
+  }
+}
+
+function dimensionLimitKey(head: 'width' | 'height', limit: 'min' | 'max'): string {
+  if (head === 'width') {
+    return limit === 'min' ? 'minWidth' : 'maxWidth'
+  }
+  return limit === 'min' ? 'minHeight' : 'maxHeight'
+}
+
+function applySingleNumber(style: TaoResolvedLayoutStyle, key: string, value: TaoLayoutTerm | undefined): void {
+  if (value !== undefined) {
+    style[key] = value
+  }
+}
+
+function applyPad(style: TaoResolvedLayoutStyle, entry: TaoLayoutEntry): void {
+  const sides: Record<'top' | 'right' | 'bottom' | 'left', TaoLayoutTerm> = {
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+  }
+  const setAll = (value: TaoLayoutTerm) => {
+    sides.top = value
+    sides.right = value
+    sides.bottom = value
+    sides.left = value
+  }
+  for (let i = 1; i < entry.length; i++) {
+    const term = entry[i]
+    if (typeof term === 'number' || isPercentString(term)) {
+      setAll(term)
+      continue
+    }
+    const value = entry[++i]
+    if (value === undefined) {
+      continue
+    }
+    switch (term) {
+      case 'horizontal':
+        sides.left = value
+        sides.right = value
+        break
+      case 'vertical':
+        sides.top = value
+        sides.bottom = value
+        break
+      case 'top':
+        sides.top = value
+        break
+      case 'right':
+        sides.right = value
+        break
+      case 'bottom':
+        sides.bottom = value
+        break
+      case 'left':
+        sides.left = value
+        break
+    }
+  }
+  style[layoutPaddingReactNativeKey('top')] = sides.top
+  style[layoutPaddingReactNativeKey('right')] = sides.right
+  style[layoutPaddingReactNativeKey('bottom')] = sides.bottom
+  style[layoutPaddingReactNativeKey('left')] = sides.left
+}
+
+function isPercentString(term: TaoLayoutTerm | undefined): term is string {
   return typeof term === 'string' && /^-?\d+%$/.test(term)
 }

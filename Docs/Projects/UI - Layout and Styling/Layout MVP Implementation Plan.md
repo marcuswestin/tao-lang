@@ -66,6 +66,17 @@ Steps 1, 3, and 7 are migration-heavy. Steps 2, 4, 5, and 6 are the main semanti
 
 Avoid helper-only commits unless a step becomes too large to review coherently. Do not stage changes except when actually committing.
 
+## Implementation Status
+
+- Step 1: complete in `adb1dde` (`feat(layout): cut over UI declaration keywords`).
+- Step 2: complete in the current implementation commit.
+  - Replaced the old layout-v1 bracket vocabulary with the MVP heads: `items`, `aligned`, `stretched`, `width`, `height`, `fill`, `hug`, `grow`, `compress`, `rigid`, `gap`, and `pad`.
+  - Added shared standard-container direction/default helpers for `Row`, `Col`, `Box`, `Stack`, and `WrappingRow`.
+  - Rewrote layout validation for item slot claims, parent-axis self alignment, size/pressure conflicts, numeric rules, legacy/deferred word rejection, and malformed entries.
+  - Updated serialized layout specs and runtime lowering to emit React Native/Yoga style props through the Tao runtime resolver, including `overflow: "hidden"` defaults.
+  - Updated parser, validation, codegen, formatter, runtime tests, and the active Kitchen Sink layout fixture.
+- Steps 3 through 8: pending.
+
 ## Step 1. Declaration Kind Cutover
 
 Goal: replace the user-facing declaration keyword while preserving the current render-body behavior temporarily.
