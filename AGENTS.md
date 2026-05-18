@@ -1,4 +1,4 @@
-# Tao Lang Agent Guide
+# Tao Agent Guide
 
 ## SETUP
 
@@ -26,8 +26,10 @@ Use **`skills/nix-devenv`** when adding shared CLI packages, or when debugging *
 
 ## Project
 
-Tao Lang is a programming language for building native and web apps.
+Tao is a programming language for building native and web apps.
 
+- Required product principles live in `CORE_TENETS.md`. Read and preserve them for all design, implementation, documentation, and review work.
+- React Native and Expo are the runtime authority for Tao UI/app behavior. Layout, styling, transforms, animation, gestures, accessibility, navigation, media, and platform features must map to React Native/Expo support, a Tao-owned runtime helper, or an explicit validation/runtime error.
 - `packages/parser/` contains the Langium grammar and generated AST.
 - `packages/compiler/` contains validation, resolution, and code generation.
 - `packages/formatter/` contains Tao source formatting.
@@ -55,6 +57,7 @@ Tao Lang is a programming language for building native and web apps.
 - Do not import generated files from main source code.
 - Use the return type of invoked functions instead of redeclaring an identical type.
 - Add JSDoc to exported or shared TypeScript functions: `/** fnName verbs description */`.
+- Format markdown tables for plain-text readability: pad cells so column pipes align vertically instead of using the shortest renderer-valid table form.
 - For new language features, update validation and formatter behavior when applicable, add tests, and feature the behavior in at least one `Apps/Test Apps/` app.
 
 ## Testing
@@ -65,11 +68,12 @@ Tao Lang is a programming language for building native and web apps.
 - Package commands: `./agent <package> <command> <args>`, for example `./agent compiler test`.
 - Before landing work, run `./agent fix` and `./agent prep-commit` unless the user opts out.
 
-## Git Safety
+## Git Safety and Workflow
 
 - Use **`./agent git …`** for all git operations (see Command Safety).
 - You **MUST** run **`./agent prep-commit`** before **`./agent git commit`** (or any other commit-creating git invocation, such as `git commit` via `./agent git`) unless the user explicitly instructs you to skip it.
 - Remote, rebase, checkout, switch, pull, and push are not separate `./agent` recipes; if you use them via `./agent git`, do so only when the user or an agreed workflow requires it.
+- Unless you are making a commit, **NEVER** stage your changes. I depend on stage for ongoing change review. If you require staging changes for some other reason, ask first.
 - After merging or rebasing `main` into a feature branch, run `./agent prep-commit` until green before treating the branch as merge-ready.
 - Use `skills/git-workflow` for staging, committing, batch commits, and merge preparation.
 - **Merging into `main`:** Always **squash merge** feature branches into `main`. The squash commit message must include (in order): **one subject line**, a **short overview bullet list** (no fine-grained detail), then the **full `Squashed commit of the following:` appendix** with every original squashed commit exactly as Git’s default squash message includes them—see **`skills/git-workflow`** (“Squash merge into `main`”).

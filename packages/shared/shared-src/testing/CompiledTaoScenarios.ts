@@ -6,7 +6,17 @@ export type TaoScenarioAppConfigObject = { [key: string]: string | TaoScenarioAp
 /** CompiledTaoScenarioStep is one assertion or interaction within a compiled Tao scenario run. */
 export type CompiledTaoScenarioStep =
   | { type: 'assertVisibleText'; text: string }
+  | { type: 'assertInputValue'; target: CompiledTaoTextInputTarget; value: string }
   | { type: 'pressVisibleText'; text: string }
+  | { type: 'typeText'; target: CompiledTaoTextInputTarget; value: string }
+
+/** CompiledTaoTextInputTarget identifies a text input in a scenario step. */
+export type CompiledTaoTextInputTarget = {
+  label?: string
+  placeholder?: string
+  testID?: string
+  text?: string
+}
 
 /** CompiledTaoWaitForOptions mirrors RTL `waitFor` options (timeout / poll interval) for compiled Tao scenario helpers. */
 export type CompiledTaoWaitForOptions = { timeout?: number; interval?: number }
@@ -39,8 +49,12 @@ export type CompiledTaoScenarioRenderResult = {
   queryAllByText?(text: string): unknown[]
   /** When present, `pressVisibleText` prefers the first matching pressable button by accessible name. */
   queryAllByRole?(role: string, options?: { name: string }): unknown[]
+  /** assertInputValue checks a text input's current value. */
+  assertInputValue(target: CompiledTaoTextInputTarget, value: string): void
   /** pressVisibleText dispatches a press on the element returned by `getByText` (e.g. Testing Library `fireEvent.press`). */
   pressVisibleText(text: string): void
+  /** typeText dispatches a text-entry event against a target text input. */
+  typeText(target: CompiledTaoTextInputTarget, value: string): void
   /** When present, `assertVisibleText` uses async wait (e.g. RTL `waitFor`) so post-mutation UI can settle. */
   waitFor?(callback: () => unknown, options?: CompiledTaoWaitForOptions): Promise<unknown>
 }
@@ -198,7 +212,7 @@ function isScenarioAppConfigObject(value: unknown): value is TaoScenarioAppConfi
   return Object.values(value).every(val => typeof val === 'string' || isScenarioAppConfigObject(val))
 }
 
-const STEP_KEYS = ['assertVisibleText', 'pressVisibleText'] as const
+const STEP_KEYS = ['assertVisibleText', 'assertInputValue', 'pressVisibleText', 'typeText'] as const
 
 /** parseStep parses one step object with exactly one supported key. */
 function parseStep(rawStep: unknown, scenarioPath: string, stepIndex: number): CompiledTaoScenarioStep {
@@ -216,17 +230,72 @@ function parseStep(rawStep: unknown, scenarioPath: string, stepIndex: number): C
   }
 
   const key = present[0]
-  const text = rawStep[key]
-  if (typeof text !== 'string' || text.length === 0) {
-    throw new Error(`Scenario step ${JSON.stringify(key)} must be a non-empty string: ${scenarioPath}#${stepIndex}`)
-  }
-
   switch (key) {
-    case 'assertVisibleText':
+    case 'assertVisibleText': {
+      const text = parseNonEmptyString(rawStep[key], key, scenarioPath, stepIndex)
       return { type: 'assertVisibleText', text }
-    case 'pressVisibleText':
+    }
+    case 'assertInputValue':
+      return parseInputValueStep(rawStep[key], key, scenarioPath, stepIndex)
+    case 'pressVisibleText': {
+      const text = parseNonEmptyString(rawStep[key], key, scenarioPath, stepIndex)
       return { type: 'pressVisibleText', text }
+    }
+    case 'typeText':
+      return parseInputValueStep(rawStep[key], key, scenarioPath, stepIndex)
   }
+}
+
+function parseInputValueStep(
+  value: unknown,
+  key: 'assertInputValue' | 'typeText',
+  scenarioPath: string,
+  stepIndex: number,
+): Extract<CompiledTaoScenarioStep, { type: typeof key }> {
+  if (!isRecord(value)) {
+    throw new Error(`Scenario step ${JSON.stringify(key)} must be an object: ${scenarioPath}#${stepIndex}`)
+  }
+  const stepValue = parseString(value['value'], `${key}.value`, scenarioPath, stepIndex)
+  return {
+    target: parseTextInputTarget(value, key, scenarioPath, stepIndex),
+    type: key,
+    value: stepValue,
+  } as Extract<CompiledTaoScenarioStep, { type: typeof key }>
+}
+
+function parseTextInputTarget(
+  value: Record<string, unknown>,
+  key: string,
+  scenarioPath: string,
+  stepIndex: number,
+): CompiledTaoTextInputTarget {
+  const targetKeys = ['placeholder', 'label', 'testID', 'text'] as const
+  const present = targetKeys.filter(targetKey => value[targetKey] !== undefined)
+  if (present.length !== 1) {
+    throw new Error(
+      `Scenario step ${JSON.stringify(key)} must target exactly one of ${
+        targetKeys.map(targetKey => JSON.stringify(targetKey)).join(', ')
+      }: ${scenarioPath}#${stepIndex}`,
+    )
+  }
+  const targetKey = present[0]
+  const targetValue = parseNonEmptyString(value[targetKey], `${key}.${targetKey}`, scenarioPath, stepIndex)
+  return { [targetKey]: targetValue } as CompiledTaoTextInputTarget
+}
+
+function parseNonEmptyString(value: unknown, key: string, scenarioPath: string, stepIndex: number): string {
+  const parsed = parseString(value, key, scenarioPath, stepIndex)
+  if (parsed.length === 0) {
+    throw new Error(`Scenario step ${JSON.stringify(key)} must be non-empty: ${scenarioPath}#${stepIndex}`)
+  }
+  return parsed
+}
+
+function parseString(value: unknown, key: string, scenarioPath: string, stepIndex: number): string {
+  if (typeof value !== 'string') {
+    throw new Error(`Scenario step ${JSON.stringify(key)} must be a string: ${scenarioPath}#${stepIndex}`)
+  }
+  return value
 }
 
 /** runStep runs one scenario step against the rendered app. */
@@ -255,6 +324,16 @@ async function runStep(step: CompiledTaoScenarioStep, renderResult: CompiledTaoS
       return
     case 'pressVisibleText':
       renderResult.pressVisibleText(step.text)
+      return
+    case 'typeText':
+      renderResult.typeText(step.target, step.value)
+      return
+    case 'assertInputValue':
+      if (renderResult.waitFor) {
+        await renderResult.waitFor(() => renderResult.assertInputValue(step.target, step.value))
+        return
+      }
+      renderResult.assertInputValue(step.target, step.value)
       return
   }
 }

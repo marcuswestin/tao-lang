@@ -15,7 +15,7 @@ describe('use statement parsing', () => {
   test('parses use statement with single import', async () => {
     const doc = await parseAST(`
       use PublicView from ./ui/views
-      view MyView { }
+      ui MyView { }
     `)
     const useStmt = doc.statements.first.as_UseStatement
     expect(useStmt.modulePath).toBe('./ui/views')
@@ -25,7 +25,7 @@ describe('use statement parsing', () => {
   test('parses use statement with multiple imports', async () => {
     const doc = await parseAST(`
       use PublicView, AnotherView, ThirdView from ./ui/views
-      view MyView { }
+      ui MyView { }
     `)
     const useStmt = doc.statements.first.as_UseStatement
     expect(useStmt.modulePath).toBe('./ui/views')
@@ -35,7 +35,7 @@ describe('use statement parsing', () => {
   test('parses use statement with parent path', async () => {
     const doc = await parseAST(`
       use Button from ../shared/components
-      view MyView { }
+      ui MyView { }
     `)
     const useStmt = doc.statements.first.as_UseStatement
     expect(useStmt.modulePath).toBe('../shared/components')
@@ -46,7 +46,7 @@ describe('use statement parsing', () => {
     const doc = await parseAST(`
       use PublicView from ./ui/views
       use Button, Input from ./ui/components
-      view MyView { }
+      ui MyView { }
     `)
     expect(doc.statements.length).toBe(3)
     expect(doc.statements[0].as_UseStatement.modulePath).toBe('./ui/views')
@@ -56,7 +56,7 @@ describe('use statement parsing', () => {
   test('parses same-module use statement (no from clause)', async () => {
     const doc = await parseAST(`
       use Button
-      view MyView { }
+      ui MyView { }
     `)
     const useStmt = doc.statements.first.as_UseStatement
     useStmt.expect('modulePath').toBeUndefined()
@@ -66,7 +66,7 @@ describe('use statement parsing', () => {
   test('parses same-module use statement with multiple imports', async () => {
     const doc = await parseAST(`
       use Button, Input, Label
-      view MyView { }
+      ui MyView { }
     `)
     const useStmt = doc.statements.first.as_UseStatement
     useStmt.expect('modulePath').toBeUndefined()
@@ -79,14 +79,14 @@ describe('multi-file module parsing', () => {
     const result = await parseMultipleFiles([
       {
         path: '/project/ui/views.tao',
-        code: `share view PublicView { }`,
+        code: `share ui PublicView { render inject \`\`\`ts return null \`\`\` }`,
       },
       {
         path: '/project/app.tao',
         code: `
           use PublicView from ./ui/views
           app MyApp { ui MainView }
-          view MainView { }
+          ui MainView { render inject \`\`\`ts return null \`\`\` }
         `,
       },
     ])
@@ -100,13 +100,14 @@ describe('cross-module import resolution (use statement)', () => {
     const result = await parseMultipleFiles([
       {
         path: '/project/ui/views.tao',
-        code: `share view Button { }`,
+        code: `share ui Button { render inject \`\`\`ts return null \`\`\` }`,
       },
       {
         path: '/project/app.tao',
         code: `
           use Button from ./ui/views
-          view MainView {
+          ui MainView {
+            render inject \`\`\`ts return null \`\`\`
             Button
           }
         `,
@@ -121,13 +122,13 @@ describe('cross-module import resolution (use statement)', () => {
     const result = await parseMultipleFiles([
       {
         path: '/project/ui/views.tao',
-        code: `share view Button { }`,
+        code: `share ui Button { render inject \`\`\`ts return null \`\`\` }`,
       },
       {
         path: '/project/app.tao',
         code: `
           use NonExistent from ./ui/views
-          view MainView { }
+          ui MainView { render inject \`\`\`ts return null \`\`\` }
         `,
       },
     ])
@@ -140,13 +141,13 @@ describe('cross-module import resolution (use statement)', () => {
     const result = await parseMultipleFiles([
       {
         path: '/project/ui/views.tao',
-        code: `view InternalView { }`, // Not shared - only visible within ui/ module
+        code: `ui InternalView { render inject \`\`\`ts return null \`\`\` }`, // Not shared - only visible within ui/ module
       },
       {
         path: '/project/app.tao',
         code: `
           use InternalView from ./ui/views
-          view MainView { }
+          ui MainView { render inject \`\`\`ts return null \`\`\` }
         `,
       },
     ])
@@ -159,13 +160,13 @@ describe('cross-module import resolution (use statement)', () => {
     const result = await parseMultipleFiles([
       {
         path: '/project/ui/views.tao',
-        code: `hide view PrivateView { }`, // Explicitly private to this file
+        code: `hide ui PrivateView { render inject \`\`\`ts return null \`\`\` }`, // Explicitly private to this file
       },
       {
         path: '/project/app.tao',
         code: `
           use PrivateView from ./ui/views
-          view MainView { }
+          ui MainView { render inject \`\`\`ts return null \`\`\` }
         `,
       },
     ])
@@ -178,17 +179,18 @@ describe('cross-module import resolution (use statement)', () => {
     const result = await parseMultipleFiles([
       {
         path: '/project/ui/buttons.tao',
-        code: `share view Button { }`,
+        code: `share frame Button { render inject \`\`\`ts return TR.Views.Button(_ViewProps) \`\`\` }`,
       },
       {
         path: '/project/ui/inputs.tao',
-        code: `share view TextInput { }`,
+        code: `share ui TextInput { render inject \`\`\`ts return null \`\`\` }`,
       },
       {
         path: '/project/app.tao',
         code: `
           use Button, TextInput from ./ui
-          view MainView {
+          ui MainView {
+            render inject \`\`\`ts return null \`\`\`
             Button { TextInput }
           }
         `,
@@ -202,13 +204,14 @@ describe('cross-module import resolution (use statement)', () => {
     const result = await parseMultipleFiles([
       {
         path: '/project/kitchen/counter/KnifeBlock.tao',
-        code: `share view KnifeBlock { }`,
+        code: `share ui KnifeBlock { render inject \`\`\`ts return null \`\`\` }`,
       },
       {
         path: '/project/kitchen/Kitchen Sink.tao',
         code: `
           use KnifeBlock from ./counter
-          view MainView {
+          ui MainView {
+            render inject \`\`\`ts return null \`\`\`
             KnifeBlock { }
           }
         `,
@@ -222,13 +225,14 @@ describe('cross-module import resolution (use statement)', () => {
     const result = await parseMultipleFiles([
       {
         path: '/project/app/components/counter/KnifeBlock.tao',
-        code: `share view KnifeBlock { }`,
+        code: `share ui KnifeBlock { render inject \`\`\`ts return null \`\`\` }`,
       },
       {
         path: '/project/app/Kitchen.tao',
         code: `
           use KnifeBlock from ./components/counter
-          view Text {
+          ui Text {
+            render inject \`\`\`ts return null \`\`\`
             KnifeBlock { }
           }
         `,
@@ -242,13 +246,14 @@ describe('cross-module import resolution (use statement)', () => {
     const result = await parseMultipleFiles([
       {
         path: '/project/src/ui/components/buttons/Button.tao',
-        code: `share view Button { }`,
+        code: `share ui Button { render inject \`\`\`ts return null \`\`\` }`,
       },
       {
         path: '/project/src/app.tao',
         code: `
           use Button from ./ui/components/buttons
-          view MainView {
+          ui MainView {
+            render inject \`\`\`ts return null \`\`\`
             Button { }
           }
         `,
@@ -263,10 +268,11 @@ describe('cross-module import resolution (use statement)', () => {
       {
         path: '/project/app/Views.tao',
         code: `
-          share view SharedView { }
-          hide view FileView { }
-          view DefaultView { }
-          view TestView {
+          share ui SharedView { render inject \`\`\`ts return null \`\`\` }
+          hide ui FileView { render inject \`\`\`ts return null \`\`\` }
+          ui DefaultView { render inject \`\`\`ts return null \`\`\` }
+          ui TestView {
+            render inject \`\`\`ts return null \`\`\`
             SharedView { }
             FileView { }
             DefaultView { }
@@ -282,13 +288,14 @@ describe('cross-module import resolution (use statement)', () => {
     const result = await parseMultipleFiles([
       {
         path: '/project/shared/components/Button.tao',
-        code: `share view Button { }`,
+        code: `share ui Button { render inject \`\`\`ts return null \`\`\` }`,
       },
       {
         path: '/project/app/views/Login.tao',
         code: `
           use Button from ../../shared/components
-          view LoginView {
+          ui LoginView {
+            render inject \`\`\`ts return null \`\`\`
             Button { }
           }
         `,
@@ -302,13 +309,14 @@ describe('cross-module import resolution (use statement)', () => {
     const result = await parseMultipleFiles([
       {
         path: '/project/app/Fridge.tao',
-        code: `share view FridgeView { }`,
+        code: `share ui FridgeView { render inject \`\`\`ts return null \`\`\` }`,
       },
       {
         path: '/project/app/kitchen/Kitchen.tao',
         code: `
           use FridgeView from ../
-          view KitchenView {
+          ui KitchenView {
+            render inject \`\`\`ts return null \`\`\`
             FridgeView { }
           }
         `,
@@ -323,13 +331,14 @@ describe('cross-module import resolution (use statement)', () => {
       const result = await parseMultipleFiles([
         {
           path: '/project/ui/buttons.tao',
-          code: `view Button { }`,
+          code: `ui Button { render inject \`\`\`ts return null \`\`\` }`,
         },
         {
           path: '/project/ui/forms.tao',
           code: `
           use Button
-          view LoginForm {
+          ui LoginForm {
+            render inject \`\`\`ts return null \`\`\`
             Button
           }
         `,
@@ -343,13 +352,14 @@ describe('cross-module import resolution (use statement)', () => {
       const result = await parseMultipleFiles([
         {
           path: '/project/ui/buttons.tao',
-          code: `share view Button { }`,
+          code: `share ui Button { render inject \`\`\`ts return null \`\`\` }`,
         },
         {
           path: '/project/ui/forms.tao',
           code: `
           use Button
-          view LoginForm {
+          ui LoginForm {
+            render inject \`\`\`ts return null \`\`\`
             Button
           }
         `,
@@ -363,12 +373,13 @@ describe('cross-module import resolution (use statement)', () => {
       const result = await parseMultipleFiles([
         {
           path: '/project/ui/buttons.tao',
-          code: `view Button { }`,
+          code: `ui Button { render inject \`\`\`ts return null \`\`\` }`,
         },
         {
           path: '/project/ui/forms.tao',
           code: `
-          view LoginForm {
+          ui LoginForm {
+            render inject \`\`\`ts return null \`\`\`
             Button
           }
         `,
@@ -383,13 +394,14 @@ describe('cross-module import resolution (use statement)', () => {
       const result = await parseMultipleFiles([
         {
           path: '/project/ui/buttons.tao',
-          code: `hide view PrivateHelper { }`,
+          code: `hide ui PrivateHelper { render inject \`\`\`ts return null \`\`\` }`,
         },
         {
           path: '/project/ui/forms.tao',
           code: `
           use PrivateHelper
-          view LoginForm {
+          ui LoginForm {
+            render inject \`\`\`ts return null \`\`\`
             PrivateHelper
           }
         `,
@@ -404,17 +416,18 @@ describe('cross-module import resolution (use statement)', () => {
       const result = await parseMultipleFiles([
         {
           path: '/project/ui/buttons.tao',
-          code: `view Button { }`,
+          code: `ui Button { render inject \`\`\`ts return null \`\`\` }`,
         },
         {
           path: '/project/ui/labels.tao',
-          code: `share view Label { }`,
+          code: `share ui Label { render inject \`\`\`ts return null \`\`\` }`,
         },
         {
           path: '/project/ui/forms.tao',
           code: `
           use Button, Label
-          view LoginForm {
+          ui LoginForm {
+            render inject \`\`\`ts return null \`\`\`
             Button { }
             Label { }
           }
@@ -439,7 +452,7 @@ describe('module system edge cases', () => {
         path: '/project/app.tao',
         code: `
           use Button from ./non/existent/path
-          view MainView { }
+          ui MainView { render inject \`\`\`ts return null \`\`\` }
         `,
       },
     ])
@@ -452,17 +465,18 @@ describe('module system edge cases', () => {
     const result = await parseMultipleFiles([
       {
         path: '/project/ui/buttons.tao',
-        code: `view Button { }`,
+        code: `ui Button { render inject \`\`\`ts return null \`\`\` }`,
       },
       {
         path: '/project/ui/special-buttons.tao',
-        code: `view Button { }`,
+        code: `ui Button { render inject \`\`\`ts return null \`\`\` }`,
       },
       {
         path: '/project/ui/forms.tao',
         code: `
           use Button
-          view Form {
+          ui Form {
+            render inject \`\`\`ts return null \`\`\`
             Button
           }
         `,
@@ -476,14 +490,15 @@ describe('module system edge cases', () => {
     const result = await parseMultipleFiles([
       {
         path: '/project/ui/buttons.tao',
-        code: `share view Button { }`,
+        code: `share ui Button { render inject \`\`\`ts return null \`\`\` }`,
       },
       {
         path: '/project/app.tao',
         code: `
           use Button from ./ui/buttons
-          view Button { }
-          view MainView {
+          ui Button { render inject \`\`\`ts return null \`\`\` }
+          ui MainView {
+            render inject \`\`\`ts return null \`\`\`
             Button
           }
         `,
@@ -499,16 +514,17 @@ describe('module system edge cases', () => {
       {
         path: '/project/ui/components.tao',
         code: `
-          share view Button { }
-          share view Input { }
-          share view Label { }
+          share ui Button { render inject \`\`\`ts return null \`\`\` }
+          share ui Input { render inject \`\`\`ts return null \`\`\` }
+          share ui Label { render inject \`\`\`ts return null \`\`\` }
         `,
       },
       {
         path: '/project/app.tao',
         code: `
           use Button, Input, Label from ./ui/components
-          view Form {
+          ui Form {
+            render inject \`\`\`ts return null \`\`\`
             Label { }
             Input { }
             Button { }
@@ -524,13 +540,13 @@ describe('module system edge cases', () => {
     const result = await parseMultipleFiles([
       {
         path: '/project/ui/internal.tao',
-        code: `view InternalHelper { }`, // No 'share' modifier
+        code: `ui InternalHelper { render inject \`\`\`ts return null \`\`\` }`, // No 'share' modifier
       },
       {
         path: '/project/app.tao',
         code: `
           use InternalHelper from ./ui/internal
-          view MainView { }
+          ui MainView { render inject \`\`\`ts return null \`\`\` }
         `,
       },
     ])
@@ -544,16 +560,17 @@ describe('module system edge cases', () => {
       {
         path: '/project/ui/mixed.tao',
         code: `
-          share view PublicButton { }
-          hide view PrivateHelper { }
-          view ModuleOnlyView { }
+          share ui PublicButton { render inject \`\`\`ts return null \`\`\` }
+          hide ui PrivateHelper { render inject \`\`\`ts return null \`\`\` }
+          ui ModuleOnlyView { render inject \`\`\`ts return null \`\`\` }
         `,
       },
       {
         path: '/project/app.tao',
         code: `
           use PublicButton from ./ui/mixed
-          view MainView {
+          ui MainView {
+            render inject \`\`\`ts return null \`\`\`
             PublicButton
           }
         `,
@@ -570,7 +587,7 @@ describe('standard library imports (use @tao/...)', () => {
   test('parses use statement with @tao/ module path', async () => {
     const doc = await parseAST(`
       use Col from @tao/ui
-      view MyView { }
+      ui MyView { }
     `)
     const useStmt = doc.statements.first.as_UseStatement
     expect(useStmt.modulePath).toBe('@tao/ui')
@@ -580,7 +597,7 @@ describe('standard library imports (use @tao/...)', () => {
   test('parses use statement with multiple std-lib imports', async () => {
     const doc = await parseAST(`
       use Col, Row, Text from @tao/ui
-      view MyView { }
+      ui MyView { }
     `)
     const useStmt = doc.statements.first.as_UseStatement
     expect(useStmt.modulePath).toBe('@tao/ui')
@@ -593,7 +610,7 @@ describe('standard library imports (use @tao/...)', () => {
         path: '/project/app.tao',
         code: `
           use Col from @tao/ui
-          view MainView { }
+          ui MainView { render inject \`\`\`ts return null \`\`\` }
         `,
       },
     ])
@@ -606,13 +623,14 @@ describe('standard library imports (use @tao/...)', () => {
     const result = await parseMultipleFiles([
       {
         path: '/tao-std-lib/tao/ui/Views.tao',
-        code: `share view Col { }`,
+        code: `share layout Col { render inject \`\`\`ts return TR.Views.Col(_ViewProps) \`\`\` }`,
       },
       {
         path: '/project/app.tao',
         code: `
           use Col from @tao/ui
-          view MainView {
+          ui MainView {
+            render inject \`\`\`ts return null \`\`\`
             Col
           }
         `,
@@ -627,16 +645,17 @@ describe('standard library imports (use @tao/...)', () => {
       {
         path: '/tao-std-lib/tao/ui/Views.tao',
         code: `
-          share view Col { }
-          share view Row { }
-          share view Text { }
+          share layout Col { render inject \`\`\`ts return TR.Views.Col(_ViewProps) \`\`\` }
+          share layout Row { render inject \`\`\`ts return TR.Views.Row(_ViewProps) \`\`\` }
+          share ui Text { render inject \`\`\`ts return null \`\`\` }
         `,
       },
       {
         path: '/project/app.tao',
         code: `
           use Col, Row, Text from @tao/ui
-          view MainView {
+          ui MainView {
+            render inject \`\`\`ts return null \`\`\`
             Col {
               Row {
                 Text
@@ -654,13 +673,13 @@ describe('standard library imports (use @tao/...)', () => {
     const result = await parseMultipleFiles([
       {
         path: '/tao-std-lib/tao/ui/Views.tao',
-        code: `share view Col { }`,
+        code: `share layout Col { render inject \`\`\`ts return TR.Views.Col(_ViewProps) \`\`\` }`,
       },
       {
         path: '/project/app.tao',
         code: `
           use NonExistent from @tao/ui
-          view MainView { }
+          ui MainView { render inject \`\`\`ts return null \`\`\` }
         `,
       },
     ], { stdLibRoot: STD_LIB_ROOT })
@@ -673,13 +692,13 @@ describe('standard library imports (use @tao/...)', () => {
     const result = await parseMultipleFiles([
       {
         path: '/tao-std-lib/tao/ui/Internal.tao',
-        code: `view InternalHelper { }`,
+        code: `ui InternalHelper { render inject \`\`\`ts return null \`\`\` }`,
       },
       {
         path: '/project/app.tao',
         code: `
           use InternalHelper from @tao/ui
-          view MainView { }
+          ui MainView { render inject \`\`\`ts return null \`\`\` }
         `,
       },
     ], { stdLibRoot: STD_LIB_ROOT })
@@ -692,18 +711,19 @@ describe('standard library imports (use @tao/...)', () => {
     const result = await parseMultipleFiles([
       {
         path: '/tao-std-lib/tao/ui/Views.tao',
-        code: `share view Col { }`,
+        code: `share layout Col { render inject \`\`\`ts return TR.Views.Col(_ViewProps) \`\`\` }`,
       },
       {
         path: '/project/components/Button.tao',
-        code: `share view Button { }`,
+        code: `share ui Button { render inject \`\`\`ts return null \`\`\` }`,
       },
       {
         path: '/project/app.tao',
         code: `
           use Col from @tao/ui
           use Button from ./components
-          view MainView {
+          ui MainView {
+            render inject \`\`\`ts return null \`\`\`
             Col {
               Button
             }
@@ -719,18 +739,19 @@ describe('standard library imports (use @tao/...)', () => {
     const result = await parseMultipleFiles([
       {
         path: '/tao-std-lib/tao/ui/Views.tao',
-        code: `share view Col { }`,
+        code: `share layout Col { render inject \`\`\`ts return TR.Views.Col(_ViewProps) \`\`\` }`,
       },
       {
         path: '/tao-std-lib/tao/nav/Navigation.tao',
-        code: `share view TabBar { }`,
+        code: `share ui TabBar { render inject \`\`\`ts return null \`\`\` }`,
       },
       {
         path: '/project/app.tao',
         code: `
           use Col from @tao/ui
           use TabBar from @tao/nav
-          view MainView {
+          ui MainView {
+            render inject \`\`\`ts return null \`\`\`
             Col {
               TabBar
             }
@@ -754,8 +775,9 @@ describe('type imports via use statement', () => {
         path: '/project/types/views.tao',
         code: `
           use Person
-          view Greet P Person { }
-          view Show {
+          ui Greet P Person { render inject \`\`\`ts return null \`\`\` }
+          ui Show {
+            render inject \`\`\`ts return null \`\`\`
             Greet Person "Ro"
           }
         `,
@@ -775,8 +797,9 @@ describe('type imports via use statement', () => {
         path: '/project/app.tao',
         code: `
           use Person from ./types
-          view Greet P Person { }
-          view Main {
+          ui Greet P Person { render inject \`\`\`ts return null \`\`\` }
+          ui Main {
+            render inject \`\`\`ts return null \`\`\`
             Greet Person { Name "Ro" }
           }
         `,
@@ -796,7 +819,7 @@ describe('type imports via use statement', () => {
         path: '/project/app.tao',
         code: `
           use Person from ./types
-          view Greet P Person { }
+          ui Greet P Person { render inject \`\`\`ts return null \`\`\` }
         `,
       },
     ])
@@ -815,7 +838,7 @@ describe('type imports via use statement', () => {
         path: '/project/app.tao',
         code: `
           use Person from ./types
-          view Greet P Person { }
+          ui Greet P Person { render inject \`\`\`ts return null \`\`\` }
         `,
       },
     ])
@@ -833,7 +856,7 @@ describe('type imports via use statement', () => {
       {
         path: '/project/app.tao',
         code: `
-          view Greet P Person { }
+          ui Greet P Person { render inject \`\`\`ts return null \`\`\` }
         `,
       },
     ])
@@ -851,7 +874,7 @@ describe('type imports via use statement', () => {
       {
         path: '/project/types/views.tao',
         code: `
-          view Greet P Person { }
+          ui Greet P Person { render inject \`\`\`ts return null \`\`\` }
         `,
       },
     ])
@@ -871,7 +894,7 @@ describe('type imports via use statement', () => {
         code: `
           use Person from ./types
           state Ro = Person { Name "Ro" }
-          view Main { }
+          ui Main { render inject \`\`\`ts return null \`\`\` }
         `,
       },
     ])

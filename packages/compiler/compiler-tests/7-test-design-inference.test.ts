@@ -1,0 +1,439 @@
+import {
+  acceptTaoDesignSuggestions,
+  compileTao,
+  generateTaoDesignSuggestions,
+} from '@compiler/compiler-main'
+import { stableStringify, type TaoDesignLock } from '@compiler/design/design-lock'
+import { validationMessages } from '@compiler/validation/tao-lang-validator'
+import { FS } from '@shared'
+import { expectHumanMessagesContain } from './test-utils/diagnostics'
+import { describe, expect, parseAST, parseASTWithErrors, parseTaoFully, test } from './test-utils/test-harness'
+
+const STD_LIB_ROOT = FS.resolvePath(FS.joinPath(__dirname, '../../tao-std-lib'))
+
+describe('UI design inference syntax and validation:', () => {
+  test('parses app design blocks, declaration specs, and variant chains', async () => {
+    const file = await parseAST(
+      `
+      use Text from @tao/ui
+
+      app DesignApp {
+        design { description "Quiet team dashboard" }
+        ui DefaultHome
+      }
+
+      variant DefaultHome = CompactHome <"primary home variant">
+      variant CompactHome = Home
+
+      ui Home <"main dashboard surface"> {
+        render Text "Hello"
+      }
+    `,
+      STD_LIB_ROOT,
+    )
+
+    const app = file.statements[1].as_AppDeclaration
+    app.appStatements.first.as_AppDesignBlock.description.value.segments.first.expect('text').toBe(
+      'Quiet team dashboard',
+    )
+    file.statements[2].as_VariantDeclaration.expect('name').toBe('DefaultHome')
+    file.statements[4].as_ViewDeclaration.designSpec.description.segments.first.expect('text').toBe(
+      'main dashboard surface',
+    )
+  })
+
+  test('validates app roots and render calls through variants', async () => {
+    await parseTaoFully(
+      `
+      use Row, Text from @tao/ui
+
+      app DesignApp {
+        design { description "Compact app" }
+        ui HomeVariant
+      }
+
+      variant HomeVariant = Home <"default home">
+
+      ui Home {
+        render Row {
+          BodyText "Hello"
+        }
+      }
+
+      variant BodyText = Text <"body copy">
+    `,
+      STD_LIB_ROOT,
+    )
+  })
+
+  test('rejects variant cycles', async () => {
+    const report = await parseASTWithErrors(`
+      variant A = B
+      variant B = A
+      ui Root {
+        render inject \`\`\`ts return null \`\`\`
+      }
+    `)
+    expectHumanMessagesContain(report, validationMessages.variantCycle)
+  })
+
+  test('rejects interpolated design descriptions and specs', async () => {
+    const report = await parseASTWithErrors(`
+      alias Name = "dashboard"
+      app DesignApp {
+        design { description "Quiet \${Name}" }
+        ui Root
+      }
+      ui Root <"Root \${Name}"> {
+        render inject \`\`\`ts return null \`\`\`
+      }
+    `)
+    expectHumanMessagesContain(report, validationMessages.designStringMustBePlain)
+  })
+
+  test('rejects non-string specs and render-site specs', async () => {
+    const badDeclaration = await parseASTWithErrors(`
+      ui Root <auto> {
+        render inject \`\`\`ts return null \`\`\`
+      }
+    `)
+    expect(badDeclaration.parserErrors.length).toBeGreaterThan(0)
+
+    const badRender = await parseASTWithErrors(
+      `
+      use Text from @tao/ui
+      ui Root {
+        render Text <"body"> "Hello"
+      }
+    `,
+      STD_LIB_ROOT,
+    )
+    expect(badRender.parserErrors.length).toBeGreaterThan(0)
+  })
+})
+
+describe('UI design inference locks and codegen:', () => {
+  test('writes deterministic suggestions and accepted locks', async () => {
+    const { appPath, tmpDir } = writeDesignApp()
+    try {
+      const review = await generateTaoDesignSuggestions({ file: appPath, stdLibRoot: STD_LIB_ROOT })
+      expect(FS.isFile(review.suggestionPath)).toBe(true)
+      expect(review.diagnostics.some(d => d.kind === 'new-entry')).toBe(true)
+      expect(FS.readTextFile(review.suggestionPath)).toBe(`${stableStringify(review.lock)}\n`)
+
+      const accepted = await acceptTaoDesignSuggestions({ file: appPath, stdLibRoot: STD_LIB_ROOT })
+      expect(FS.isFile(accepted.acceptedPath)).toBe(true)
+      expect(Object.values(accepted.lock.entries).every(entry => entry.status === 'accepted')).toBe(true)
+    } finally {
+      FS.rmDirectory(tmpDir)
+    }
+  })
+
+  test('production requires accepted current locks while body edits do not stale entries', async () => {
+    const { appPath, tmpDir } = writeDesignApp()
+    try {
+      const missing = await compileTao({ file: appPath, stdLibRoot: STD_LIB_ROOT, designMode: 'production' })
+      expect(missing.ok).toBe(false)
+      if (!missing.ok) {
+        expect(missing.errorReport.getHumanErrorMessage()).toContain('Missing accepted design lock')
+      }
+
+      const accepted = await acceptTaoDesignSuggestions({ file: appPath, stdLibRoot: STD_LIB_ROOT })
+      const locked = await compileTao({ file: appPath, stdLibRoot: STD_LIB_ROOT, designMode: 'production' })
+      expect(locked.ok).toBe(true)
+
+      const lock = JSON.parse(FS.readTextFile(accepted.acceptedPath)) as TaoDesignLock
+      lock.generatedAt = '2099-01-01T00:00:00.000Z'
+      FS.writeFile(accepted.acceptedPath, `${stableStringify(lock)}\n`)
+      const generatedAtOnlyChange = await compileTao({
+        file: appPath,
+        stdLibRoot: STD_LIB_ROOT,
+        designMode: 'production',
+      })
+      expect(generatedAtOnlyChange.ok).toBe(true)
+
+      FS.writeFile(appPath, designAppSource({ text: 'Hello after body edit' }))
+      const bodyEdit = await compileTao({ file: appPath, stdLibRoot: STD_LIB_ROOT, designMode: 'production' })
+      expect(bodyEdit.ok).toBe(true)
+
+      FS.writeFile(appPath, designAppSource({ spec: 'secondary dashboard home' }))
+      const stale = await compileTao({ file: appPath, stdLibRoot: STD_LIB_ROOT, designMode: 'production' })
+      expect(stale.ok).toBe(false)
+      if (!stale.ok) {
+        expect(stale.errorReport.getHumanErrorMessage()).toContain('Stale accepted design entry')
+      }
+    } finally {
+      FS.rmDirectory(tmpDir)
+    }
+  })
+
+  test('production rejects malformed accepted locks', async () => {
+    const { appPath, tmpDir } = writeDesignApp()
+    try {
+      const accepted = await acceptTaoDesignSuggestions({ file: appPath, stdLibRoot: STD_LIB_ROOT })
+      const lock = JSON.parse(FS.readTextFile(accepted.acceptedPath)) as TaoDesignLock
+      lock.schemaVersion = 999
+      FS.writeFile(accepted.acceptedPath, `${stableStringify(lock)}\n`)
+
+      const result = await compileTao({ file: appPath, stdLibRoot: STD_LIB_ROOT, designMode: 'production' })
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        const message = result.errorReport.getHumanErrorMessage()
+        expect(message).toContain('Invalid Tao design lock')
+        expect(message).toContain('schemaVersion must be 1')
+      }
+    } finally {
+      FS.rmDirectory(tmpDir)
+    }
+  })
+
+  test('deterministic fallback uses one app palette across roles', async () => {
+    const { appPath, tmpDir } = writePaletteApp()
+    try {
+      const review = await generateTaoDesignSuggestions({ file: appPath, stdLibRoot: STD_LIB_ROOT })
+      const entries = Object.values(review.lock.entries)
+      const primary = entries.find(entry => entry.identity.endsWith('#PrimaryAction'))
+      const secondary = entries.find(entry => entry.identity.endsWith('#SecondaryAction'))
+
+      expect(primary?.semantic.compositeRole).toBe('composite.action.primary')
+      expect(secondary?.semantic.compositeRole).toBe('composite.action.secondary')
+      expect(primary?.resolved.baseStyle['backgroundColor']).toBeDefined()
+      expect(secondary?.resolved.baseStyle['borderColor']).toBeDefined()
+      expect(primary?.resolved.baseStyle['backgroundColor']).toBe(secondary?.resolved.baseStyle['borderColor'])
+    } finally {
+      FS.rmDirectory(tmpDir)
+    }
+  })
+
+  test('suggestion update drops stale accepted entries and labels changed entries', async () => {
+    const { appPath, tmpDir } = writeDesignApp()
+    try {
+      await acceptTaoDesignSuggestions({ file: appPath, stdLibRoot: STD_LIB_ROOT })
+      FS.writeFile(appPath, designAppSource({ includeVariant: false, spec: 'secondary dashboard home' }))
+      const review = await generateTaoDesignSuggestions({ file: appPath, stdLibRoot: STD_LIB_ROOT })
+
+      expect(review.diagnostics.some(d => d.kind === 'changed-entry')).toBe(true)
+      expect(review.diagnostics.some(d => d.kind === 'stale-entry')).toBe(true)
+      expect(Object.keys(review.lock.entries).some(identity => identity.includes('#HomeVariant'))).toBe(false)
+    } finally {
+      FS.rmDirectory(tmpDir)
+    }
+  })
+
+  test('generated modules import design runtime and every referenced style key exists', async () => {
+    const { appPath, tmpDir } = writeDesignApp()
+    try {
+      const result = await compileTao({ file: appPath, stdLibRoot: STD_LIB_ROOT })
+      if (!result.ok) {
+        throw new Error(result.errorReport.getHumanErrorMessage())
+      }
+      const designModule = result.files.find(f => f.relativePath === 'tao-design.ts')?.content ?? ''
+      const bootstrap = result.files.find(f => f.relativePath === 'app-bootstrap.tsx')?.content ?? ''
+      const emitted = result.files.map(f => f.content).join('\n')
+      const referencedStyleKeys = [...emitted.matchAll(/resolveStyle\("([^"]+)"/g)].map(match => match[1]!)
+
+      expect(designModule).toContain(
+        "import { createTaoDesign, type TaoDesignInput } from './use/@tao/tao-runtime/tao-design-runtime'",
+      )
+      expect(designModule).not.toContain('@ts-nocheck')
+      expect(designModule).not.toContain('tokens:')
+      expect(designModule).not.toContain('adaptations: {}')
+      expect(designModule).not.toContain('states: {}')
+      expect(emitted).toContain('TaoDesignProvider')
+      expect(bootstrap).toContain('_compiledTaoAppRootBackground')
+      expect(bootstrap).not.toContain("backgroundColor: 'black'")
+      expect(referencedStyleKeys.length).toBeGreaterThan(0)
+      for (const styleKey of referencedStyleKeys) {
+        expect(designModule).toContain(JSON.stringify(styleKey))
+      }
+    } finally {
+      FS.rmDirectory(tmpDir)
+    }
+  })
+
+  test('variant wrappers pass target design style before variant style', async () => {
+    const { appPath, tmpDir } = writeVariantButtonApp()
+    try {
+      const result = await compileTao({ file: appPath, stdLibRoot: STD_LIB_ROOT })
+      if (!result.ok) {
+        throw new Error(result.errorReport.getHumanErrorMessage())
+      }
+      const emitted = result.files.map(f => f.content).join('\n')
+      const variantWrapper = emitted.match(/const PrimaryAction = function PrimaryAction_View[\s\S]*?\n      }/)?.[0]
+        ?? ''
+
+      expect(variantWrapper).toContain('<Button {..._ViewProps} _taoDesignStyle={(state) => [resolveStyle("style.')
+      expect(variantWrapper).toContain("_ViewProps._taoDesignStyle === 'function'")
+    } finally {
+      FS.rmDirectory(tmpDir)
+    }
+  })
+
+  test('variant wrappers preserve styled target view declarations', async () => {
+    const { appPath, tmpDir } = writeVariantViewApp()
+    try {
+      const result = await compileTao({ file: appPath, stdLibRoot: STD_LIB_ROOT })
+      if (!result.ok) {
+        throw new Error(result.errorReport.getHumanErrorMessage())
+      }
+      const emitted = result.files.map(f => f.content).join('\n')
+      const variantWrapper = emitted.match(/const FeaturedHome = function FeaturedHome_View[\s\S]*?\n      }/)?.[0]
+        ?? ''
+
+      expect(variantWrapper).toContain('<Home {..._ViewProps} _taoDesignStyle={[resolveStyle("style.')
+      expect(variantWrapper).toContain('_ViewProps._taoDesignStyle]}')
+    } finally {
+      FS.rmDirectory(tmpDir)
+    }
+  })
+
+  test('warning panel specs infer warning surface instead of warning action', async () => {
+    const { appPath, tmpDir } = writeWarningPanelApp()
+    try {
+      const review = await generateTaoDesignSuggestions({ file: appPath, stdLibRoot: STD_LIB_ROOT })
+      const warning = Object.values(review.lock.entries).find(entry => entry.identity.endsWith('#WarningPanel'))
+
+      expect(warning?.semantic.compositeRole).toBe('composite.surface.warning')
+      expect(warning?.resolved.baseStyle['backgroundColor']).toBe('#fff7ed')
+    } finally {
+      FS.rmDirectory(tmpDir)
+    }
+  })
+})
+
+function writeDesignApp(opts: DesignAppSourceOpts = {}) {
+  const tmpDir = FS.mkTmpDir(FS.joinPath(FS.tmpdir(), 'tao-design-inference-'))
+  const appPath = FS.joinPath(tmpDir, 'app.tao')
+  FS.writeFile(appPath, designAppSource(opts))
+  return { appPath, tmpDir }
+}
+
+function writePaletteApp() {
+  const tmpDir = FS.mkTmpDir(FS.joinPath(FS.tmpdir(), 'tao-design-palette-'))
+  const appPath = FS.joinPath(tmpDir, 'app.tao')
+  FS.writeFile(
+    appPath,
+    `
+    use Button, Col from @tao/ui
+
+    app DesignApp {
+      design { description "Focused productivity tool" }
+      ui Root
+    }
+
+    variant PrimaryAction = Button <"primary action">
+    variant SecondaryAction = Button <"secondary quiet action">
+
+    ui Root {
+      render Col {
+        PrimaryAction "Save", action { }
+        SecondaryAction "Cancel", action { }
+      }
+    }
+  `,
+  )
+  return { appPath, tmpDir }
+}
+
+function writeVariantButtonApp() {
+  const tmpDir = FS.mkTmpDir(FS.joinPath(FS.tmpdir(), 'tao-design-variant-button-'))
+  const appPath = FS.joinPath(tmpDir, 'app.tao')
+  FS.writeFile(
+    appPath,
+    `
+    use Button from @tao/ui
+
+    app DesignApp {
+      design { description "Focused productivity tool" }
+      ui Root
+    }
+
+    variant PrimaryAction = Button <"primary add action">
+
+    ui Root {
+      render PrimaryAction "Add", action { }
+    }
+  `,
+  )
+  return { appPath, tmpDir }
+}
+
+function writeVariantViewApp() {
+  const tmpDir = FS.mkTmpDir(FS.joinPath(FS.tmpdir(), 'tao-design-variant-view-'))
+  const appPath = FS.joinPath(tmpDir, 'app.tao')
+  FS.writeFile(
+    appPath,
+    `
+    use Button, Col from @tao/ui
+
+    app DesignApp {
+      design { description "Focused productivity tool" }
+      ui Root
+    }
+
+    variant FeaturedHome = Home <"featured home treatment">
+
+    ui Home <"base home screen surface"> {
+      render Col {
+        Button "Save", action { }
+      }
+    }
+
+    ui Root {
+      render FeaturedHome
+    }
+  `,
+  )
+  return { appPath, tmpDir }
+}
+
+function writeWarningPanelApp() {
+  const tmpDir = FS.mkTmpDir(FS.joinPath(FS.tmpdir(), 'tao-design-warning-panel-'))
+  const appPath = FS.joinPath(tmpDir, 'app.tao')
+  FS.writeFile(
+    appPath,
+    `
+    use Box from @tao/ui
+
+    app DesignApp {
+      design { description "Focused productivity tool" }
+      ui Root
+    }
+
+    ui WarningPanel <"warning panel"> {
+      render Box
+    }
+
+    ui Root {
+      render WarningPanel
+    }
+  `,
+  )
+  return { appPath, tmpDir }
+}
+
+type DesignAppSourceOpts = {
+  includeVariant?: boolean
+  spec?: string
+  text?: string
+}
+
+function designAppSource(opts: DesignAppSourceOpts = {}) {
+  const includeVariant = opts.includeVariant ?? true
+  const rootName = includeVariant ? 'HomeVariant' : 'Home'
+  const variant = includeVariant ? 'variant HomeVariant = Home <"default home variant">\n\n' : ''
+  return `
+    use Row, Text from @tao/ui
+
+    app DesignApp {
+      design { description "Quiet team dashboard" }
+      ui ${rootName}
+    }
+
+    ${variant}ui Home <"${opts.spec ?? 'primary dashboard home'}"> {
+      render Row {
+        Text "${opts.text ?? 'Hello'}"
+      }
+    }
+  `
+}

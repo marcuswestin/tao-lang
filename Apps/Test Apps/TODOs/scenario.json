@@ -1,0 +1,51 @@
+{
+  "app": {
+    "provider": {
+      "name": "Memory"
+    }
+  },
+  "steps": [
+    {
+      "assertVisibleText": "TODOs"
+    },
+    {
+      "assertVisibleText": "Add next task"
+    },
+    {
+      "typeText": {
+        "placeholder": "New task title",
+        "value": "Buy oat milk"
+      }
+    },
+    {
+      "assertInputValue": {
+        "placeholder": "New task title",
+        "value": "Buy oat milk"
+      }
+    },
+    {
+      "pressVisibleText": "Add next task"
+    },
+    {
+      "assertVisibleText": "Buy oat milk"
+    },
+    {
+      "assertInputValue": {
+        "placeholder": "New task title",
+        "value": ""
+      }
+    },
+    {
+      "typeText": {
+        "placeholder": "New task title",
+        "value": "Book dentist"
+      }
+    },
+    {
+      "pressVisibleText": "Add next task"
+    },
+    {
+      "assertVisibleText": "Book dentist"
+    }
+  ]
+}

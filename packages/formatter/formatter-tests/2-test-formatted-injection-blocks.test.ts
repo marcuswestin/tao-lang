@@ -29,10 +29,10 @@ describe('Format Injections', () => {
     `)
   testFormatter('injection formatting')
     .format(`
-      view MyView {inject \`\`\`ts
+      ui MyView {inject \`\`\`ts
       return <div/>\n\`\`\`}`)
     .equals(`
-      view MyView {
+      ui MyView {
           inject \`\`\`ts
               return <div/>
           \`\`\`

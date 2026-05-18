@@ -2,6 +2,11 @@ import { compileNode, CompositeGeneratorNode, GeneratorNode } from '@compiler/co
 import type { UriAndPath } from '@compiler/resolution/ModuleResolution'
 import { AST } from '@parser'
 import { FS } from '@shared'
+import {
+  designStyleKeyForNode,
+  TAO_DESIGN_MODULE_RELATIVE_PATH,
+  type TaoDesignCodegenContext,
+} from '../../design/design-codegen'
 import { decodeTaoTemplateTextChunk } from '../tao-template-text-chunk'
 import {
   isAppConfigObject,
@@ -33,6 +38,7 @@ export function generateTypescriptReactNativeApp(
   entryAbsolutePath: string,
   stdLibRoot: string | undefined,
   codegenInputOpts?: TaoCodegenInputOpts,
+  design?: TaoDesignCodegenContext,
 ): {
   fileNodes: { relativePath: string; node: GeneratorNode }[]
   bootstrapNode: GeneratorNode
@@ -40,7 +46,7 @@ export function generateTypescriptReactNativeApp(
   codegenOpts: TaoCodegenOpts
 } {
   const allTaoFiles = dedupeTaoFilesByUri([mainTaoFile, ...importedTaoFiles])
-  const resolvedCodegen = buildMergedEntryCodegenOpts(mainTaoFile, codegenInputOpts)
+  const resolvedCodegen = buildMergedEntryCodegenOpts(mainTaoFile, codegenInputOpts, design)
   const { uriToEmitPath } = buildUriToEmitPath(allTaoFiles, entryAbsolutePath, stdLibRoot)
   const uriToTao = buildUriToTaoMap(allTaoFiles)
   const uriAndPaths = getDocUrisAndPaths(allTaoFiles)
@@ -72,7 +78,11 @@ export function generateTypescriptReactNativeApp(
     .filter((rel): rel is string => !!rel)
     .map(rel => emitRelativeImport(BOOTSTRAP_RELATIVE_PATH, rel))
   const entryImportPath = emitRelativeImport(BOOTSTRAP_RELATIVE_PATH, entryEmit)
-  const bootstrapNode = compileBootstrapNode(bootstrapImports, entryImportPath)
+  const bootstrapNode = compileBootstrapNode(
+    bootstrapImports,
+    entryImportPath,
+    appRootDesignStyleKey(mainTaoFile, resolvedCodegen.design),
+  )
 
   return {
     fileNodes,
@@ -86,6 +96,7 @@ export function generateTypescriptReactNativeApp(
 export function buildMergedEntryCodegenOpts(
   mainTaoFile: AST.TaoFile,
   codegenInputOpts?: TaoCodegenInputOpts,
+  design?: TaoDesignCodegenContext,
 ): TaoCodegenOpts {
   const appConfig = mergeTaoAppConfig(
     appDeclarationToAppConfig(findEntryAppDeclaration(mainTaoFile)),
@@ -94,6 +105,7 @@ export function buildMergedEntryCodegenOpts(
   return {
     app: appConfig,
     appProvider: resolveAppProvider(appConfig),
+    design,
   }
 }
 
@@ -124,9 +136,11 @@ function compileOneTaoFileModule(
   const dirCount = FS.splitPath(relativePath).length
   const importBase = '../'.repeat(dirCount - 1)
   const { reactImport, taoDataImport } = buildRuntimePreambleImports(taoFile, importBase)
+  const designImportPath = emitRelativeImport(relativePath, TAO_DESIGN_MODULE_RELATIVE_PATH).replace(/\.ts$/, '')
+  const taoDesignImport = `import { resolveStyle, useTaoDesignContext } from '${designImportPath}'\n`
   result.append(compileNode(taoFile)`
     import { _TaoRuntime, TR } from '${importBase}use/@tao/tao-runtime/tao-runtime'
-    ${reactImport}${taoDataImport}${importHeader} // ${taoFile.$document!.uri}
+    ${reactImport}${taoDataImport}${taoDesignImport}${importHeader} // ${taoFile.$document!.uri}
   `)
   const body = compileTaoFile(taoFile, codegenOpts)
   if (body) {
@@ -189,6 +203,19 @@ function appDeclarationToAppConfig(app: AST.AppDeclaration | undefined): TaoAppC
   return { app: config }
 }
 
+function appRootDesignStyleKey(
+  mainTaoFile: AST.TaoFile,
+  design: TaoDesignCodegenContext | undefined,
+): string | undefined {
+  const app = findEntryAppDeclaration(mainTaoFile)
+  const appUi = app?.appStatements.find(AST.isAppUiStatement)
+  const root = appUi?.ui.ref
+  if (!AST.isViewDeclaration(root) && !AST.isVariantDeclaration(root)) {
+    return undefined
+  }
+  return designStyleKeyForNode(design, root)
+}
+
 /** stringConfigValue returns a string property from an app config object. */
 function stringConfigValue(config: TaoAppConfigObject, key: string): string | undefined {
   const value = config[key]
@@ -220,9 +247,14 @@ function stringTemplateTextOnlyLiteral(node: AST.StringTemplateExpression | unde
 }
 
 /** compileBootstrapNode emits the default-export app shell, a separate `AppUIView` import from the entry emit path, and runs every emitted Tao module init. */
-function compileBootstrapNode(initImportPaths: string[], appUIViewModulePath: string): GeneratorNode {
+function compileBootstrapNode(
+  initImportPaths: string[],
+  appUIViewModulePath: string,
+  appRootStyleKey: string | undefined,
+): GeneratorNode {
   const n = new CompositeGeneratorNode()
   const appUiImport = `import { AppUIView } from '${appUIViewModulePath}'`
+  const designImport = `import { TaoDesignProvider, resolveStyle, useTaoDesignContext } from './tao-design'`
   const initImports = initImportPaths
     .map((path, idx) =>
       `import { _taoOpenDataProviders as _taoOpenDataProviders${idx}, _taoRunAppInits as _taoRunAppInits${idx} } from '${path}'`
@@ -233,18 +265,40 @@ function compileBootstrapNode(initImportPaths: string[], appUIViewModulePath: st
   n.append(`// @ts-nocheck
 import * as RN from 'react-native'
 ${appUiImport}
+${designImport}
 ${initImports}
 
 ${dataProviderInitCalls}
 ${initCalls}
 
-const _compiledTaoAppRootViewStyle = { flex: 1, backgroundColor: 'black' }
+const _compiledTaoAppRootDesignStyleKey = ${JSON.stringify(appRootStyleKey ?? null)}
+const _compiledTaoAppRootViewStyle = { flex: 1 }
+
+function _compiledTaoAppRootBackground(_taoDesignContext) {
+  const designStyle = _compiledTaoAppRootDesignStyleKey === null
+    ? undefined
+    : RN.StyleSheet.flatten(resolveStyle(_compiledTaoAppRootDesignStyleKey, _taoDesignContext))
+  const designBackground = designStyle?.backgroundColor
+  const backgroundColor = typeof designBackground === 'string' || typeof designBackground === 'number'
+    ? designBackground
+    : (_taoDesignContext.colorScheme === 'dark' ? '#0f1115' : '#f7f8fa')
+  return [_compiledTaoAppRootViewStyle, { backgroundColor }]
+}
+
+function CompiledTaoAppContent() {
+  const _taoDesignContext = useTaoDesignContext()
+  return (
+    <RN.ScrollView style={_compiledTaoAppRootBackground(_taoDesignContext)}>
+      <AppUIView />
+    </RN.ScrollView>
+  )
+}
 
 export default function CompiledTaoApp() {
   return (
-    <RN.ScrollView style={_compiledTaoAppRootViewStyle}>
-      <AppUIView />
-    </RN.ScrollView>
+    <TaoDesignProvider>
+      <CompiledTaoAppContent />
+    </TaoDesignProvider>
   )
 }
 `)

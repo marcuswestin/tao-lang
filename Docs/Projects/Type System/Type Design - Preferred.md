@@ -6,10 +6,10 @@
 > - **Forks, open questions, and superseded options** live in **[Type Design - Alternatives.md](./Type%20Design%20-%20Alternatives.md)**.
 > - **Full staged execution plan** (Stages 0–11), language-surface examples, design decisions, and deferred blocks (value guards, generics): **[Type Implementation - Execution plan.md](./Type%20Implementation%20-%20Execution%20plan.md)**.
 > - **Typir + Langium wiring** (patterns, LOX references): **[Typir and Langium - Implementation guide.md](./Typir%20and%20Langium%20-%20Implementation%20guide.md)**.
-> - **Long-form language examples and informal semantics** (historical / tutorial depth): **[Language surface - Type System Design.md](./Language%20surface%20-%20Type%20System%20Design.md)** (moved from _Tao Language Design_; may lag Preferred—resolve conflicts in **Alternatives**).
+> - **Long-form language examples and informal semantics** (historical / tutorial depth): **[Tao Type System - Design.md](./Tao%20Type%20System%20-%20Design.md)** (moved from _Tao Language Design_; may lag Preferred—resolve conflicts in **Alternatives**).
 > - **Implementation checklist** (type matching phases, etc.): **[Type System - Followups.md](./Type%20System%20-%20Followups.md)**.
-> - **Future per-stage `.tao` fixtures** (placeholder): [Example Types - Target](./Example%20Types%20-%20Target/README.md).
-> - **Data layer async types** (`Loadable<T>`) interact with deferred view `guard`/`check` — see [Queries Design - Preferred](../Data%20Schema%20and%20Queries/Process%20Docs/Queries%20Design%20-%20Preferred.md) and [Queries Design - Alternatives](../Data%20Schema%20and%20Queries/Process%20Docs/Queries%20Design%20-%20Alternatives.md#loadable-vs-guard-and-check).
+> - **Future per-stage `.tao` fixtures** remain a placeholder.
+> - **Data layer async types** interact with deferred view `guard`/`check` — see [Data and Queries - Design](../Data%20Schema%20and%20Queries/Process%20Docs/Data%20and%20Queries%20-%20Design.md#async-model) and [Outstanding and deferred](../Data%20Schema%20and%20Queries/Process%20Docs/Data%20and%20Queries%20-%20Design.md#outstanding).
 
 ---
 
@@ -57,7 +57,7 @@ Full detail, exit criteria, tests, and grammar touchpoints: **[Type Implementati
 | --------------------------------- | --------------------------------------------------------------------------------------------------- |
 | Implement a stage                 | [Type Implementation - Execution plan](./Type%20Implementation%20-%20Execution%20plan.md)           |
 | Wire Typir services               | [Typir and Langium - Implementation guide](./Typir%20and%20Langium%20-%20Implementation%20guide.md) |
-| Tutorial-style examples           | [Language surface - Type System Design](./Language%20surface%20-%20Type%20System%20Design.md)       |
+| Tutorial-style examples           | [Tao Type System - Design](./Tao%20Type%20System%20-%20Design.md)                                   |
 | Parser/compiler file paths        | Execution plan **Key files** section                                                                |
 | Open questions / forks            | [Type Design - Alternatives](./Type%20Design%20-%20Alternatives.md)                                 |
 | Phased followups (matching, etc.) | [Type System - Followups](./Type%20System%20-%20Followups.md)                                       |

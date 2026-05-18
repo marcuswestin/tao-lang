@@ -1,0 +1,7 @@
+{
+  "steps": [
+    { "assertVisibleText": "Launch readiness" },
+    { "assertVisibleText": "Northstar Mobile 2.0" },
+    { "assertVisibleText": "Start release review" }
+  ]
+}

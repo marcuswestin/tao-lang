@@ -1,0 +1,126 @@
+use Button, Col, MultiLineText, Number, Row, Stack, Text, TextInput, TextLabel, WrappingRow from @tao/ui
+
+app TODOs {
+   design {
+      description "A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones."
+   }
+   provider InstantDB {
+      appId "00000000-0000-4000-8000-000000000020"
+      adminToken "local-dev-token"
+      apiURI "http://localhost:9020"
+      websocketURI "ws://localhost:9020/runtime/session"
+   }
+   ui Today
+}
+
+variant Screen = Col <"full screen app surface with generous readable spacing">
+
+variant Hero = Stack <"top summary area with primary title, supporting copy, and useful status metrics">
+
+variant HeroKicker = Text <"small uppercase section label for the current day">
+
+variant HeroTitle = Text <"large app title with confident visual weight">
+
+variant HeroCopy = MultiLineText <"supporting paragraph text that remains readable on mobile">
+
+variant MetricStrip = WrappingRow <"compact metrics row that wraps cleanly on narrow screens">
+
+variant MetricTile = Stack <"small metric surface with label and numeric value">
+
+variant MetricLabel = TextLabel <"quiet label for a metric tile">
+
+variant MetricValue = Number <"large metric number with strong contrast">
+
+variant Toolbar = Row <"action toolbar with primary action and status copy">
+
+variant TaskInput = TextInput <"editable field for entering the next task title">
+
+variant PrimaryAction = Button <"prominent add task action with pressed, focused, disabled, and selected states">
+
+variant SecondaryAction = Button <"secondary planning action with restrained styling">
+
+variant SectionLabel = Text <"section header label for task groups">
+
+variant TaskList = Stack <"vertical list container for todo cards">
+
+variant TaskCard = Row <"card-like task row with status pill and readable spacing">
+
+variant TaskTitle = Text <"primary task title text">
+
+variant TaskMeta = Text <"secondary task metadata text">
+
+variant StatusPill = Text <"compact task status pill">
+
+variant EmptyNote = MultiLineText <"subtle empty-state note">
+
+data TodoData {
+   Todos Todo {
+      Title text,
+      Done text,
+      Ordering number indexed,
+   }
+}
+
+state TaskCount = 0
+
+state DraftTitle = ""
+
+action UpdateDraftTitle Value text {
+   set DraftTitle = Value
+}
+
+action CreateTask {
+   set TaskCount += 1
+   create TodoData.Todo {
+      Title DraftTitle,
+      Done "open",
+      Ordering TaskCount
+   }
+   set DraftTitle = ""
+}
+
+ui Today <"root todo dashboard for creating and reviewing today's tasks"> {
+   query TodoData.Todos as TodoItems {
+      Title,
+      Done,
+      Ordering,
+   }
+   guard {
+      Text "Loading tasks..."
+   }
+   render Screen [items top stretch, gap 18, pad 20, width fill] {
+      Hero [gap 12, pad 18, width fill] {
+         HeroKicker "Today"
+         HeroTitle "TODOs"
+         HeroCopy "Capture the next useful task, keep the list readable, and make small progress visible without turning the app into a project dashboard."
+         MetricStrip [gap 10, width fill] {
+            MetricTile [gap 4, pad 12] {
+               MetricLabel "Created"
+               MetricValue TaskCount
+            }
+            MetricTile [gap 4, pad 12] {
+               MetricLabel "Focus"
+               Text "Now"
+            }
+         }
+      }
+      Toolbar [items center spread, gap 12, width fill] {
+         TaskInput DraftTitle, .Label "New task title", UpdateDraftTitle [grow]
+         PrimaryAction "Add next task", CreateTask
+         SecondaryAction "Plan later", CreateTask
+      }
+      SectionLabel "Open tasks"
+      TaskList [gap 10] {
+         EmptyNote "Nothing is in the list yet. Capture one next action to make the day concrete."
+         for Todo in TodoItems {
+            TaskCard [items center spread, gap 12, pad 14, width fill] {
+               Stack [gap 4] {
+                  TaskTitle "${ Todo.Title}"
+                  TaskMeta "Captured for today"
+               }
+               StatusPill "${ Todo.Done}"
+            }
+         }
+      }
+   }
+}

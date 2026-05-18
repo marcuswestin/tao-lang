@@ -2,12 +2,22 @@ app StdLibTextRenderApp {
    ui RootView
 }
 
-use Col, Row, Text from @tao/ui
+use Button, Col, MultiLineText, Number, Row, Stack, Text, TextLabel, WrappingRow from @tao/ui
 
-view RootView {
-   Col {
-      Row {
-         Text "Hello from std lib" { }
+ui RootView {
+   render Col [gap 8, pad 12] {
+      Row [gap 8] {
+         Text "Hello from std lib"
+         Number 42
+      }
+      Stack [gap 4] {
+         TextLabel "STD-LIB-LABEL"
+         MultiLineText "This text variant is allowed to wrap naturally."
+      }
+      WrappingRow [gap 4] {
+         Text "Chip one"
+         Text "Chip two"
+         Button "Tap", action { }
       }
    }
 }

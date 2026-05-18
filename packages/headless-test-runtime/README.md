@@ -9,6 +9,7 @@ This package is a generic React Native Jest harness for compiled Tao apps. It is
 - No iOS or Android native bridges.
 - No browser runtime or `react-native-web` layout.
 - No device APIs, Expo Router runtime, or Metro bundling behavior.
+- No native animation driver, gesture responder, accessibility service, media, font loading, or device integration behavior.
 
 For platform-dependent app runtime work, use this harness for portable React Native behavior and pair it with `packages/expo-runtime/` tests or manual Expo checks for iOS, Android, and web-specific behavior.
 

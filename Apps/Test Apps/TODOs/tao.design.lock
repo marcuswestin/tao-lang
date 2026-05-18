@@ -1,0 +1,1890 @@
+{
+  "analyzer": {
+    "name": "tao-design",
+    "profile": "deterministic-local",
+    "version": "deterministic-local-v1"
+  },
+  "appDesign": {
+    "description": "A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones."
+  },
+  "entries": {
+    "@tao/ui/Views#Button": {
+      "identity": "@tao/ui/Views#Button",
+      "inputHash": "ae0203e6242c9aeaa38ad092ffd73217a5fc1d0c78bd5e9b25fd795f5a4ebca3",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "primary action",
+        "compositeRole": "composite.action.primary",
+        "confidence": 0.68,
+        "designSpecIdentity": "@tao/ui/Views#Button|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:",
+        "inputHash": "ae0203e6242c9aeaa38ad092ffd73217a5fc1d0c78bd5e9b25fd795f5a4ebca3",
+        "model": "deterministic-local",
+        "rationale": "Matched declaration identity.",
+        "sourceIdentity": "@tao/ui/Views#Button"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "backgroundColor": "#c9a240",
+              "borderColor": "#c9a240",
+              "color": "#ffffff"
+            }
+          },
+          "reducedMotion": {
+            "reduce": {}
+          }
+        },
+        "baseStyle": {
+          "backgroundColor": "#9d7b25",
+          "borderColor": "#9d7b25",
+          "borderRadius": 8,
+          "borderWidth": 1,
+          "color": "#ffffff",
+          "paddingHorizontal": 12,
+          "paddingVertical": 8
+        },
+        "compositeRole": "composite.action.primary",
+        "states": {
+          "disabled": {
+            "opacity": 0.45
+          },
+          "focused": {
+            "borderWidth": 2
+          },
+          "pressed": {
+            "opacity": 0.82
+          },
+          "selected": {
+            "borderWidth": 2
+          }
+        },
+        "styleKey": "style.tao.ui.views.button",
+        "tokens": {
+          "border": {},
+          "color": {},
+          "elevation": {},
+          "font": {},
+          "motion": {},
+          "opacity": {},
+          "radius": {},
+          "shadow": {},
+          "size": {},
+          "spacing": {},
+          "text": {},
+          "transform": {}
+        }
+      },
+      "semantic": {
+        "compositeRole": "composite.action.primary",
+        "confidence": 0.68,
+        "description": "",
+        "designSpecIdentity": "@tao/ui/Views#Button|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:",
+        "rationale": "Matched declaration identity.",
+        "role": "primary action",
+        "sourceIdentity": "@tao/ui/Views#Button"
+      },
+      "status": "accepted"
+    },
+    "@tao/ui/Views#Col": {
+      "identity": "@tao/ui/Views#Col",
+      "inputHash": "91588d4c65d190542520d6c474e5d356f40203c74236eb7caf4841252ea3856d",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "structural layout",
+        "compositeRole": "composite.layout.structural",
+        "confidence": 0.52,
+        "designSpecIdentity": "@tao/ui/Views#Col|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:",
+        "inputHash": "91588d4c65d190542520d6c474e5d356f40203c74236eb7caf4841252ea3856d",
+        "model": "deterministic-local",
+        "rationale": "Mapped Col to structural layout role.",
+        "sourceIdentity": "@tao/ui/Views#Col"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {}
+          },
+          "reducedMotion": {
+            "reduce": {}
+          }
+        },
+        "baseStyle": {},
+        "compositeRole": "composite.layout.structural",
+        "styleKey": "style.tao.ui.views.col",
+        "tokens": {
+          "border": {},
+          "color": {},
+          "elevation": {},
+          "font": {},
+          "motion": {},
+          "opacity": {},
+          "radius": {},
+          "shadow": {},
+          "size": {},
+          "spacing": {},
+          "text": {},
+          "transform": {}
+        }
+      },
+      "semantic": {
+        "compositeRole": "composite.layout.structural",
+        "confidence": 0.52,
+        "description": "",
+        "designSpecIdentity": "@tao/ui/Views#Col|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:",
+        "rationale": "Mapped Col to structural layout role.",
+        "role": "structural layout",
+        "sourceIdentity": "@tao/ui/Views#Col"
+      },
+      "status": "accepted"
+    },
+    "@tao/ui/Views#MultiLineText": {
+      "identity": "@tao/ui/Views#MultiLineText",
+      "inputHash": "fcde896e8ce223acf2d6feaa1f89a882204a6a5f382a4f9cadf5a471b8cb12a5",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "body text",
+        "compositeRole": "composite.text.body",
+        "confidence": 0.68,
+        "designSpecIdentity": "@tao/ui/Views#MultiLineText|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:",
+        "inputHash": "fcde896e8ce223acf2d6feaa1f89a882204a6a5f382a4f9cadf5a471b8cb12a5",
+        "model": "deterministic-local",
+        "rationale": "Matched declaration identity.",
+        "sourceIdentity": "@tao/ui/Views#MultiLineText"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "color": "#f8fafc"
+            }
+          },
+          "reducedMotion": {
+            "reduce": {}
+          }
+        },
+        "baseStyle": {
+          "color": "#1f2937",
+          "fontSize": 16
+        },
+        "compositeRole": "composite.text.body",
+        "styleKey": "style.tao.ui.views.multilinetext",
+        "tokens": {
+          "border": {},
+          "color": {},
+          "elevation": {},
+          "font": {},
+          "motion": {},
+          "opacity": {},
+          "radius": {},
+          "shadow": {},
+          "size": {},
+          "spacing": {},
+          "text": {},
+          "transform": {}
+        }
+      },
+      "semantic": {
+        "compositeRole": "composite.text.body",
+        "confidence": 0.68,
+        "description": "",
+        "designSpecIdentity": "@tao/ui/Views#MultiLineText|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:",
+        "rationale": "Matched declaration identity.",
+        "role": "body text",
+        "sourceIdentity": "@tao/ui/Views#MultiLineText"
+      },
+      "status": "accepted"
+    },
+    "@tao/ui/Views#Number": {
+      "identity": "@tao/ui/Views#Number",
+      "inputHash": "b25c49809aff7a06285bcdbbc3d22eb131822b486a53c1ed7a0bbb32abf4c003",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "metric text",
+        "compositeRole": "composite.text.metric",
+        "confidence": 0.68,
+        "designSpecIdentity": "@tao/ui/Views#Number|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:",
+        "inputHash": "b25c49809aff7a06285bcdbbc3d22eb131822b486a53c1ed7a0bbb32abf4c003",
+        "model": "deterministic-local",
+        "rationale": "Matched declaration identity.",
+        "sourceIdentity": "@tao/ui/Views#Number"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "color": "#f8fafc"
+            }
+          },
+          "reducedMotion": {
+            "reduce": {}
+          }
+        },
+        "baseStyle": {
+          "color": "#26732b",
+          "fontSize": 28,
+          "fontWeight": "700"
+        },
+        "compositeRole": "composite.text.metric",
+        "styleKey": "style.tao.ui.views.number",
+        "tokens": {
+          "border": {},
+          "color": {},
+          "elevation": {},
+          "font": {},
+          "motion": {},
+          "opacity": {},
+          "radius": {},
+          "shadow": {},
+          "size": {},
+          "spacing": {},
+          "text": {},
+          "transform": {}
+        }
+      },
+      "semantic": {
+        "compositeRole": "composite.text.metric",
+        "confidence": 0.68,
+        "description": "",
+        "designSpecIdentity": "@tao/ui/Views#Number|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:",
+        "rationale": "Matched declaration identity.",
+        "role": "metric text",
+        "sourceIdentity": "@tao/ui/Views#Number"
+      },
+      "status": "accepted"
+    },
+    "@tao/ui/Views#Row": {
+      "identity": "@tao/ui/Views#Row",
+      "inputHash": "5f117f5aabd29a528d9a0fbf93ee3e0a40f8c6a945cc9c516bf1a5c41c33bc83",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "structural layout",
+        "compositeRole": "composite.layout.structural",
+        "confidence": 0.52,
+        "designSpecIdentity": "@tao/ui/Views#Row|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:",
+        "inputHash": "5f117f5aabd29a528d9a0fbf93ee3e0a40f8c6a945cc9c516bf1a5c41c33bc83",
+        "model": "deterministic-local",
+        "rationale": "Mapped Row to structural layout role.",
+        "sourceIdentity": "@tao/ui/Views#Row"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {}
+          },
+          "reducedMotion": {
+            "reduce": {}
+          }
+        },
+        "baseStyle": {},
+        "compositeRole": "composite.layout.structural",
+        "styleKey": "style.tao.ui.views.row",
+        "tokens": {
+          "border": {},
+          "color": {},
+          "elevation": {},
+          "font": {},
+          "motion": {},
+          "opacity": {},
+          "radius": {},
+          "shadow": {},
+          "size": {},
+          "spacing": {},
+          "text": {},
+          "transform": {}
+        }
+      },
+      "semantic": {
+        "compositeRole": "composite.layout.structural",
+        "confidence": 0.52,
+        "description": "",
+        "designSpecIdentity": "@tao/ui/Views#Row|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:",
+        "rationale": "Mapped Row to structural layout role.",
+        "role": "structural layout",
+        "sourceIdentity": "@tao/ui/Views#Row"
+      },
+      "status": "accepted"
+    },
+    "@tao/ui/Views#Stack": {
+      "identity": "@tao/ui/Views#Stack",
+      "inputHash": "bdc46a98e6a3e32b7ff84520f5b9e483aff5b913b93942023a84c46fe6c2b047",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "structural layout",
+        "compositeRole": "composite.layout.structural",
+        "confidence": 0.52,
+        "designSpecIdentity": "@tao/ui/Views#Stack|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:",
+        "inputHash": "bdc46a98e6a3e32b7ff84520f5b9e483aff5b913b93942023a84c46fe6c2b047",
+        "model": "deterministic-local",
+        "rationale": "Mapped Stack to structural layout role.",
+        "sourceIdentity": "@tao/ui/Views#Stack"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {}
+          },
+          "reducedMotion": {
+            "reduce": {}
+          }
+        },
+        "baseStyle": {},
+        "compositeRole": "composite.layout.structural",
+        "styleKey": "style.tao.ui.views.stack",
+        "tokens": {
+          "border": {},
+          "color": {},
+          "elevation": {},
+          "font": {},
+          "motion": {},
+          "opacity": {},
+          "radius": {},
+          "shadow": {},
+          "size": {},
+          "spacing": {},
+          "text": {},
+          "transform": {}
+        }
+      },
+      "semantic": {
+        "compositeRole": "composite.layout.structural",
+        "confidence": 0.52,
+        "description": "",
+        "designSpecIdentity": "@tao/ui/Views#Stack|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:",
+        "rationale": "Mapped Stack to structural layout role.",
+        "role": "structural layout",
+        "sourceIdentity": "@tao/ui/Views#Stack"
+      },
+      "status": "accepted"
+    },
+    "@tao/ui/Views#Text": {
+      "identity": "@tao/ui/Views#Text",
+      "inputHash": "dd17c5c670ba895da2c6a0edb7f1a920a0f4e60f299f9d4e1aa498c21b6fdfef",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "body text",
+        "compositeRole": "composite.text.body",
+        "confidence": 0.68,
+        "designSpecIdentity": "@tao/ui/Views#Text|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:",
+        "inputHash": "dd17c5c670ba895da2c6a0edb7f1a920a0f4e60f299f9d4e1aa498c21b6fdfef",
+        "model": "deterministic-local",
+        "rationale": "Matched declaration identity.",
+        "sourceIdentity": "@tao/ui/Views#Text"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "color": "#f8fafc"
+            }
+          },
+          "reducedMotion": {
+            "reduce": {}
+          }
+        },
+        "baseStyle": {
+          "color": "#1f2937",
+          "fontSize": 16
+        },
+        "compositeRole": "composite.text.body",
+        "styleKey": "style.tao.ui.views.text",
+        "tokens": {
+          "border": {},
+          "color": {},
+          "elevation": {},
+          "font": {},
+          "motion": {},
+          "opacity": {},
+          "radius": {},
+          "shadow": {},
+          "size": {},
+          "spacing": {},
+          "text": {},
+          "transform": {}
+        }
+      },
+      "semantic": {
+        "compositeRole": "composite.text.body",
+        "confidence": 0.68,
+        "description": "",
+        "designSpecIdentity": "@tao/ui/Views#Text|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:",
+        "rationale": "Matched declaration identity.",
+        "role": "body text",
+        "sourceIdentity": "@tao/ui/Views#Text"
+      },
+      "status": "accepted"
+    },
+    "@tao/ui/Views#TextInput": {
+      "identity": "@tao/ui/Views#TextInput",
+      "inputHash": "1da1a342bd63f00b77f082f054d83f1051a383aa658fa89b8c54ba00048f9882",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "text input field",
+        "compositeRole": "composite.input.field",
+        "confidence": 0.68,
+        "designSpecIdentity": "@tao/ui/Views#TextInput|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:",
+        "inputHash": "1da1a342bd63f00b77f082f054d83f1051a383aa658fa89b8c54ba00048f9882",
+        "model": "deterministic-local",
+        "rationale": "Matched declaration identity.",
+        "sourceIdentity": "@tao/ui/Views#TextInput"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "backgroundColor": "#111827",
+              "borderColor": "#475569",
+              "color": "#f8fafc"
+            }
+          },
+          "reducedMotion": {
+            "reduce": {}
+          }
+        },
+        "baseStyle": {
+          "backgroundColor": "#ffffff",
+          "borderColor": "#cbd5e1",
+          "borderRadius": 8,
+          "borderWidth": 1,
+          "color": "#111827",
+          "fontSize": 16,
+          "minHeight": 44,
+          "paddingHorizontal": 12,
+          "paddingVertical": 10
+        },
+        "compositeRole": "composite.input.field",
+        "states": {
+          "disabled": {
+            "opacity": 0.45
+          },
+          "focused": {
+            "borderWidth": 2
+          },
+          "pressed": {},
+          "selected": {}
+        },
+        "styleKey": "style.tao.ui.views.textinput",
+        "tokens": {
+          "border": {},
+          "color": {},
+          "elevation": {},
+          "font": {},
+          "motion": {},
+          "opacity": {},
+          "radius": {},
+          "shadow": {},
+          "size": {},
+          "spacing": {},
+          "text": {},
+          "transform": {}
+        }
+      },
+      "semantic": {
+        "compositeRole": "composite.input.field",
+        "confidence": 0.68,
+        "description": "",
+        "designSpecIdentity": "@tao/ui/Views#TextInput|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:",
+        "rationale": "Matched declaration identity.",
+        "role": "text input field",
+        "sourceIdentity": "@tao/ui/Views#TextInput"
+      },
+      "status": "accepted"
+    },
+    "@tao/ui/Views#TextLabel": {
+      "identity": "@tao/ui/Views#TextLabel",
+      "inputHash": "7775133dde762e613087700949c258abb1a2e100b07dbd99d34386b2f997ad59",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "supporting text",
+        "compositeRole": "composite.text.supporting",
+        "confidence": 0.68,
+        "designSpecIdentity": "@tao/ui/Views#TextLabel|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:",
+        "inputHash": "7775133dde762e613087700949c258abb1a2e100b07dbd99d34386b2f997ad59",
+        "model": "deterministic-local",
+        "rationale": "Matched declaration identity.",
+        "sourceIdentity": "@tao/ui/Views#TextLabel"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "color": "#cbd5e1"
+            }
+          },
+          "reducedMotion": {
+            "reduce": {}
+          }
+        },
+        "baseStyle": {
+          "color": "#64748b",
+          "fontSize": 13,
+          "fontWeight": "500"
+        },
+        "compositeRole": "composite.text.supporting",
+        "styleKey": "style.tao.ui.views.textlabel",
+        "tokens": {
+          "border": {},
+          "color": {},
+          "elevation": {},
+          "font": {},
+          "motion": {},
+          "opacity": {},
+          "radius": {},
+          "shadow": {},
+          "size": {},
+          "spacing": {},
+          "text": {},
+          "transform": {}
+        }
+      },
+      "semantic": {
+        "compositeRole": "composite.text.supporting",
+        "confidence": 0.68,
+        "description": "",
+        "designSpecIdentity": "@tao/ui/Views#TextLabel|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:",
+        "rationale": "Matched declaration identity.",
+        "role": "supporting text",
+        "sourceIdentity": "@tao/ui/Views#TextLabel"
+      },
+      "status": "accepted"
+    },
+    "@tao/ui/Views#WrappingRow": {
+      "identity": "@tao/ui/Views#WrappingRow",
+      "inputHash": "debaedea646798db3a245b27be96e0d1623a690028fa0f2493a1ee59b2c9975a",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "structural layout",
+        "compositeRole": "composite.layout.structural",
+        "confidence": 0.52,
+        "designSpecIdentity": "@tao/ui/Views#WrappingRow|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:",
+        "inputHash": "debaedea646798db3a245b27be96e0d1623a690028fa0f2493a1ee59b2c9975a",
+        "model": "deterministic-local",
+        "rationale": "Mapped WrappingRow to structural layout role.",
+        "sourceIdentity": "@tao/ui/Views#WrappingRow"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {}
+          },
+          "reducedMotion": {
+            "reduce": {}
+          }
+        },
+        "baseStyle": {},
+        "compositeRole": "composite.layout.structural",
+        "styleKey": "style.tao.ui.views.wrappingrow",
+        "tokens": {
+          "border": {},
+          "color": {},
+          "elevation": {},
+          "font": {},
+          "motion": {},
+          "opacity": {},
+          "radius": {},
+          "shadow": {},
+          "size": {},
+          "spacing": {},
+          "text": {},
+          "transform": {}
+        }
+      },
+      "semantic": {
+        "compositeRole": "composite.layout.structural",
+        "confidence": 0.52,
+        "description": "",
+        "designSpecIdentity": "@tao/ui/Views#WrappingRow|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:",
+        "rationale": "Mapped WrappingRow to structural layout role.",
+        "role": "structural layout",
+        "sourceIdentity": "@tao/ui/Views#WrappingRow"
+      },
+      "status": "accepted"
+    },
+    "app/TODOs#EmptyNote": {
+      "identity": "app/TODOs#EmptyNote",
+      "inputHash": "9540f6ed1b5156075fea59a45f1c8c895a85949e553de9da6419425a4badbaa6",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "body text",
+        "compositeRole": "composite.text.body",
+        "confidence": 0.84,
+        "designSpecIdentity": "app/TODOs#EmptyNote|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:subtle empty-state note",
+        "inputHash": "9540f6ed1b5156075fea59a45f1c8c895a85949e553de9da6419425a4badbaa6",
+        "model": "deterministic-local",
+        "rationale": "Matched design spec and declaration identity.",
+        "sourceIdentity": "app/TODOs#EmptyNote"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "color": "#f8fafc"
+            }
+          },
+          "reducedMotion": {
+            "reduce": {}
+          }
+        },
+        "baseStyle": {
+          "color": "#1f2937",
+          "fontSize": 16
+        },
+        "compositeRole": "composite.text.body",
+        "styleKey": "style.app.todos.emptynote",
+        "tokens": {
+          "border": {},
+          "color": {},
+          "elevation": {},
+          "font": {},
+          "motion": {},
+          "opacity": {},
+          "radius": {},
+          "shadow": {},
+          "size": {},
+          "spacing": {},
+          "text": {},
+          "transform": {}
+        }
+      },
+      "semantic": {
+        "compositeRole": "composite.text.body",
+        "confidence": 0.84,
+        "description": "subtle empty-state note",
+        "designSpecIdentity": "app/TODOs#EmptyNote|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:subtle empty-state note",
+        "rationale": "Matched design spec and declaration identity.",
+        "role": "body text",
+        "sourceIdentity": "app/TODOs#EmptyNote"
+      },
+      "status": "accepted"
+    },
+    "app/TODOs#Hero": {
+      "identity": "app/TODOs#Hero",
+      "inputHash": "c8c7766637e47df22b7004ea75a6223680a7d1881f612405b890360fdd92afd8",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "structural layout",
+        "compositeRole": "composite.layout.structural",
+        "confidence": 0.72,
+        "designSpecIdentity": "app/TODOs#Hero|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:top summary area with primary title, supporting copy, and useful status metrics",
+        "inputHash": "c8c7766637e47df22b7004ea75a6223680a7d1881f612405b890360fdd92afd8",
+        "model": "deterministic-local",
+        "rationale": "Mapped Stack to structural layout role.",
+        "sourceIdentity": "app/TODOs#Hero"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {}
+          },
+          "reducedMotion": {
+            "reduce": {}
+          }
+        },
+        "baseStyle": {},
+        "compositeRole": "composite.layout.structural",
+        "styleKey": "style.app.todos.hero",
+        "tokens": {
+          "border": {},
+          "color": {},
+          "elevation": {},
+          "font": {},
+          "motion": {},
+          "opacity": {},
+          "radius": {},
+          "shadow": {},
+          "size": {},
+          "spacing": {},
+          "text": {},
+          "transform": {}
+        }
+      },
+      "semantic": {
+        "compositeRole": "composite.layout.structural",
+        "confidence": 0.72,
+        "description": "top summary area with primary title, supporting copy, and useful status metrics",
+        "designSpecIdentity": "app/TODOs#Hero|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:top summary area with primary title, supporting copy, and useful status metrics",
+        "rationale": "Mapped Stack to structural layout role.",
+        "role": "structural layout",
+        "sourceIdentity": "app/TODOs#Hero"
+      },
+      "status": "accepted"
+    },
+    "app/TODOs#HeroCopy": {
+      "identity": "app/TODOs#HeroCopy",
+      "inputHash": "2a78120070a046b8daa9e8251abf2f6f935fae3cf87140e4d09331b0da862794",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "secondary action",
+        "compositeRole": "composite.action.secondary",
+        "confidence": 0.84,
+        "designSpecIdentity": "app/TODOs#HeroCopy|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:supporting paragraph text that remains readable on mobile",
+        "inputHash": "2a78120070a046b8daa9e8251abf2f6f935fae3cf87140e4d09331b0da862794",
+        "model": "deterministic-local",
+        "rationale": "Matched design spec and declaration identity.",
+        "sourceIdentity": "app/TODOs#HeroCopy"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "backgroundColor": "#1f2937",
+              "borderColor": "#475569",
+              "color": "#f8fafc"
+            }
+          },
+          "reducedMotion": {
+            "reduce": {}
+          }
+        },
+        "baseStyle": {
+          "backgroundColor": "#eef2f7",
+          "borderColor": "#cbd5e1",
+          "borderRadius": 8,
+          "borderWidth": 1,
+          "color": "#1f2937",
+          "paddingHorizontal": 12,
+          "paddingVertical": 8
+        },
+        "compositeRole": "composite.action.secondary",
+        "states": {
+          "disabled": {
+            "opacity": 0.45
+          },
+          "focused": {
+            "borderWidth": 2
+          },
+          "pressed": {
+            "opacity": 0.82
+          },
+          "selected": {
+            "borderWidth": 2
+          }
+        },
+        "styleKey": "style.app.todos.herocopy",
+        "tokens": {
+          "border": {},
+          "color": {},
+          "elevation": {},
+          "font": {},
+          "motion": {},
+          "opacity": {},
+          "radius": {},
+          "shadow": {},
+          "size": {},
+          "spacing": {},
+          "text": {},
+          "transform": {}
+        }
+      },
+      "semantic": {
+        "compositeRole": "composite.action.secondary",
+        "confidence": 0.84,
+        "description": "supporting paragraph text that remains readable on mobile",
+        "designSpecIdentity": "app/TODOs#HeroCopy|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:supporting paragraph text that remains readable on mobile",
+        "rationale": "Matched design spec and declaration identity.",
+        "role": "secondary action",
+        "sourceIdentity": "app/TODOs#HeroCopy"
+      },
+      "status": "accepted"
+    },
+    "app/TODOs#HeroKicker": {
+      "identity": "app/TODOs#HeroKicker",
+      "inputHash": "6e13ff86a5be86bc18917b3f6ad41e4bd4ee7e15e32d8d70ec469634c99b1454",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "supporting text",
+        "compositeRole": "composite.text.supporting",
+        "confidence": 0.84,
+        "designSpecIdentity": "app/TODOs#HeroKicker|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:small uppercase section label for the current day",
+        "inputHash": "6e13ff86a5be86bc18917b3f6ad41e4bd4ee7e15e32d8d70ec469634c99b1454",
+        "model": "deterministic-local",
+        "rationale": "Matched design spec and declaration identity.",
+        "sourceIdentity": "app/TODOs#HeroKicker"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "color": "#cbd5e1"
+            }
+          },
+          "reducedMotion": {
+            "reduce": {}
+          }
+        },
+        "baseStyle": {
+          "color": "#64748b",
+          "fontSize": 13,
+          "fontWeight": "500"
+        },
+        "compositeRole": "composite.text.supporting",
+        "styleKey": "style.app.todos.herokicker",
+        "tokens": {
+          "border": {},
+          "color": {},
+          "elevation": {},
+          "font": {},
+          "motion": {},
+          "opacity": {},
+          "radius": {},
+          "shadow": {},
+          "size": {},
+          "spacing": {},
+          "text": {},
+          "transform": {}
+        }
+      },
+      "semantic": {
+        "compositeRole": "composite.text.supporting",
+        "confidence": 0.84,
+        "description": "small uppercase section label for the current day",
+        "designSpecIdentity": "app/TODOs#HeroKicker|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:small uppercase section label for the current day",
+        "rationale": "Matched design spec and declaration identity.",
+        "role": "supporting text",
+        "sourceIdentity": "app/TODOs#HeroKicker"
+      },
+      "status": "accepted"
+    },
+    "app/TODOs#HeroTitle": {
+      "identity": "app/TODOs#HeroTitle",
+      "inputHash": "0103a5eb02c718f89d1200c1f4b1f8d2f2da51a794f3be94a62400839a871dd5",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "body text",
+        "compositeRole": "composite.text.body",
+        "confidence": 0.84,
+        "designSpecIdentity": "app/TODOs#HeroTitle|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:large app title with confident visual weight",
+        "inputHash": "0103a5eb02c718f89d1200c1f4b1f8d2f2da51a794f3be94a62400839a871dd5",
+        "model": "deterministic-local",
+        "rationale": "Matched design spec and declaration identity.",
+        "sourceIdentity": "app/TODOs#HeroTitle"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "color": "#f8fafc"
+            }
+          },
+          "reducedMotion": {
+            "reduce": {}
+          }
+        },
+        "baseStyle": {
+          "color": "#1f2937",
+          "fontSize": 16
+        },
+        "compositeRole": "composite.text.body",
+        "styleKey": "style.app.todos.herotitle",
+        "tokens": {
+          "border": {},
+          "color": {},
+          "elevation": {},
+          "font": {},
+          "motion": {},
+          "opacity": {},
+          "radius": {},
+          "shadow": {},
+          "size": {},
+          "spacing": {},
+          "text": {},
+          "transform": {}
+        }
+      },
+      "semantic": {
+        "compositeRole": "composite.text.body",
+        "confidence": 0.84,
+        "description": "large app title with confident visual weight",
+        "designSpecIdentity": "app/TODOs#HeroTitle|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:large app title with confident visual weight",
+        "rationale": "Matched design spec and declaration identity.",
+        "role": "body text",
+        "sourceIdentity": "app/TODOs#HeroTitle"
+      },
+      "status": "accepted"
+    },
+    "app/TODOs#MetricLabel": {
+      "identity": "app/TODOs#MetricLabel",
+      "inputHash": "f83aa3f25de3c04a2eb44a6eef8d4636e7fab1d1245fa45cc4cafa408f111da6",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "secondary action",
+        "compositeRole": "composite.action.secondary",
+        "confidence": 0.84,
+        "designSpecIdentity": "app/TODOs#MetricLabel|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:quiet label for a metric tile",
+        "inputHash": "f83aa3f25de3c04a2eb44a6eef8d4636e7fab1d1245fa45cc4cafa408f111da6",
+        "model": "deterministic-local",
+        "rationale": "Matched design spec and declaration identity.",
+        "sourceIdentity": "app/TODOs#MetricLabel"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "backgroundColor": "#1f2937",
+              "borderColor": "#475569",
+              "color": "#f8fafc"
+            }
+          },
+          "reducedMotion": {
+            "reduce": {}
+          }
+        },
+        "baseStyle": {
+          "backgroundColor": "#eef2f7",
+          "borderColor": "#cbd5e1",
+          "borderRadius": 8,
+          "borderWidth": 1,
+          "color": "#1f2937",
+          "paddingHorizontal": 12,
+          "paddingVertical": 8
+        },
+        "compositeRole": "composite.action.secondary",
+        "states": {
+          "disabled": {
+            "opacity": 0.45
+          },
+          "focused": {
+            "borderWidth": 2
+          },
+          "pressed": {
+            "opacity": 0.82
+          },
+          "selected": {
+            "borderWidth": 2
+          }
+        },
+        "styleKey": "style.app.todos.metriclabel",
+        "tokens": {
+          "border": {},
+          "color": {},
+          "elevation": {},
+          "font": {},
+          "motion": {},
+          "opacity": {},
+          "radius": {},
+          "shadow": {},
+          "size": {},
+          "spacing": {},
+          "text": {},
+          "transform": {}
+        }
+      },
+      "semantic": {
+        "compositeRole": "composite.action.secondary",
+        "confidence": 0.84,
+        "description": "quiet label for a metric tile",
+        "designSpecIdentity": "app/TODOs#MetricLabel|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:quiet label for a metric tile",
+        "rationale": "Matched design spec and declaration identity.",
+        "role": "secondary action",
+        "sourceIdentity": "app/TODOs#MetricLabel"
+      },
+      "status": "accepted"
+    },
+    "app/TODOs#MetricStrip": {
+      "identity": "app/TODOs#MetricStrip",
+      "inputHash": "4f697998b55b2e5230bdda7ab88a228b9d7fe98d8b14670bb47da6332e88f865",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "structural layout",
+        "compositeRole": "composite.layout.structural",
+        "confidence": 0.72,
+        "designSpecIdentity": "app/TODOs#MetricStrip|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:compact metrics row that wraps cleanly on narrow screens",
+        "inputHash": "4f697998b55b2e5230bdda7ab88a228b9d7fe98d8b14670bb47da6332e88f865",
+        "model": "deterministic-local",
+        "rationale": "Mapped WrappingRow to structural layout role.",
+        "sourceIdentity": "app/TODOs#MetricStrip"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {}
+          },
+          "reducedMotion": {
+            "reduce": {}
+          }
+        },
+        "baseStyle": {},
+        "compositeRole": "composite.layout.structural",
+        "styleKey": "style.app.todos.metricstrip",
+        "tokens": {
+          "border": {},
+          "color": {},
+          "elevation": {},
+          "font": {},
+          "motion": {},
+          "opacity": {},
+          "radius": {},
+          "shadow": {},
+          "size": {},
+          "spacing": {},
+          "text": {},
+          "transform": {}
+        }
+      },
+      "semantic": {
+        "compositeRole": "composite.layout.structural",
+        "confidence": 0.72,
+        "description": "compact metrics row that wraps cleanly on narrow screens",
+        "designSpecIdentity": "app/TODOs#MetricStrip|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:compact metrics row that wraps cleanly on narrow screens",
+        "rationale": "Mapped WrappingRow to structural layout role.",
+        "role": "structural layout",
+        "sourceIdentity": "app/TODOs#MetricStrip"
+      },
+      "status": "accepted"
+    },
+    "app/TODOs#MetricTile": {
+      "identity": "app/TODOs#MetricTile",
+      "inputHash": "85820efd0476d64386e3a59121db07e7400450e5664e837c4fa4b4497a5011d0",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "structural layout",
+        "compositeRole": "composite.layout.structural",
+        "confidence": 0.72,
+        "designSpecIdentity": "app/TODOs#MetricTile|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:small metric surface with label and numeric value",
+        "inputHash": "85820efd0476d64386e3a59121db07e7400450e5664e837c4fa4b4497a5011d0",
+        "model": "deterministic-local",
+        "rationale": "Mapped Stack to structural layout role.",
+        "sourceIdentity": "app/TODOs#MetricTile"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {}
+          },
+          "reducedMotion": {
+            "reduce": {}
+          }
+        },
+        "baseStyle": {},
+        "compositeRole": "composite.layout.structural",
+        "styleKey": "style.app.todos.metrictile",
+        "tokens": {
+          "border": {},
+          "color": {},
+          "elevation": {},
+          "font": {},
+          "motion": {},
+          "opacity": {},
+          "radius": {},
+          "shadow": {},
+          "size": {},
+          "spacing": {},
+          "text": {},
+          "transform": {}
+        }
+      },
+      "semantic": {
+        "compositeRole": "composite.layout.structural",
+        "confidence": 0.72,
+        "description": "small metric surface with label and numeric value",
+        "designSpecIdentity": "app/TODOs#MetricTile|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:small metric surface with label and numeric value",
+        "rationale": "Mapped Stack to structural layout role.",
+        "role": "structural layout",
+        "sourceIdentity": "app/TODOs#MetricTile"
+      },
+      "status": "accepted"
+    },
+    "app/TODOs#MetricValue": {
+      "identity": "app/TODOs#MetricValue",
+      "inputHash": "f7d88b0c434242cd98f6ac5bd084b0e21605481c8627f4b73821661cbbbbaf93",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "metric text",
+        "compositeRole": "composite.text.metric",
+        "confidence": 0.84,
+        "designSpecIdentity": "app/TODOs#MetricValue|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:large metric number with strong contrast",
+        "inputHash": "f7d88b0c434242cd98f6ac5bd084b0e21605481c8627f4b73821661cbbbbaf93",
+        "model": "deterministic-local",
+        "rationale": "Matched design spec and declaration identity.",
+        "sourceIdentity": "app/TODOs#MetricValue"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "color": "#f8fafc"
+            }
+          },
+          "reducedMotion": {
+            "reduce": {}
+          }
+        },
+        "baseStyle": {
+          "color": "#5d2673",
+          "fontSize": 28,
+          "fontWeight": "700"
+        },
+        "compositeRole": "composite.text.metric",
+        "styleKey": "style.app.todos.metricvalue",
+        "tokens": {
+          "border": {},
+          "color": {},
+          "elevation": {},
+          "font": {},
+          "motion": {},
+          "opacity": {},
+          "radius": {},
+          "shadow": {},
+          "size": {},
+          "spacing": {},
+          "text": {},
+          "transform": {}
+        }
+      },
+      "semantic": {
+        "compositeRole": "composite.text.metric",
+        "confidence": 0.84,
+        "description": "large metric number with strong contrast",
+        "designSpecIdentity": "app/TODOs#MetricValue|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:large metric number with strong contrast",
+        "rationale": "Matched design spec and declaration identity.",
+        "role": "metric text",
+        "sourceIdentity": "app/TODOs#MetricValue"
+      },
+      "status": "accepted"
+    },
+    "app/TODOs#PrimaryAction": {
+      "identity": "app/TODOs#PrimaryAction",
+      "inputHash": "66cf2ef54310a8f47db552cae6a9a7a4f8f72ad15d95046a6a53cdee5589b80c",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "primary action",
+        "compositeRole": "composite.action.primary",
+        "confidence": 0.84,
+        "designSpecIdentity": "app/TODOs#PrimaryAction|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:prominent add task action with pressed, focused, disabled, and selected states",
+        "inputHash": "66cf2ef54310a8f47db552cae6a9a7a4f8f72ad15d95046a6a53cdee5589b80c",
+        "model": "deterministic-local",
+        "rationale": "Matched design spec and declaration identity.",
+        "sourceIdentity": "app/TODOs#PrimaryAction"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "backgroundColor": "#40c96e",
+              "borderColor": "#40c96e",
+              "color": "#ffffff"
+            }
+          },
+          "reducedMotion": {
+            "reduce": {}
+          }
+        },
+        "baseStyle": {
+          "backgroundColor": "#259d4d",
+          "borderColor": "#259d4d",
+          "borderRadius": 8,
+          "borderWidth": 1,
+          "color": "#ffffff",
+          "paddingHorizontal": 12,
+          "paddingVertical": 8
+        },
+        "compositeRole": "composite.action.primary",
+        "states": {
+          "disabled": {
+            "opacity": 0.45
+          },
+          "focused": {
+            "borderWidth": 2
+          },
+          "pressed": {
+            "opacity": 0.82
+          },
+          "selected": {
+            "borderWidth": 2
+          }
+        },
+        "styleKey": "style.app.todos.primaryaction",
+        "tokens": {
+          "border": {},
+          "color": {},
+          "elevation": {},
+          "font": {},
+          "motion": {},
+          "opacity": {},
+          "radius": {},
+          "shadow": {},
+          "size": {},
+          "spacing": {},
+          "text": {},
+          "transform": {}
+        }
+      },
+      "semantic": {
+        "compositeRole": "composite.action.primary",
+        "confidence": 0.84,
+        "description": "prominent add task action with pressed, focused, disabled, and selected states",
+        "designSpecIdentity": "app/TODOs#PrimaryAction|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:prominent add task action with pressed, focused, disabled, and selected states",
+        "rationale": "Matched design spec and declaration identity.",
+        "role": "primary action",
+        "sourceIdentity": "app/TODOs#PrimaryAction"
+      },
+      "status": "accepted"
+    },
+    "app/TODOs#Screen": {
+      "identity": "app/TODOs#Screen",
+      "inputHash": "1fcf715946660c9db9d325fc7c4d25843188297b826b0fb3153b872efa8b301d",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "structural layout",
+        "compositeRole": "composite.layout.structural",
+        "confidence": 0.72,
+        "designSpecIdentity": "app/TODOs#Screen|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:full screen app surface with generous readable spacing",
+        "inputHash": "1fcf715946660c9db9d325fc7c4d25843188297b826b0fb3153b872efa8b301d",
+        "model": "deterministic-local",
+        "rationale": "Mapped Col to structural layout role.",
+        "sourceIdentity": "app/TODOs#Screen"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {}
+          },
+          "reducedMotion": {
+            "reduce": {}
+          }
+        },
+        "baseStyle": {},
+        "compositeRole": "composite.layout.structural",
+        "styleKey": "style.app.todos.screen",
+        "tokens": {
+          "border": {},
+          "color": {},
+          "elevation": {},
+          "font": {},
+          "motion": {},
+          "opacity": {},
+          "radius": {},
+          "shadow": {},
+          "size": {},
+          "spacing": {},
+          "text": {},
+          "transform": {}
+        }
+      },
+      "semantic": {
+        "compositeRole": "composite.layout.structural",
+        "confidence": 0.72,
+        "description": "full screen app surface with generous readable spacing",
+        "designSpecIdentity": "app/TODOs#Screen|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:full screen app surface with generous readable spacing",
+        "rationale": "Mapped Col to structural layout role.",
+        "role": "structural layout",
+        "sourceIdentity": "app/TODOs#Screen"
+      },
+      "status": "accepted"
+    },
+    "app/TODOs#SecondaryAction": {
+      "identity": "app/TODOs#SecondaryAction",
+      "inputHash": "1888a6bf14da3457c2975c6d843bb6dde6f685fa79f017c53294837b293a38b4",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "secondary action",
+        "compositeRole": "composite.action.secondary",
+        "confidence": 0.84,
+        "designSpecIdentity": "app/TODOs#SecondaryAction|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:secondary planning action with restrained styling",
+        "inputHash": "1888a6bf14da3457c2975c6d843bb6dde6f685fa79f017c53294837b293a38b4",
+        "model": "deterministic-local",
+        "rationale": "Matched design spec and declaration identity.",
+        "sourceIdentity": "app/TODOs#SecondaryAction"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "backgroundColor": "#1f2937",
+              "borderColor": "#475569",
+              "color": "#f8fafc"
+            }
+          },
+          "reducedMotion": {
+            "reduce": {}
+          }
+        },
+        "baseStyle": {
+          "backgroundColor": "#eef2f7",
+          "borderColor": "#cbd5e1",
+          "borderRadius": 8,
+          "borderWidth": 1,
+          "color": "#1f2937",
+          "paddingHorizontal": 12,
+          "paddingVertical": 8
+        },
+        "compositeRole": "composite.action.secondary",
+        "states": {
+          "disabled": {
+            "opacity": 0.45
+          },
+          "focused": {
+            "borderWidth": 2
+          },
+          "pressed": {
+            "opacity": 0.82
+          },
+          "selected": {
+            "borderWidth": 2
+          }
+        },
+        "styleKey": "style.app.todos.secondaryaction",
+        "tokens": {
+          "border": {},
+          "color": {},
+          "elevation": {},
+          "font": {},
+          "motion": {},
+          "opacity": {},
+          "radius": {},
+          "shadow": {},
+          "size": {},
+          "spacing": {},
+          "text": {},
+          "transform": {}
+        }
+      },
+      "semantic": {
+        "compositeRole": "composite.action.secondary",
+        "confidence": 0.84,
+        "description": "secondary planning action with restrained styling",
+        "designSpecIdentity": "app/TODOs#SecondaryAction|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:secondary planning action with restrained styling",
+        "rationale": "Matched design spec and declaration identity.",
+        "role": "secondary action",
+        "sourceIdentity": "app/TODOs#SecondaryAction"
+      },
+      "status": "accepted"
+    },
+    "app/TODOs#SectionLabel": {
+      "identity": "app/TODOs#SectionLabel",
+      "inputHash": "970074c3d773eb7ecde7a4024a2227048905a3af240cfb2914e5b7e27fc45433",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "supporting text",
+        "compositeRole": "composite.text.supporting",
+        "confidence": 0.84,
+        "designSpecIdentity": "app/TODOs#SectionLabel|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:section header label for task groups",
+        "inputHash": "970074c3d773eb7ecde7a4024a2227048905a3af240cfb2914e5b7e27fc45433",
+        "model": "deterministic-local",
+        "rationale": "Matched design spec and declaration identity.",
+        "sourceIdentity": "app/TODOs#SectionLabel"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "color": "#cbd5e1"
+            }
+          },
+          "reducedMotion": {
+            "reduce": {}
+          }
+        },
+        "baseStyle": {
+          "color": "#64748b",
+          "fontSize": 13,
+          "fontWeight": "500"
+        },
+        "compositeRole": "composite.text.supporting",
+        "styleKey": "style.app.todos.sectionlabel",
+        "tokens": {
+          "border": {},
+          "color": {},
+          "elevation": {},
+          "font": {},
+          "motion": {},
+          "opacity": {},
+          "radius": {},
+          "shadow": {},
+          "size": {},
+          "spacing": {},
+          "text": {},
+          "transform": {}
+        }
+      },
+      "semantic": {
+        "compositeRole": "composite.text.supporting",
+        "confidence": 0.84,
+        "description": "section header label for task groups",
+        "designSpecIdentity": "app/TODOs#SectionLabel|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:section header label for task groups",
+        "rationale": "Matched design spec and declaration identity.",
+        "role": "supporting text",
+        "sourceIdentity": "app/TODOs#SectionLabel"
+      },
+      "status": "accepted"
+    },
+    "app/TODOs#StatusPill": {
+      "identity": "app/TODOs#StatusPill",
+      "inputHash": "0619d93209b3af3d776d64d58f9aa75d7ea5ef46009fa6bf6383c0bb9862ebe6",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "body text",
+        "compositeRole": "composite.text.body",
+        "confidence": 0.84,
+        "designSpecIdentity": "app/TODOs#StatusPill|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:compact task status pill",
+        "inputHash": "0619d93209b3af3d776d64d58f9aa75d7ea5ef46009fa6bf6383c0bb9862ebe6",
+        "model": "deterministic-local",
+        "rationale": "Matched design spec and declaration identity.",
+        "sourceIdentity": "app/TODOs#StatusPill"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "color": "#f8fafc"
+            }
+          },
+          "reducedMotion": {
+            "reduce": {}
+          }
+        },
+        "baseStyle": {
+          "color": "#1f2937",
+          "fontSize": 16
+        },
+        "compositeRole": "composite.text.body",
+        "styleKey": "style.app.todos.statuspill",
+        "tokens": {
+          "border": {},
+          "color": {},
+          "elevation": {},
+          "font": {},
+          "motion": {},
+          "opacity": {},
+          "radius": {},
+          "shadow": {},
+          "size": {},
+          "spacing": {},
+          "text": {},
+          "transform": {}
+        }
+      },
+      "semantic": {
+        "compositeRole": "composite.text.body",
+        "confidence": 0.84,
+        "description": "compact task status pill",
+        "designSpecIdentity": "app/TODOs#StatusPill|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:compact task status pill",
+        "rationale": "Matched design spec and declaration identity.",
+        "role": "body text",
+        "sourceIdentity": "app/TODOs#StatusPill"
+      },
+      "status": "accepted"
+    },
+    "app/TODOs#TaskCard": {
+      "identity": "app/TODOs#TaskCard",
+      "inputHash": "f93f2327fae33e77708991a575f4557930bfad1204250059e0bacd3d28895048",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "structural layout",
+        "compositeRole": "composite.layout.structural",
+        "confidence": 0.72,
+        "designSpecIdentity": "app/TODOs#TaskCard|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:card-like task row with status pill and readable spacing",
+        "inputHash": "f93f2327fae33e77708991a575f4557930bfad1204250059e0bacd3d28895048",
+        "model": "deterministic-local",
+        "rationale": "Mapped Row to structural layout role.",
+        "sourceIdentity": "app/TODOs#TaskCard"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {}
+          },
+          "reducedMotion": {
+            "reduce": {}
+          }
+        },
+        "baseStyle": {},
+        "compositeRole": "composite.layout.structural",
+        "styleKey": "style.app.todos.taskcard",
+        "tokens": {
+          "border": {},
+          "color": {},
+          "elevation": {},
+          "font": {},
+          "motion": {},
+          "opacity": {},
+          "radius": {},
+          "shadow": {},
+          "size": {},
+          "spacing": {},
+          "text": {},
+          "transform": {}
+        }
+      },
+      "semantic": {
+        "compositeRole": "composite.layout.structural",
+        "confidence": 0.72,
+        "description": "card-like task row with status pill and readable spacing",
+        "designSpecIdentity": "app/TODOs#TaskCard|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:card-like task row with status pill and readable spacing",
+        "rationale": "Mapped Row to structural layout role.",
+        "role": "structural layout",
+        "sourceIdentity": "app/TODOs#TaskCard"
+      },
+      "status": "accepted"
+    },
+    "app/TODOs#TaskInput": {
+      "identity": "app/TODOs#TaskInput",
+      "inputHash": "4b609c62bd61cae457a7c55fbce5d1948f174b78b35c1ebfdbcef63eee6ea137",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "text input field",
+        "compositeRole": "composite.input.field",
+        "confidence": 0.84,
+        "designSpecIdentity": "app/TODOs#TaskInput|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:editable field for entering the next task title",
+        "inputHash": "4b609c62bd61cae457a7c55fbce5d1948f174b78b35c1ebfdbcef63eee6ea137",
+        "model": "deterministic-local",
+        "rationale": "Matched design spec and declaration identity.",
+        "sourceIdentity": "app/TODOs#TaskInput"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "backgroundColor": "#111827",
+              "borderColor": "#475569",
+              "color": "#f8fafc"
+            }
+          },
+          "reducedMotion": {
+            "reduce": {}
+          }
+        },
+        "baseStyle": {
+          "backgroundColor": "#ffffff",
+          "borderColor": "#cbd5e1",
+          "borderRadius": 8,
+          "borderWidth": 1,
+          "color": "#111827",
+          "fontSize": 16,
+          "minHeight": 44,
+          "paddingHorizontal": 12,
+          "paddingVertical": 10
+        },
+        "compositeRole": "composite.input.field",
+        "states": {
+          "disabled": {
+            "opacity": 0.45
+          },
+          "focused": {
+            "borderWidth": 2
+          },
+          "pressed": {},
+          "selected": {}
+        },
+        "styleKey": "style.app.todos.taskinput",
+        "tokens": {
+          "border": {},
+          "color": {},
+          "elevation": {},
+          "font": {},
+          "motion": {},
+          "opacity": {},
+          "radius": {},
+          "shadow": {},
+          "size": {},
+          "spacing": {},
+          "text": {},
+          "transform": {}
+        }
+      },
+      "semantic": {
+        "compositeRole": "composite.input.field",
+        "confidence": 0.84,
+        "description": "editable field for entering the next task title",
+        "designSpecIdentity": "app/TODOs#TaskInput|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:editable field for entering the next task title",
+        "rationale": "Matched design spec and declaration identity.",
+        "role": "text input field",
+        "sourceIdentity": "app/TODOs#TaskInput"
+      },
+      "status": "accepted"
+    },
+    "app/TODOs#TaskList": {
+      "identity": "app/TODOs#TaskList",
+      "inputHash": "cd084788892062a800891916cbba13844428369c9bb54326d12871d8007acb26",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "structural layout",
+        "compositeRole": "composite.layout.structural",
+        "confidence": 0.72,
+        "designSpecIdentity": "app/TODOs#TaskList|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:vertical list container for todo cards",
+        "inputHash": "cd084788892062a800891916cbba13844428369c9bb54326d12871d8007acb26",
+        "model": "deterministic-local",
+        "rationale": "Mapped Stack to structural layout role.",
+        "sourceIdentity": "app/TODOs#TaskList"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {}
+          },
+          "reducedMotion": {
+            "reduce": {}
+          }
+        },
+        "baseStyle": {},
+        "compositeRole": "composite.layout.structural",
+        "styleKey": "style.app.todos.tasklist",
+        "tokens": {
+          "border": {},
+          "color": {},
+          "elevation": {},
+          "font": {},
+          "motion": {},
+          "opacity": {},
+          "radius": {},
+          "shadow": {},
+          "size": {},
+          "spacing": {},
+          "text": {},
+          "transform": {}
+        }
+      },
+      "semantic": {
+        "compositeRole": "composite.layout.structural",
+        "confidence": 0.72,
+        "description": "vertical list container for todo cards",
+        "designSpecIdentity": "app/TODOs#TaskList|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:vertical list container for todo cards",
+        "rationale": "Mapped Stack to structural layout role.",
+        "role": "structural layout",
+        "sourceIdentity": "app/TODOs#TaskList"
+      },
+      "status": "accepted"
+    },
+    "app/TODOs#TaskMeta": {
+      "identity": "app/TODOs#TaskMeta",
+      "inputHash": "8b01433088648608ca0dd1ca99532311fdd2d6e09d2bb200fa4ddfcb7d47c3fa",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "secondary action",
+        "compositeRole": "composite.action.secondary",
+        "confidence": 0.84,
+        "designSpecIdentity": "app/TODOs#TaskMeta|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:secondary task metadata text",
+        "inputHash": "8b01433088648608ca0dd1ca99532311fdd2d6e09d2bb200fa4ddfcb7d47c3fa",
+        "model": "deterministic-local",
+        "rationale": "Matched design spec and declaration identity.",
+        "sourceIdentity": "app/TODOs#TaskMeta"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "backgroundColor": "#1f2937",
+              "borderColor": "#475569",
+              "color": "#f8fafc"
+            }
+          },
+          "reducedMotion": {
+            "reduce": {}
+          }
+        },
+        "baseStyle": {
+          "backgroundColor": "#eef2f7",
+          "borderColor": "#cbd5e1",
+          "borderRadius": 8,
+          "borderWidth": 1,
+          "color": "#1f2937",
+          "paddingHorizontal": 12,
+          "paddingVertical": 8
+        },
+        "compositeRole": "composite.action.secondary",
+        "states": {
+          "disabled": {
+            "opacity": 0.45
+          },
+          "focused": {
+            "borderWidth": 2
+          },
+          "pressed": {
+            "opacity": 0.82
+          },
+          "selected": {
+            "borderWidth": 2
+          }
+        },
+        "styleKey": "style.app.todos.taskmeta",
+        "tokens": {
+          "border": {},
+          "color": {},
+          "elevation": {},
+          "font": {},
+          "motion": {},
+          "opacity": {},
+          "radius": {},
+          "shadow": {},
+          "size": {},
+          "spacing": {},
+          "text": {},
+          "transform": {}
+        }
+      },
+      "semantic": {
+        "compositeRole": "composite.action.secondary",
+        "confidence": 0.84,
+        "description": "secondary task metadata text",
+        "designSpecIdentity": "app/TODOs#TaskMeta|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:secondary task metadata text",
+        "rationale": "Matched design spec and declaration identity.",
+        "role": "secondary action",
+        "sourceIdentity": "app/TODOs#TaskMeta"
+      },
+      "status": "accepted"
+    },
+    "app/TODOs#TaskTitle": {
+      "identity": "app/TODOs#TaskTitle",
+      "inputHash": "287014e6f5efdfb91bbbd9c076b6a4bcedd3ebb79b015a69fa7a5e7f61bb0e0f",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "body text",
+        "compositeRole": "composite.text.body",
+        "confidence": 0.84,
+        "designSpecIdentity": "app/TODOs#TaskTitle|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:primary task title text",
+        "inputHash": "287014e6f5efdfb91bbbd9c076b6a4bcedd3ebb79b015a69fa7a5e7f61bb0e0f",
+        "model": "deterministic-local",
+        "rationale": "Matched design spec and declaration identity.",
+        "sourceIdentity": "app/TODOs#TaskTitle"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "color": "#f8fafc"
+            }
+          },
+          "reducedMotion": {
+            "reduce": {}
+          }
+        },
+        "baseStyle": {
+          "color": "#1f2937",
+          "fontSize": 16
+        },
+        "compositeRole": "composite.text.body",
+        "styleKey": "style.app.todos.tasktitle",
+        "tokens": {
+          "border": {},
+          "color": {},
+          "elevation": {},
+          "font": {},
+          "motion": {},
+          "opacity": {},
+          "radius": {},
+          "shadow": {},
+          "size": {},
+          "spacing": {},
+          "text": {},
+          "transform": {}
+        }
+      },
+      "semantic": {
+        "compositeRole": "composite.text.body",
+        "confidence": 0.84,
+        "description": "primary task title text",
+        "designSpecIdentity": "app/TODOs#TaskTitle|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:primary task title text",
+        "rationale": "Matched design spec and declaration identity.",
+        "role": "body text",
+        "sourceIdentity": "app/TODOs#TaskTitle"
+      },
+      "status": "accepted"
+    },
+    "app/TODOs#Today": {
+      "identity": "app/TODOs#Today",
+      "inputHash": "c17b9bbd449e9b9e4820c5bd00a8957144c67c9601db44944f73803e6fc80094",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "plain surface",
+        "compositeRole": "composite.surface.plain",
+        "confidence": 0.66,
+        "designSpecIdentity": "app/TODOs#Today|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:root todo dashboard for creating and reviewing today's tasks",
+        "inputHash": "c17b9bbd449e9b9e4820c5bd00a8957144c67c9601db44944f73803e6fc80094",
+        "model": "deterministic-local",
+        "rationale": "Used conservative plain-surface role for Today.",
+        "sourceIdentity": "app/TODOs#Today"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {}
+          },
+          "reducedMotion": {
+            "reduce": {}
+          }
+        },
+        "baseStyle": {},
+        "compositeRole": "composite.surface.plain",
+        "styleKey": "style.app.todos.today",
+        "tokens": {
+          "border": {},
+          "color": {},
+          "elevation": {},
+          "font": {},
+          "motion": {},
+          "opacity": {},
+          "radius": {},
+          "shadow": {},
+          "size": {},
+          "spacing": {},
+          "text": {},
+          "transform": {}
+        }
+      },
+      "semantic": {
+        "compositeRole": "composite.surface.plain",
+        "confidence": 0.66,
+        "description": "root todo dashboard for creating and reviewing today's tasks",
+        "designSpecIdentity": "app/TODOs#Today|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:root todo dashboard for creating and reviewing today's tasks",
+        "rationale": "Used conservative plain-surface role for Today.",
+        "role": "plain surface",
+        "sourceIdentity": "app/TODOs#Today"
+      },
+      "status": "accepted"
+    },
+    "app/TODOs#Toolbar": {
+      "identity": "app/TODOs#Toolbar",
+      "inputHash": "4f3a4e9d7db28c86c24e1fc972334b477b3f2ba52127a0129eb76176e90e7033",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "structural layout",
+        "compositeRole": "composite.layout.structural",
+        "confidence": 0.72,
+        "designSpecIdentity": "app/TODOs#Toolbar|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:action toolbar with primary action and status copy",
+        "inputHash": "4f3a4e9d7db28c86c24e1fc972334b477b3f2ba52127a0129eb76176e90e7033",
+        "model": "deterministic-local",
+        "rationale": "Mapped Row to structural layout role.",
+        "sourceIdentity": "app/TODOs#Toolbar"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {}
+          },
+          "reducedMotion": {
+            "reduce": {}
+          }
+        },
+        "baseStyle": {},
+        "compositeRole": "composite.layout.structural",
+        "styleKey": "style.app.todos.toolbar",
+        "tokens": {
+          "border": {},
+          "color": {},
+          "elevation": {},
+          "font": {},
+          "motion": {},
+          "opacity": {},
+          "radius": {},
+          "shadow": {},
+          "size": {},
+          "spacing": {},
+          "text": {},
+          "transform": {}
+        }
+      },
+      "semantic": {
+        "compositeRole": "composite.layout.structural",
+        "confidence": 0.72,
+        "description": "action toolbar with primary action and status copy",
+        "designSpecIdentity": "app/TODOs#Toolbar|app:A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones.|spec:action toolbar with primary action and status copy",
+        "rationale": "Mapped Row to structural layout role.",
+        "role": "structural layout",
+        "sourceIdentity": "app/TODOs#Toolbar"
+      },
+      "status": "accepted"
+    }
+  },
+  "generatedAt": "1970-01-01T00:00:00.000Z",
+  "schemaVersion": 1
+}

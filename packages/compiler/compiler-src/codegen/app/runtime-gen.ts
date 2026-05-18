@@ -16,7 +16,15 @@ import { parameterName } from '@compiler/tao-type-shapes'
 import { resolveArgumentBindings } from '@compiler/typing/tao-argument-bindings'
 import { AST } from '@parser/parser'
 import { Assert, Stream, switch_safe } from '@shared'
+import { standardContainerDirection } from '@shared/layout/layout-axis'
 import { throwUnexpectedBehaviorError } from '@shared/TaoErrors'
+import { designStyleKeyForNode, type TaoDesignCodegenContext } from '../../design/design-codegen'
+import {
+  isViewLikeDeclaration,
+  resolveVariantTargetView,
+  type TaoViewLikeDeclaration,
+} from '../../design/variant-resolution'
+import { layoutEntryValues } from '../../layout/tao-layout'
 import {
   collectionSlugFromPlural,
   queryDeclarationAliasName,
@@ -25,6 +33,8 @@ import { decodeTaoTemplateTextChunk } from '../tao-template-text-chunk'
 import type { TaoAppConfig, TaoAppConfigObject } from './app-config'
 import { dataDeclarationToSerializedSchema } from './data-schema-serialization'
 import { compileQueryDeclaration, compileQueryMemberAccessExpression } from './query-plan-gen'
+
+type ViewRenderHost = AST.ViewRender | (AST.RenderStatement & { view: NonNullable<AST.RenderStatement['view']> })
 
 /** TaoResolvedAppProvider is the provider selected for the compiled app after Tao source + compile overrides. */
 export type TaoResolvedAppProvider = {
@@ -38,6 +48,8 @@ export type TaoCodegenOpts = {
   app: TaoAppConfig
   /** Provider selected from the entry app and app overrides. Defaults to Memory. */
   appProvider: TaoResolvedAppProvider
+  /** Optional design analysis result used to emit generated style resolver calls. */
+  design?: TaoDesignCodegenContext
 }
 
 /** TaoCodegenInputOpts are caller-provided app overrides before source defaults are resolved. */
@@ -89,8 +101,11 @@ class RuntimeGen {
       AppDeclaration: (n) => this.AppDeclaration(n),
       AssignmentDeclaration: (n) => this.AssignmentDeclaration(n),
       ViewDeclaration: (n) => this.ViewDeclaration(n),
+      VariantDeclaration: (n) => this.VariantDeclaration(n),
       ActionDeclaration: (n) => this.ActionDeclaration(n),
+      RenderStatement: (n) => this.RenderStatement(n),
       ViewRender: (n) => this.ViewRender(n),
+      ChildrenSplice: (n) => this.ChildrenSplice(n),
       ActionRender: (n) => this.ActionRender(n),
       TypeDeclaration: (n) => this.TypeDeclaration(n),
       DataDeclaration: (n) => this.dataDeclarationRuntime(n),
@@ -107,6 +122,7 @@ class RuntimeGen {
       AppDeclaration: (n) => this.AppDeclaration(n),
       ActionDeclaration: (n) => this.ActionDeclaration(n),
       ViewDeclaration: (n) => this.ViewDeclaration(n),
+      VariantDeclaration: (n) => this.VariantDeclaration(n),
       TypeDeclaration: (n) => this.TypeDeclaration(n),
       DataDeclaration: (n) => this.dataDeclarationRuntime(n),
     })
@@ -266,11 +282,36 @@ class RuntimeGen {
       return compileNoop()
     }
     const uiTarget = refResolved(ui.ui, 'AppUiStatement.ui')
+    Assert.is(
+      uiTarget,
+      isViewLikeDeclaration,
+      'App ui must resolve to a view-like declaration after validation.',
+      { ui: ui.ui.$refText },
+    )
+    const designStyle = this.designStyleProp(uiTarget)
     return compileNode(declaration)`
         function _AppUIView() {
-          return <${uiTarget.name} />
+          ${this.designContextDeclaration(declaration)}
+          return <${uiTarget.name}${designStyle} />
         }; export const AppUIView = _AppUIView // TODO: Remove this
       `
+  }
+
+  VariantDeclaration(declaration: AST.VariantDeclaration): Compiled {
+    const target = declaration.target.ref
+    Assert.is(
+      target,
+      isViewLikeDeclaration,
+      'Variant target must resolve to a view-like declaration after validation.',
+      { target: declaration.target.$refText },
+    )
+    const targetStyleProp = this.variantTargetDesignStyleProp(declaration, target)
+    return compileNode(declaration)`
+      const ${declaration.name} = function ${declaration.name}_View(_ViewProps: any) {
+        ${this.designContextDeclaration(declaration)}
+        return <${target.name} {..._ViewProps}${targetStyleProp} />
+      }
+    `
   }
 
   ModuleDeclaration(moduleDecl: AST.ModuleDeclaration): Compiled {
@@ -424,10 +465,6 @@ class RuntimeGen {
       .filter(decl => decl.type === 'state')
       .unique()
 
-    const viewBodyOrdered = block.statements.filter(
-      s => !AST.isQueryDeclaration(s) && !AST.isGuardStatement(s),
-    )
-
     const queryStmts = block.statements.filter(AST.isQueryDeclaration)
     const guardStmt = block.statements.find(AST.isGuardStatement)
     const guardQueries = queryStmts
@@ -440,19 +477,23 @@ class RuntimeGen {
       : compileNoop()
 
     const params = this.ViewParameterList(parameterList)
+    const renderRoot = block.statements.find(AST.isRenderStatement)
+    const renderedRoot = renderRoot === undefined
+      ? compileNode(viewDeclaration)`null`
+      : this.RenderStatement(renderRoot)
 
     return this.scoped(() =>
       compileNode(viewDeclaration)`
         const ${name} = TR.BlockScope(_Scope, (_Scope) => {
           return function ${name}_View(${params}) {
+            ${this.designContextDeclaration(viewDeclaration)}
             ${this.typeDeclarations(viewDeclaration, declarations)}
+            ${this.viewParameterizedScope(parameterList?.parameters ?? [])}
             ${compileNodeList(declarations, declaration => this.Declaration(declaration))}
             ${compileNodeList(bindings, decl => this.reactiveBinding(decl))}
             ${compileNodeList(queryStmts, q => this.QueryDeclaration(q))}
             ${guardEarly}
-            return <>
-              ${compileNodeList(viewBodyOrdered, stmt => this.viewFragmentStatement(stmt))}
-            </>
+            return ${renderedRoot}
           }
         })
       `
@@ -465,7 +506,9 @@ class RuntimeGen {
       return this.Statement(stmt)
     }
     return switch_safe.type(stmt, {
+      RenderStatement: n => this.RenderStatement(n),
       ViewRender: n => this.renderNode(n),
+      ChildrenSplice: n => this.renderNode(n),
       Injection: n => this.renderNode(n),
       ForStatement: n => this.ForStatement(n),
       Debugger: n => this.Debugger(n),
@@ -476,6 +519,7 @@ class RuntimeGen {
       AppDeclaration: () => compileNoop(),
       AssignmentDeclaration: () => compileNoop(),
       ViewDeclaration: () => compileNoop(),
+      VariantDeclaration: () => compileNoop(),
       ActionDeclaration: () => compileNoop(),
     })
   }
@@ -570,7 +614,9 @@ class RuntimeGen {
     alias: 'Alias',
     state: 'AppState',
     action: 'Action',
-    view: 'ViewState',
+    ui: 'ViewState',
+    frame: 'ViewState',
+    layout: 'ViewState',
     app: '<unsupported in runtimeTypes>',
   } as const
 
@@ -578,9 +624,11 @@ class RuntimeGen {
     return compileNode(decl)`_Scope.${decl.name}.useReactiveHandle()`
   }
 
-  renderNode(renderNode: AST.ViewRender | AST.Injection): Compiled {
+  renderNode(renderNode: AST.RenderNode): Compiled {
     return switch_safe.type(renderNode, {
+      RenderStatement: (stmt) => this.RenderStatement(stmt),
       ViewRender: (stmt) => this.ViewRender(stmt),
+      ChildrenSplice: (stmt) => this.ChildrenSplice(stmt),
       Injection: (stmt) => compileNode(stmt)`{ ${this.Injection(stmt)} }`,
     })
   }
@@ -590,33 +638,255 @@ class RuntimeGen {
     return new CompositeGeneratorNode('_ViewProps: any')
   }
 
+  /** viewParameterizedScope exposes view props as scope bindings for member access inside the view body. */
+  private viewParameterizedScope(params: readonly AST.ParameterDeclaration[]): Compiled {
+    return compileNodeList(params, p =>
+      compileNode(p)`
+        _Scope[${JSON.stringify(parameterName(p))}] = _ViewProps.${parameterName(p)}
+      `)
+  }
+
+  /** designContextDeclaration emits the single design-context hook call a generated component needs. */
+  private designContextDeclaration(node: AST.Node): Compiled {
+    if (this.codegenOpts.design === undefined) {
+      return compileNoop()
+    }
+    return compileNode(node)`
+      const _taoDesignContext = useTaoDesignContext()
+      void _taoDesignContext
+    `
+  }
+
+  RenderStatement(renderStatement: AST.RenderStatement): Compiled {
+    if (renderStatement.injection !== undefined) {
+      return this.Injection(renderStatement.injection)
+    }
+    if (renderStatement.view === undefined) {
+      return compileNode(renderStatement)`null`
+    }
+    return this.viewRenderHost(renderStatement as ViewRenderHost, 'RenderStatement.view')
+  }
+
   ViewRender(viewRender: AST.ViewRender): Compiled {
+    return this.viewRenderHost(viewRender, 'ViewRender.view')
+  }
+
+  viewRenderHost(
+    viewRender: ViewRenderHost,
+    diagnosticLabel: string,
+  ): Compiled {
     return compileNodePropertyRef(
       viewRender,
       'view',
-      viewDecl => {
+      viewLike => {
         Assert.is(
-          viewDecl,
-          AST.isViewDeclaration,
-          'ViewRender callee must resolve to a view declaration after validation.',
-          { callee: viewRender.view.$refText },
+          viewLike,
+          isViewLikeDeclaration,
+          'ViewRender callee must resolve to a view-like declaration after validation.',
+          { callee: viewRender.view?.$refText },
         )
-        const argumentList = this.viewRenderArgumentList(viewRender, viewDecl)
-        const scopeProp = this.viewScopeProp(viewDecl)
+        const targetView = resolveVariantTargetView(viewLike)
+        Assert.is(
+          targetView,
+          AST.isViewDeclaration,
+          'ViewRender variant target must resolve to a view declaration after validation.',
+          { callee: viewRender.view?.$refText },
+        )
+        const argumentList = this.viewRenderArgumentList(viewRender, targetView)
+        const layoutProp = this.viewRenderLayoutSpec(viewRender, targetView)
+        const childrenLayoutProp = this.viewRenderChildrenLayoutEntriesProp(viewRender, targetView)
+        const designStyleProp = this.viewRenderDesignStyleProp(viewRender, viewLike)
+        const scopeProp = this.viewScopeProp(targetView)
         if (!isBlockWithStatements(viewRender.block)) {
           return compileNode(viewRender)`
-            <${viewDecl.name}${scopeProp} ${argumentList}/>
+            <${viewLike.name}${scopeProp} ${argumentList}${layoutProp}${childrenLayoutProp}${designStyleProp}/>
           `
         } else {
           return compileNode(viewRender)`
-            <${viewDecl.name}${scopeProp} ${argumentList}>
+            <${viewLike.name}${scopeProp} ${argumentList}${layoutProp}${childrenLayoutProp}${designStyleProp}>
               ${compileNodeList(viewRender.block.statements, stmt => this.viewRenderBlockStatement(stmt))}
-            </${viewDecl.name}>
+            </${viewLike.name}>
           `
         }
       },
-      { requireResolved: true, diagnosticLabel: 'ViewRender.view' },
+      { requireResolved: true, diagnosticLabel },
     )
+  }
+
+  private viewRenderDesignStyleProp(viewRender: ViewRenderHost, viewLike: TaoViewLikeDeclaration): Compiled {
+    const styleKey = designStyleKeyForNode(this.codegenOpts.design, viewLike)
+    const owner = publicRenderRootOwner(viewRender)
+    if (owner !== undefined) {
+      if (styleKey === undefined) {
+        return compileNode(viewRender)`_taoDesignStyle={_ViewProps._taoDesignStyle} `.append(' ')
+      }
+      if (this.viewLikeUsesStatefulDesignStyle(viewLike)) {
+        return compileNode(viewRender)`_taoDesignStyle={(state) => [resolveStyle(${
+          JSON.stringify(styleKey)
+        }, _taoDesignContext, state), typeof _ViewProps._taoDesignStyle === 'function' ? _ViewProps._taoDesignStyle(state) : _ViewProps._taoDesignStyle]} `
+          .append(' ')
+      }
+      return compileNode(viewRender)`_taoDesignStyle={[resolveStyle(${
+        JSON.stringify(styleKey)
+      }, _taoDesignContext), _ViewProps._taoDesignStyle]} `.append(' ')
+    }
+    if (styleKey === undefined) {
+      return compileNoop()
+    }
+    if (this.viewLikeUsesStatefulDesignStyle(viewLike)) {
+      return compileNode(viewRender)`_taoDesignStyle={(state) => resolveStyle(${
+        JSON.stringify(styleKey)
+      }, _taoDesignContext, state)} `
+        .append(' ')
+    }
+    return compileNode(viewRender)`_taoDesignStyle={resolveStyle(${JSON.stringify(styleKey)}, _taoDesignContext)} `
+      .append(' ')
+  }
+
+  private designStyleProp(viewLike: TaoViewLikeDeclaration): Compiled {
+    const styleKey = designStyleKeyForNode(this.codegenOpts.design, viewLike)
+    if (styleKey === undefined) {
+      return compileNoop()
+    }
+    if (this.viewLikeUsesStatefulDesignStyle(viewLike)) {
+      return compileNode(viewLike)` _taoDesignStyle={(state) => resolveStyle(${
+        JSON.stringify(styleKey)
+      }, _taoDesignContext, state)}`
+    }
+    return compileNode(viewLike)` _taoDesignStyle={resolveStyle(${JSON.stringify(styleKey)}, _taoDesignContext)}`
+  }
+
+  private variantTargetDesignStyleProp(
+    variant: AST.VariantDeclaration,
+    target: TaoViewLikeDeclaration,
+  ): Compiled {
+    const styleKey = designStyleKeyForNode(this.codegenOpts.design, target)
+    if (styleKey === undefined) {
+      return compileNoop()
+    }
+    if (this.viewLikeUsesStatefulDesignStyle(target)) {
+      return compileNode(variant)` _taoDesignStyle={(state) => [resolveStyle(${
+        JSON.stringify(styleKey)
+      }, _taoDesignContext, state), typeof _ViewProps._taoDesignStyle === 'function' ? _ViewProps._taoDesignStyle(state) : _ViewProps._taoDesignStyle]}`
+    }
+    return compileNode(variant)` _taoDesignStyle={[resolveStyle(${
+      JSON.stringify(styleKey)
+    }, _taoDesignContext), _ViewProps._taoDesignStyle]}`
+  }
+
+  private viewLikeUsesStatefulDesignStyle(viewLike: TaoViewLikeDeclaration): boolean {
+    return resolveVariantTargetView(viewLike)?.name === 'Button'
+  }
+
+  /** viewRenderLayoutSpec emits the serialized layout spec for the runtime layout resolver. */
+  viewRenderLayoutSpec(viewRender: ViewRenderHost, viewDecl: AST.ViewDeclaration): Compiled {
+    const layoutExpression = this.viewRenderResolvedLayoutExpression(viewRender, viewDecl)
+    const rawEntriesProp = this.viewRenderRawLayoutEntriesProp(viewRender, viewDecl)
+    const parentDirectionProp = this.viewRenderParentDirectionProp(viewRender, viewDecl)
+    if (layoutExpression === undefined && rawEntriesProp === undefined && parentDirectionProp === undefined) {
+      return compileNoop()
+    }
+    return compileNode(viewRender.layoutClause ?? viewRender)`
+      ${layoutExpression === undefined ? '' : `_taoLayout={${layoutExpression}} `}
+      ${rawEntriesProp ?? ''}
+      ${parentDirectionProp ?? ''}
+    `.append(' ')
+  }
+
+  private viewRenderResolvedLayoutExpression(
+    viewRender: ViewRenderHost,
+    viewDecl: AST.ViewDeclaration,
+  ): string | undefined {
+    const entrySetExpressions: string[] = []
+    const viewDeclPublicSelfEntries = viewDeclarationPublicSelfEntryValues(viewDecl)
+    if (viewDeclPublicSelfEntries.length > 0) {
+      entrySetExpressions.push(JSON.stringify(viewDeclPublicSelfEntries))
+    }
+
+    const selfEntries = this.viewRenderSelfLayoutEntryValues(viewRender, viewDecl)
+    if (selfEntries.length > 0) {
+      entrySetExpressions.push(JSON.stringify(selfEntries))
+    }
+
+    const publicRootOwner = publicRenderRootOwner(viewRender)
+    if (publicRootOwner !== undefined) {
+      const publicSelfEntries = viewDeclarationPublicSelfEntryValues(publicRootOwner)
+      if (publicSelfEntries.length > 0) {
+        entrySetExpressions.push(JSON.stringify(publicSelfEntries))
+      }
+      entrySetExpressions.push('_ViewProps._taoLayoutEntries ?? []')
+    }
+
+    const childrenHostOwner = childrenHostOwnerDeclaration(viewRender)
+    if (childrenHostOwner !== undefined) {
+      const declarationContainerEntries = viewDeclarationContainerEntryValues(childrenHostOwner)
+      if (declarationContainerEntries.length > 0) {
+        entrySetExpressions.push(JSON.stringify(declarationContainerEntries))
+      }
+      entrySetExpressions.push('_ViewProps._taoChildrenLayoutEntries ?? []')
+    }
+    if (entrySetExpressions.length === 0) {
+      return undefined
+    }
+    return layoutResolveMergedExpression(
+      viewDecl.name,
+      entrySetExpressions,
+      publicRootOwner === undefined
+        ? layoutDirectionLiteral(parentViewDirection(viewRender))
+        : '_ViewProps._taoLayoutParentDirection',
+    )
+  }
+
+  /** viewRenderChildrenLayoutEntriesProp passes caller container entries to a frame/layout's @@children host. */
+  viewRenderChildrenLayoutEntriesProp(viewRender: ViewRenderHost, viewDecl: AST.ViewDeclaration): Compiled {
+    if (viewRender.layoutClause === undefined || !viewDeclarationRoutesCallerContainerLayout(viewDecl)) {
+      return compileNoop()
+    }
+    const entries = viewRender.layoutClause.entries.filter(isContainerLayoutEntry).map(entry =>
+      layoutEntryValues(entry)
+    )
+    if (entries.length === 0) {
+      return compileNoop()
+    }
+    return compileNode(viewRender.layoutClause)`
+      _taoChildrenLayoutEntries={${JSON.stringify(entries)}}
+    `.append(' ')
+  }
+
+  private viewRenderSelfLayoutEntryValues(
+    viewRender: ViewRenderHost,
+    viewDecl: AST.ViewDeclaration,
+  ): readonly (readonly (string | number)[])[] {
+    const entries = viewRender.layoutClause?.entries ?? []
+    if (!viewDeclarationRoutesCallerContainerLayout(viewDecl)) {
+      return entries.map(entry => layoutEntryValues(entry))
+    }
+    return entries.filter(entry => !isContainerLayoutEntry(entry)).map(entry => layoutEntryValues(entry))
+  }
+
+  private viewRenderRawLayoutEntriesProp(
+    viewRender: ViewRenderHost,
+    viewDecl: AST.ViewDeclaration,
+  ): string | undefined {
+    if (viewDeclarationPublicRootIsInjection(viewDecl)) {
+      return undefined
+    }
+    const entries = this.viewRenderSelfLayoutEntryValues(viewRender, viewDecl)
+    if (entries.length === 0) {
+      return undefined
+    }
+    return `_taoLayoutEntries={${JSON.stringify(entries)}} `
+  }
+
+  private viewRenderParentDirectionProp(viewRender: ViewRenderHost, viewDecl: AST.ViewDeclaration): string | undefined {
+    if (viewDeclarationPublicRootIsInjection(viewDecl)) {
+      return undefined
+    }
+    const parentDirection = parentViewDirection(viewRender)
+    if (parentDirection === undefined) {
+      return undefined
+    }
+    return `_taoLayoutParentDirection={${JSON.stringify(parentDirection)}} `
   }
 
   viewRenderBlockStatement(stmt: AST.Statement): Compiled {
@@ -624,7 +894,13 @@ class RuntimeGen {
       // Declarations are hoisted in views, so ignore it here
       return compileNoop()
     }
+    if (AST.isRenderStatement(stmt)) {
+      return this.RenderStatement(stmt)
+    }
     if (AST.isViewRender(stmt)) {
+      return this.renderNode(stmt)
+    }
+    if (AST.isChildrenSplice(stmt)) {
       return this.renderNode(stmt)
     }
     if (AST.isInjection(stmt)) {
@@ -634,6 +910,10 @@ class RuntimeGen {
       return this.ForStatement(stmt)
     }
     return this.Statement(stmt)
+  }
+
+  ChildrenSplice(node: AST.ChildrenSplice): Compiled {
+    return compileNode(node)`{_ViewProps.children}`
   }
 
   // Scope
@@ -686,7 +966,7 @@ class RuntimeGen {
   /** viewRenderArgumentList emits JSX props for a `ViewRender`'s arguments using the resolver's bindings.
    * Each prop key is the resolved parameter name. Args without a binding (validation errors) are dropped
    * from emission to keep the JSX well-formed. */
-  viewRenderArgumentList(viewRender: AST.ViewRender, viewDecl: AST.ViewDeclaration): Compiled {
+  viewRenderArgumentList(viewRender: ViewRenderHost, viewDecl: AST.ViewDeclaration): Compiled {
     if (!viewRender.argumentList) {
       return compileNoop()
     }
@@ -830,6 +1110,133 @@ function isBlockWithStatements(block: AST.Block | undefined): block is BlockWith
 /** isNestedDeclaration returns true when the declaration lives inside another declaration (not at file/module level). */
 function isNestedDeclaration(decl: AST.Declaration): boolean {
   return AST.isBlock(decl.$container)
+}
+
+/** parentViewDirection returns the standard-container direction of the nearest render parent, when known. */
+function parentViewDirection(node: ViewRenderHost): ReturnType<typeof standardContainerDirection> {
+  let current: AST.Node | undefined = node.$container
+  while (current !== undefined) {
+    if (AST.isBlock(current)) {
+      const owner = current.$container as AST.Node
+      if (AST.isViewRender(owner) || AST.isRenderStatement(owner)) {
+        const view = owner.view?.ref
+        const target = isViewLikeDeclaration(view) ? resolveVariantTargetView(view) : undefined
+        return target === undefined ? undefined : standardContainerDirection(target.name)
+      }
+      current = owner
+    } else {
+      current = current.$container as AST.Node | undefined
+    }
+  }
+  return undefined
+}
+
+function renderHostDirectlyContainsChildrenSplice(node: ViewRenderHost): boolean {
+  return node.block?.statements.some(AST.isChildrenSplice) ?? false
+}
+
+function publicRenderRootOwner(node: ViewRenderHost): AST.ViewDeclaration | undefined {
+  if (!AST.isRenderStatement(node)) {
+    return undefined
+  }
+  const block = node.$container
+  if (!AST.isBlock(block) || !AST.isViewDeclaration(block.$container)) {
+    return undefined
+  }
+  return block.statements.find(AST.isRenderStatement) === node ? block.$container : undefined
+}
+
+function viewDeclarationPublicRootIsInjection(decl: AST.ViewDeclaration): boolean {
+  return decl.block.statements.find(AST.isRenderStatement)?.injection !== undefined
+}
+
+function childrenHostOwnerDeclaration(node: ViewRenderHost): AST.ViewDeclaration | undefined {
+  if (!renderHostDirectlyContainsChildrenSplice(node)) {
+    return undefined
+  }
+  return nearestViewDeclaration(node)
+}
+
+function viewDeclarationRoutesCallerContainerLayout(decl: AST.ViewDeclaration): boolean {
+  return decl.type !== 'ui' && viewDeclarationUsesChildrenSplice(decl)
+}
+
+function viewDeclarationUsesChildrenSplice(decl: AST.ViewDeclaration): boolean {
+  const stack = [...decl.block.statements]
+  while (stack.length > 0) {
+    const stmt = stack.pop()!
+    if (AST.isChildrenSplice(stmt)) {
+      return true
+    }
+    if (AST.isDeclaration(stmt)) {
+      continue
+    }
+    if (
+      AST.isRenderStatement(stmt) || AST.isViewRender(stmt) || AST.isGuardStatement(stmt) || AST.isForStatement(stmt)
+    ) {
+      stack.push(...(stmt.block?.statements ?? []))
+    }
+  }
+  return false
+}
+
+function isContainerLayoutEntry(entry: AST.LayoutEntry): boolean {
+  const values = layoutEntryValues(entry)
+  const head = values[0]
+  return head === 'items' || head === 'gap'
+}
+
+function viewDeclarationPublicSelfEntryValues(decl: AST.ViewDeclaration): readonly (readonly (string | number)[])[] {
+  return [
+    ...kindDefaultSelfEntryValues(decl),
+    ...((decl.layoutClause?.entries ?? []).filter(entry => !isContainerLayoutEntry(entry)).map(entry =>
+      layoutEntryValues(entry)
+    )),
+  ]
+}
+
+function viewDeclarationContainerEntryValues(decl: AST.ViewDeclaration): readonly (readonly (string | number)[])[] {
+  return (decl.layoutClause?.entries ?? []).filter(isContainerLayoutEntry).map(entry => layoutEntryValues(entry))
+}
+
+function kindDefaultSelfEntryValues(decl: AST.ViewDeclaration): readonly (readonly (string | number)[])[] {
+  if (decl.type === 'layout' && decl.name === 'WrappingRow') {
+    return [['compress'], ['width', 'fill'], ['height', 'hug']]
+  }
+  if (decl.type === 'layout') {
+    return [['compress'], ['fill']]
+  }
+  return [['rigid'], ['hug']]
+}
+
+function layoutResolveMergedExpression(
+  viewName: string,
+  entrySetExpressions: readonly string[],
+  parentDirectionExpression: string | undefined,
+): string {
+  const props = [
+    `view: ${JSON.stringify(viewName)}`,
+    `entrySets: [${entrySetExpressions.join(', ')}]`,
+  ]
+  if (parentDirectionExpression !== undefined) {
+    props.push(`parentDirection: ${parentDirectionExpression}`)
+  }
+  return `TR.Layout.resolveMerged({ ${props.join(', ')} })`
+}
+
+function layoutDirectionLiteral(direction: ReturnType<typeof standardContainerDirection>): string | undefined {
+  return direction === undefined ? undefined : JSON.stringify(direction)
+}
+
+function nearestViewDeclaration(node: AST.Node): AST.ViewDeclaration | undefined {
+  let current = node.$container as AST.Node | undefined
+  while (current !== undefined) {
+    if (AST.isViewDeclaration(current)) {
+      return current
+    }
+    current = current.$container as AST.Node | undefined
+  }
+  return undefined
 }
 
 /** stripTsFenceFromTsCodeBlock removes outer ```ts / ``` fences from an embedded TS code block for executable emit. */

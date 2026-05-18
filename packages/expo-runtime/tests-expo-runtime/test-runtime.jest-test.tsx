@@ -6,15 +6,243 @@ import {
   TAO_SDK_COMPILE_OPTS_ENV_EXPO,
   throwIfTaoSdkCompileFailed,
 } from '@shared/testing'
-import { render } from '@testing-library/react-native'
+import { fireEvent, render } from '@testing-library/react-native'
 import type { ComponentType } from 'react'
-import { Text } from 'react-native'
+import * as RN from 'react-native'
+import { Layout } from '../../tao-std-lib/tao/tao-runtime/Layout'
+import { TR } from '../../tao-std-lib/tao/tao-runtime/tao-runtime'
+
+const rowLayoutStyle = { gap: 8, justifyContent: 'space-between' } as const
+const labelLayoutStyle = { alignSelf: 'center', width: 120 } as const
+const buttonLayoutStyle = { alignSelf: 'center', width: 180 } as const
 
 describe('runtime:', () => {
   test('renders <MockTestView />', async () => {
-    const MockTestView = () => <Text>Hello Mock Test View</Text>
+    const MockTestView = () => <RN.Text>Hello Mock Test View</RN.Text>
     const res = await render(<MockTestView />).findByText('Hello Mock Test View')
     expect(res).toBeDefined()
+  })
+
+  test('maps Tao layout specs to React Native style props', () => {
+    expect(Layout.resolve({ view: 'Row', entries: [['items', 'top', 'spread'], ['gap', 8]] })).toMatchObject({
+      alignItems: 'flex-start',
+      gap: 8,
+      justifyContent: 'space-between',
+      overflow: 'hidden',
+    })
+
+    expect(
+      Layout.resolve({ view: 'Text', parentDirection: 'row', entries: [['aligned', 'center'], ['width', 120]] }),
+    ).toMatchObject({
+      alignSelf: 'center',
+      overflow: 'hidden',
+      width: 120,
+    })
+
+    expect(Layout.resolve({ view: 'Col', entries: [] })).toMatchObject({
+      alignItems: 'stretch',
+      justifyContent: 'flex-start',
+      overflow: 'hidden',
+    })
+
+    expect(Layout.resolve({ view: 'Stack', entries: [] })).toMatchObject({
+      alignItems: 'center',
+      justifyContent: 'flex-start',
+      overflow: 'hidden',
+    })
+
+    expect(Layout.resolve({ view: 'Box', entries: [['items', 'center']] })).toMatchObject({
+      alignItems: 'center',
+      justifyContent: 'center',
+      overflow: 'hidden',
+    })
+
+    expect(Layout.resolve({ view: 'WrappingRow', entries: [] })).toMatchObject({
+      alignItems: 'baseline',
+      justifyContent: 'flex-start',
+      overflow: 'hidden',
+    })
+
+    const wrappingRowDefaults = Layout.resolve({
+      view: 'WrappingRow',
+      parentDirection: 'column',
+      entries: [['compress'], ['width', 'fill'], ['height', 'hug']],
+    })
+    expect(wrappingRowDefaults).toMatchObject({
+      alignItems: 'baseline',
+      alignSelf: 'stretch',
+      flexShrink: 1,
+      justifyContent: 'flex-start',
+      overflow: 'hidden',
+    })
+    expect(wrappingRowDefaults).not.toHaveProperty('flexGrow')
+
+    expect(Layout.resolve({ view: 'Row', entries: [['pad', 10, 'horizontal', 4]] })).toMatchObject({
+      paddingBottom: 10,
+      paddingLeft: 4,
+      paddingRight: 4,
+      paddingTop: 10,
+    })
+
+    expect(Layout.resolve({ view: 'Text', entries: [['fill'], ['rigid']] })).toMatchObject({
+      alignSelf: 'stretch',
+      flexGrow: 1,
+      flexShrink: 0,
+      overflow: 'hidden',
+    })
+
+    expect(
+      Layout.resolve({ view: 'Text', parentDirection: 'row', entries: [['width', 'fill', 'max', 400]] }),
+    ).toMatchObject({
+      flexGrow: 1,
+      maxWidth: 400,
+      overflow: 'hidden',
+    })
+
+    expect(
+      Layout.resolveMerged({
+        view: 'Box',
+        entrySets: [
+          [['pad', 8], ['rigid']],
+          [['pad', 'horizontal', 4], ['compress']],
+        ],
+      }),
+    ).toMatchObject({
+      flexShrink: 1,
+      paddingBottom: 8,
+      paddingLeft: 4,
+      paddingRight: 4,
+      paddingTop: 8,
+    })
+  })
+
+  test('ignores non-string pad tokens while merging layout padding entries', () => {
+    expect(
+      Layout.resolveMerged({
+        view: 'Box',
+        entrySets: [
+          [['pad', 'top', 6]],
+          [['pad', undefined as unknown as string, 'horizontal', 3]],
+        ],
+      }),
+    ).toMatchObject({
+      paddingBottom: 0,
+      paddingLeft: 3,
+      paddingRight: 3,
+      paddingTop: 6,
+    })
+  })
+
+  test('applies Tao layout styles through std-lib Row and Text views', () => {
+    const screen = render(
+      <TR.Views.Row testID="row" _taoLayout={rowLayoutStyle}>
+        <TR.Views.Text testID="label" _taoLayout={labelLayoutStyle}>
+          Label
+        </TR.Views.Text>
+      </TR.Views.Row>,
+    )
+
+    expect(flattenStyle(screen.getByTestId('row').props.style)).toMatchObject({
+      flexDirection: 'row',
+      gap: 8,
+      justifyContent: 'space-between',
+    })
+    expect(flattenStyle(screen.getByTestId('label').props.style)).toMatchObject({
+      alignSelf: 'center',
+      width: 120,
+    })
+  })
+
+  test('applies standard container host styles through std-lib views', () => {
+    const screen = render(
+      <TR.Views.Col testID="col">
+        <TR.Views.Stack testID="stack">
+          <TR.Views.Box testID="box">
+            <TR.Views.WrappingRow testID="wrapping-row">
+              <TR.Views.Text>Chip</TR.Views.Text>
+            </TR.Views.WrappingRow>
+          </TR.Views.Box>
+        </TR.Views.Stack>
+      </TR.Views.Col>,
+    )
+
+    expect(flattenStyle(screen.getByTestId('col').props.style)).toMatchObject({
+      flexDirection: 'column',
+    })
+    expect(flattenStyle(screen.getByTestId('stack').props.style)).toMatchObject({
+      flexDirection: 'column',
+    })
+    expect(flattenStyle(screen.getByTestId('box').props.style)).toMatchObject({
+      flexDirection: 'row',
+    })
+    expect(flattenStyle(screen.getByTestId('wrapping-row').props.style)).toMatchObject({
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+    })
+  })
+
+  test('applies Tao text pressure props through std-lib text variants', () => {
+    const screen = render(
+      <>
+        <TR.Views.Text testID="text">Single line</TR.Views.Text>
+        <TR.Views.TextLabel testID="text-label" _taoLayout={labelLayoutStyle}>Label</TR.Views.TextLabel>
+        <TR.Views.MultiLineText testID="multi-line">Unlimited lines</TR.Views.MultiLineText>
+        <TR.Views.MultiLineText testID="limited-multi-line" lines={3} _taoLayout={labelLayoutStyle}>
+          Limited lines
+        </TR.Views.MultiLineText>
+        <TR.Views.Number testID="number">42</TR.Views.Number>
+      </>,
+    )
+
+    expect(screen.getByTestId('text').props).toMatchObject({
+      ellipsizeMode: 'tail',
+      numberOfLines: 1,
+    })
+    expect(screen.getByTestId('text-label').props).toMatchObject({
+      ellipsizeMode: 'clip',
+      numberOfLines: 1,
+    })
+    expect(flattenStyle(screen.getByTestId('text-label').props.style)).toMatchObject(labelLayoutStyle)
+    expect(screen.getByTestId('multi-line').props.numberOfLines).toBeUndefined()
+    expect(screen.getByTestId('multi-line').props.ellipsizeMode).toBeUndefined()
+    expect(screen.getByTestId('limited-multi-line').props).toMatchObject({
+      ellipsizeMode: 'tail',
+      numberOfLines: 3,
+    })
+    expect(flattenStyle(screen.getByTestId('limited-multi-line').props.style)).toMatchObject(labelLayoutStyle)
+    expect(screen.getByTestId('number').props).toMatchObject({
+      ellipsizeMode: 'tail',
+      numberOfLines: 1,
+    })
+  })
+
+  test('applies Tao layout styles to the std-lib Button wrapper', () => {
+    const onPress = jest.fn()
+    const screen = render(
+      <TR.Views.Button
+        title="Save"
+        testID="save-button"
+        onPress={onPress}
+        _taoLayout={buttonLayoutStyle}
+      />,
+    )
+    const button = screen.getByTestId('save-button')
+    const label = screen.getByText('Save')
+    const buttonStyle = typeof button.props.style === 'function'
+      ? button.props.style({ pressed: false })
+      : button.props.style
+
+    expect(flattenStyle(buttonStyle)).toMatchObject({
+      alignSelf: 'center',
+      width: 180,
+    })
+    expect(button.props.accessibilityRole).toBe('button')
+    expect(flattenStyle(label.props.style)).toMatchObject({
+      fontWeight: '600',
+    })
+
+    fireEvent.press(button)
+    expect(onPress).toHaveBeenCalledTimes(1)
   })
 
   test('compile and run with sdk', async () => {
@@ -50,12 +278,37 @@ describe('runtime:', () => {
   })
 })
 
-/** assertBootstrapRendersNeedle reloads the compiled app module tree (nested emits under the same dir need a full reset; matches pre-refactor tests). */
+/** assertBootstrapRendersNeedle reloads the compiled app module tree and its React renderer together. */
 async function assertBootstrapRendersNeedle(needle: string, bootstrapPath: string) {
   jest.resetModules()
   // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const ReactRuntime = require('react') as typeof import('react')
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const TestRenderer = require('react-test-renderer') as {
+    act(callback: () => void): void
+    create(element: unknown): { toJSON(): unknown }
+  }
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { default: CompiledNeedleApp } = require(bootstrapPath) as { default: ComponentType }
-  await render(<CompiledNeedleApp />).findByText(needle)
+  let tree: { toJSON(): unknown } | undefined
+  TestRenderer.act(() => {
+    tree = TestRenderer.create(ReactRuntime.createElement(CompiledNeedleApp))
+  })
+  expect(testRendererTreeContainsText(tree?.toJSON(), needle)).toBe(true)
+}
+
+function testRendererTreeContainsText(node: unknown, text: string): boolean {
+  if (typeof node === 'string') {
+    return node === text
+  }
+  if (Array.isArray(node)) {
+    return node.some(child => testRendererTreeContainsText(child, text))
+  }
+  if (node === null || typeof node !== 'object') {
+    return false
+  }
+  const children = (node as { children?: unknown }).children
+  return testRendererTreeContainsText(children, text)
 }
 
 /** emitTreeContainsNeedle returns true when some `.ts`/`.tsx` under `rootDir` contains `needle`. */
@@ -79,13 +332,27 @@ function makeNeedleApp() {
   const code = `
     app KitchenSink { ui RootView }
 
-    view RootView {
+    ui RootView {
       alias TextValue = "${needle}"
-      Text TextValue
+      render Wrapper {
+        Text TextValue
+      }
     }
 
-    view Text Value text {
-        inject \`\`\`ts
+    frame Stack {
+        render inject \`\`\`ts
+          return TR.Views.Col(_ViewProps)
+        \`\`\`
+    }
+
+    frame Wrapper {
+      render Stack {
+        @@children
+      }
+    }
+
+    ui Text Value text {
+        render inject \`\`\`ts
           return TR.Views.Text({ children: [_ViewProps.Value.evaluate().jsValue] })
         \`\`\`
     }
@@ -94,6 +361,10 @@ function makeNeedleApp() {
   const taoPath = FS.joinPath(dir, 'NeedleApp.tao')
   FS.writeFile(taoPath, code)
   return { needle, runtimeDir, taoPath }
+}
+
+function flattenStyle(style: RN.StyleProp<any>) {
+  return RN.StyleSheet.flatten(style)
 }
 
 async function _cmd(cmd: string, args: string[], opts?: { cwd: string }): Promise<number> {

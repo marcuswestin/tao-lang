@@ -31,13 +31,24 @@ export default class TaoFormatter extends AbstractFormatter {
       UseStatement: (n) => this.formatUseStatement(n),
       ModuleDeclaration: (n) => this.formatModuleDeclaration(n),
       AppDeclaration: (n) => this.formatAppDeclaration(n),
+      AppDesignBlock: (n) => this.formatAppDesignBlock(n),
+      AppDesignDescription: (n) => this.formatAppDesignDescription(n),
       AppUiStatement: (n) => this.formatAppUiStatement(n),
       AppProviderStatement: (n) => this.formatAppProviderStatement(n),
       AppProviderProperty: (n) => this.formatAppProviderProperty(n),
       OnStatement: (n) => this.formatOnStatement(n),
       ViewDeclaration: (n) => this.formatViewDeclaration(n),
+      VariantDeclaration: (n) => this.formatVariantDeclaration(n),
+      DesignSpec: (n) => this.formatDesignSpec(n),
       ActionDeclaration: (n) => this.formatActionDeclaration(n),
+      RenderStatement: (n) => this.formatRenderStatement(n),
       ViewRender: (n) => this.formatViewRender(n),
+      ChildrenSplice: (n) => this.formatChildrenSplice(n),
+      LayoutClause: (n) => this.formatLayoutClause(n),
+      LayoutEntry: (n) => this.formatLayoutEntry(n),
+      LayoutWord: (n) => this.formatLayoutWord(n),
+      LayoutNumberLiteral: (n) => this.formatLayoutNumberLiteral(n),
+      LayoutPercentLiteral: (n) => this.formatLayoutPercentLiteral(n),
       ActionRender: (n) => this.formatActionRender(n),
       Block: (n) => this.formatBlock(n),
       ArgumentList: (n) => this.formatArgumentList(n),
@@ -212,6 +223,21 @@ export default class TaoFormatter extends AbstractFormatter {
     this._indentBlock(node, 'appStatements')
   }
 
+  private formatAppDesignBlock(node: AST.AppDesignBlock): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('design').append(Formatting.oneSpace())
+    const open = f.keyword('{')
+    const close = f.keyword('}')
+    f.interior(open, close).prepend(Formatting.indent())
+    f.node(node.description).prepend(Formatting.indent())
+    close.prepend(Formatting.newLine())
+  }
+
+  private formatAppDesignDescription(node: AST.AppDesignDescription): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('description').append(Formatting.oneSpace())
+  }
+
   private formatAppUiStatement(node: AST.AppUiStatement): void {
     const f = this.getNodeFormatter(node)
     f.keyword('ui').append(Formatting.oneSpace())
@@ -317,6 +343,24 @@ export default class TaoFormatter extends AbstractFormatter {
   private formatViewDeclaration(node: AST.ViewDeclaration): void {
     this._spaceAroundName(node)
     this._spaceAfterProperty(node, 'parameterList')
+    this._spaceBeforeProperty(node, 'designSpec')
+    this._spaceAfterProperty(node, 'designSpec')
+    this._spaceBeforeProperty(node, 'layoutClause')
+  }
+
+  private formatVariantDeclaration(node: AST.VariantDeclaration): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('variant').append(Formatting.oneSpace())
+    f.property('name').append(Formatting.oneSpace())
+    f.keyword('=').surround(Formatting.oneSpace())
+    f.property('target')
+    this._spaceBeforeProperty(node, 'designSpec')
+  }
+
+  private formatDesignSpec(node: AST.DesignSpec): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('<').append(Formatting.noSpace())
+    f.keyword('>').prepend(Formatting.noSpace())
   }
 
   private formatActionDeclaration(node: AST.ActionDeclaration): void {
@@ -349,9 +393,50 @@ export default class TaoFormatter extends AbstractFormatter {
 
   private formatViewRender(node: AST.ViewRender): void {
     this._spaceBeforeProperty(node, 'argumentList')
+    this._spaceBeforeProperty(node, 'layoutClause')
     if (node.block) {
       this._spaceBeforeProperty(node, 'block')
     }
+  }
+
+  private formatRenderStatement(node: AST.RenderStatement): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('render').append(Formatting.oneSpace())
+    this._spaceBeforeProperty(node, 'argumentList')
+    this._spaceBeforeProperty(node, 'layoutClause')
+    if (node.block) {
+      this._spaceBeforeProperty(node, 'block')
+    }
+  }
+
+  private formatChildrenSplice(_node: AST.ChildrenSplice): void {
+    // No intra-node spacing.
+  }
+
+  private formatLayoutClause(node: AST.LayoutClause): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('[').append(Formatting.noSpace())
+    f.keyword(']').prepend(Formatting.noSpace())
+    this._spaceBetweenCommaSeperatedItems(node)
+  }
+
+  private formatLayoutEntry(node: AST.LayoutEntry): void {
+    this._spaceBetweenNodesInList(node, 'terms')
+  }
+
+  private formatLayoutWord(_node: AST.LayoutWord): void {
+    // Layout words are atomic tokens.
+  }
+
+  private formatLayoutNumberLiteral(node: AST.LayoutNumberLiteral): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('-').append(Formatting.noSpace())
+  }
+
+  private formatLayoutPercentLiteral(node: AST.LayoutPercentLiteral): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('-').append(Formatting.noSpace())
+    f.keyword('%').prepend(Formatting.noSpace())
   }
 
   private formatActionRender(node: AST.ActionRender): void {

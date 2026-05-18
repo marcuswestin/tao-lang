@@ -5,7 +5,7 @@ describe('alias statements', () => {
   test('top-level alias', async () => {
     const doc = await parseAST(`
       alias Pi = 3
-      view MyView { }
+      ui MyView { }
     `)
     const alias = doc.statements.first.as_AssignmentDeclaration
     alias.expect('name').toBe('Pi')
@@ -14,7 +14,7 @@ describe('alias statements', () => {
 
   test('alias with number literal', async () => {
     const doc = await parseAST(`
-      view MyView {
+      ui MyView {
         alias Age = 1
       }
     `)
@@ -26,7 +26,7 @@ describe('alias statements', () => {
 
   test('alias with string literal', async () => {
     const doc = await parseAST(`
-      view MyView {
+      ui MyView {
         alias Greeting = "hello"
       }
     `)
@@ -39,7 +39,7 @@ describe('alias statements', () => {
 
   test('multiple aliases in a view', async () => {
     const doc = await parseAST(`
-      view MyView {
+      ui MyView {
         alias Name = "world"
         alias Count = 42
       }
@@ -57,7 +57,7 @@ describe('alias statements', () => {
   test('string template parses ${…} as AST expression segments (not post-processed text)', async () => {
     // Use normal string concat so Tao source contains real `${` (nested template literals can leave a `\\` before `$`).
     const doc = await parseAST(
-      ['view MyView {', '  state N = 1', '  alias Msg = "a ${N} b"', '}'].join('\n'),
+      ['ui MyView {', '  state N = 1', '  alias Msg = "a ${N} b"', '}'].join('\n'),
     )
     const view = doc.statements.first.as_ViewDeclaration
     const alias = view.block.statements.second.as_AssignmentDeclaration
@@ -75,7 +75,7 @@ describe('alias statements', () => {
     // Object literals inside `${…}` exercise the `{` / `}` clones in the interp lexer mode
     // (BraceOpenInterp / BraceCloseInterp with CATEGORIES pointing at the original keywords).
     const doc = await parseAST(
-      ['view MyView {', '  alias Msg = "x ${ { a 1 } } y"', '}'].join('\n'),
+      ['ui MyView {', '  alias Msg = "x ${ { a 1 } } y"', '}'].join('\n'),
     )
     const view = doc.statements.first.as_ViewDeclaration
     const alias = view.block.statements.first.as_AssignmentDeclaration
@@ -89,7 +89,7 @@ describe('alias statements', () => {
     // `STRING_START` is intentionally excluded from the `interp` mode token list, so an inner `"` inside `${…}`
     // fails at the lexer and then the parser. This is the gate for the deferred nested-template feature.
     const report = await parseASTWithErrors(
-      ['view MyView {', '  alias Msg = "a ${ "b" } c"', '}'].join('\n'),
+      ['ui MyView {', '  alias Msg = "a ${ "b" } c"', '}'].join('\n'),
     )
     expect(report.hasError()).toBe(true)
   })
@@ -99,7 +99,7 @@ describe('alias statements', () => {
     // synthetic prefix). Under the multi-mode lexer, the interpolation is part of the host CST so the parameter
     // resolves through the normal Langium scope chain.
     const doc = await parseAST(
-      ['view Greeting Name text {', '  alias M = "Hi ${Name}"', '}'].join('\n'),
+      ['ui Greeting Name text {', '  alias M = "Hi ${Name}"', '}'].join('\n'),
     )
     const view = doc.statements.first.as_ViewDeclaration
     const alias = view.block.statements.first.as_AssignmentDeclaration
@@ -112,7 +112,7 @@ describe('alias statements', () => {
     // responsible for turning `\n`, `\t`, `\"`, `\\`, `\$`, `\r` into their unescaped characters. This test pins
     // down both sides of that contract (raw-text preserved at parse time, decoder produces expected output).
     const doc = await parseAST(
-      ['view V {', '  alias M = "a\\nb\\tc\\\\d\\"e\\$f"', '}'].join('\n'),
+      ['ui V {', '  alias M = "a\\nb\\tc\\\\d\\"e\\$f"', '}'].join('\n'),
     )
     const view = doc.statements.first.as_ViewDeclaration
     const alias = view.block.statements.first.as_AssignmentDeclaration
@@ -124,8 +124,8 @@ describe('alias statements', () => {
 
   test('alias alongside view render statements', async () => {
     const doc = await parseAST(`
-      view Text Value text { }
-      view MyView {
+      ui Text Value text { }
+      ui MyView {
         alias Msg = "hi"
         Text "hello"
       }
@@ -137,8 +137,8 @@ describe('alias statements', () => {
 
   test('identifier reference in argument', async () => {
     const doc = await parseAST(`
-      view Text Value text { }
-      view MyView {
+      ui Text Value text { }
+      ui MyView {
         alias Msg = "hi"
         Text Msg
       }
@@ -150,8 +150,8 @@ describe('alias statements', () => {
 
   test('alias in nested view body', async () => {
     const doc = await parseAST(`
-      view Container { }
-      view MyView {
+      ui Container { }
+      ui MyView {
         Container {
           alias Nested = 99
         }

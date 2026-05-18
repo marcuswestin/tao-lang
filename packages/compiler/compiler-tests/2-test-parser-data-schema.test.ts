@@ -16,7 +16,7 @@ describe('parse — data schema:', () => {
         provider InstantDB { appId "test-app" }
         ui RootView
       }
-      view RootView { }
+      ui RootView { render inject \`\`\`ts return null \`\`\` }
     `)
     doc.statements.first.as_AppDeclaration.appStatements[0].as_AppProviderStatement.match({
       provider: 'InstantDB',
@@ -135,7 +135,7 @@ describe('parse — data schema:', () => {
         People Person { Name text }
       }
       app MyApp { ui RootView }
-      view RootView { }
+      ui RootView { render inject \`\`\`ts return null \`\`\` }
     `)
     expect(doc.statements.length).toBe(3)
     void doc.statements[0].as_DataDeclaration
@@ -175,14 +175,15 @@ describe('parse — data schema:', () => {
       action Add {
         create D.Item { N "a" }
       }
-      view V {
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
         for It in Rows {
           Text "x"
         }
       }
     `)
     const view = doc.statements.last.as_ViewDeclaration
-    const forStmt = view.block.statements[0].as_ForStatement
+    const forStmt = view.block.statements[1].as_ForStatement
     forStmt.expect('name').toBe('It')
     const add = doc.statements[2].as_ActionDeclaration
     const create = add.block.statements[0].as_CreateStatement

@@ -54,10 +54,12 @@ describe('codegen — call-site argument bindings:', () => {
   test('ViewRender emits one JSX prop per parameter, keyed by parameter name', async () => {
     const out = await writeAndCompile(`
       app A { ui V }
-      view Btn Title text, OnPress action { }
+      ui Btn Title text, OnPress action {
+        render inject \`\`\`ts return null \`\`\`
+      }
       action H { }
-      view V {
-        Btn "x", H
+      ui V {
+        render Btn "x", H
       }
     `)
     expect(out).toMatch(/<Btn[\s\S]*?Title=\{/)
@@ -68,7 +70,8 @@ describe('codegen — call-site argument bindings:', () => {
     const out = await writeAndCompile(`
       app A { ui V }
       action LogEvent Message text, Level number { }
-      view V {
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
         action Outer {
           do LogEvent "submitted", 1
         }
@@ -82,7 +85,8 @@ describe('codegen — call-site argument bindings:', () => {
     const out = await writeAndCompile(`
       app A { ui V }
       action Notify { }
-      view V {
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
         action Outer {
           do Notify
         }
@@ -95,7 +99,8 @@ describe('codegen — call-site argument bindings:', () => {
     const out = await writeAndCompile(`
       app A { ui V }
       action Inner { }
-      view V {
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
         action Outer {
           do Inner {
             debugger
@@ -130,8 +135,8 @@ app HarnessApp {
   ui HarnessRoot
 }
 
-view HarnessRoot {
-  Text "ok"
+ui HarnessRoot {
+  render Text "ok"
 }
 `
 
@@ -178,7 +183,9 @@ describe('codegen — app provider selection and overrides:', () => {
         }
       }
       app HarnessApp { ui HarnessRoot }
-      view HarnessRoot { }
+      ui HarnessRoot {
+        render inject \`\`\`ts return null \`\`\`
+      }
     `)
     expect(out).toContain(
       '"events":{"Title":{"type":"string"},"Host":{"type":"any"},"Attendees":{"type":"any"}}',
@@ -234,7 +241,9 @@ describe('codegen — app provider selection and overrides:', () => {
       query FirstData.FirstItems as FirstRows { T }
       query SecondData.SecondItems as SecondRows { T }
       app HarnessApp { ui HarnessRoot }
-      view HarnessRoot { }
+      ui HarnessRoot {
+        render inject \`\`\`ts return null \`\`\`
+      }
     `,
     )
     const result = await compileTao({ file: filePath, stdLibRoot: STD_LIB_ROOT })
@@ -269,7 +278,9 @@ describe('codegen — app provider selection and overrides:', () => {
       use SharedData from ./db
       query SharedData.Items as Rows { T }
       app HarnessApp { ui HarnessRoot }
-      view HarnessRoot { }
+      ui HarnessRoot {
+        render inject \`\`\`ts return null \`\`\`
+      }
     `,
     )
     const result = await compileTao({ file: mainPath, stdLibRoot: STD_LIB_ROOT })
@@ -303,7 +314,9 @@ describe('codegen — app provider selection and overrides:', () => {
         Email = "ro@example.test",
       }
       app A { ui V }
-      view V { }
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
+      }
     `)
     expect(out).toContain('cardinality: "many"')
     expect(out).toContain('collection: "people"')
@@ -341,7 +354,9 @@ describe('codegen — app provider selection and overrides:', () => {
         Attendees != CurrentUser,
       }
       app A { ui V }
-      view V { }
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
+      }
     `)
     const queryPlan = slicePeekQueryPlanObject(out, '_Scope.HostedEvents = getTaoData("D").peekQuery(')
     const selectBlock = queryPlan.slice(queryPlan.indexOf('select: ['), queryPlan.indexOf('where: ['))
@@ -389,7 +404,9 @@ describe('codegen — app provider selection and overrides:', () => {
         },
       }
       app A { ui V }
-      view V { }
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
+      }
     `)
     expect(out).toMatch(/path: \["Todos"\][\s\S]*select: \[[\s\S]*path: \["Description"\][\s\S]*path: \["Done"\]/)
     expect(out).toMatch(/path: \["Tags"\][\s\S]*select: \[[\s\S]*path: \["Name"\]/)
@@ -408,7 +425,9 @@ describe('codegen — app provider selection and overrides:', () => {
       query D.Users as DefaultUsers
       query D.Users as EmptyBlockUsers { }
       app A { ui V }
-      view V { }
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
+      }
     `)
     const queryPlan = slicePeekQueryPlanObject(out, '_Scope.DefaultUsers = getTaoData("D").peekQuery(')
     expect(queryPlan).toContain('path: ["Name"]')
@@ -456,7 +475,9 @@ describe('codegen — app provider selection and overrides:', () => {
       use SharedData from ./db
       query SharedData.Items as Rows { T }
       app HarnessApp { ui HarnessRoot }
-      view HarnessRoot { }
+      ui HarnessRoot {
+        render inject \`\`\`ts return null \`\`\`
+      }
     `,
     )
     const result = await compileTao({ file: mainPath, stdLibRoot: STD_LIB_ROOT })

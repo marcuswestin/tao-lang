@@ -1,14 +1,22 @@
 import { Command } from '@commander-js/extra-typings'
 import {
+  acceptTaoDesignSuggestions,
   appendSourceMappingUrlPragma,
   type CompileOutputFile,
   compileTao,
+  generateTaoDesignSuggestions,
   mergeTaoAppConfig,
   parseAppConfigAssignment,
   resolveTaoRuntimeBootstrapAbsolutePath,
   type TaoAppConfigObject,
+  type TaoDesignDiagnostic,
+  type TaoDesignMode,
   traceToEncodedSourceMapJson,
 } from '@compiler'
+import {
+  createTaoDesignLLMProvider,
+  type TaoDesignLLMProviderName,
+} from '@compiler/design/design-suggestion-provider'
 import { FS, TaoError } from '@shared'
 import { Log } from '@shared/Log'
 import { throwUserInputRejectionError } from '@shared/TaoErrors'
@@ -32,49 +40,108 @@ export function taoCliMain() {
     .option('--verbose', 'Verbose output', false)
     .option('--std-lib-root <path>', 'The root directory of the standard library', (value) => FS.resolvePath(value))
     .option('--app <assignment>', 'Override an app config key, e.g. --app provider.appId=value', collectAppOverride, {})
+    .option('--design-mode <mode>', 'Design mode: development or production', parseDesignMode, 'development')
+    .option(
+      '--design-lock-dir <path>',
+      'Directory for tao.design.lock and .tao.design.lock',
+      (value) => FS.resolvePath(value),
+    )
     .option('--push-schema', 'Push data schemas after a successful compile')
     .option('--push-schema-overwrite', 'Push data schemas after compile using provider overwrite/exact-sync mode')
-    .action(async (path, { watch, verbose, runtimeDir, stdLibRoot, app, pushSchema, pushSchemaOverwrite }) => {
-      hci.setVerbose(verbose)
-      await hci.wrapExecution(async () => {
-        /** compileAndWrite runs `TaoSDK_compile` for the path/runtime/std-lib and prints the output path.
-         * In watch mode, parse/compiler errors are logged and the process keeps running so `just dev` is not torn down. */
-        async function compileAndWrite() {
-          hci.verboselyInform(`Compiling...`)
-          const result = await TaoSDK_compile({
-            path,
-            runtimeDir,
-            stdLibRoot,
-            app,
-            pushSchema: pushSchema === true,
-            pushSchemaOverwrite: pushSchemaOverwrite === true,
-          })
-          hci.inform(`Compiled to ${result.outputPath}`)
-        }
+    .action(
+      async (
+        path,
+        { watch, verbose, runtimeDir, stdLibRoot, app, designMode, designLockDir, pushSchema, pushSchemaOverwrite },
+      ) => {
+        hci.setVerbose(verbose)
+        await hci.wrapExecution(async () => {
+          /** compileAndWrite runs `TaoSDK_compile` for the path/runtime/std-lib and prints the output path.
+           * In watch mode, parse/compiler errors are logged and the process keeps running so `just dev` is not torn down. */
+          async function compileAndWrite() {
+            hci.verboselyInform(`Compiling...`)
+            const result = await TaoSDK_compile({
+              path,
+              runtimeDir,
+              stdLibRoot,
+              app,
+              designLockDir,
+              designMode,
+              pushSchema: pushSchema === true,
+              pushSchemaOverwrite: pushSchemaOverwrite === true,
+            })
+            hci.inform(`Compiled to ${result.outputPath}`)
+          }
 
-        async function checkCompileAndWrite() {
-          try {
-            await compileAndWrite()
-          } catch (error) {
-            if (watch) {
-              Log.taoError(TaoError.getTaoError(error, { context: 'tao-cli compile --watch' }))
-            } else {
-              throw error
+          async function checkCompileAndWrite() {
+            try {
+              await compileAndWrite()
+            } catch (error) {
+              if (watch) {
+                Log.taoError(TaoError.getTaoError(error, { context: 'tao-cli compile --watch' }))
+              } else {
+                throw error
+              }
             }
           }
-        }
 
-        if (watch) {
-          // TODO: Have compiler return the resolved module graph (entry + used paths) so watch targets stay minimal
-          // and pick up cross-directory `use` without watching the whole parent directory.
-          const fileDir = FS.dirname(path)
-          chokidar.watch(fileDir).on('change', checkCompileAndWrite)
-          if (stdLibRoot) {
-            chokidar.watch(stdLibRoot).on('change', checkCompileAndWrite)
+          if (watch) {
+            // TODO: Have compiler return the resolved module graph (entry + used paths) so watch targets stay minimal
+            // and pick up cross-directory `use` without watching the whole parent directory.
+            const fileDir = FS.dirname(path)
+            chokidar.watch(fileDir).on('change', checkCompileAndWrite)
+            if (stdLibRoot) {
+              chokidar.watch(stdLibRoot).on('change', checkCompileAndWrite)
+            }
           }
-        }
 
-        await checkCompileAndWrite()
+          await checkCompileAndWrite()
+        })
+      },
+    )
+
+  program.command('design')
+    .description('Analyze Tao design inference, or run `tao design update <path>` to accept suggestions')
+    .argument('<path-or-update>', 'The file to analyze, or `update`')
+    .argument('[path]', 'The file to analyze when using `update`')
+    .option('--verbose', 'Verbose output', false)
+    .option('--llm', 'Generate design suggestions through an LLM provider (default: codex-cli)')
+    .option('--llm-provider <provider>', 'LLM provider: codex-cli or claude-cli')
+    .option('--model <model>', 'Model name or alias for the selected LLM provider')
+    .option('--std-lib-root <path>', 'The root directory of the standard library', (value) => FS.resolvePath(value))
+    .option(
+      '--design-lock-dir <path>',
+      'Directory for tao.design.lock and .tao.design.lock',
+      (value) => FS.resolvePath(value),
+    )
+    .action(async (pathOrUpdate, path, { verbose, llm, llmProvider, model, stdLibRoot, designLockDir }) => {
+      hci.setVerbose(verbose)
+      await hci.wrapExecution(async () => {
+        const suggestionProvider = designSuggestionProviderFromOptions({ llm, llmProvider, model })
+        if (pathOrUpdate === 'update') {
+          if (path === undefined) {
+            throwUserInputRejectionError('Expected a Tao file path after `tao design update`.')
+          }
+          const result = await acceptTaoDesignSuggestions({
+            file: FS.resolvePath(path),
+            stdLibRoot,
+            designLockDir,
+            suggestionProvider,
+          })
+          printDesignResult('Accepted design lock', result.acceptedPath, result.diagnostics)
+          rejectOnDesignErrors(result.diagnostics)
+          return
+        }
+        if (path !== undefined) {
+          throwUserInputRejectionError('Expected `tao design <path>` or `tao design update <path>`.')
+        }
+        const result = await generateTaoDesignSuggestions({
+          file: FS.resolvePath(pathOrUpdate),
+          stdLibRoot,
+          designLockDir,
+          suggestionProvider,
+        })
+        printDesignResult('Design suggestions', result.suggestionPath, result.diagnostics)
+        rejectOnDesignErrors(result.diagnostics)
       })
     })
 
@@ -101,6 +168,30 @@ export function taoCliMain() {
   program.parse(normalizeAppOverrideArgv(process.argv))
 }
 
+function designSuggestionProviderFromOptions(opts: {
+  llm?: boolean
+  llmProvider?: string
+  model?: string
+}) {
+  if (opts.llm !== true && opts.llmProvider === undefined && opts.model === undefined) {
+    return undefined
+  }
+  const provider = parseLLMProvider(opts.llmProvider ?? 'codex-cli')
+  hci.verboselyInform(`Using ${provider} for design suggestions.`)
+  return createTaoDesignLLMProvider({
+    cwd: process.cwd(),
+    model: opts.model,
+    provider,
+  })
+}
+
+function parseLLMProvider(value: string): TaoDesignLLMProviderName {
+  if (value === 'codex-cli' || value === 'claude-cli') {
+    return value
+  }
+  throwUserInputRejectionError(`Invalid --llm-provider '${value}'. Expected codex-cli or claude-cli.`)
+}
+
 type TaoSDK_compileOpts = {
   path: string
   runtimeDir: string
@@ -109,6 +200,10 @@ type TaoSDK_compileOpts = {
   outputFileName?: string
   /** App config overrides, e.g. `{ provider: { appId: "test-db" } }`. */
   app?: TaoAppConfigObject
+  /** Design mode. Development uses deterministic suggestions as fallback; production requires accepted lock entries. */
+  designMode?: TaoDesignMode
+  /** Directory containing `tao.design.lock` and `.tao.design.lock`. */
+  designLockDir?: string
   /** When true, push schemas with provider admin after successful compile. */
   pushSchema?: boolean
   /** When true, push schemas with provider admin in overwrite/exact-sync mode after successful compile. */
@@ -142,6 +237,8 @@ export async function TaoSDK_compile(opts: TaoSDK_compileOpts): Promise<TaoSDK_c
       file: opts.path,
       stdLibRoot: opts.stdLibRoot,
       app: opts.app,
+      designLockDir: opts.designLockDir,
+      designMode: opts.designMode,
     })
     if (!result.ok) {
       FS.writeFile(stagedOutputPath, result.code)
@@ -173,6 +270,49 @@ export async function TaoSDK_compile(opts: TaoSDK_compileOpts): Promise<TaoSDK_c
     if (FS.isDirectory(stagedEmitRoot)) {
       FS.rmDirectory(stagedEmitRoot)
     }
+  }
+}
+
+/** parseDesignMode validates the CLI design mode option. */
+function parseDesignMode(value: string): TaoDesignMode {
+  if (value === 'development' || value === 'production') {
+    return value
+  }
+  throwUserInputRejectionError(`Invalid design mode '${value}'. Expected development or production.`)
+}
+
+/** printDesignResult prints a grouped CLI summary for design analysis/update. */
+function printDesignResult(label: string, path: string, diagnostics: readonly TaoDesignDiagnostic[]): void {
+  hci.inform(`${label}: ${path}`)
+  const groups: { label: string; kinds: readonly TaoDesignDiagnostic['kind'][] }[] = [
+    { label: 'New', kinds: ['new-entry', 'missing-entry'] },
+    { label: 'Changed', kinds: ['changed-entry'] },
+    { label: 'Stale', kinds: ['stale-entry'] },
+    { label: 'Low-confidence', kinds: ['low-confidence'] },
+  ]
+  for (const group of groups) {
+    const items = diagnostics.filter(d => group.kinds.includes(d.kind) && d.severity !== 'error')
+    if (items.length === 0) {
+      continue
+    }
+    hci.inform(`${group.label}: ${items.length}`)
+    for (const item of items) {
+      hci.inform(`- ${item.message}`)
+    }
+  }
+  const errors = diagnostics.filter(d => d.severity === 'error')
+  if (errors.length > 0) {
+    hci.inform(`Errors: ${errors.length}`)
+    for (const diagnostic of errors) {
+      hci.inform(`- ${diagnostic.message}`)
+    }
+  }
+}
+
+function rejectOnDesignErrors(diagnostics: readonly TaoDesignDiagnostic[]): void {
+  const errorCount = diagnostics.filter(d => d.severity === 'error').length
+  if (errorCount > 0) {
+    throwUserInputRejectionError(`Design analysis reported ${errorCount} error${errorCount === 1 ? '' : 's'}.`)
   }
 }
 

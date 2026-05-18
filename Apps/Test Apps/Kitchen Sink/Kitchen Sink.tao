@@ -16,15 +16,15 @@ action BumpFileLevelDemo {
    set FileLevelDemoCounter += 1
 }
 
-view AppView {
-   Text "Kitchen Sink"
-   Text "Exercises types, state, scopes, objects, structs, expressions, actions, local param types, nested views, inject, and cross-folder `use`."
-   Text "${ KitchenSinkVersion } · file-level state below"
-   Col {
-      Row {
-         Text "File-level counter:"
-         Number FileLevelDemoCounter
-         Button "Top-level action", BumpFileLevelDemo { }
+ui AppView {
+   render Col [items top left, gap 12, pad 16] {
+      Text "Kitchen Sink"
+      Text "Exercises types, state, scopes, objects, structs, expressions, actions, local param types, nested views, inject, and cross-folder `use`."
+      Text "${ KitchenSinkVersion } · file-level state below"
+      Row [items center spread, gap 8] {
+         Text "File-level counter:" [aligned top]
+         Number FileLevelDemoCounter [aligned center]
+         Button "Top-level action", BumpFileLevelDemo [aligned center, width 180] { }
       }
       Divider { }
       TypeMatching { }

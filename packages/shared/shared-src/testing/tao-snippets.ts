@@ -13,7 +13,7 @@ export const SNIPPET_MINIMAL_BUMP_APP_BARE_STEP = `
 app A { ui V }
 state Counter = 0
 action Bump Step is number { set Counter += Step }
-view V { action Use { do Bump Step 1 } }
+ui V { render inject \`\`\`ts return null \`\`\` action Use { do Bump Step 1 } }
 `.trim()
 
 /** SNIPPET_MINIMAL_BUMP_APP_QUALIFIED_STEP is the same app with `Bump.Step` at the call site. */
@@ -21,7 +21,7 @@ export const SNIPPET_MINIMAL_BUMP_APP_QUALIFIED_STEP = `
 app A { ui V }
 state Counter = 0
 action Bump Step is number { set Counter += Step }
-view V { action Use { do Bump Bump.Step 2 } }
+ui V { render inject \`\`\`ts return null \`\`\` action Use { do Bump Bump.Step 2 } }
 `.trim()
 
 /** SNIPPET_MINIMAL_BUMP_APP_DOT_LOCAL_STEP is the same app with `.Step` at the call site. */
@@ -29,5 +29,5 @@ export const SNIPPET_MINIMAL_BUMP_APP_DOT_LOCAL_STEP = `
 app A { ui V }
 state Counter = 0
 action Bump Step is number { set Counter += Step }
-view V { action Use { do Bump .Step 3 } }
+ui V { render inject \`\`\`ts return null \`\`\` action Use { do Bump .Step 3 } }
 `.trim()

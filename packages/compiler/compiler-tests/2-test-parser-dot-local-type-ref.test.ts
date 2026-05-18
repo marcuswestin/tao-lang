@@ -3,8 +3,8 @@ import { describe, parseAST, test } from './test-utils/test-harness'
 describe('dot-local type ref (Phase 2):', () => {
   test('`.Title "x"` parses as TypedLiteralExpression with DotLocalTypeRef', async () => {
     const doc = await parseAST(`
-      view Badge Title is text { }
-      view Root {
+      ui Badge Title is text { }
+      ui Root {
         Badge .Title "x"
       }
     `)
@@ -16,8 +16,8 @@ describe('dot-local type ref (Phase 2):', () => {
 
   test('`.Count 42` parses with number value', async () => {
     const doc = await parseAST(`
-      view Counter Count is number { }
-      view Root {
+      ui Counter Count is number { }
+      ui Root {
         Counter .Count 42
       }
     `)
@@ -31,8 +31,8 @@ describe('dot-local type ref (Phase 2):', () => {
   test('`.Person { Name "Ro" }` parses with object literal value', async () => {
     const doc = await parseAST(`
       type PersonData is { Name text }
-      view Profile Person is PersonData { }
-      view Root {
+      ui Profile Person is PersonData { }
+      ui Root {
         Profile .Person { Name "Ro" }
       }
     `)
@@ -45,8 +45,8 @@ describe('dot-local type ref (Phase 2):', () => {
 
   test('multiple dot-local args parse: `.Title "x", .Subtitle "y"`', async () => {
     const doc = await parseAST(`
-      view Badge Title is text, Subtitle is text { }
-      view Root {
+      ui Badge Title is text, Subtitle is text { }
+      ui Root {
         Badge .Title "x", .Subtitle "y"
       }
     `)

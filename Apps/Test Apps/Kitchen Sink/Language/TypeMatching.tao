@@ -14,7 +14,7 @@ type Person is {
    }
 }
 
-share view TypeMatching {
+share ui TypeMatching {
    state Hero = Person {
       Name "Ada",
       Age 36,
@@ -22,7 +22,7 @@ share view TypeMatching {
          Title "Engineer"
       }
    }
-   Col {
+   render Col {
       Text "Language: types & typed literals"
       Text "${ Hero.Name } — ${ Hero.Job.Title } (${ Hero.Age })"
       Button "Promote Job", action {

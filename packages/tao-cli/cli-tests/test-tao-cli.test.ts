@@ -1,3 +1,5 @@
+import { acceptTaoDesignSuggestions, generateTaoDesignSuggestions } from '@compiler'
+import { createFixtureDesignSuggestionProvider } from '@compiler/design/design-suggestion-provider'
 import { FS } from '@shared'
 import { describe, expect, test } from 'bun:test'
 import { TaoSDK_compile } from '../cli-src/tao-cli-main'
@@ -75,8 +77,8 @@ describe('cli:', () => {
         appPath,
         `
         app Broken { ui RootView }
-        view RootView { Text 42 }
-        view Text Value text { }
+        ui RootView { render Text 42 }
+        ui Text Value text { render inject \`\`\`ts return null \`\`\` }
       `,
       )
       FS.mkdir(testRuntimeDir)
@@ -135,6 +137,57 @@ describe('cli:', () => {
       FS.rmDirectory(tmpDir)
     }
   })
+
+  test('design review and update honor a custom lock dir', async () => {
+    const tmpDir = FS.mkTmpDir(FS.joinPath(FS.tmpdir(), 'tao-cli-design-lock-'))
+    try {
+      const appPath = FS.joinPath(tmpDir, 'app.tao')
+      const lockDir = FS.joinPath(tmpDir, 'locks')
+      const testRuntimeDir = FS.joinPath(tmpDir, 'runtime')
+      FS.writeFile(appPath, getDesignApp())
+      FS.mkdir(lockDir)
+      FS.mkdir(testRuntimeDir)
+
+      const review = await generateTaoDesignSuggestions({ file: appPath, stdLibRoot, designLockDir: lockDir })
+      expect(review.suggestionPath).toBe(FS.joinPath(lockDir, '.tao.design.lock'))
+      expect(FS.isFile(review.suggestionPath)).toBe(true)
+      expect(review.diagnostics.some(d => d.kind === 'new-entry')).toBe(true)
+
+      const accepted = await acceptTaoDesignSuggestions({ file: appPath, stdLibRoot, designLockDir: lockDir })
+      expect(accepted.acceptedPath).toBe(FS.joinPath(lockDir, 'tao.design.lock'))
+      expect(Object.values(accepted.lock.entries).every(entry => entry.status === 'accepted')).toBe(true)
+
+      await TaoSDK_compile({
+        path: appPath,
+        runtimeDir: testRuntimeDir,
+        stdLibRoot,
+        designMode: 'production',
+        designLockDir: lockDir,
+      })
+      expect(FS.isFile(FS.joinPath(testRuntimeDir, '_gen/tao-app/tao-design.ts'))).toBe(true)
+    } finally {
+      FS.rmDirectory(tmpDir)
+    }
+  })
+
+  test('design review accepts an injected hermetic suggestion provider', async () => {
+    const tmpDir = FS.mkTmpDir(FS.joinPath(FS.tmpdir(), 'tao-cli-design-provider-'))
+    try {
+      const appPath = FS.joinPath(tmpDir, 'app.tao')
+      FS.writeFile(appPath, getDesignApp())
+
+      const review = await generateTaoDesignSuggestions({
+        file: appPath,
+        stdLibRoot,
+        suggestionProvider: createFixtureDesignSuggestionProvider(),
+      })
+
+      expect(review.lock.analyzer.profile).toBe('fixture-provider')
+      expect(FS.readTextFile(review.suggestionPath)).toContain('brand.primary')
+    } finally {
+      FS.rmDirectory(tmpDir)
+    }
+  })
 })
 
 function getRandomUI() {
@@ -142,10 +195,10 @@ function getRandomUI() {
   const code = `
     app KitchenSink { ui RootView }
 
-    view RootView { Text "${needle}" {} }
+    ui RootView { render Text "${needle}" {} }
 
-    view Text Value text {
-        inject \`\`\`ts return <RN.Text>{_ViewProps.Value}</RN.Text> \`\`\`
+    ui Text Value text {
+        render inject \`\`\`ts return <RN.Text>{_ViewProps.Value}</RN.Text> \`\`\`
     }
   `
   return { code, needle }
@@ -170,6 +223,21 @@ function getDataApp(provider: 'Memory' | 'InstantDB') {
       ui HarnessRoot
     }
 
-    view HarnessRoot { Text "Harness" }
+    ui HarnessRoot { render Text "Harness" }
+  `
+}
+
+function getDesignApp() {
+  return `
+    use Text from @tao/ui
+
+    app DesignApp {
+      design { description "Quiet team dashboard" }
+      ui Home
+    }
+
+    ui Home <"body copy"> {
+      render Text "Hello"
+    }
   `
 }

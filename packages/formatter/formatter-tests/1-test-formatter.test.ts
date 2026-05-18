@@ -22,12 +22,12 @@ const formatterUseStatementCases: FormatterCase[] = [
     title: 'use statement newline',
     raw: `
       use Button from ./ui/views
-      view MyView {}
+      ui MyView {}
     `,
     expected: `
       use Button from ./ui/views
 
-      view MyView { }
+      ui MyView { }
     `,
   },
   {
@@ -35,13 +35,13 @@ const formatterUseStatementCases: FormatterCase[] = [
     raw: `
       use KnifeBlock from ./counter
       use FridgeView
-      view MyView {}
+      ui MyView {}
     `,
     expected: `
       use KnifeBlock from ./counter
       use FridgeView
 
-      view MyView { }
+      ui MyView { }
     `,
   },
   {
@@ -49,13 +49,13 @@ const formatterUseStatementCases: FormatterCase[] = [
     raw: `
       use Button
       use Label
-      view MyView {}
+      ui MyView {}
     `,
     expected: `
       use Button
       use Label
 
-      view MyView { }
+      ui MyView { }
     `,
   },
 ]
@@ -157,90 +157,160 @@ describe('Formatter', () => {
       }
     `)
   testFormatter('empty view')
-    .format(`view MyView {}`)
+    .format(`ui MyView {}`)
     .equals(`
-        view MyView { }
+        ui MyView { }
     `)
   testFormatter('view with empty body statement')
-    .format(`view MyView {Child {}}`)
+    .format(`ui MyView {Child {}}`)
     .equals(`
-      view MyView {
+      ui MyView {
           Child { }
       }
     `)
   testFormatter('view with single statement')
-    .format(`view MyView {Child {}}`)
+    .format(`ui MyView {Child {}}`)
     .equals(`
-      view MyView {
+      ui MyView {
           Child { }
       }
     `)
   testFormatter('view with multiple statements')
-    .format(`view MyView {Child1 {} Child2 {}}`)
+    .format(`ui MyView {Child1 {} Child2 {}}`)
     .equals(`
-      view MyView {
+      ui MyView {
           Child1 { }
           Child2 { }
       }
     `)
   testFormatter('view with parameter')
-    .format(`view Text value text {}`)
+    .format(`ui Text value text {}`)
     .equals(`
-        view Text value text { }
+        ui Text value text { }
     `)
   testFormatter('view with multiple parameters')
-    .format(`view Text value text, count number {}`)
+    .format(`ui Text value text, count number {}`)
     .equals(`
-        view Text value text, count number { }
+        ui Text value text, count number { }
+    `)
+  testFormatter('view declaration with layout defaults')
+    .format(`ui Pill Label text [ pad   8 , rigid ] {render Box{}}`)
+    .equals(`
+        ui Pill Label text [pad 8, rigid] {
+            render Box { }
+        }
+    `)
+  testFormatter('app design block')
+    .format(`app MyApp{design{description "Quiet app"}ui Root}`)
+    .equals(`
+      app MyApp {
+          design {
+              description "Quiet app"
+          }
+          ui Root
+      }
+    `)
+  testFormatter('compact variant declaration')
+    .format(`variant   PrimaryHome   =   Home   <"primary home">`)
+    .equals(`
+      variant PrimaryHome = Home <"primary home">
+    `)
+  testFormatter('view declaration design spec before layout defaults')
+    .format(`ui Pill Label text <"primary action"> [ pad   8 , rigid ] {render Box{}}`)
+    .equals(`
+      ui Pill Label text <"primary action"> [pad 8, rigid] {
+          render Box { }
+      }
     `)
   testFormatter('view render with args')
-    .format(`view MyView {Text "hello" {}}`)
+    .format(`ui MyView {Text "hello" {}}`)
     .equals(`
-      view MyView {
+      ui MyView {
           Text "hello" { }
       }
     `)
   testFormatter('view render with multiple args')
-    .format(`view MyView {Text "hello", 42 {}}`)
+    .format(`ui MyView {Text "hello", 42 {}}`)
     .equals(`
-      view MyView {
+      ui MyView {
           Text "hello", 42 { }
       }
     `)
   testFormatter('view render with body')
-    .format(`view MyView {Container {Child {}}}`)
+    .format(`ui MyView {Container {Child {}}}`)
     .equals(`
-      view MyView {
+      ui MyView {
           Container {
               Child { }
           }
       }
     `)
+  testFormatter('view render with layout clause')
+    .format(`ui MyView {Row [ items   top   left , gap   8 ]{Child [ aligned   center ]{}}}`)
+    .equals(`
+      ui MyView {
+          Row [items top left, gap 8] {
+              Child [aligned center] { }
+          }
+      }
+    `)
+  testFormatter('material render root with args, layout, and body')
+    .format(`ui MyView {render Row "title" [ items   center   left , gap   8 ]{Text "hello"{}}}`)
+    .equals(`
+      ui MyView {
+          render Row "title" [items center left, gap 8] {
+              Text "hello" { }
+          }
+      }
+    `)
+  testFormatter('caller children splice')
+    .format(`frame Card {render Stack [ gap   12 ]{@@children}}`)
+    .equals(`
+      frame Card {
+          render Stack [gap 12] {
+              @@children
+          }
+      }
+    `)
+  testFormatter('view render with multiline layout clause')
+    .format(`
+      ui MyView {
+          Row [
+              items center spread,
+              gap 12
+          ] {}
+      }
+    `)
+    .equals(`
+      ui MyView {
+          Row [items center spread, gap 12] { }
+      }
+    `)
   testFormatter('top level declarations separated')
-    .format(`app MyApp {}view MyView {}`)
+    .format(`app MyApp {}ui MyView {}`)
     .equals(`
       app MyApp { }
 
-      view MyView { }
+      ui MyView { }
     `)
   testFormatter('string literal spacing')
-    .format(`view MyView {Text "hello"{}}`)
+    .format(`ui MyView {Text "hello"{}}`)
     .equals(`
-      view MyView {
+      ui MyView {
           Text "hello" { }
       }
     `)
   testFormatter('number literal spacing')
-    .format(`view MyView {Text 42{}}`)
+    .format(`ui MyView {Text 42{}}`)
     .equals(`
-      view MyView {
+      ui MyView {
           Text 42 { }
       }
     `)
   testFormatter('empty body with space')
-    .format(`view MyView {Child{}}`)
+    .format(`ui MyView {Child{}}`)
     .equals(`
-      view MyView {
+      ui MyView {
           Child { }
       }
     `)
@@ -271,33 +341,33 @@ describe('Formatter', () => {
       }
     `)
   testFormatter('view with no parameters')
-    .format(`view MyView {}`)
+    .format(`ui MyView {}`)
     .equals(`
-        view MyView { }
+        ui MyView { }
     `)
   testFormatter('view with named parameter')
-    .format(`view MyView value text {}`)
+    .format(`ui MyView value text {}`)
     .equals(`
-        view MyView value text { }
+        ui MyView value text { }
     `)
   testFormatter('argument key value spacing')
-    .format(`view MyView {Text "test"{}}`)
+    .format(`ui MyView {Text "test"{}}`)
     .equals(`
-      view MyView {
+      ui MyView {
           Text "test" { }
       }
     `)
   testFormatter('multiple arguments spacing')
-    .format(`view MyView {Text "hello",42{}}`)
+    .format(`ui MyView {Text "hello",42{}}`)
     .equals(`
-      view MyView {
+      ui MyView {
           Text "hello", 42 { }
       }
     `)
   testFormatter('deep nesting')
-    .format(`view MyView {A {B {C {D {}}}}}`)
+    .format(`ui MyView {A {B {C {D {}}}}}`)
     .equals(`
-      view MyView {
+      ui MyView {
           A {
               B {
                   C {
@@ -308,9 +378,9 @@ describe('Formatter', () => {
       }
     `)
   testFormatter('mixed statements and injections')
-    .format(`view MyView {Child {} inject \`\`\`ts\ncode\n\`\`\`}`)
+    .format(`ui MyView {Child {} inject \`\`\`ts\ncode\n\`\`\`}`)
     .equals(`
-      view MyView {
+      ui MyView {
           Child { }
           inject \`\`\`ts
               code
@@ -318,9 +388,9 @@ describe('Formatter', () => {
       }
     `)
   testFormatter('inject spacing')
-    .format(`view MyView {inject \`\`\`ts\nx\n\`\`\`}`)
+    .format(`ui MyView {inject \`\`\`ts\nx\n\`\`\`}`)
     .equals(`
-      view MyView {
+      ui MyView {
           inject \`\`\`ts
               x
           \`\`\`
@@ -334,9 +404,9 @@ describe('Formatter', () => {
       }
     `)
   testFormatter('view render with inline action argument')
-    .format(`view V {Btn Title "a", action {}}`)
+    .format(`ui V {Btn Title "a", action {}}`)
     .equals(`
-      view V {
+      ui V {
           Btn Title "a", action { }
       }
     `)
@@ -346,7 +416,7 @@ describe('Formatter', () => {
       // comment
       ui MyView }
 
-      view MyView { Child {} }
+      ui MyView { Child {} }
     `)
     .equals(`
       app MyApp {
@@ -354,7 +424,7 @@ describe('Formatter', () => {
           ui MyView
       }
 
-      view MyView {
+      ui MyView {
           Child { }
       }
     `)
@@ -366,10 +436,10 @@ describe('Formatter', () => {
 describe('formatter edge cases', () => {
   testFormatter('deeply nested view structures')
     .format(`
-      view Outer{Inner1{Inner2{Inner3{}}}}
+      ui Outer{Inner1{Inner2{Inner3{}}}}
     `)
     .equals(`
-      view Outer {
+      ui Outer {
           Inner1 {
               Inner2 {
                   Inner3 { }
@@ -380,65 +450,65 @@ describe('formatter edge cases', () => {
 
   testFormatter('visibility modifiers - share')
     .format(`
-      share view   Button{}
+      share ui   Button{}
     `)
     .equals(`
-      share view Button { }
+      share ui Button { }
     `)
 
   testFormatter('visibility modifiers - hide')
     .format(`
-      hide view   PrivateHelper{}
+      hide ui   PrivateHelper{}
     `)
     .equals(`
-      hide view PrivateHelper { }
+      hide ui PrivateHelper { }
     `)
 
   testFormatter('multiple declarations with visibility modifiers')
     .format(`
-      share view Button{}
-      hide view Helper{}
-      view Default{}
+      share ui Button{}
+      hide ui Helper{}
+      ui Default{}
     `)
     .equals(`
-      share view Button { }
+      share ui Button { }
 
-      hide view Helper { }
+      hide ui Helper { }
 
-      view Default { }
+      ui Default { }
     `)
 
   testFormatter('empty view body')
-    .format(`view Empty{}`)
+    .format(`ui Empty{}`)
     .equals(`
-      view Empty { }
+      ui Empty { }
     `)
 
   testFormatter('view with only whitespace in body')
-    .format(`view Whitespace{   }`)
+    .format(`ui Whitespace{   }`)
     .equals(`
-      view Whitespace { }
+      ui Whitespace { }
     `)
 
   testFormatter('app with view reference')
     .format(`
       app MyApp{ui MainView}
-      view MainView{}
+      ui MainView{}
     `)
     .equals(`
       app MyApp {
           ui MainView
       }
 
-      view MainView { }
+      ui MainView { }
     `)
 
   testFormatter('multiple apps in file')
     .format(`
         app App1{ui View1}
         app App2{ui View2}
-        view View1{}
-        view View2{}
+        ui View1{}
+        ui View2{}
       `)
     .equals(`
         app App1 {
@@ -449,9 +519,9 @@ describe('formatter edge cases', () => {
             ui View2
         }
 
-        view View1 { }
+        ui View1 { }
 
-        view View2 { }
+        ui View2 { }
       `)
 
   testFormatter('use statement stability')
@@ -465,51 +535,51 @@ describe('formatter edge cases', () => {
 
 describe('alias statement formatting', () => {
   testFormatter('alias number literal')
-    .format(`view MyView {alias age=1}`)
+    .format(`ui MyView {alias age=1}`)
     .equals(`
-      view MyView {
+      ui MyView {
           alias age = 1
       }
     `)
 
   testFormatter('alias string literal')
-    .format(`view MyView {alias name="hello"}`)
+    .format(`ui MyView {alias name="hello"}`)
     .equals(`
-      view MyView {
+      ui MyView {
           alias name = "hello"
       }
     `)
 
   testFormatter('alias spacing normalization')
-    .format(`view MyView {alias   name  =  "hello"}`)
+    .format(`ui MyView {alias   name  =  "hello"}`)
     .equals(`
-      view MyView {
+      ui MyView {
           alias name = "hello"
       }
     `)
 
   testFormatter('alias with identifier reference value')
-    .format(`view MyView {alias x=1 alias y=x}`)
+    .format(`ui MyView {alias x=1 alias y=x}`)
     .equals(`
-      view MyView {
+      ui MyView {
           alias x = 1
           alias y = x
       }
     `)
 
   testFormatter('alias before render statement')
-    .format(`view MyView {alias msg="hi" Child {}}`)
+    .format(`ui MyView {alias msg="hi" Child {}}`)
     .equals(`
-      view MyView {
+      ui MyView {
           alias msg = "hi"
           Child { }
       }
     `)
 
   testFormatter('alias in nested view body')
-    .format(`view MyView {Container {alias n=42}}`)
+    .format(`ui MyView {Container {alias n=42}}`)
     .equals(`
-      view MyView {
+      ui MyView {
           Container {
               alias n = 42
           }
@@ -517,33 +587,33 @@ describe('alias statement formatting', () => {
     `)
 
   testFormatter('alias with binary expression')
-    .format(`view MyView { alias sum=1+2 }`)
+    .format(`ui MyView { alias sum=1+2 }`)
     .equals(`
-      view MyView {
+      ui MyView {
           alias sum = 1 + 2
       }
     `)
 
   testFormatter('alias with unary minus')
-    .format(`view MyView { alias n=-5 }`)
+    .format(`ui MyView { alias n=-5 }`)
     .equals(`
-      view MyView {
+      ui MyView {
           alias n = -5
       }
     `)
 
   testFormatter('identifier reference in argument')
-    .format(`view MyView {Text msg{}}`)
+    .format(`ui MyView {Text msg{}}`)
     .equals(`
-      view MyView {
+      ui MyView {
           Text msg { }
       }
     `)
 
   testFormatter('object literal in alias')
-    .format(`view V { alias O = { x 1, y 2 } }`)
+    .format(`ui V { alias O = { x 1, y 2 } }`)
     .equals(`
-      view V {
+      ui V {
           alias O = {
               x 1,
               y 2
@@ -552,9 +622,9 @@ describe('alias statement formatting', () => {
     `)
 
   testFormatter('object literal with trailing comma')
-    .format(`view V { alias O = { x 1, y 2, } }`)
+    .format(`ui V { alias O = { x 1, y 2, } }`)
     .equals(`
-      view V {
+      ui V {
           alias O = {
               x 1,
               y 2,
@@ -563,11 +633,11 @@ describe('alias statement formatting', () => {
     `)
 
   testFormatter('member access in view argument')
-    .format(`view T value text { } view V { alias O = { x 1 } T O.x { } }`)
+    .format(`ui T value text { } ui V { alias O = { x 1 } T O.x { } }`)
     .equals(`
-      view T value text { }
+      ui T value text { }
 
-      view V {
+      ui V {
           alias O = {
               x 1
           }
@@ -576,9 +646,9 @@ describe('alias statement formatting', () => {
     `)
 
   testFormatter('nested set in action')
-    .format(`view V { state S = { a 1 } action A { set S.a = 2 } }`)
+    .format(`ui V { state S = { a 1 } action A { set S.a = 2 } }`)
     .equals(`
-      view V {
+      ui V {
           state S = {
               a 1
           }
@@ -589,9 +659,9 @@ describe('alias statement formatting', () => {
     `)
 
   testFormatter('nested object literal in alias')
-    .format(`view V { alias A = { a { b { c 1 } } } }`)
+    .format(`ui V { alias A = { a { b { c 1 } } } }`)
     .equals(`
-      view V {
+      ui V {
           alias A = {
               a {
                   b {
@@ -604,7 +674,7 @@ describe('alias statement formatting', () => {
 
   testFormatter('nested object literal in state with comma-separated properties')
     .format(dedent(`
-      view Main {
+      ui Main {
           state Pet = {
               name "cat", age 0, owner {
               name "Ro", address {
@@ -616,7 +686,7 @@ describe('alias statement formatting', () => {
       }
     `))
     .equals(`
-      view Main {
+      ui Main {
           state Pet = {
               name "cat",
               age 0,
@@ -632,11 +702,11 @@ describe('alias statement formatting', () => {
     `)
 
   testFormatter('chained member access')
-    .format(`view T value text { } view V { alias A = { x 1 } T A.x.y { } }`)
+    .format(`ui T value text { } ui V { alias A = { x 1 } T A.x.y { } }`)
     .equals(`
-      view T value text { }
+      ui T value text { }
 
-      view V {
+      ui V {
           alias A = {
               x 1
           }
@@ -645,9 +715,9 @@ describe('alias statement formatting', () => {
     `)
 
   testFormatter('set with three-level path')
-    .format(`view V { state S = { x 1 } action A { set S.x.y.z = 3 } }`)
+    .format(`ui V { state S = { x 1 } action A { set S.x.y.z = 3 } }`)
     .equals(`
-      view V {
+      ui V {
           state S = {
               x 1
           }
@@ -678,14 +748,14 @@ describe('alias statement formatting', () => {
     `)
 
   testFormatter('typed struct literal')
-    .format(`type Person is { Name text, Age number } view V { alias Ro = Person {Name "Ro",Age 40} }`)
+    .format(`type Person is { Name text, Age number } ui V { alias Ro = Person {Name "Ro",Age 40} }`)
     .equals(`
       type Person is {
           Name text,
           Age number
       }
 
-      view V {
+      ui V {
           alias Ro = Person {
               Name "Ro",
               Age 40
@@ -694,17 +764,17 @@ describe('alias statement formatting', () => {
     `)
 
   testFormatter('parameter typed by named struct')
-    .format(`type Person is { Name text } view Profile P Person {}`)
+    .format(`type Person is { Name text } ui Profile P Person {}`)
     .equals(`
       type Person is {
           Name text
       }
 
-      view Profile P Person { }
+      ui Profile P Person { }
     `)
 
   testFormatter('nested type reference Person.Job in parameter position')
-    .format(`type Person is { Name text, Job { Title text } } view ShowJob J Person.Job {}`)
+    .format(`type Person is { Name text, Job { Title text } } ui ShowJob J Person.Job {}`)
     .equals(`
       type Person is {
           Name text,
@@ -713,7 +783,7 @@ describe('alias statement formatting', () => {
           }
       }
 
-      view ShowJob J Person.Job { }
+      ui ShowJob J Person.Job { }
     `)
 })
 
@@ -732,26 +802,26 @@ describe('Formatter: real-app fixtures', () => {
 
 describe('Formatter — local parameter types:', () => {
   testFormatter('formats view with Title is text correctly')
-    .format(`view   Badge   Title    is   text { }`)
-    .equals(`view Badge Title is text { }`)
+    .format(`ui   Badge   Title    is   text { }`)
+    .equals(`ui Badge Title is text { }`)
 
   testFormatter('formats view with multiple local types')
-    .format(`view   Button   Title  is  text ,  Action  is  action { }`)
-    .equals(`view Button Title is text, Action is action { }`)
+    .format(`ui   Button   Title  is  text ,  Action  is  action { }`)
+    .equals(`ui Button Title is text, Action is action { }`)
 
   testFormatter('formats mixed local and explicit params')
-    .format(`view  Card   Title   is   text ,   Size   number { }`)
-    .equals(`view Card Title is text, Size   number { }`)
+    .format(`ui  Card   Title   is   text ,   Size   number { }`)
+    .equals(`ui Card Title is text, Size   number { }`)
 })
 
 describe('Formatter — dot-local type ref (Phase 2):', () => {
   testFormatter('formats Badge .Title "x" preserving dot shorthand')
-    .format(`view Badge Title is text { } view Root { Badge .Title "x" }`)
-    .equals(`view Badge Title is text { }\n\nview Root {\n   Badge .Title "x"\n}`)
+    .format(`ui Badge Title is text { } ui Root { Badge .Title "x" }`)
+    .equals(`ui Badge Title is text { }\n\nui Root {\n   Badge .Title "x"\n}`)
 
   testFormatter('formats multiple dot-local args')
-    .format(`view Badge Title is text, Subtitle is text { } view Root { Badge .Title "x", .Subtitle "y" }`)
-    .equals(`view Badge Title is text, Subtitle is text { }\n\nview Root {\n   Badge .Title "x", .Subtitle "y"\n}`)
+    .format(`ui Badge Title is text, Subtitle is text { } ui Root { Badge .Title "x", .Subtitle "y" }`)
+    .equals(`ui Badge Title is text, Subtitle is text { }\n\nui Root {\n   Badge .Title "x", .Subtitle "y"\n}`)
 })
 
 describe('Formatter — action local parameter types (Phase 3):', () => {
@@ -936,7 +1006,7 @@ describe('Formatter — data schema:', () => {
       action A {
         create  D.Item  {  N  "a"  }
       }
-      view V {
+      ui V {
         for  It  in  Rows  {
           Text "x"
         }
@@ -960,7 +1030,7 @@ describe('Formatter — data schema:', () => {
           }
       }
 
-      view V {
+      ui V {
           for It in Rows {
               Text "x"
           }

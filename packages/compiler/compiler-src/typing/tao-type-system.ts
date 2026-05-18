@@ -267,6 +267,9 @@ export class TaoTypeSystem implements LangiumTypeSystemDefinition<TaoSpecifics> 
           }
         }
       },
+      RenderStatement: (host, accept) => {
+        validateCallSiteArguments(host, accept, typir)
+      },
       ViewRender: (host, accept) => {
         validateCallSiteArguments(host, accept, typir)
       },
@@ -526,7 +529,7 @@ function typirTypeOfTypeExpression(expr: AST.TypeExpression, typir: TaoTypirServ
   return undefined
 }
 
-/** validateCallSiteArguments runs the shared argument-binding resolver for a `ViewRender` or `ActionRender`
+/** validateCallSiteArguments runs the shared argument-binding resolver for a `render`, `ViewRender`, or `ActionRender`
  * host, then surfaces both Typir assignability errors (per resolved binding) and structural diagnostics from
  * the resolver (unknown name, ambiguous type match, missing argument, …). Centralizing here means all call
  * sites share one matching algorithm and one set of error messages. */
@@ -605,8 +608,12 @@ function reportArgumentBindingDiagnostic(
         severity: 'error',
         message: diag.message,
         languageNode: host,
-        languageProperty: AST.isViewRender(host) ? 'view' : 'action',
+        languageProperty: callSiteCalleeProperty(host),
       })
       return
   }
+}
+
+function callSiteCalleeProperty(host: AST.ArgumentListHost): 'view' | 'action' {
+  return AST.isActionRender(host) ? 'action' : 'view'
 }

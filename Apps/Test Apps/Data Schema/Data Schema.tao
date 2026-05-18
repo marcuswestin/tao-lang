@@ -48,7 +48,7 @@ app DataSchemaApp {
    ui RootView
 }
 
-view RootView {
+ui RootView {
    query MeetupData.Events as MyEvents {
       Title,
       Ordering,
@@ -79,8 +79,8 @@ view RootView {
    guard {
       Text "Loading..."
    }
-   Button "Create Event ${ EventCount }", CreateEvent
-   Col {
+   render Col {
+      Button "Create Event ${ EventCount }", CreateEvent
       Text "Data Schema Test App"
       for MyEvent in MyEvents {
          Text "${ MyEvent.Title }"

@@ -936,6 +936,12 @@ Tao explicitly assumes:
 
 For example, inside a view body on a blank render line, typing `B` may only validly autocomplete to views. This is considered a legitimate part of the language’s usability strategy, not merely an editor enhancement.
 
+## J. On simple concepts and useful defaults
+
+Tao should make common design intent easy to express with small, human concepts. Complex behavior should remain possible, but should live behind less common concepts, lower-level APIs, or explicit syntax that mirrors that complexity.
+
+The path of least resistance should usually include choosing good defaults. A declaration may provide sensible defaults, and callers should be able to override the parts they own without restating the entire design.
+
 ---
 
 # Specification: Lexical Conventions

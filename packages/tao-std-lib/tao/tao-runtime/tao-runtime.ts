@@ -2,6 +2,7 @@ import * as LegendAppState from '@legendapp/state'
 import * as LegendAppStateReact from '@legendapp/state/react'
 import React from 'react'
 
+import { Layout } from './Layout'
 import { Assert, switch_Exhaustive } from './runtime-utils'
 import { Views } from './Views'
 
@@ -69,6 +70,7 @@ export const TR: _TaoRuntime = {
   Action,
 
   // Views. TODO: Move this to @tao/ui
+  Layout,
   Views,
 } as const
 
@@ -91,6 +93,7 @@ export type _TaoRuntime = {
 
   Action: typeof Action
 
+  Layout: typeof Layout
   Views: typeof Views
 }
 

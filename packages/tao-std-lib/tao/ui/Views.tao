@@ -1,38 +1,80 @@
-share view Box {
-  inject ```ts
+share frame Box {
+  render inject ```ts
     return TR.Views.Box(_ViewProps)
   ```
 }
 
-share view Col {
-  inject ```ts
+share frame Stack {
+  render inject ```ts
+    return TR.Views.Stack(_ViewProps)
+  ```
+}
+
+share layout Col {
+  render inject ```ts
     return TR.Views.Col(_ViewProps)
   ```
 }
 
-share view Row {
-  inject ```ts
+share layout Row {
+  render inject ```ts
     return TR.Views.Row(_ViewProps)
   ```
 }
 
-share view Text Value text {
-  inject ```ts
+share layout WrappingRow {
+  render inject ```ts
+    return TR.Views.WrappingRow(_ViewProps)
+  ```
+}
+
+share ui Text Value text {
+  render inject ```ts
     const tao_text = _ViewProps.Value.evaluate()
-    return TR.Views.Text({ children: [tao_text.jsValue] })
+    return TR.Views.Text({ _taoLayout: _ViewProps._taoLayout, _taoDesignStyle: _ViewProps._taoDesignStyle, children: [tao_text.jsValue] })
   ```
 }
 
-share view Number Value number {
-  inject ```ts
+share ui TextLabel Value text {
+  render inject ```ts
+    const tao_text = _ViewProps.Value.evaluate()
+    return TR.Views.TextLabel({ _taoLayout: _ViewProps._taoLayout, _taoDesignStyle: _ViewProps._taoDesignStyle, children: [tao_text.jsValue] })
+  ```
+}
+
+share ui MultiLineText Value text {
+  render inject ```ts
+    const tao_text = _ViewProps.Value.evaluate()
+    return TR.Views.MultiLineText({ _taoLayout: _ViewProps._taoLayout, _taoDesignStyle: _ViewProps._taoDesignStyle, children: [tao_text.jsValue] })
+  ```
+}
+
+share ui TextInput Value text, Label is text, OnChange action {
+  render inject ```ts
+    const tao_label = _ViewProps.Label.evaluate().jsValue.toString()
+    return TR.Views.TextInput({
+      _taoLayout: _ViewProps._taoLayout,
+      _taoDesignStyle: _ViewProps._taoDesignStyle,
+      accessibilityLabel: tao_label,
+      onChangeText: (value: string) => _ViewProps.OnChange.invoke({ Value: TR.Literal(value) }),
+      placeholder: tao_label,
+      value: _ViewProps.Value.evaluate().jsValue.toString()
+    })
+  ```
+}
+
+share ui Number Value number {
+  render inject ```ts
     const tao_number = _ViewProps.Value.evaluate()
-    return TR.Views.Text({ children: [String(tao_number.jsValue)] })
+    return TR.Views.Number({ _taoLayout: _ViewProps._taoLayout, _taoDesignStyle: _ViewProps._taoDesignStyle, children: [String(tao_number.jsValue)] })
   ```
 }
 
-share view Button Title text, Action action {
-  inject ```ts
+share ui Button Title text, Action action {
+  render inject ```ts
     return TR.Views.Button({
+      _taoLayout: _ViewProps._taoLayout,
+      _taoDesignStyle: _ViewProps._taoDesignStyle,
       title: _ViewProps.Title.evaluate().jsValue.toString(),
       onPress: () => _ViewProps.Action.invoke({})
     })

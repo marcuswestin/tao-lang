@@ -1,0 +1,10 @@
+{
+  "steps": [
+    { "assertVisibleText": "Layout Showcase" },
+    { "assertVisibleText": "items+gap" },
+    { "assertVisibleText": "Box fill width" },
+    { "assertVisibleText": "Stack stretched child" },
+    { "assertVisibleText": "wrap-two" },
+    { "assertVisibleText": "Line limited multiline text clamps through runtime forwarding." }
+  ]
+}

@@ -1,23 +1,9 @@
-# UI Layout and Styling
+# LAYOUT AND STUFF
 
-Batch-moved notes from `Docs/Tao Lang Roadmap.md` (especially the long "Design UI Appearance" section). Intentionally rough and comprehensive; refine later.
-
-## Layout and styling priorities
-
-- Parse UI theme definitions.
-- Parse view layout.
-- Parse view styling.
-- Design animation and transition syntax.
-- Define "beautiful by default" baseline styles.
-
-## Alignment and distribution exploration
-
-- Consider different syntax for self-alignment vs child alignment.
 - Current direction includes:
   - Parent alignment and distribution (`align`, `items`, `spread`, `stretch`, etc).
   - Child self-alignment (`aligned ...`, `stretched`).
   - Axis-aware restrictions by container type (`Row` vs `Col`).
-- Candidate examples from moved notes:
 
 ```tao
 Col [items top left] {
@@ -37,19 +23,14 @@ Col [align top spread] {}
 Row [align bottom spread] {}
 ```
 
-## Size model candidates
+## Size
 
-- Width/height syntax still open.
-- Candidate forms:
+- Candidates:
   - `width fill-parent`, `height 40px`
   - Percent + grow/shrink combinations
   - Basis semantics mapped to axis (`Row` basis -> width, `Col` basis -> height)
-- Notes to preserve:
   - Clarify `fill-parent` vs `hug-content`.
   - Keep warnings/errors for impossible axis combinations.
-
-## Spacing, border, margin, padding
-
 - Border/padding/margin syntax and consistency are open.
 - Candidate compact forms:
   - `[border 4]`
@@ -58,15 +39,17 @@ Row [align bottom spread] {}
   - `[gap 10]`
   - `[gap V H]`
 
-## React Native behavior notes to preserve
+## DEFAULT VALUES:
 
-- Empty views can disappear without width/height/flex.
+!! React Native empty views "disappear" without width/height/flex.
+
 - RN defaults differ from web:
   - `flexDirection: column`
   - `alignContent: flex-start`
   - `alignItems: stretch`
   - `flexShrink: 0`
-- Tao may want defaults that keep layout visibly debuggable by default.
+
+!! - Tao: may want defaults that keep layout visibly debuggable by default.
 
 ## Additional layout concerns
 
@@ -79,6 +62,8 @@ Row [align bottom spread] {}
 - Flow direction and localization (`ltr`/`rtl`).
 - Absolute positioning behavior.
 - Optional `order`, `reverse`, `display: contents`, `aspectRatio`, measure functions.
+
+- [ ] Design ANIMATIONs and TRANSITIONs
 
 ## Themes and design system notes
 
@@ -97,77 +82,72 @@ Row [align bottom spread] {}
 
 ## Related docs
 
-- [Tao Lang Roadmap](../../Tao%20Lang%20Roadmap.md)
-- [App Routing and Navigation](App%20Routing%20and%20Navigation.md)
-- [Error Handling](Error%20Handling.md)
+! Child-self is "centerED", "stretchED"; Container for items is "stretch", "spread", ......
 
-## Appendix: verbatim from `Docs/Tao Lang Roadmap.md` (git HEAD, pre-cleanup)
+```tao
+row [strech, spread, gap 10] <pad 40, aligned left stretched, fill>
+col <width fill-parent, height 40px> {
+  row <height 40px 50% 20%, width fill-parent>
+}
+```
 
-Source: `git show HEAD:Docs/Tao Lang Roadmap.md` lines 302–612 (`### Design UI Appearance` … before `### Design App Routing and Navigation`).
+! CURRENT CHOICES
 
-### Design UI Appearance: Layout, Design, Styling, Animations
+```tao
+  Row [items <stretched/spread> <vert/horz>]
+  Row [items bottom right]
+  Row [items stretch left]
+  Row [items stretch left]
+  Row [items spread-hug top]
+  Row [items spread-hug-tight top]
+  Row [items baseline left]
 
-- [ ] Design ANIMATIONs and TRANSITIONs
-- [ ] Design Layout and Styling
-  - [ ] CONSIDER: DIFFERENT Syntax for self alignment and child alignment??
-    ```tao
-    row [strech, spread, gap 10] <pad 40, aligned left stretched, fill>
-    col <width fill-parent, height 40px> {
-      row <height 40px 50% 20%, width fill-parent>
-    }
-    ```
-  - [ ] Implement. Current choice:
-        ~~ `Row [items <stretched/spread> <vert/horz>]`~~
-        ~~ `Row [items bottom right]`~~
-        ~~ `Row [items stretch left]`~~
-        ~~ `Row [items stretch left]`~~
-        ~~ `Row [items spread-hug top]`~~
-        ~~ `Row [items spread-hug-tight top]`~~
-        ~~ `Row [items baseline left]`~~
-        `Col [items baseline left] // warning (error?): baseline only applies to Row (RN doesn't have text-direction for Vert flow of text)`
-        `Row [items spread left] // warning (error?): Row spread overwrites horizontal alignment (left)`
-        `Row [items stretch top] // warning (error?): Row stretch overwrites vertical alignment (top)`
-        `Col [items stretch bottom] // warning (error?): Col stretch overwrites vertical alignment (bottom)`
-        `Col [items spread right] // warning (error?): Col spread overwrites horizontal alignment (right)`
-        `Col [items spread top]`
-        `Col [items spread-hug-tight left]`
-        `Row [items spread top]`
-  - [ ] align-self: `aligned` and `stretched`
-    ```tao
-    Col [items top left] {
-      View [aligned right]
-      Row [aligned center]
-      View [stretched]
-    }
-    Row [items top] {
-      View [aligned bottom]
-    }
-    ```
-  - [ ] width/height:
-    - Possible syntaxes:
-      ```tao
-      // REJECTED:`[HORZ VERT]`:
-      row [fill hug]
-      // THIS ISN'T GREAT:
-      row [100px 50% 20% 20px] // basis 100px grow 0.5 shrink 0.2; width 20px
-      [width HORZ, height VERT]:
-      // <number+(px, rem, %)>, fill-parent, hug-content
-      col [width fill-parent, height 40px] {
-        col [height 40px 50% 20%, width fill-parent]
-        col [width 40rem 30%] // warning (error?): parent is COL, can only grow/shrink cross-axis (height)
-      }
-      ```
-  - [ ] border, padding and margin -- all the same?
-    - pixel units only,
-      `[border 4]`
-      `[border 6, 10]`
-    - `[border/pad(ding)/margin top right bottom left]`
-      - also: `[pad VH]`, `[pad V Right0]`, `[pad Top H Bottom]`, `[pad Top Right Bottom Left]`
-      - This doesn't feel completely good to me
-  - [ ] gaps:
-        `[gap VH]` OR `[gap V H]`
-        `[gap 10] // 10 px unit gap`
-  - [ ] Review: Layout: Choice Exploration, Thinking, Justification
+  Col [items baseline left] // warning (error?): baseline only applies to Row (RN doesn't have text-direction for Vert flow of text)
+  Row [items spread left] // warning (error?): Row spread overwrites horizontal alignment (left)
+  Row [items stretch top] // warning (error?): Row stretch overwrites vertical alignment (top)
+  Col [items stretch bottom] // warning (error?): Col stretch overwrites vertical alignment (bottom)
+  Col [items spread right] // warning (error?): Col spread overwrites horizontal alignment (right)
+  Col [items spread top]`
+  Col [items spread-hug-tight left]`
+  Row [items spread top]`
+
+// align-self: "aligned" and "stretched"
+
+  Col [items top left] {
+    View [aligned right]
+    Row [aligned center]
+    View [stretched]
+  }
+  Row [items top] {
+    View [aligned bottom]
+  }
+
+// width/height:
+
+// REJECTED:`[HORZ VERT]`:
+row [fill hug]
+// THIS ISN'T GREAT:
+row [100px 50% 20% 20px] // basis 100px grow 0.5 shrink 0.2; width 20px
+// [width HORZ, height VERT]:
+// <number+(px, rem, %)>, fill-parent, hug-content
+col [width fill-parent, height 40px] {
+  col [height 40px 50% 20%, width fill-parent]
+  col [width 40rem 30%] // warning (error?): parent is COL, can only grow/shrink cross-axis (height)
+}
+
+//  - [ ] border, padding and margin -- all the same?
+    // - pixel units only,
+
+Box [border 4 white] // all sides 4px white
+Box [border top 1, border bottom 2] // top 1px <default color..??> bottom 2px <...>
+Box [pad 10 5] // top 10px, right 5px, bottom 10px, left 5px
+Box [pad 10 5 3] // top 10px, right 5px, bottom 3px, left 5px
+// - This doesn't feel completely good to me
+
+// `[gap value]`
+Col [gap 10] { } // 10 px unit gap
+```
+
     - ALIGNMENT
       - This is governed by align-items and justify-content
         ~~- What if we combine them?~~
@@ -185,7 +165,7 @@ Source: `git show HEAD:Docs/Tao Lang Roadmap.md` lines 302–612 (`### Design UI
           - In RN, views hug content TO 0 by default
             - If two children with flexGrow = 1/3, they will take up only 2/3 of parent size
           - In a Row with non-0 height:
-            - a child FILLES parent height (because alignItems=stretch by default)
+            - a child FILLS parent height (because alignItems=stretch by default)
           - In a row with 0 height:
             - A child HUGS and becomes its own content's height
           - In a row with alignItems: 'flex-start':
@@ -316,7 +296,7 @@ Source: `git show HEAD:Docs/Tao Lang Roadmap.md` lines 302–612 (`### Design UI
         `Row [align top, spread space-around] // Row, items up top, and spread, w space left+right of items to edges`
         `Row [align left, stretch] // items fill vertical space of Row`
         `Row [stretch, spread]`
-        `Row [align left, spread] // warning (error?): spread overwrites horizontal alignment for Row (left)`
+        `Row [align left, spread] // warning (error?): spread overwrites horizontal alignment for Row (left)
         `Row [align top, stretch]`
         `Col [align top, spread]`
         `Col [align left, stretch] // warning`
@@ -354,6 +334,7 @@ Source: `git show HEAD:Docs/Tao Lang Roadmap.md` lines 302–612 (`### Design UI
       - Should resize and width/height both be allowed at the same time?
     - `[width (sets flexBasis in Row) px/%/auto 0/10/10%/100%/auto]`
     - `[height (sets flexBasis in Col) ---=----]`
+
 - [ ] Design: Beautiful By Default
   - [ ] Nice default styles
   - [ ] Easy layout
@@ -423,4 +404,4 @@ Single bullet preserved from old `Docs/Tao Lang Roadmap.md` **§ Next and Advanc
 
 - [ ] Learn about MEASURE FUNCTIONS: https://reactnative.dev/docs/layout-props#aspectratio
 
-The rest of **Next and Advanced** and **Long-term Goals** from that roadmap lives under **RAW TRANSFER** in [Tao Features](../../../Tao%20Language%20Design/Features/Features.md).
+The rest of **Next and Advanced** and **Long-term Goals** from that roadmap lives under **RAW TRANSFER** in [Tao Features](../Tao%20Features.md).

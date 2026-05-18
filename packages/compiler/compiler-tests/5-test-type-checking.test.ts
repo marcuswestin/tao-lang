@@ -20,7 +20,7 @@ describe('type checking — Stage 0 (Typir wiring):', () => {
     const multi = await parseMultipleFiles([
       {
         path: '/project/app.tao',
-        code: `app StageZeroApp { ui V }\nview V { }\n`,
+        code: `app StageZeroApp { ui V }\nui V { render inject \`\`\`ts return null \`\`\` }\n`,
       },
     ])
     const typir = multi.workspace.getTypir()
@@ -34,7 +34,7 @@ describe('type checking — Stage 0 (Typir wiring):', () => {
   test('trivial document builds and validates with Typir wired', async () => {
     await parseTaoFully(`
       app StageZeroApp { ui V }
-      view V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
   })
 })
@@ -43,21 +43,21 @@ describe('type checking — type declarations:', () => {
   test('type X is text parses and validates cleanly', async () => {
     await parseTaoFully(`
       type FirstName is text
-      view V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
   })
 
   test('type X is number parses and validates cleanly', async () => {
     await parseTaoFully(`
       type Age is number
-      view V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
   })
 
   test('type X is view parses and validates cleanly', async () => {
     await parseTaoFully(`
       type Slot is view
-      view V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
   })
 
@@ -65,7 +65,7 @@ describe('type checking — type declarations:', () => {
     const report = await parseASTWithErrors(`
       type FirstName is text
       type FirstName is number
-      view V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
     expectDuplicateIdentifier(report, 'FirstName')
   })
@@ -76,7 +76,7 @@ describe('type checking — typed literals:', () => {
     await parseTaoFully(`
       type Greeting is text
       alias Msg = Greeting "Hi"
-      view V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
   })
 
@@ -84,7 +84,7 @@ describe('type checking — typed literals:', () => {
     await parseTaoFully(`
       type Age is number
       alias N = Age 40
-      view V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
   })
 
@@ -92,7 +92,7 @@ describe('type checking — typed literals:', () => {
     const report = await parseASTWithErrors(`
       type Greeting is text
       alias Msg = Greeting 42
-      view V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
     expectAnyHumanMessageSubstring(report, ['not assignable', 'number'])
   })
@@ -100,7 +100,7 @@ describe('type checking — typed literals:', () => {
   test('bare literal alias validates without nominal promotion', async () => {
     await parseTaoFully(`
       alias Width = 30
-      view V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
   })
 })
@@ -108,8 +108,9 @@ describe('type checking — typed literals:', () => {
 describe('type checking — view argument assignability:', () => {
   test('text argument accepts string literal', async () => {
     await parseTaoFully(`
-      view B T text { }
-      view V {
+      ui B T text { render inject \`\`\`ts return null \`\`\` }
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
         B "hello"
       }
     `)
@@ -117,8 +118,9 @@ describe('type checking — view argument assignability:', () => {
 
   test('text argument rejects number literal', async () => {
     const report = await parseASTWithErrors(`
-      view B T text { }
-      view V {
+      ui B T text { render inject \`\`\`ts return null \`\`\` }
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
         B 42
       }
     `)
@@ -127,9 +129,10 @@ describe('type checking — view argument assignability:', () => {
 
   test('action argument accepts action declaration reference', async () => {
     await parseTaoFully(`
-      view B T text, A action { }
+      ui B T text, A action { render inject \`\`\`ts return null \`\`\` }
       action H { }
-      view V {
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
         B "x", H
       }
     `)
@@ -137,8 +140,9 @@ describe('type checking — view argument assignability:', () => {
 
   test('action argument rejects number literal', async () => {
     const report = await parseASTWithErrors(`
-      view B A action { }
-      view V {
+      ui B A action { render inject \`\`\`ts return null \`\`\` }
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
         B 42
       }
     `)
@@ -147,8 +151,9 @@ describe('type checking — view argument assignability:', () => {
 
   test('action argument rejects string literal', async () => {
     const report = await parseASTWithErrors(`
-      view B A action { }
-      view V {
+      ui B A action { render inject \`\`\`ts return null \`\`\` }
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
         B "nope"
       }
     `)
@@ -157,9 +162,10 @@ describe('type checking — view argument assignability:', () => {
 
   test('view parameter accepts bare view reference', async () => {
     await parseTaoFully(`
-      view Panel B view { }
-      view Child { }
-      view V {
+      ui Panel B view { render inject \`\`\`ts return null \`\`\` }
+      ui Child { render inject \`\`\`ts return null \`\`\` }
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
         Panel Child
       }
     `)
@@ -167,8 +173,9 @@ describe('type checking — view argument assignability:', () => {
 
   test('view parameter rejects string literal', async () => {
     const report = await parseASTWithErrors(`
-      view Panel B view { }
-      view V {
+      ui Panel B view { render inject \`\`\`ts return null \`\`\` }
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
         Panel "nope"
       }
     `)
@@ -177,9 +184,10 @@ describe('type checking — view argument assignability:', () => {
 
   test('view parameter rejects action reference', async () => {
     const report = await parseASTWithErrors(`
-      view Panel B view { }
+      ui Panel B view { render inject \`\`\`ts return null \`\`\` }
       action H { }
-      view V {
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
         Panel H
       }
     `)
@@ -192,14 +200,14 @@ describe('type checking — operators and string templates:', () => {
     await parseTaoFully(`
       alias A = "a" + "b"
       alias N = 1 + 2
-      view V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
   })
 
   test('text + number fails type checking', async () => {
     const report = await parseASTWithErrors(`
       alias Bad = "x" + 1
-      view V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
     expectHumanMessagesContain(report, '+')
   })
@@ -207,43 +215,49 @@ describe('type checking — operators and string templates:', () => {
   test('text repetition requires text on the left and number on the right', async () => {
     await parseTaoFully(`
       alias Repeated = "ha" * 3
-      view V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
 
     const report = await parseASTWithErrors(`
       alias Bad = 3 * "ha"
-      view V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
     expectHumanMessagesContain(report, '*')
   })
 
   test('string template interpolation accepts number operand', async () => {
-    await parseTaoFully(['state N = 1', 'alias S = "v ${N}"', 'view V { }'].join('\n'))
+    await parseTaoFully(
+      ['state N = 1', 'alias S = "v ${N}"', 'ui V { render inject ```ts return null ``` }'].join('\n'),
+    )
   })
 
   test('string template interpolation accepts boolean-typed parameter', async () => {
     // Boolean-typed view parameters are the only source of boolean values in Tao today (no `true`/`false` literal
     // syntax). This pins down the `boolean` branch of the interpolation allow-list so a future refactor of
     // `isDisplayablePrimitive` can't silently drop boolean support.
-    await parseTaoFully(['view V Flag boolean {', '  alias S = "v=${Flag}"', '}'].join('\n'))
+    await parseTaoFully(
+      ['ui V Flag boolean {', '  render inject ```ts return null ```', '  alias S = "v=${Flag}"', '}'].join('\n'),
+    )
   })
 
   test('string template interpolation rejects action operand', async () => {
     const report = await parseASTWithErrors(
-      ['action H { }', 'alias S = "x ${action { }}"', 'view V { }'].join('\n'),
+      ['action H { }', 'alias S = "x ${action { }}"', 'ui V { render inject ```ts return null ``` }'].join('\n'),
     )
     expectHumanMessagesContain(report, 'interpolation')
   })
 
   test('string template interpolation rejects bare action name reference', async () => {
-    const report = await parseASTWithErrors(['action H { }', 'alias S = "x ${H}"', 'view V { }'].join('\n'))
+    const report = await parseASTWithErrors(
+      ['action H { }', 'alias S = "x ${H}"', 'ui V { render inject ```ts return null ``` }'].join('\n'),
+    )
     expectHumanMessagesContain(report, 'interpolation')
   })
 
   test('unary minus requires number operand', async () => {
     const report = await parseASTWithErrors(`
       alias Bad = -"x"
-      view V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
     expectHumanMessagesContain(report, 'Unary')
   })
@@ -252,7 +266,12 @@ describe('type checking — operators and string templates:', () => {
     // `FirstName "${x}"` would be a computed string, not a literal, which violates the nominal-literal contract of
     // `TypedLiteralExpression`. The validator rejects any template with at least one interpolation segment.
     const report = await parseASTWithErrors(
-      ['type FirstName is text', 'state N = 1', 'alias Bad = FirstName "Hi ${N}"', 'view V { }'].join('\n'),
+      [
+        'type FirstName is text',
+        'state N = 1',
+        'alias Bad = FirstName "Hi ${N}"',
+        'ui V { render inject ```ts return null ``` }',
+      ].join('\n'),
     )
     expectSomeHumanMessageSatisfies(
       report,
@@ -265,7 +284,7 @@ describe('type checking — struct/item types:', () => {
   test('struct type declaration registers as a nominal Typir type', async () => {
     await parseTaoFully(`
       type Person is { Name text, Age number }
-      view V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
   })
 
@@ -273,15 +292,16 @@ describe('type checking — struct/item types:', () => {
     await parseTaoFully(`
       type Person is { Name text, Age number }
       alias Ro = Person { Name "Ro", Age 40 }
-      view V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
   })
 
   test('view parameter typed by a struct accepts a typed struct literal argument', async () => {
     await parseTaoFully(`
       type Person is { Name text, Age number }
-      view Show P Person { }
-      view V {
+      ui Show P Person { render inject \`\`\`ts return null \`\`\` }
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
         Show Person { Name "Ro", Age 40 }
       }
     `)
@@ -290,8 +310,9 @@ describe('type checking — struct/item types:', () => {
   test('view parameter typed by a struct rejects a primitive argument', async () => {
     const report = await parseASTWithErrors(`
       type Person is { Name text, Age number }
-      view Show P Person { }
-      view V {
+      ui Show P Person { render inject \`\`\`ts return null \`\`\` }
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
         Show "nope"
       }
     `)
@@ -302,8 +323,9 @@ describe('type checking — struct/item types:', () => {
     const report = await parseASTWithErrors(`
       type Person is { Name text, Age number }
       type Pet is { Name text, Age number }
-      view ShowPerson P Person { }
-      view V {
+      ui ShowPerson P Person { render inject \`\`\`ts return null \`\`\` }
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
         ShowPerson Pet { Name "Cat", Age 4 }
       }
     `)
@@ -313,8 +335,9 @@ describe('type checking — struct/item types:', () => {
   test('member access on struct-typed alias yields the declared field type', async () => {
     await parseTaoFully(`
       type Person is { Name text, Age number }
-      view Text Value text { }
-      view V {
+      ui Text Value text { render inject \`\`\`ts return null \`\`\` }
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
         alias Ro = Person { Name "Ro", Age 40 }
         Text Ro.Name
       }
@@ -324,10 +347,11 @@ describe('type checking — struct/item types:', () => {
   test('member access on struct-typed parameter yields the declared field type', async () => {
     await parseTaoFully(`
       type Person is { Name text, Age number }
-      view Profile P Person {
+      ui Profile P Person {
+        render inject \`\`\`ts return null \`\`\`
         alias Display = "${'$'}{P.Name}"
       }
-      view V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
   })
 
@@ -335,11 +359,13 @@ describe('type checking — struct/item types:', () => {
     await parseTaoFully(`
       type Job is { Title text }
       type Person is { Name text, Job Job }
-      view Text Value text { }
-      view ShowJob J Person.Job {
+      ui Text Value text { render inject \`\`\`ts return null \`\`\` }
+      ui ShowJob J Person.Job {
+        render inject \`\`\`ts return null \`\`\`
         Text J.Title
       }
-      view V {
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
         ShowJob Job { Title "Builder" }
       }
     `)
@@ -348,8 +374,8 @@ describe('type checking — struct/item types:', () => {
   test('segmented type ref Person.Buddy where Buddy is the same nominal resolves without spurious errors', async () => {
     await parseTaoFully(`
       type Person is { Name text, Buddy Person }
-      view ShowBuddy B Person.Buddy { }
-      view V { }
+      ui ShowBuddy B Person.Buddy { render inject \`\`\`ts return null \`\`\` }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
   })
 
@@ -357,11 +383,13 @@ describe('type checking — struct/item types:', () => {
     const report = await parseASTWithErrors(`
       type Job is { Title text }
       type Person is { Name text, Job Job }
-      view Text Value text { }
-      view ShowJob J Person.Job {
+      ui Text Value text { render inject \`\`\`ts return null \`\`\` }
+      ui ShowJob J Person.Job {
+        render inject \`\`\`ts return null \`\`\`
         Text J.WrongName
       }
-      view V {
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
         ShowJob Job { Title "Builder" }
       }
     `)
@@ -375,11 +403,13 @@ describe('type checking — struct/item types:', () => {
     const report = await parseASTWithErrors(`
       type Job is { Title text }
       type Person is { Name text, Job Job }
-      view ShowNumber Value number { }
-      view ShowJob J Person.Job {
+      ui ShowNumber Value number { render inject \`\`\`ts return null \`\`\` }
+      ui ShowJob J Person.Job {
+        render inject \`\`\`ts return null \`\`\`
         ShowNumber J.Title
       }
-      view V {
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
         ShowJob Job { Title "Builder" }
       }
     `)
@@ -389,8 +419,9 @@ describe('type checking — struct/item types:', () => {
   test('member access on struct-typed alias rejects field-type mismatch in view argument', async () => {
     const report = await parseASTWithErrors(`
       type Person is { Name text, Age number }
-      view ShowText Value text { }
-      view V {
+      ui ShowText Value text { render inject \`\`\`ts return null \`\`\` }
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
         alias Ro = Person { Name "Ro", Age 40 }
         ShowText Ro.Age
       }
@@ -401,11 +432,13 @@ describe('type checking — struct/item types:', () => {
   test('struct type declared then used through a parameter renders without errors', async () => {
     await parseTaoFully(`
       type Person is { Name text }
-      view Text Value text { }
-      view Profile P Person {
+      ui Text Value text { render inject \`\`\`ts return null \`\`\` }
+      ui Profile P Person {
+        render inject \`\`\`ts return null \`\`\`
         Text P.Name
       }
-      view V {
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
         Profile Person { Name "Ro" }
       }
     `)
@@ -415,9 +448,10 @@ describe('type checking — struct/item types:', () => {
 describe('type checking — argument binding (views):', () => {
   test('arguments matched by type validate', async () => {
     await parseTaoFully(`
-      view Btn T text, A action { }
+      ui Btn T text, A action { render inject \`\`\`ts return null \`\`\` }
       action H { }
-      view V {
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
         Btn "Go", H
       }
     `)
@@ -425,9 +459,10 @@ describe('type checking — argument binding (views):', () => {
 
   test('argument order is independent when types are distinct', async () => {
     await parseTaoFully(`
-      view Btn T text, A action { }
+      ui Btn T text, A action { render inject \`\`\`ts return null \`\`\` }
       action H { }
-      view V {
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
         Btn H, "Go"
       }
     `)
@@ -435,8 +470,9 @@ describe('type checking — argument binding (views):', () => {
 
   test('argument with wrong type is rejected', async () => {
     const report = await parseASTWithErrors(`
-      view Btn T text { }
-      view V {
+      ui Btn T text { render inject \`\`\`ts return null \`\`\` }
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
         Btn 42
       }
     `)
@@ -447,8 +483,9 @@ describe('type checking — argument binding (views):', () => {
     await parseTaoFully(`
       type Left is text
       type Right is text
-      view Pair Left, Right { }
-      view V {
+      ui Pair Left, Right { render inject \`\`\`ts return null \`\`\` }
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
         Pair Left "L", Right "R"
       }
     `)
@@ -458,8 +495,8 @@ describe('type checking — argument binding (views):', () => {
     const report = await parseASTWithErrors(`
       type Left is text
       type Right is text
-      view Pair Left, Right { }
-      view V {
+      ui Pair Left, Right { render inject \`\`\`ts return null \`\`\` }
+      ui V {
         Pair Left "L", Left "R"
       }
     `)
@@ -468,8 +505,8 @@ describe('type checking — argument binding (views):', () => {
 
   test('arity mismatch — missing argument — is reported', async () => {
     const report = await parseASTWithErrors(`
-      view Btn T text, A action { }
-      view V {
+      ui Btn T text, A action { render inject \`\`\`ts return null \`\`\` }
+      ui V {
         Btn "Go"
       }
     `)
@@ -478,9 +515,9 @@ describe('type checking — argument binding (views):', () => {
 
   test('arity mismatch — extra argument — is reported', async () => {
     const report = await parseASTWithErrors(`
-      view Btn T text { }
+      ui Btn T text { render inject \`\`\`ts return null \`\`\` }
       action H { }
-      view V {
+      ui V {
         Btn "Go", H
       }
     `)
@@ -489,8 +526,8 @@ describe('type checking — argument binding (views):', () => {
 
   test('extra argument of same type is rejected', async () => {
     const report = await parseASTWithErrors(`
-      view Btn T text { }
-      view V {
+      ui Btn T text { render inject \`\`\`ts return null \`\`\` }
+      ui V {
         Btn "A", "B"
       }
     `)
@@ -579,7 +616,7 @@ describe('type checking — argument binding (actions):', () => {
 
   test('do referencing a non-action declaration is rejected', async () => {
     const report = await parseASTWithErrors(`
-      view SomeView { }
+      ui SomeView { render inject \`\`\`ts return null \`\`\` }
       action Outer {
         do SomeView
       }
@@ -607,28 +644,28 @@ describe('type checking — uppercase name enforcement:', () => {
   test('lowercase alias name fails validation', async () => {
     const report = await parseASTWithErrors(`
       alias foo = 1
-      view V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
     expectSomeHumanMessageSatisfies(report, m => m.includes("'foo'") && m.includes('uppercase'))
   })
 
   test('lowercase view name fails validation', async () => {
     const report = await parseASTWithErrors(`
-      view myView { }
+      ui myView { render inject \`\`\`ts return null \`\`\` }
     `)
     expectSomeHumanMessageSatisfies(report, m => m.includes("'myView'") && m.includes('uppercase'))
   })
 
   test('lowercase parameter name fails validation', async () => {
     const report = await parseASTWithErrors(`
-      view V name text { }
+      ui V name text { render inject \`\`\`ts return null \`\`\` }
     `)
     expectSomeHumanMessageSatisfies(report, m => m.includes("'name'") && m.includes('uppercase'))
   })
 
   test('uppercase names pass validation', async () => {
     await parseTaoFully(`
-      view V Name text { }
+      ui V Name text { render inject \`\`\`ts return null \`\`\` }
     `)
   })
 })
@@ -636,13 +673,15 @@ describe('type checking — uppercase name enforcement:', () => {
 describe('type checking — local parameter types (Phase 1):', () => {
   test('bare constructor in argument context resolves to callee-local type', async () => {
     await parseTaoFully(`
-      view Text Value text {
-        inject \`\`\`ts return null \`\`\`
+      ui Text Value text {
+        render inject \`\`\`ts return null \`\`\`
       }
-      view Badge Title is text {
+      ui Badge Title is text {
+        render inject \`\`\`ts return null \`\`\`
         Text Title
       }
-      view Root {
+      ui Root {
+        render inject \`\`\`ts return null \`\`\`
         Badge Title "hello"
       }
     `)
@@ -650,16 +689,19 @@ describe('type checking — local parameter types (Phase 1):', () => {
 
   test('two views with same-named local types do not cross-resolve', async () => {
     await parseTaoFully(`
-      view Text Value text {
-        inject \`\`\`ts return null \`\`\`
+      ui Text Value text {
+        render inject \`\`\`ts return null \`\`\`
       }
-      view Badge Title is text {
+      ui Badge Title is text {
+        render inject \`\`\`ts return null \`\`\`
         Text Title
       }
-      view OtherBadge Title is text {
+      ui OtherBadge Title is text {
+        render inject \`\`\`ts return null \`\`\`
         Text Title
       }
-      view Root {
+      ui Root {
+        render inject \`\`\`ts return null \`\`\`
         Badge Title "a"
         OtherBadge Title "b"
       }
@@ -668,10 +710,11 @@ describe('type checking — local parameter types (Phase 1):', () => {
 
   test('local type in body references parameter value', async () => {
     await parseTaoFully(`
-      view Text Value text {
-        inject \`\`\`ts return null \`\`\`
+      ui Text Value text {
+        render inject \`\`\`ts return null \`\`\`
       }
-      view Badge Title is text {
+      ui Badge Title is text {
+        render inject \`\`\`ts return null \`\`\`
         Text Title
       }
     `)
@@ -679,8 +722,9 @@ describe('type checking — local parameter types (Phase 1):', () => {
 
   test('wrong value type for local param is rejected', async () => {
     const report = await parseASTWithErrors(`
-      view Badge Title is text { }
-      view Root {
+      ui Badge Title is text { render inject \`\`\`ts return null \`\`\` }
+      ui Root {
+        render inject \`\`\`ts return null \`\`\`
         Badge Title 42
       }
     `)
@@ -691,13 +735,15 @@ describe('type checking — local parameter types (Phase 1):', () => {
 describe('type checking — dot-local parameter types (Phase 2):', () => {
   test('dot-local `.Title "x"` resolves and type-checks', async () => {
     await parseTaoFully(`
-      view Text Value text {
-        inject \`\`\`ts return null \`\`\`
+      ui Text Value text {
+        render inject \`\`\`ts return null \`\`\`
       }
-      view Badge Title is text {
+      ui Badge Title is text {
+        render inject \`\`\`ts return null \`\`\`
         Text Title
       }
-      view Root {
+      ui Root {
+        render inject \`\`\`ts return null \`\`\`
         Badge .Title "hello"
       }
     `)
@@ -705,8 +751,9 @@ describe('type checking — dot-local parameter types (Phase 2):', () => {
 
   test('wrong value type for dot-local param is rejected', async () => {
     const report = await parseASTWithErrors(`
-      view Badge Title is text { }
-      view Root {
+      ui Badge Title is text { render inject \`\`\`ts return null \`\`\` }
+      ui Root {
+        render inject \`\`\`ts return null \`\`\`
         Badge .Title 123
       }
     `)
@@ -716,10 +763,11 @@ describe('type checking — dot-local parameter types (Phase 2):', () => {
   test('dot-local struct-based `.Person { Name "Ro" }` type-checks', async () => {
     await parseTaoFully(`
       type PersonData is { Name text }
-      view Profile Person is PersonData {
-        inject \`\`\`ts void 0 \`\`\`
+      ui Profile Person is PersonData {
+        render inject \`\`\`ts void 0 \`\`\`
       }
-      view Root {
+      ui Root {
+        render inject \`\`\`ts return null \`\`\`
         Profile .Person { Name "Ro" }
       }
     `)
@@ -728,10 +776,11 @@ describe('type checking — dot-local parameter types (Phase 2):', () => {
   test('qualified struct-based `Profile.Person { Name "Ro" }` type-checks', async () => {
     await parseTaoFully(`
       type PersonData is { Name text }
-      view Profile Person is PersonData {
-        inject \`\`\`ts void 0 \`\`\`
+      ui Profile Person is PersonData {
+        render inject \`\`\`ts void 0 \`\`\`
       }
-      view Root {
+      ui Root {
+        render inject \`\`\`ts return null \`\`\`
         Profile Profile.Person { Name "Ro" }
       }
     `)
@@ -750,7 +799,7 @@ describe('type checking — action local parameter types (Phase 3):', () => {
         do Bump Bump.Step 2
         do Bump .Step 3
       }
-      view V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
   })
 
@@ -760,7 +809,7 @@ describe('type checking — action local parameter types (Phase 3):', () => {
       action Use {
         do Bump .Step "x"
       }
-      view V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
     expectTypeAssignabilityError(report)
   })
@@ -772,7 +821,7 @@ describe('type checking — action local parameter types (Phase 3):', () => {
         set Counter += Step
       }
       alias S = Bump.Step 3
-      view V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
   })
 })

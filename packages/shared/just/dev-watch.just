@@ -8,6 +8,9 @@ _dev DEVICE APP:
     export IOS_DEVICE="{{ DEVICE }}"
     export DEV_METRO_PORT="{{ DEV_METRO_PORT }}"
     export LOCAL_INSTANTDB_APP_ID="{{ LOCAL_INSTANTDB_APP_ID }}"
+    export LANG="en_US.UTF-8"
+    export LC_ALL="en_US.UTF-8"
+    export LC_CTYPE="en_US.UTF-8"
     just deps gen
     echo "compile"
     just _compile_dev_app

@@ -1,4 +1,4 @@
-# Tao Lang Error Handling
+# Tao Error Handling
 
 ## Syntax: WIP
 
@@ -118,7 +118,7 @@ defer allocator.free(data);
 
 ## Data loading, NaV, guard, and boundary notes (moved)
 
-Moved from `Docs/Tao Lang Roadmap.md` to consolidate language-level error and loading semantics in one place.
+Moved from older roadmap material to consolidate language-level error and loading semantics in one place.
 
 - External data may be loading or errored.
 - External data should be type checked at entry.
@@ -159,4 +159,4 @@ Open questions:
 ## Related docs
 
 - [App Routing and Navigation](App%20Routing%20and%20Navigation.md)
-- [Queries Design - Preferred](../Data%20Schema%20and%20Queries/Process%20Docs/Queries%20Design%20-%20Preferred.md)
+- [Data and Queries - Design](../Data%20Schema%20and%20Queries/Process%20Docs/Data%20and%20Queries%20-%20Design.md)

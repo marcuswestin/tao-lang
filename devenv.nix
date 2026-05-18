@@ -45,6 +45,9 @@ in
   ];
 
   env.TAO_DEVENV = "1";
+  env.LANG = "en_US.UTF-8";
+  env.LC_ALL = "en_US.UTF-8";
+  env.LC_CTYPE = "en_US.UTF-8";
   env.TAO_DEVENV_SCRIPT_HELP = lib.generators.toKeyValue {} (
     lib.filterAttrs (_name: description: description != "") (
       lib.mapAttrs (_name: script: script.description) config.scripts

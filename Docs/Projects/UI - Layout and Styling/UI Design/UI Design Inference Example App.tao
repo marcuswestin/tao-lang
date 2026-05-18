@@ -1,0 +1,146 @@
+// TARGET-ONLY FUTURE SYNTAX - design inference example.
+// This file documents the intended V1 source shape; it is not a runnable current-parser scenario.
+
+app DesignInferenceDemo {
+  design {
+    description "calm launch operations dashboard for teams reviewing readiness, blockers, and next actions"
+  }
+
+  ui LaunchReadinessDashboard
+}
+
+use Box, Button, Col, MultiLineText, Number, Row, Stack, Text, TextLabel, WrappingRow from @tao/ui
+
+variant ActionButton = Button <"default app action with native platform behavior">
+variant PrimaryAction = ActionButton <"most important positive action on a screen">
+variant SecondaryAction = ActionButton <"quiet supporting action">
+variant ReviewAction = SecondaryAction <"open an item for careful review">
+variant WarningAction = ActionButton <"attention action for unresolved risk">
+variant DangerAction = WarningAction <"rare destructive action, visually stronger than warning">
+
+variant CardSurface = Box <"raised surface for grouped operational information">
+variant WarningSurface = CardSurface <"surface for urgent blockers and risks">
+variant HeaderLabel = TextLabel <"small section label for dashboard groups">
+variant StatusPill = TextLabel <"compact status badge">
+variant MetricNumber = Number <"large scannable metric value">
+variant BodyCopy = Text <"plain readable dashboard text">
+variant MutedCopy = BodyCopy <"lower-emphasis supporting copy">
+variant NoteCopy = MultiLineText <"readable paragraph copy for operational context">
+
+// The accepted design graph resolves these identities through composites such as
+// composite.action.primary, composite.action.danger, composite.text.supporting,
+// and composite.surface.card.
+ui LaunchReadinessDashboard <"information-dense but calm dashboard screen"> {
+  render Col [items top stretch, gap 16, pad 20, width fill] {
+    DashboardHeader
+    SummaryStrip
+    Row [items stretch spread, gap 16, width fill] {
+      LaunchHealthCard
+      BlockingRisksCard
+    }
+    WorkQueue
+    FooterActions
+  }
+}
+
+ui DashboardHeader <"native-feeling page header with concise status and a primary action"> {
+  render Row [items center spread, gap 12, width fill] {
+    Stack [gap 4, grow] {
+      HeaderLabel "Launch readiness"
+      Text "Northstar Mobile 2.0"
+      MutedCopy "Beta release review"
+    }
+    StatusPill "On track"
+    PrimaryAction "Share summary", action { }
+  }
+}
+
+ui SummaryStrip <"three compact metrics that scan well on phones and tablets"> {
+  render WrappingRow [gap 10, width fill] {
+    MetricTile "Readiness" 82 "percent complete"
+    MetricTile "Open risks" 4 "need review"
+    MetricTile "Owners" 7 "active this week"
+  }
+}
+
+ui MetricTile Label text, Value number, Note text <"small metric card with clear hierarchy"> {
+  render CardSurface [items top left, gap 6, pad 14, width 160] {
+    HeaderLabel Label
+    MetricNumber Value
+    MutedCopy Note
+  }
+}
+
+ui LaunchHealthCard <"trustworthy progress card with balanced confidence and caution"> {
+  render CardSurface [items top stretch, gap 10, pad 16, grow] {
+    HeaderLabel "Release health"
+    Text "The core funnel is stable and sign-up latency is back under target."
+    NoteCopy "Two accessibility reviews and one Android navigation pass remain before the release candidate can be tagged."
+    Row [items center left, gap 8] {
+      PrimaryAction "Open checklist", action { }
+      SecondaryAction "View history", action { }
+    }
+  }
+}
+
+ui BlockingRisksCard <"attention card for risks without making the whole app feel alarming"> {
+  render WarningSurface [items top stretch, gap 10, pad 16, grow] {
+    HeaderLabel "Needs attention"
+    RiskRow "Android back gesture" "Navigation" "owner review today"
+    RiskRow "High contrast audit" "Accessibility" "awaiting device pass"
+    RiskRow "Billing copy" "Content" "legal sign-off needed"
+    Row [items center left, gap 8] {
+      WarningAction "Escalate", action { }
+      DangerAction "Drop blocker", action { }
+    }
+  }
+}
+
+ui RiskRow Title text, Area text, Detail text <"compact risk row with readable severity"> {
+  render Row [items top stretch, gap 10, width fill] {
+    StatusPill Area
+    Stack [gap 2, grow] {
+      BodyCopy Title
+      MutedCopy Detail
+    }
+  }
+}
+
+// No design spec here: inference still uses app design, declaration name,
+// declaration kind, and the variant chain for rendered children.
+ui WorkQueue {
+  render CardSurface [items top stretch, gap 10, pad 16, width fill] {
+    HeaderLabel "Review queue"
+    TaskRow "Final copy sweep" "Mira" "ready"
+    TaskRow "Tablet spacing pass" "Jon" "in review"
+    TaskRow "Reduced-motion QA" "Sana" "blocked"
+    SectionDivider
+    EmptyHint
+  }
+}
+
+ui TaskRow Title text, Owner text, State text <"dense work item row with owner and state"> {
+  render Row [items center spread, gap 12, width fill] {
+    Stack [gap 2, grow] {
+      BodyCopy Title
+      MutedCopy Owner
+    }
+    StatusPill State
+    ReviewAction "Review", action { }
+  }
+}
+
+ui SectionDivider {
+  render Box [height 1, width fill]
+}
+
+ui EmptyHint <"quiet guidance for when the queue is empty or mostly complete"> {
+  render NoteCopy "When all review work is complete, this area will show the next release milestone instead of manual follow-up tasks."
+}
+
+ui FooterActions <"persistent bottom action row with one obvious next step"> {
+  render Row [items center spread, gap 12, width fill] {
+    SecondaryAction "Export report", action { }
+    PrimaryAction "Start release review", action { }
+  }
+}

@@ -1,4 +1,5 @@
-const path = require('path')
+const fs = require('fs')
+const fsPath = require('path')
 const { getDefaultConfig } = require('expo/metro-config')
 const { rewriteBundleMapSources } = require('./tao-source-map-rewrite.cjs')
 
@@ -7,8 +8,42 @@ const config = getDefaultConfig(__dirname)
 
 config.transformerPath = require.resolve('./tao-expo-chain-transform-worker.cjs')
 
+/** Tao std-lib and generated `_gen` code import `@shared/*` (see `tsconfig.json` paths). Metro does not read TS paths; mirror `packages/shared/jest-module-name-mapper.cjs`. */
+const SHARED_SRC_ROOT = fsPath.resolve(__dirname, '../shared/shared-src')
+const SHARED_SOURCE_EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.json']
+
+/** resolveSharedSourceFile maps `@shared` or `@shared/...` to an on-disk file under `shared-src`, or returns null. */
+function resolveSharedSourceFile(moduleName) {
+  if (!moduleName.startsWith('@shared/')) {
+    return null
+  }
+  const basePath = moduleName.slice('@shared/'.length)
+  const candidateBase = fsPath.join(SHARED_SRC_ROOT, basePath)
+  for (const ext of SHARED_SOURCE_EXTENSIONS) {
+    const filePath = candidateBase + ext
+    if (fs.existsSync(filePath)) {
+      return filePath
+    }
+    const indexFilePath = fsPath.join(candidateBase, `index${ext}`)
+    if (fs.existsSync(indexFilePath)) {
+      return indexFilePath
+    }
+  }
+  return null
+}
+
+config.watchFolders = [...new Set([...(config.watchFolders ?? []), fsPath.resolve(__dirname, '../shared')])]
+
+config.resolver.resolveRequest = function resolveRequest(context, moduleName, platform) {
+  const sharedFile = resolveSharedSourceFile(moduleName)
+  if (sharedFile) {
+    return { type: 'sourceFile', filePath: sharedFile }
+  }
+  return context.resolveRequest(context, moduleName, platform)
+}
+
 /** GEN_DIR is the Tao SDK compile output root (`tao-app`); must match `rewriteBundleMapSources` callers and tests. */
-const GEN_DIR = path.join(__dirname, '_gen', 'tao-app')
+const GEN_DIR = fsPath.join(__dirname, '_gen', 'tao-app')
 
 /** bufferChunk normalizes a write/end chunk to a Buffer (encoding applies only to string chunks). */
 function bufferChunk(chunk, encodingOrCb) {

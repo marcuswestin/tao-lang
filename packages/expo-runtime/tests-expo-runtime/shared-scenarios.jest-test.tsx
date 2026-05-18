@@ -5,7 +5,7 @@ import {
 } from '@shared/testing'
 import { createExpoScenarioAdapter } from '../test-runtime'
 
-const expoScenarioAllowList = new Set(['Simple test render'])
+const expoScenarioAllowList = new Set(['Layout Showcase', 'Simple test render', 'Std lib text render'])
 
 const expoSharedScenarios = discoverCompiledTaoScenarios()
   .filter(({ scenarioDir }) => expoScenarioAllowList.has(FS.basename(scenarioDir)))

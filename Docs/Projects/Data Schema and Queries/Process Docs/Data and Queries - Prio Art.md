@@ -2,7 +2,7 @@
 
 External **survey** of how other systems express schema, reads, and writes. Used to inform Tao’s **Preferred** and **Alternatives** docs — not a specification of Tao syntax.
 
-See **[Queries Design - Preferred.md](./Queries%20Design%20-%20Preferred.md)** for what Tao actually intends to ship.
+See **[Data and Queries - Design.md](./Data%20and%20Queries%20-%20Design.md)** for what Tao actually intends to ship.
 
 ---
 

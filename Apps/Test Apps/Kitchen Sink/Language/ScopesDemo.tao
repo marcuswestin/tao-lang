@@ -2,9 +2,9 @@ use Text, Button, Row, Col, Number from @tao/ui
 
 state SharedOuter = 0
 
-share view ScopesDemo {
+share ui ScopesDemo {
    state ViewOnly = 0
-   Col {
+   render Col {
       Text "Scopes: nested state reaches file state"
       Row {
          Text "Outer (file):"

@@ -12,7 +12,7 @@ type Person is {
    }
 }
 
-view Main {
+ui Main {
    state Ro = Person {
       Name "Ro",
       Age 40,
@@ -20,7 +20,7 @@ view Main {
          Title "Builder"
       }
    }
-   Col {
+   render Col {
       Text Ro.Name { }
       Text Ro.Job.Title { }
       Text "${ Ro.Name } is ${ Ro.Age } and works as ${ Ro.Job.Title }" { }

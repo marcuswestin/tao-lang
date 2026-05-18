@@ -1,0 +1,1627 @@
+{
+  "analyzer": {
+    "name": "tao-design",
+    "profile": "deterministic-local",
+    "version": "deterministic-local-v1"
+  },
+  "appDesign": {
+    "description": "calm launch operations dashboard for teams reviewing readiness, blockers, and next actions"
+  },
+  "entries": {
+    "@tao/ui/Views#Box": {
+      "identity": "@tao/ui/Views#Box",
+      "inputHash": "f6f9470663416840bdf640c352ed0f08b45dd9d2dd84c3e2c099ec20f3f0951e",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "structural layout",
+        "compositeRole": "composite.layout.structural",
+        "confidence": 0.52,
+        "designSpecIdentity": "@tao/ui/Views#Box|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:",
+        "inputHash": "f6f9470663416840bdf640c352ed0f08b45dd9d2dd84c3e2c099ec20f3f0951e",
+        "model": "deterministic-local",
+        "rationale": "Mapped Box to structural layout role.",
+        "sourceIdentity": "@tao/ui/Views#Box"
+      },
+      "resolved": {
+        "baseStyle": {},
+        "compositeRole": "composite.layout.structural",
+        "styleKey": "style.tao.ui.views.box"
+      },
+      "semantic": {
+        "compositeRole": "composite.layout.structural",
+        "confidence": 0.52,
+        "description": "",
+        "designSpecIdentity": "@tao/ui/Views#Box|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:",
+        "rationale": "Mapped Box to structural layout role.",
+        "role": "structural layout",
+        "sourceIdentity": "@tao/ui/Views#Box"
+      },
+      "status": "accepted"
+    },
+    "@tao/ui/Views#Button": {
+      "identity": "@tao/ui/Views#Button",
+      "inputHash": "d63972f864c0a997863b82f488531d593f35a0c68fa27c48ff59472839b5e795",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "primary action",
+        "compositeRole": "composite.action.primary",
+        "confidence": 0.68,
+        "designSpecIdentity": "@tao/ui/Views#Button|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:",
+        "inputHash": "d63972f864c0a997863b82f488531d593f35a0c68fa27c48ff59472839b5e795",
+        "model": "deterministic-local",
+        "rationale": "Matched declaration identity.",
+        "sourceIdentity": "@tao/ui/Views#Button"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "backgroundColor": "#8740c9",
+              "borderColor": "#8740c9",
+              "color": "#ffffff"
+            }
+          }
+        },
+        "baseStyle": {
+          "backgroundColor": "#63259d",
+          "borderColor": "#63259d",
+          "borderRadius": 8,
+          "borderWidth": 1,
+          "color": "#ffffff",
+          "paddingHorizontal": 12,
+          "paddingVertical": 8
+        },
+        "compositeRole": "composite.action.primary",
+        "states": {
+          "disabled": {
+            "opacity": 0.45
+          },
+          "focused": {
+            "borderWidth": 2
+          },
+          "pressed": {
+            "opacity": 0.82
+          },
+          "selected": {
+            "borderWidth": 2
+          }
+        },
+        "styleKey": "style.tao.ui.views.button"
+      },
+      "semantic": {
+        "compositeRole": "composite.action.primary",
+        "confidence": 0.68,
+        "description": "",
+        "designSpecIdentity": "@tao/ui/Views#Button|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:",
+        "rationale": "Matched declaration identity.",
+        "role": "primary action",
+        "sourceIdentity": "@tao/ui/Views#Button"
+      },
+      "status": "accepted"
+    },
+    "@tao/ui/Views#Col": {
+      "identity": "@tao/ui/Views#Col",
+      "inputHash": "9f9ca03f5590f0ec7ab8ce8bf2596ee844ca8194447c561af22e24b80526285b",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "structural layout",
+        "compositeRole": "composite.layout.structural",
+        "confidence": 0.52,
+        "designSpecIdentity": "@tao/ui/Views#Col|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:",
+        "inputHash": "9f9ca03f5590f0ec7ab8ce8bf2596ee844ca8194447c561af22e24b80526285b",
+        "model": "deterministic-local",
+        "rationale": "Mapped Col to structural layout role.",
+        "sourceIdentity": "@tao/ui/Views#Col"
+      },
+      "resolved": {
+        "baseStyle": {},
+        "compositeRole": "composite.layout.structural",
+        "styleKey": "style.tao.ui.views.col"
+      },
+      "semantic": {
+        "compositeRole": "composite.layout.structural",
+        "confidence": 0.52,
+        "description": "",
+        "designSpecIdentity": "@tao/ui/Views#Col|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:",
+        "rationale": "Mapped Col to structural layout role.",
+        "role": "structural layout",
+        "sourceIdentity": "@tao/ui/Views#Col"
+      },
+      "status": "accepted"
+    },
+    "@tao/ui/Views#MultiLineText": {
+      "identity": "@tao/ui/Views#MultiLineText",
+      "inputHash": "3c78b43d975e25c135ab337a3315d2e5c1816a4796cd74d0d0893844e451f8f8",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "body text",
+        "compositeRole": "composite.text.body",
+        "confidence": 0.68,
+        "designSpecIdentity": "@tao/ui/Views#MultiLineText|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:",
+        "inputHash": "3c78b43d975e25c135ab337a3315d2e5c1816a4796cd74d0d0893844e451f8f8",
+        "model": "deterministic-local",
+        "rationale": "Matched declaration identity.",
+        "sourceIdentity": "@tao/ui/Views#MultiLineText"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "color": "#f8fafc"
+            }
+          }
+        },
+        "baseStyle": {
+          "color": "#1f2937",
+          "fontSize": 16
+        },
+        "compositeRole": "composite.text.body",
+        "styleKey": "style.tao.ui.views.multilinetext"
+      },
+      "semantic": {
+        "compositeRole": "composite.text.body",
+        "confidence": 0.68,
+        "description": "",
+        "designSpecIdentity": "@tao/ui/Views#MultiLineText|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:",
+        "rationale": "Matched declaration identity.",
+        "role": "body text",
+        "sourceIdentity": "@tao/ui/Views#MultiLineText"
+      },
+      "status": "accepted"
+    },
+    "@tao/ui/Views#Number": {
+      "identity": "@tao/ui/Views#Number",
+      "inputHash": "16b92ac0f4f7605cd5750ff4e524f294b42038f754341fed1192abfaf7c88f8a",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "metric text",
+        "compositeRole": "composite.text.metric",
+        "confidence": 0.68,
+        "designSpecIdentity": "@tao/ui/Views#Number|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:",
+        "inputHash": "16b92ac0f4f7605cd5750ff4e524f294b42038f754341fed1192abfaf7c88f8a",
+        "model": "deterministic-local",
+        "rationale": "Matched declaration identity.",
+        "sourceIdentity": "@tao/ui/Views#Number"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "color": "#f8fafc"
+            }
+          }
+        },
+        "baseStyle": {
+          "color": "#267359",
+          "fontSize": 28,
+          "fontWeight": "700"
+        },
+        "compositeRole": "composite.text.metric",
+        "styleKey": "style.tao.ui.views.number"
+      },
+      "semantic": {
+        "compositeRole": "composite.text.metric",
+        "confidence": 0.68,
+        "description": "",
+        "designSpecIdentity": "@tao/ui/Views#Number|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:",
+        "rationale": "Matched declaration identity.",
+        "role": "metric text",
+        "sourceIdentity": "@tao/ui/Views#Number"
+      },
+      "status": "accepted"
+    },
+    "@tao/ui/Views#Row": {
+      "identity": "@tao/ui/Views#Row",
+      "inputHash": "fa8ae704013a17a7d8b2a2b2c9284b8b6ca35089b84200ef0579b4c116873b73",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "structural layout",
+        "compositeRole": "composite.layout.structural",
+        "confidence": 0.52,
+        "designSpecIdentity": "@tao/ui/Views#Row|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:",
+        "inputHash": "fa8ae704013a17a7d8b2a2b2c9284b8b6ca35089b84200ef0579b4c116873b73",
+        "model": "deterministic-local",
+        "rationale": "Mapped Row to structural layout role.",
+        "sourceIdentity": "@tao/ui/Views#Row"
+      },
+      "resolved": {
+        "baseStyle": {},
+        "compositeRole": "composite.layout.structural",
+        "styleKey": "style.tao.ui.views.row"
+      },
+      "semantic": {
+        "compositeRole": "composite.layout.structural",
+        "confidence": 0.52,
+        "description": "",
+        "designSpecIdentity": "@tao/ui/Views#Row|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:",
+        "rationale": "Mapped Row to structural layout role.",
+        "role": "structural layout",
+        "sourceIdentity": "@tao/ui/Views#Row"
+      },
+      "status": "accepted"
+    },
+    "@tao/ui/Views#Stack": {
+      "identity": "@tao/ui/Views#Stack",
+      "inputHash": "e1f074170e8677e8fa2bcd85db303b9c61e4154af1ed7c74a0b0f02de8601dba",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "structural layout",
+        "compositeRole": "composite.layout.structural",
+        "confidence": 0.52,
+        "designSpecIdentity": "@tao/ui/Views#Stack|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:",
+        "inputHash": "e1f074170e8677e8fa2bcd85db303b9c61e4154af1ed7c74a0b0f02de8601dba",
+        "model": "deterministic-local",
+        "rationale": "Mapped Stack to structural layout role.",
+        "sourceIdentity": "@tao/ui/Views#Stack"
+      },
+      "resolved": {
+        "baseStyle": {},
+        "compositeRole": "composite.layout.structural",
+        "styleKey": "style.tao.ui.views.stack"
+      },
+      "semantic": {
+        "compositeRole": "composite.layout.structural",
+        "confidence": 0.52,
+        "description": "",
+        "designSpecIdentity": "@tao/ui/Views#Stack|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:",
+        "rationale": "Mapped Stack to structural layout role.",
+        "role": "structural layout",
+        "sourceIdentity": "@tao/ui/Views#Stack"
+      },
+      "status": "accepted"
+    },
+    "@tao/ui/Views#Text": {
+      "identity": "@tao/ui/Views#Text",
+      "inputHash": "956d4450edb341c1ed014ed241bbff96652792a66f0e4fb48c4073a334dd9c23",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "body text",
+        "compositeRole": "composite.text.body",
+        "confidence": 0.68,
+        "designSpecIdentity": "@tao/ui/Views#Text|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:",
+        "inputHash": "956d4450edb341c1ed014ed241bbff96652792a66f0e4fb48c4073a334dd9c23",
+        "model": "deterministic-local",
+        "rationale": "Matched declaration identity.",
+        "sourceIdentity": "@tao/ui/Views#Text"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "color": "#f8fafc"
+            }
+          }
+        },
+        "baseStyle": {
+          "color": "#1f2937",
+          "fontSize": 16
+        },
+        "compositeRole": "composite.text.body",
+        "styleKey": "style.tao.ui.views.text"
+      },
+      "semantic": {
+        "compositeRole": "composite.text.body",
+        "confidence": 0.68,
+        "description": "",
+        "designSpecIdentity": "@tao/ui/Views#Text|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:",
+        "rationale": "Matched declaration identity.",
+        "role": "body text",
+        "sourceIdentity": "@tao/ui/Views#Text"
+      },
+      "status": "accepted"
+    },
+    "@tao/ui/Views#TextLabel": {
+      "identity": "@tao/ui/Views#TextLabel",
+      "inputHash": "e3da320164174e213150e9fb56440e364af14f4c4ef9982f1b11be62dc49e21e",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "supporting text",
+        "compositeRole": "composite.text.supporting",
+        "confidence": 0.68,
+        "designSpecIdentity": "@tao/ui/Views#TextLabel|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:",
+        "inputHash": "e3da320164174e213150e9fb56440e364af14f4c4ef9982f1b11be62dc49e21e",
+        "model": "deterministic-local",
+        "rationale": "Matched declaration identity.",
+        "sourceIdentity": "@tao/ui/Views#TextLabel"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "color": "#cbd5e1"
+            }
+          }
+        },
+        "baseStyle": {
+          "color": "#64748b",
+          "fontSize": 13,
+          "fontWeight": "500"
+        },
+        "compositeRole": "composite.text.supporting",
+        "styleKey": "style.tao.ui.views.textlabel"
+      },
+      "semantic": {
+        "compositeRole": "composite.text.supporting",
+        "confidence": 0.68,
+        "description": "",
+        "designSpecIdentity": "@tao/ui/Views#TextLabel|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:",
+        "rationale": "Matched declaration identity.",
+        "role": "supporting text",
+        "sourceIdentity": "@tao/ui/Views#TextLabel"
+      },
+      "status": "accepted"
+    },
+    "@tao/ui/Views#WrappingRow": {
+      "identity": "@tao/ui/Views#WrappingRow",
+      "inputHash": "d39b96a06fd2fe6a8c40250f180e8e7236ffb1fd67f0e494bbb8720698432610",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "structural layout",
+        "compositeRole": "composite.layout.structural",
+        "confidence": 0.52,
+        "designSpecIdentity": "@tao/ui/Views#WrappingRow|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:",
+        "inputHash": "d39b96a06fd2fe6a8c40250f180e8e7236ffb1fd67f0e494bbb8720698432610",
+        "model": "deterministic-local",
+        "rationale": "Mapped WrappingRow to structural layout role.",
+        "sourceIdentity": "@tao/ui/Views#WrappingRow"
+      },
+      "resolved": {
+        "baseStyle": {},
+        "compositeRole": "composite.layout.structural",
+        "styleKey": "style.tao.ui.views.wrappingrow"
+      },
+      "semantic": {
+        "compositeRole": "composite.layout.structural",
+        "confidence": 0.52,
+        "description": "",
+        "designSpecIdentity": "@tao/ui/Views#WrappingRow|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:",
+        "rationale": "Mapped WrappingRow to structural layout role.",
+        "role": "structural layout",
+        "sourceIdentity": "@tao/ui/Views#WrappingRow"
+      },
+      "status": "accepted"
+    },
+    "app/UI Design Inference#ActionButton": {
+      "identity": "app/UI Design Inference#ActionButton",
+      "inputHash": "92c490dbdb05e24c928779dc2359f89ec14691916d0ff652e8626f13957bc896",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "primary action",
+        "compositeRole": "composite.action.primary",
+        "confidence": 0.84,
+        "designSpecIdentity": "app/UI Design Inference#ActionButton|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:default app action with native platform behavior",
+        "inputHash": "92c490dbdb05e24c928779dc2359f89ec14691916d0ff652e8626f13957bc896",
+        "model": "deterministic-local",
+        "rationale": "Matched design spec and declaration identity.",
+        "sourceIdentity": "app/UI Design Inference#ActionButton"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "backgroundColor": "#4079c9",
+              "borderColor": "#4079c9",
+              "color": "#ffffff"
+            }
+          }
+        },
+        "baseStyle": {
+          "backgroundColor": "#25579d",
+          "borderColor": "#25579d",
+          "borderRadius": 8,
+          "borderWidth": 1,
+          "color": "#ffffff",
+          "paddingHorizontal": 12,
+          "paddingVertical": 8
+        },
+        "compositeRole": "composite.action.primary",
+        "states": {
+          "disabled": {
+            "opacity": 0.45
+          },
+          "focused": {
+            "borderWidth": 2
+          },
+          "pressed": {
+            "opacity": 0.82
+          },
+          "selected": {
+            "borderWidth": 2
+          }
+        },
+        "styleKey": "style.app.ui.design.inference.actionbutton"
+      },
+      "semantic": {
+        "compositeRole": "composite.action.primary",
+        "confidence": 0.84,
+        "description": "default app action with native platform behavior",
+        "designSpecIdentity": "app/UI Design Inference#ActionButton|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:default app action with native platform behavior",
+        "rationale": "Matched design spec and declaration identity.",
+        "role": "primary action",
+        "sourceIdentity": "app/UI Design Inference#ActionButton"
+      },
+      "status": "accepted"
+    },
+    "app/UI Design Inference#BlockingRisksCard": {
+      "identity": "app/UI Design Inference#BlockingRisksCard",
+      "inputHash": "c01a84ad57b0e145c9228e0d99b02c2e0a8e317f427bf9c0074f91bade4604f0",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "warning action",
+        "compositeRole": "composite.action.warning",
+        "confidence": 0.84,
+        "designSpecIdentity": "app/UI Design Inference#BlockingRisksCard|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:attention card for risks without making the whole app feel alarming",
+        "inputHash": "c01a84ad57b0e145c9228e0d99b02c2e0a8e317f427bf9c0074f91bade4604f0",
+        "model": "deterministic-local",
+        "rationale": "Matched design spec and declaration identity.",
+        "sourceIdentity": "app/UI Design Inference#BlockingRisksCard"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "backgroundColor": "#aec940",
+              "borderColor": "#aec940",
+              "color": "#ffffff"
+            }
+          }
+        },
+        "baseStyle": {
+          "backgroundColor": "#b54708",
+          "borderColor": "#b54708",
+          "borderRadius": 8,
+          "borderWidth": 1,
+          "color": "#ffffff",
+          "paddingHorizontal": 12,
+          "paddingVertical": 8
+        },
+        "compositeRole": "composite.action.warning",
+        "states": {
+          "disabled": {
+            "opacity": 0.45
+          },
+          "focused": {
+            "borderWidth": 2
+          },
+          "pressed": {
+            "opacity": 0.82
+          },
+          "selected": {
+            "borderWidth": 2
+          }
+        },
+        "styleKey": "style.app.ui.design.inference.blockingriskscard"
+      },
+      "semantic": {
+        "compositeRole": "composite.action.warning",
+        "confidence": 0.84,
+        "description": "attention card for risks without making the whole app feel alarming",
+        "designSpecIdentity": "app/UI Design Inference#BlockingRisksCard|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:attention card for risks without making the whole app feel alarming",
+        "rationale": "Matched design spec and declaration identity.",
+        "role": "warning action",
+        "sourceIdentity": "app/UI Design Inference#BlockingRisksCard"
+      },
+      "status": "accepted"
+    },
+    "app/UI Design Inference#BodyCopy": {
+      "identity": "app/UI Design Inference#BodyCopy",
+      "inputHash": "1adac893a981bc54cf6616f73879ea2134b9d526492233886de2c4c79c088c4a",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "body text",
+        "compositeRole": "composite.text.body",
+        "confidence": 0.84,
+        "designSpecIdentity": "app/UI Design Inference#BodyCopy|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:plain readable dashboard text",
+        "inputHash": "1adac893a981bc54cf6616f73879ea2134b9d526492233886de2c4c79c088c4a",
+        "model": "deterministic-local",
+        "rationale": "Matched design spec and declaration identity.",
+        "sourceIdentity": "app/UI Design Inference#BodyCopy"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "color": "#f8fafc"
+            }
+          }
+        },
+        "baseStyle": {
+          "color": "#1f2937",
+          "fontSize": 16
+        },
+        "compositeRole": "composite.text.body",
+        "styleKey": "style.app.ui.design.inference.bodycopy"
+      },
+      "semantic": {
+        "compositeRole": "composite.text.body",
+        "confidence": 0.84,
+        "description": "plain readable dashboard text",
+        "designSpecIdentity": "app/UI Design Inference#BodyCopy|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:plain readable dashboard text",
+        "rationale": "Matched design spec and declaration identity.",
+        "role": "body text",
+        "sourceIdentity": "app/UI Design Inference#BodyCopy"
+      },
+      "status": "accepted"
+    },
+    "app/UI Design Inference#CardSurface": {
+      "identity": "app/UI Design Inference#CardSurface",
+      "inputHash": "4728c3a4a1d0fbb940caab83f786e55dd320745f3779e3e197a869732074e333",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "structural layout",
+        "compositeRole": "composite.layout.structural",
+        "confidence": 0.72,
+        "designSpecIdentity": "app/UI Design Inference#CardSurface|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:raised surface for grouped operational information",
+        "inputHash": "4728c3a4a1d0fbb940caab83f786e55dd320745f3779e3e197a869732074e333",
+        "model": "deterministic-local",
+        "rationale": "Mapped Box to structural layout role.",
+        "sourceIdentity": "app/UI Design Inference#CardSurface"
+      },
+      "resolved": {
+        "baseStyle": {},
+        "compositeRole": "composite.layout.structural",
+        "styleKey": "style.app.ui.design.inference.cardsurface"
+      },
+      "semantic": {
+        "compositeRole": "composite.layout.structural",
+        "confidence": 0.72,
+        "description": "raised surface for grouped operational information",
+        "designSpecIdentity": "app/UI Design Inference#CardSurface|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:raised surface for grouped operational information",
+        "rationale": "Mapped Box to structural layout role.",
+        "role": "structural layout",
+        "sourceIdentity": "app/UI Design Inference#CardSurface"
+      },
+      "status": "accepted"
+    },
+    "app/UI Design Inference#DangerAction": {
+      "identity": "app/UI Design Inference#DangerAction",
+      "inputHash": "230dc15baaadc59832de484d8b8fa47ea394eb1aaa36703802f92786578b75e6",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "destructive action",
+        "compositeRole": "composite.action.danger",
+        "confidence": 0.84,
+        "designSpecIdentity": "app/UI Design Inference#DangerAction|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:rare destructive action, visually stronger than warning",
+        "inputHash": "230dc15baaadc59832de484d8b8fa47ea394eb1aaa36703802f92786578b75e6",
+        "model": "deterministic-local",
+        "rationale": "Matched design spec and declaration identity.",
+        "sourceIdentity": "app/UI Design Inference#DangerAction"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "backgroundColor": "#c94055",
+              "borderColor": "#c94055",
+              "color": "#ffffff"
+            }
+          }
+        },
+        "baseStyle": {
+          "backgroundColor": "#b42318",
+          "borderColor": "#b42318",
+          "borderRadius": 8,
+          "borderWidth": 1,
+          "color": "#ffffff",
+          "paddingHorizontal": 12,
+          "paddingVertical": 8
+        },
+        "compositeRole": "composite.action.danger",
+        "states": {
+          "disabled": {
+            "opacity": 0.45
+          },
+          "focused": {
+            "borderWidth": 2
+          },
+          "pressed": {
+            "opacity": 0.82
+          },
+          "selected": {
+            "borderWidth": 2
+          }
+        },
+        "styleKey": "style.app.ui.design.inference.dangeraction"
+      },
+      "semantic": {
+        "compositeRole": "composite.action.danger",
+        "confidence": 0.84,
+        "description": "rare destructive action, visually stronger than warning",
+        "designSpecIdentity": "app/UI Design Inference#DangerAction|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:rare destructive action, visually stronger than warning",
+        "rationale": "Matched design spec and declaration identity.",
+        "role": "destructive action",
+        "sourceIdentity": "app/UI Design Inference#DangerAction"
+      },
+      "status": "accepted"
+    },
+    "app/UI Design Inference#DashboardHeader": {
+      "identity": "app/UI Design Inference#DashboardHeader",
+      "inputHash": "af863d0f6016c7602e9cb928861da6461772bf9037efef8506a58adcc2df8323",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "primary action",
+        "compositeRole": "composite.action.primary",
+        "confidence": 0.84,
+        "designSpecIdentity": "app/UI Design Inference#DashboardHeader|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:native-feeling page header with concise status and a primary action",
+        "inputHash": "af863d0f6016c7602e9cb928861da6461772bf9037efef8506a58adcc2df8323",
+        "model": "deterministic-local",
+        "rationale": "Matched design spec and declaration identity.",
+        "sourceIdentity": "app/UI Design Inference#DashboardHeader"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "backgroundColor": "#b9c940",
+              "borderColor": "#b9c940",
+              "color": "#ffffff"
+            }
+          }
+        },
+        "baseStyle": {
+          "backgroundColor": "#8f9d25",
+          "borderColor": "#8f9d25",
+          "borderRadius": 8,
+          "borderWidth": 1,
+          "color": "#ffffff",
+          "paddingHorizontal": 12,
+          "paddingVertical": 8
+        },
+        "compositeRole": "composite.action.primary",
+        "states": {
+          "disabled": {
+            "opacity": 0.45
+          },
+          "focused": {
+            "borderWidth": 2
+          },
+          "pressed": {
+            "opacity": 0.82
+          },
+          "selected": {
+            "borderWidth": 2
+          }
+        },
+        "styleKey": "style.app.ui.design.inference.dashboardheader"
+      },
+      "semantic": {
+        "compositeRole": "composite.action.primary",
+        "confidence": 0.84,
+        "description": "native-feeling page header with concise status and a primary action",
+        "designSpecIdentity": "app/UI Design Inference#DashboardHeader|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:native-feeling page header with concise status and a primary action",
+        "rationale": "Matched design spec and declaration identity.",
+        "role": "primary action",
+        "sourceIdentity": "app/UI Design Inference#DashboardHeader"
+      },
+      "status": "accepted"
+    },
+    "app/UI Design Inference#EmptyHint": {
+      "identity": "app/UI Design Inference#EmptyHint",
+      "inputHash": "da0914da351f2578b1f96dba0eda898d6609c60960f79f341f09b4666083e8eb",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "secondary action",
+        "compositeRole": "composite.action.secondary",
+        "confidence": 0.84,
+        "designSpecIdentity": "app/UI Design Inference#EmptyHint|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:quiet guidance for when the queue is empty or mostly complete",
+        "inputHash": "da0914da351f2578b1f96dba0eda898d6609c60960f79f341f09b4666083e8eb",
+        "model": "deterministic-local",
+        "rationale": "Matched design spec and declaration identity.",
+        "sourceIdentity": "app/UI Design Inference#EmptyHint"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "backgroundColor": "#1f2937",
+              "borderColor": "#475569",
+              "color": "#f8fafc"
+            }
+          }
+        },
+        "baseStyle": {
+          "backgroundColor": "#eef2f7",
+          "borderColor": "#cbd5e1",
+          "borderRadius": 8,
+          "borderWidth": 1,
+          "color": "#1f2937",
+          "paddingHorizontal": 12,
+          "paddingVertical": 8
+        },
+        "compositeRole": "composite.action.secondary",
+        "states": {
+          "disabled": {
+            "opacity": 0.45
+          },
+          "focused": {
+            "borderWidth": 2
+          },
+          "pressed": {
+            "opacity": 0.82
+          },
+          "selected": {
+            "borderWidth": 2
+          }
+        },
+        "styleKey": "style.app.ui.design.inference.emptyhint"
+      },
+      "semantic": {
+        "compositeRole": "composite.action.secondary",
+        "confidence": 0.84,
+        "description": "quiet guidance for when the queue is empty or mostly complete",
+        "designSpecIdentity": "app/UI Design Inference#EmptyHint|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:quiet guidance for when the queue is empty or mostly complete",
+        "rationale": "Matched design spec and declaration identity.",
+        "role": "secondary action",
+        "sourceIdentity": "app/UI Design Inference#EmptyHint"
+      },
+      "status": "accepted"
+    },
+    "app/UI Design Inference#FooterActions": {
+      "identity": "app/UI Design Inference#FooterActions",
+      "inputHash": "ee554cface2e12efa0bbafd4bce732935f18641a103470031620cfbcbd0958ef",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "primary action",
+        "compositeRole": "composite.action.primary",
+        "confidence": 0.84,
+        "designSpecIdentity": "app/UI Design Inference#FooterActions|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:persistent bottom action row with one obvious next step",
+        "inputHash": "ee554cface2e12efa0bbafd4bce732935f18641a103470031620cfbcbd0958ef",
+        "model": "deterministic-local",
+        "rationale": "Matched design spec and declaration identity.",
+        "sourceIdentity": "app/UI Design Inference#FooterActions"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "backgroundColor": "#c95740",
+              "borderColor": "#c95740",
+              "color": "#ffffff"
+            }
+          }
+        },
+        "baseStyle": {
+          "backgroundColor": "#9d3925",
+          "borderColor": "#9d3925",
+          "borderRadius": 8,
+          "borderWidth": 1,
+          "color": "#ffffff",
+          "paddingHorizontal": 12,
+          "paddingVertical": 8
+        },
+        "compositeRole": "composite.action.primary",
+        "states": {
+          "disabled": {
+            "opacity": 0.45
+          },
+          "focused": {
+            "borderWidth": 2
+          },
+          "pressed": {
+            "opacity": 0.82
+          },
+          "selected": {
+            "borderWidth": 2
+          }
+        },
+        "styleKey": "style.app.ui.design.inference.footeractions"
+      },
+      "semantic": {
+        "compositeRole": "composite.action.primary",
+        "confidence": 0.84,
+        "description": "persistent bottom action row with one obvious next step",
+        "designSpecIdentity": "app/UI Design Inference#FooterActions|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:persistent bottom action row with one obvious next step",
+        "rationale": "Matched design spec and declaration identity.",
+        "role": "primary action",
+        "sourceIdentity": "app/UI Design Inference#FooterActions"
+      },
+      "status": "accepted"
+    },
+    "app/UI Design Inference#HeaderLabel": {
+      "identity": "app/UI Design Inference#HeaderLabel",
+      "inputHash": "02925df64eee043a20a01a15a3a66b7490946f91683a10c102d2705f849514b7",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "supporting text",
+        "compositeRole": "composite.text.supporting",
+        "confidence": 0.84,
+        "designSpecIdentity": "app/UI Design Inference#HeaderLabel|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:small section label for dashboard groups",
+        "inputHash": "02925df64eee043a20a01a15a3a66b7490946f91683a10c102d2705f849514b7",
+        "model": "deterministic-local",
+        "rationale": "Matched design spec and declaration identity.",
+        "sourceIdentity": "app/UI Design Inference#HeaderLabel"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "color": "#cbd5e1"
+            }
+          }
+        },
+        "baseStyle": {
+          "color": "#64748b",
+          "fontSize": 13,
+          "fontWeight": "500"
+        },
+        "compositeRole": "composite.text.supporting",
+        "styleKey": "style.app.ui.design.inference.headerlabel"
+      },
+      "semantic": {
+        "compositeRole": "composite.text.supporting",
+        "confidence": 0.84,
+        "description": "small section label for dashboard groups",
+        "designSpecIdentity": "app/UI Design Inference#HeaderLabel|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:small section label for dashboard groups",
+        "rationale": "Matched design spec and declaration identity.",
+        "role": "supporting text",
+        "sourceIdentity": "app/UI Design Inference#HeaderLabel"
+      },
+      "status": "accepted"
+    },
+    "app/UI Design Inference#LaunchHealthCard": {
+      "identity": "app/UI Design Inference#LaunchHealthCard",
+      "inputHash": "c2bc5cef6ff77a8beee97a11fde6bd85085e30e29b31b30961888200090d88b5",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "card surface",
+        "compositeRole": "composite.surface.card",
+        "confidence": 0.84,
+        "designSpecIdentity": "app/UI Design Inference#LaunchHealthCard|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:trustworthy progress card with balanced confidence and caution",
+        "inputHash": "c2bc5cef6ff77a8beee97a11fde6bd85085e30e29b31b30961888200090d88b5",
+        "model": "deterministic-local",
+        "rationale": "Matched design spec and declaration identity.",
+        "sourceIdentity": "app/UI Design Inference#LaunchHealthCard"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "backgroundColor": "#111827",
+              "borderColor": "#334155"
+            }
+          }
+        },
+        "baseStyle": {
+          "backgroundColor": "#ffffff",
+          "borderColor": "#e2e8f0",
+          "borderRadius": 8,
+          "borderWidth": 1
+        },
+        "compositeRole": "composite.surface.card",
+        "styleKey": "style.app.ui.design.inference.launchhealthcard"
+      },
+      "semantic": {
+        "compositeRole": "composite.surface.card",
+        "confidence": 0.84,
+        "description": "trustworthy progress card with balanced confidence and caution",
+        "designSpecIdentity": "app/UI Design Inference#LaunchHealthCard|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:trustworthy progress card with balanced confidence and caution",
+        "rationale": "Matched design spec and declaration identity.",
+        "role": "card surface",
+        "sourceIdentity": "app/UI Design Inference#LaunchHealthCard"
+      },
+      "status": "accepted"
+    },
+    "app/UI Design Inference#LaunchReadinessDashboard": {
+      "identity": "app/UI Design Inference#LaunchReadinessDashboard",
+      "inputHash": "1c5e16ee8b5af0f4c1ee0152313d0a9d38c5c67132384314465caa58899e0d16",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "plain surface",
+        "compositeRole": "composite.surface.plain",
+        "confidence": 0.66,
+        "designSpecIdentity": "app/UI Design Inference#LaunchReadinessDashboard|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:information-dense but calm dashboard screen",
+        "inputHash": "1c5e16ee8b5af0f4c1ee0152313d0a9d38c5c67132384314465caa58899e0d16",
+        "model": "deterministic-local",
+        "rationale": "Used conservative plain-surface role for LaunchReadinessDashboard.",
+        "sourceIdentity": "app/UI Design Inference#LaunchReadinessDashboard"
+      },
+      "resolved": {
+        "baseStyle": {},
+        "compositeRole": "composite.surface.plain",
+        "styleKey": "style.app.ui.design.inference.launchreadinessdashboard"
+      },
+      "semantic": {
+        "compositeRole": "composite.surface.plain",
+        "confidence": 0.66,
+        "description": "information-dense but calm dashboard screen",
+        "designSpecIdentity": "app/UI Design Inference#LaunchReadinessDashboard|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:information-dense but calm dashboard screen",
+        "rationale": "Used conservative plain-surface role for LaunchReadinessDashboard.",
+        "role": "plain surface",
+        "sourceIdentity": "app/UI Design Inference#LaunchReadinessDashboard"
+      },
+      "status": "accepted"
+    },
+    "app/UI Design Inference#MetricNumber": {
+      "identity": "app/UI Design Inference#MetricNumber",
+      "inputHash": "7796693268146e5659b4c011e6ab199d65fc9fb8f314648d57567a6a96c8def3",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "metric text",
+        "compositeRole": "composite.text.metric",
+        "confidence": 0.84,
+        "designSpecIdentity": "app/UI Design Inference#MetricNumber|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:large scannable metric value",
+        "inputHash": "7796693268146e5659b4c011e6ab199d65fc9fb8f314648d57567a6a96c8def3",
+        "model": "deterministic-local",
+        "rationale": "Matched design spec and declaration identity.",
+        "sourceIdentity": "app/UI Design Inference#MetricNumber"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "color": "#f8fafc"
+            }
+          }
+        },
+        "baseStyle": {
+          "color": "#264673",
+          "fontSize": 28,
+          "fontWeight": "700"
+        },
+        "compositeRole": "composite.text.metric",
+        "styleKey": "style.app.ui.design.inference.metricnumber"
+      },
+      "semantic": {
+        "compositeRole": "composite.text.metric",
+        "confidence": 0.84,
+        "description": "large scannable metric value",
+        "designSpecIdentity": "app/UI Design Inference#MetricNumber|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:large scannable metric value",
+        "rationale": "Matched design spec and declaration identity.",
+        "role": "metric text",
+        "sourceIdentity": "app/UI Design Inference#MetricNumber"
+      },
+      "status": "accepted"
+    },
+    "app/UI Design Inference#MetricTile": {
+      "identity": "app/UI Design Inference#MetricTile",
+      "inputHash": "26a067afdf558c98a65c3d98796ca5a004f9733abc38b2e8e98d93b49cad039c",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "metric text",
+        "compositeRole": "composite.text.metric",
+        "confidence": 0.84,
+        "designSpecIdentity": "app/UI Design Inference#MetricTile|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:small metric card with clear hierarchy",
+        "inputHash": "26a067afdf558c98a65c3d98796ca5a004f9733abc38b2e8e98d93b49cad039c",
+        "model": "deterministic-local",
+        "rationale": "Matched design spec and declaration identity.",
+        "sourceIdentity": "app/UI Design Inference#MetricTile"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "color": "#f8fafc"
+            }
+          }
+        },
+        "baseStyle": {
+          "color": "#262e73",
+          "fontSize": 28,
+          "fontWeight": "700"
+        },
+        "compositeRole": "composite.text.metric",
+        "styleKey": "style.app.ui.design.inference.metrictile"
+      },
+      "semantic": {
+        "compositeRole": "composite.text.metric",
+        "confidence": 0.84,
+        "description": "small metric card with clear hierarchy",
+        "designSpecIdentity": "app/UI Design Inference#MetricTile|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:small metric card with clear hierarchy",
+        "rationale": "Matched design spec and declaration identity.",
+        "role": "metric text",
+        "sourceIdentity": "app/UI Design Inference#MetricTile"
+      },
+      "status": "accepted"
+    },
+    "app/UI Design Inference#MutedCopy": {
+      "identity": "app/UI Design Inference#MutedCopy",
+      "inputHash": "3414bf94f308bae8eec34df33c4c0ff4508fafd2702b2414546fd3b3d3edb3ae",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "secondary action",
+        "compositeRole": "composite.action.secondary",
+        "confidence": 0.84,
+        "designSpecIdentity": "app/UI Design Inference#MutedCopy|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:lower-emphasis supporting copy",
+        "inputHash": "3414bf94f308bae8eec34df33c4c0ff4508fafd2702b2414546fd3b3d3edb3ae",
+        "model": "deterministic-local",
+        "rationale": "Matched design spec and declaration identity.",
+        "sourceIdentity": "app/UI Design Inference#MutedCopy"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "backgroundColor": "#1f2937",
+              "borderColor": "#475569",
+              "color": "#f8fafc"
+            }
+          }
+        },
+        "baseStyle": {
+          "backgroundColor": "#eef2f7",
+          "borderColor": "#cbd5e1",
+          "borderRadius": 8,
+          "borderWidth": 1,
+          "color": "#1f2937",
+          "paddingHorizontal": 12,
+          "paddingVertical": 8
+        },
+        "compositeRole": "composite.action.secondary",
+        "states": {
+          "disabled": {
+            "opacity": 0.45
+          },
+          "focused": {
+            "borderWidth": 2
+          },
+          "pressed": {
+            "opacity": 0.82
+          },
+          "selected": {
+            "borderWidth": 2
+          }
+        },
+        "styleKey": "style.app.ui.design.inference.mutedcopy"
+      },
+      "semantic": {
+        "compositeRole": "composite.action.secondary",
+        "confidence": 0.84,
+        "description": "lower-emphasis supporting copy",
+        "designSpecIdentity": "app/UI Design Inference#MutedCopy|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:lower-emphasis supporting copy",
+        "rationale": "Matched design spec and declaration identity.",
+        "role": "secondary action",
+        "sourceIdentity": "app/UI Design Inference#MutedCopy"
+      },
+      "status": "accepted"
+    },
+    "app/UI Design Inference#NoteCopy": {
+      "identity": "app/UI Design Inference#NoteCopy",
+      "inputHash": "d8718cdc9a03ef432f714055b0469c5e6f43f74c6abc654bad3faccf0bc041d7",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "body text",
+        "compositeRole": "composite.text.body",
+        "confidence": 0.84,
+        "designSpecIdentity": "app/UI Design Inference#NoteCopy|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:readable paragraph copy for operational context",
+        "inputHash": "d8718cdc9a03ef432f714055b0469c5e6f43f74c6abc654bad3faccf0bc041d7",
+        "model": "deterministic-local",
+        "rationale": "Matched design spec and declaration identity.",
+        "sourceIdentity": "app/UI Design Inference#NoteCopy"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "color": "#f8fafc"
+            }
+          }
+        },
+        "baseStyle": {
+          "color": "#1f2937",
+          "fontSize": 16
+        },
+        "compositeRole": "composite.text.body",
+        "styleKey": "style.app.ui.design.inference.notecopy"
+      },
+      "semantic": {
+        "compositeRole": "composite.text.body",
+        "confidence": 0.84,
+        "description": "readable paragraph copy for operational context",
+        "designSpecIdentity": "app/UI Design Inference#NoteCopy|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:readable paragraph copy for operational context",
+        "rationale": "Matched design spec and declaration identity.",
+        "role": "body text",
+        "sourceIdentity": "app/UI Design Inference#NoteCopy"
+      },
+      "status": "accepted"
+    },
+    "app/UI Design Inference#PrimaryAction": {
+      "identity": "app/UI Design Inference#PrimaryAction",
+      "inputHash": "03fd854f77e302f05c553ff007e5422f1b59fb257cbedb9ad7f5f6834576ff35",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "primary action",
+        "compositeRole": "composite.action.primary",
+        "confidence": 0.84,
+        "designSpecIdentity": "app/UI Design Inference#PrimaryAction|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:most important positive action on a screen",
+        "inputHash": "03fd854f77e302f05c553ff007e5422f1b59fb257cbedb9ad7f5f6834576ff35",
+        "model": "deterministic-local",
+        "rationale": "Matched design spec and declaration identity.",
+        "sourceIdentity": "app/UI Design Inference#PrimaryAction"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "backgroundColor": "#40c9a9",
+              "borderColor": "#40c9a9",
+              "color": "#ffffff"
+            }
+          }
+        },
+        "baseStyle": {
+          "backgroundColor": "#259d81",
+          "borderColor": "#259d81",
+          "borderRadius": 8,
+          "borderWidth": 1,
+          "color": "#ffffff",
+          "paddingHorizontal": 12,
+          "paddingVertical": 8
+        },
+        "compositeRole": "composite.action.primary",
+        "states": {
+          "disabled": {
+            "opacity": 0.45
+          },
+          "focused": {
+            "borderWidth": 2
+          },
+          "pressed": {
+            "opacity": 0.82
+          },
+          "selected": {
+            "borderWidth": 2
+          }
+        },
+        "styleKey": "style.app.ui.design.inference.primaryaction"
+      },
+      "semantic": {
+        "compositeRole": "composite.action.primary",
+        "confidence": 0.84,
+        "description": "most important positive action on a screen",
+        "designSpecIdentity": "app/UI Design Inference#PrimaryAction|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:most important positive action on a screen",
+        "rationale": "Matched design spec and declaration identity.",
+        "role": "primary action",
+        "sourceIdentity": "app/UI Design Inference#PrimaryAction"
+      },
+      "status": "accepted"
+    },
+    "app/UI Design Inference#ReviewAction": {
+      "identity": "app/UI Design Inference#ReviewAction",
+      "inputHash": "1a7da20e9262e41e1bf283c177df4182ebe24607344b4a3094a96500bd04fb14",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "secondary action",
+        "compositeRole": "composite.action.secondary",
+        "confidence": 0.84,
+        "designSpecIdentity": "app/UI Design Inference#ReviewAction|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:open an item for careful review",
+        "inputHash": "1a7da20e9262e41e1bf283c177df4182ebe24607344b4a3094a96500bd04fb14",
+        "model": "deterministic-local",
+        "rationale": "Matched design spec and declaration identity.",
+        "sourceIdentity": "app/UI Design Inference#ReviewAction"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "backgroundColor": "#1f2937",
+              "borderColor": "#475569",
+              "color": "#f8fafc"
+            }
+          }
+        },
+        "baseStyle": {
+          "backgroundColor": "#eef2f7",
+          "borderColor": "#cbd5e1",
+          "borderRadius": 8,
+          "borderWidth": 1,
+          "color": "#1f2937",
+          "paddingHorizontal": 12,
+          "paddingVertical": 8
+        },
+        "compositeRole": "composite.action.secondary",
+        "states": {
+          "disabled": {
+            "opacity": 0.45
+          },
+          "focused": {
+            "borderWidth": 2
+          },
+          "pressed": {
+            "opacity": 0.82
+          },
+          "selected": {
+            "borderWidth": 2
+          }
+        },
+        "styleKey": "style.app.ui.design.inference.reviewaction"
+      },
+      "semantic": {
+        "compositeRole": "composite.action.secondary",
+        "confidence": 0.84,
+        "description": "open an item for careful review",
+        "designSpecIdentity": "app/UI Design Inference#ReviewAction|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:open an item for careful review",
+        "rationale": "Matched design spec and declaration identity.",
+        "role": "secondary action",
+        "sourceIdentity": "app/UI Design Inference#ReviewAction"
+      },
+      "status": "accepted"
+    },
+    "app/UI Design Inference#RiskRow": {
+      "identity": "app/UI Design Inference#RiskRow",
+      "inputHash": "89592f9b08d111e59fb519fc68b20362546da7eabab95664c55e364498a7b913",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "warning action",
+        "compositeRole": "composite.action.warning",
+        "confidence": 0.84,
+        "designSpecIdentity": "app/UI Design Inference#RiskRow|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:compact risk row with readable severity",
+        "inputHash": "89592f9b08d111e59fb519fc68b20362546da7eabab95664c55e364498a7b913",
+        "model": "deterministic-local",
+        "rationale": "Matched design spec and declaration identity.",
+        "sourceIdentity": "app/UI Design Inference#RiskRow"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "backgroundColor": "#c540c9",
+              "borderColor": "#c540c9",
+              "color": "#ffffff"
+            }
+          }
+        },
+        "baseStyle": {
+          "backgroundColor": "#b54708",
+          "borderColor": "#b54708",
+          "borderRadius": 8,
+          "borderWidth": 1,
+          "color": "#ffffff",
+          "paddingHorizontal": 12,
+          "paddingVertical": 8
+        },
+        "compositeRole": "composite.action.warning",
+        "states": {
+          "disabled": {
+            "opacity": 0.45
+          },
+          "focused": {
+            "borderWidth": 2
+          },
+          "pressed": {
+            "opacity": 0.82
+          },
+          "selected": {
+            "borderWidth": 2
+          }
+        },
+        "styleKey": "style.app.ui.design.inference.riskrow"
+      },
+      "semantic": {
+        "compositeRole": "composite.action.warning",
+        "confidence": 0.84,
+        "description": "compact risk row with readable severity",
+        "designSpecIdentity": "app/UI Design Inference#RiskRow|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:compact risk row with readable severity",
+        "rationale": "Matched design spec and declaration identity.",
+        "role": "warning action",
+        "sourceIdentity": "app/UI Design Inference#RiskRow"
+      },
+      "status": "accepted"
+    },
+    "app/UI Design Inference#SecondaryAction": {
+      "identity": "app/UI Design Inference#SecondaryAction",
+      "inputHash": "f36d07cb456322838e6ce829d4c2dbbc43e8e6c61adf2a8ca7b78db8ab456e14",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "secondary action",
+        "compositeRole": "composite.action.secondary",
+        "confidence": 0.84,
+        "designSpecIdentity": "app/UI Design Inference#SecondaryAction|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:quiet supporting action",
+        "inputHash": "f36d07cb456322838e6ce829d4c2dbbc43e8e6c61adf2a8ca7b78db8ab456e14",
+        "model": "deterministic-local",
+        "rationale": "Matched design spec and declaration identity.",
+        "sourceIdentity": "app/UI Design Inference#SecondaryAction"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "backgroundColor": "#1f2937",
+              "borderColor": "#475569",
+              "color": "#f8fafc"
+            }
+          }
+        },
+        "baseStyle": {
+          "backgroundColor": "#eef2f7",
+          "borderColor": "#cbd5e1",
+          "borderRadius": 8,
+          "borderWidth": 1,
+          "color": "#1f2937",
+          "paddingHorizontal": 12,
+          "paddingVertical": 8
+        },
+        "compositeRole": "composite.action.secondary",
+        "states": {
+          "disabled": {
+            "opacity": 0.45
+          },
+          "focused": {
+            "borderWidth": 2
+          },
+          "pressed": {
+            "opacity": 0.82
+          },
+          "selected": {
+            "borderWidth": 2
+          }
+        },
+        "styleKey": "style.app.ui.design.inference.secondaryaction"
+      },
+      "semantic": {
+        "compositeRole": "composite.action.secondary",
+        "confidence": 0.84,
+        "description": "quiet supporting action",
+        "designSpecIdentity": "app/UI Design Inference#SecondaryAction|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:quiet supporting action",
+        "rationale": "Matched design spec and declaration identity.",
+        "role": "secondary action",
+        "sourceIdentity": "app/UI Design Inference#SecondaryAction"
+      },
+      "status": "accepted"
+    },
+    "app/UI Design Inference#SectionDivider": {
+      "identity": "app/UI Design Inference#SectionDivider",
+      "inputHash": "f708c6121242bc9288f97e900e18600dc0ae4841a3df701445ce72e654b9302c",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "plain surface",
+        "compositeRole": "composite.surface.plain",
+        "confidence": 0.48,
+        "designSpecIdentity": "app/UI Design Inference#SectionDivider|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:",
+        "inputHash": "f708c6121242bc9288f97e900e18600dc0ae4841a3df701445ce72e654b9302c",
+        "model": "deterministic-local",
+        "rationale": "Used conservative plain-surface role for SectionDivider.",
+        "sourceIdentity": "app/UI Design Inference#SectionDivider"
+      },
+      "resolved": {
+        "baseStyle": {},
+        "compositeRole": "composite.surface.plain",
+        "styleKey": "style.app.ui.design.inference.sectiondivider"
+      },
+      "semantic": {
+        "compositeRole": "composite.surface.plain",
+        "confidence": 0.48,
+        "description": "",
+        "designSpecIdentity": "app/UI Design Inference#SectionDivider|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:",
+        "rationale": "Used conservative plain-surface role for SectionDivider.",
+        "role": "plain surface",
+        "sourceIdentity": "app/UI Design Inference#SectionDivider"
+      },
+      "status": "accepted"
+    },
+    "app/UI Design Inference#StatusPill": {
+      "identity": "app/UI Design Inference#StatusPill",
+      "inputHash": "5703620e956df5765cbbe4e71ee9cab2895ad3662ef1935e979450c1eb103377",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "supporting text",
+        "compositeRole": "composite.text.supporting",
+        "confidence": 0.84,
+        "designSpecIdentity": "app/UI Design Inference#StatusPill|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:compact status badge",
+        "inputHash": "5703620e956df5765cbbe4e71ee9cab2895ad3662ef1935e979450c1eb103377",
+        "model": "deterministic-local",
+        "rationale": "Matched design spec and declaration identity.",
+        "sourceIdentity": "app/UI Design Inference#StatusPill"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "color": "#cbd5e1"
+            }
+          }
+        },
+        "baseStyle": {
+          "color": "#64748b",
+          "fontSize": 13,
+          "fontWeight": "500"
+        },
+        "compositeRole": "composite.text.supporting",
+        "styleKey": "style.app.ui.design.inference.statuspill"
+      },
+      "semantic": {
+        "compositeRole": "composite.text.supporting",
+        "confidence": 0.84,
+        "description": "compact status badge",
+        "designSpecIdentity": "app/UI Design Inference#StatusPill|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:compact status badge",
+        "rationale": "Matched design spec and declaration identity.",
+        "role": "supporting text",
+        "sourceIdentity": "app/UI Design Inference#StatusPill"
+      },
+      "status": "accepted"
+    },
+    "app/UI Design Inference#SummaryStrip": {
+      "identity": "app/UI Design Inference#SummaryStrip",
+      "inputHash": "1c76122372cbfa2ab8dd90fc3672a65ac36a00b0b2bf527cae702c800d5bdf97",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "metric text",
+        "compositeRole": "composite.text.metric",
+        "confidence": 0.84,
+        "designSpecIdentity": "app/UI Design Inference#SummaryStrip|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:three compact metrics that scan well on phones and tablets",
+        "inputHash": "1c76122372cbfa2ab8dd90fc3672a65ac36a00b0b2bf527cae702c800d5bdf97",
+        "model": "deterministic-local",
+        "rationale": "Matched design spec and declaration identity.",
+        "sourceIdentity": "app/UI Design Inference#SummaryStrip"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "color": "#f8fafc"
+            }
+          }
+        },
+        "baseStyle": {
+          "color": "#733b26",
+          "fontSize": 28,
+          "fontWeight": "700"
+        },
+        "compositeRole": "composite.text.metric",
+        "styleKey": "style.app.ui.design.inference.summarystrip"
+      },
+      "semantic": {
+        "compositeRole": "composite.text.metric",
+        "confidence": 0.84,
+        "description": "three compact metrics that scan well on phones and tablets",
+        "designSpecIdentity": "app/UI Design Inference#SummaryStrip|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:three compact metrics that scan well on phones and tablets",
+        "rationale": "Matched design spec and declaration identity.",
+        "role": "metric text",
+        "sourceIdentity": "app/UI Design Inference#SummaryStrip"
+      },
+      "status": "accepted"
+    },
+    "app/UI Design Inference#TaskRow": {
+      "identity": "app/UI Design Inference#TaskRow",
+      "inputHash": "fcb89ff57feca3550c6759f0e38e90adf6621093e9adf8377c3682ab2be59c8e",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "plain surface",
+        "compositeRole": "composite.surface.plain",
+        "confidence": 0.66,
+        "designSpecIdentity": "app/UI Design Inference#TaskRow|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:dense work item row with owner and state",
+        "inputHash": "fcb89ff57feca3550c6759f0e38e90adf6621093e9adf8377c3682ab2be59c8e",
+        "model": "deterministic-local",
+        "rationale": "Used conservative plain-surface role for TaskRow.",
+        "sourceIdentity": "app/UI Design Inference#TaskRow"
+      },
+      "resolved": {
+        "baseStyle": {},
+        "compositeRole": "composite.surface.plain",
+        "styleKey": "style.app.ui.design.inference.taskrow"
+      },
+      "semantic": {
+        "compositeRole": "composite.surface.plain",
+        "confidence": 0.66,
+        "description": "dense work item row with owner and state",
+        "designSpecIdentity": "app/UI Design Inference#TaskRow|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:dense work item row with owner and state",
+        "rationale": "Used conservative plain-surface role for TaskRow.",
+        "role": "plain surface",
+        "sourceIdentity": "app/UI Design Inference#TaskRow"
+      },
+      "status": "accepted"
+    },
+    "app/UI Design Inference#WarningAction": {
+      "identity": "app/UI Design Inference#WarningAction",
+      "inputHash": "5609bafb0778d5c31012a623fa51a6ee6b065f9b16284b8762082adc0d3abb91",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "warning action",
+        "compositeRole": "composite.action.warning",
+        "confidence": 0.84,
+        "designSpecIdentity": "app/UI Design Inference#WarningAction|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:attention action for unresolved risk",
+        "inputHash": "5609bafb0778d5c31012a623fa51a6ee6b065f9b16284b8762082adc0d3abb91",
+        "model": "deterministic-local",
+        "rationale": "Matched design spec and declaration identity.",
+        "sourceIdentity": "app/UI Design Inference#WarningAction"
+      },
+      "resolved": {
+        "adaptations": {
+          "colorScheme": {
+            "dark": {
+              "backgroundColor": "#40a7c9",
+              "borderColor": "#40a7c9",
+              "color": "#ffffff"
+            }
+          }
+        },
+        "baseStyle": {
+          "backgroundColor": "#b54708",
+          "borderColor": "#b54708",
+          "borderRadius": 8,
+          "borderWidth": 1,
+          "color": "#ffffff",
+          "paddingHorizontal": 12,
+          "paddingVertical": 8
+        },
+        "compositeRole": "composite.action.warning",
+        "states": {
+          "disabled": {
+            "opacity": 0.45
+          },
+          "focused": {
+            "borderWidth": 2
+          },
+          "pressed": {
+            "opacity": 0.82
+          },
+          "selected": {
+            "borderWidth": 2
+          }
+        },
+        "styleKey": "style.app.ui.design.inference.warningaction"
+      },
+      "semantic": {
+        "compositeRole": "composite.action.warning",
+        "confidence": 0.84,
+        "description": "attention action for unresolved risk",
+        "designSpecIdentity": "app/UI Design Inference#WarningAction|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:attention action for unresolved risk",
+        "rationale": "Matched design spec and declaration identity.",
+        "role": "warning action",
+        "sourceIdentity": "app/UI Design Inference#WarningAction"
+      },
+      "status": "accepted"
+    },
+    "app/UI Design Inference#WarningSurface": {
+      "identity": "app/UI Design Inference#WarningSurface",
+      "inputHash": "db9640692b21faf356cea8af976e1ff202b11ec9d66873cfe05de4578ef2db11",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "structural layout",
+        "compositeRole": "composite.layout.structural",
+        "confidence": 0.72,
+        "designSpecIdentity": "app/UI Design Inference#WarningSurface|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:surface for urgent blockers and risks",
+        "inputHash": "db9640692b21faf356cea8af976e1ff202b11ec9d66873cfe05de4578ef2db11",
+        "model": "deterministic-local",
+        "rationale": "Mapped Box to structural layout role.",
+        "sourceIdentity": "app/UI Design Inference#WarningSurface"
+      },
+      "resolved": {
+        "baseStyle": {},
+        "compositeRole": "composite.layout.structural",
+        "styleKey": "style.app.ui.design.inference.warningsurface"
+      },
+      "semantic": {
+        "compositeRole": "composite.layout.structural",
+        "confidence": 0.72,
+        "description": "surface for urgent blockers and risks",
+        "designSpecIdentity": "app/UI Design Inference#WarningSurface|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:surface for urgent blockers and risks",
+        "rationale": "Mapped Box to structural layout role.",
+        "role": "structural layout",
+        "sourceIdentity": "app/UI Design Inference#WarningSurface"
+      },
+      "status": "accepted"
+    },
+    "app/UI Design Inference#WorkQueue": {
+      "identity": "app/UI Design Inference#WorkQueue",
+      "inputHash": "71a902adb3157c217dbc2c5d6ddeac284876474a2b32064bf9d80c6974c3f19f",
+      "provenance": {
+        "analyzerVersion": "deterministic-local-v1",
+        "chosenRole": "plain surface",
+        "compositeRole": "composite.surface.plain",
+        "confidence": 0.48,
+        "designSpecIdentity": "app/UI Design Inference#WorkQueue|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:",
+        "inputHash": "71a902adb3157c217dbc2c5d6ddeac284876474a2b32064bf9d80c6974c3f19f",
+        "model": "deterministic-local",
+        "rationale": "Used conservative plain-surface role for WorkQueue.",
+        "sourceIdentity": "app/UI Design Inference#WorkQueue"
+      },
+      "resolved": {
+        "baseStyle": {},
+        "compositeRole": "composite.surface.plain",
+        "styleKey": "style.app.ui.design.inference.workqueue"
+      },
+      "semantic": {
+        "compositeRole": "composite.surface.plain",
+        "confidence": 0.48,
+        "description": "",
+        "designSpecIdentity": "app/UI Design Inference#WorkQueue|app:calm launch operations dashboard for teams reviewing readiness, blockers, and next actions|spec:",
+        "rationale": "Used conservative plain-surface role for WorkQueue.",
+        "role": "plain surface",
+        "sourceIdentity": "app/UI Design Inference#WorkQueue"
+      },
+      "status": "accepted"
+    }
+  },
+  "generatedAt": "1970-01-01T00:00:00.000Z",
+  "schemaVersion": 1
+}

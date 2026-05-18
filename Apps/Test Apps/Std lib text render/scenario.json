@@ -1,3 +1,7 @@
 {
-  "steps": [{ "assertVisibleText": "Hello from std lib" }]
+  "steps": [
+    { "assertVisibleText": "Hello from std lib" },
+    { "assertVisibleText": "STD-LIB-LABEL" },
+    { "assertVisibleText": "Chip one" }
+  ]
 }

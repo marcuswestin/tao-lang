@@ -11,7 +11,7 @@ describe('validation — app provider:', () => {
         provider InstantDB { appId "test" }
         ui Root
       }
-      view Root { }
+      ui Root { render inject \`\`\`ts return null \`\`\` }
     `)
     expectHumanMessagesContain(report, validationMessages.duplicateAppProvider)
   })
@@ -22,7 +22,7 @@ describe('validation — app provider:', () => {
         provider AcmeDb { url "x" }
         ui Root
       }
-      view Root { }
+      ui Root { render inject \`\`\`ts return null \`\`\` }
     `)
     expectHumanMessagesContain(report, validationMessages.unknownAppDataProvider('AcmeDb'))
   })
@@ -122,7 +122,7 @@ describe('validation — data schema:', () => {
         People Person { Name text }
       }
       app MyApp { ui MyView }
-      view MyView { }
+      ui MyView { render inject \`\`\`ts return null \`\`\` }
     `)
   })
 
@@ -159,12 +159,16 @@ describe('validation — for / create:', () => {
         Items Item { N text }
       }
       query D.Items as Rows { N }
-      view V {
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
         create D.Item { N "x" }
       }
       app A { ui V }
     `)
-    expectHumanMessagesContain(report, 'Only view/alias/state/action/inject statements are allowed in a view body.')
+    expectHumanMessagesContain(
+      report,
+      'Only ui/frame/layout/alias/state/action/inject statements are allowed in a UI body.',
+    )
   })
 
   test('for in action body fails', async () => {
@@ -177,7 +181,7 @@ describe('validation — for / create:', () => {
         for I in Rows { }
       }
       app A { ui V }
-      view V { Text "x" }
+      ui V { render Text "x" }
     `)
     expectHumanMessagesContain(
       report,
@@ -192,7 +196,8 @@ describe('validation — for / create:', () => {
       }
       query D.Item as One { id = "item-1", N }
       app A { ui V }
-      view V {
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
         for X in One { Text "x" }
       }
     `)
@@ -206,7 +211,8 @@ describe('validation — for / create:', () => {
       }
       query D.Items as Rows { N }
       app A { ui V }
-      view V {
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
         for X in Rows {
           query D.Items as Inner { N }
           Text "x"
@@ -223,7 +229,8 @@ describe('validation — for / create:', () => {
       }
       query D.Items as Rows { N }
       app A { ui V }
-      view V {
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
         for X in Rows {
           guard { Text "loading" }
           Text "x"
@@ -242,7 +249,7 @@ describe('validation — for / create:', () => {
         create D.Item { Unknown "a" }
       }
       app A { ui V }
-      view V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
     expectHumanMessagesContain(report, forCreateMessages.createUnknownField('Unknown'))
   })
@@ -255,7 +262,7 @@ describe('validation — for / create:', () => {
         \`\`\`
       }
       app A { ui V }
-      view V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
     expectHumanMessagesContain(report, validationMessages.legacyIDBInjection)
   })
@@ -274,7 +281,7 @@ describe('validation — selection-block data queries:', () => {
         Email = "ro@example.test",
       }
       app A { ui V }
-      view V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
   })
 
@@ -291,7 +298,7 @@ describe('validation — selection-block data queries:', () => {
         Name,
       }
       app A { ui V }
-      view V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
   })
 
@@ -307,7 +314,7 @@ describe('validation — selection-block data queries:', () => {
         id = "00000000-0000-0000-0000-000000000001",
       }
       app A { ui V }
-      view V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
   })
 
@@ -323,7 +330,7 @@ describe('validation — selection-block data queries:', () => {
         Name = "Ro",
       }
       app A { ui V }
-      view V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
     expectHumanMessagesContain(report, queryValidationMessages.queryOneNeedsUniqueWhere)
   })
@@ -338,7 +345,7 @@ describe('validation — selection-block data queries:', () => {
       }
       query D.Person as CurrentPerson
       app A { ui V }
-      view V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
     expectHumanMessagesContain(report, queryValidationMessages.queryOneNeedsUniqueWhere)
   })
@@ -355,7 +362,7 @@ describe('validation — selection-block data queries:', () => {
         Email != "ro@example.test",
       }
       app A { ui V }
-      view V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
     expectHumanMessagesContain(report, queryValidationMessages.queryOneNeedsUniqueWhere)
   })
@@ -370,7 +377,7 @@ describe('validation — selection-block data queries:', () => {
         Host.Name = "Ro",
       }
       app A { ui V }
-      view V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
     expectHumanMessagesContain(
       report,
@@ -391,7 +398,7 @@ describe('validation — selection-block data queries:', () => {
         },
       }
       app A { ui V }
-      view V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
   })
 
@@ -409,7 +416,7 @@ describe('validation — selection-block data queries:', () => {
         Tasks,
       }
       app A { ui V }
-      view V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
   })
 
@@ -427,7 +434,7 @@ describe('validation — selection-block data queries:', () => {
         Tasks,
       }
       app A { ui V }
-      view V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
     expectHumanMessagesContain(report, queryValidationMessages.queryDuplicateProjection('Tasks'))
   })
@@ -445,7 +452,7 @@ describe('validation — selection-block data queries:', () => {
         Email,
       }
       app A { ui V }
-      view V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
     expectHumanMessagesContain(report, queryValidationMessages.queryDuplicateProjection('Email'))
   })
@@ -460,7 +467,7 @@ describe('validation — selection-block data queries:', () => {
       }
       query D.Tasks
       app A { ui V }
-      view V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
   })
 
@@ -476,7 +483,7 @@ describe('validation — selection-block data queries:', () => {
         Host = CurrentUser,
       }
       app A { ui V }
-      view V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
   })
 })

@@ -44,7 +44,7 @@ describe('rewriteBundleMapSources', () => {
     const fixture = setupGenFixture({
       prefix: 'tao-map-rewrite-',
       name: 'Kitchen',
-      taoText: 'app Kitchen { view Root { } }',
+      taoText: 'app Kitchen { ui Root { } }',
       compilerMappings: 'AAAA',
     })
     tmp = fixture.tmp

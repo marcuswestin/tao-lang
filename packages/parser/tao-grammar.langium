@@ -3,7 +3,7 @@ grammar TaoLang
 entry TaoFile:
     statements += Statement*;
 
-Statement: Declaration | ModuleDeclaration | UseStatement | Debugger | Injection | ViewRender | ActionRender | StateUpdate
+Statement: Declaration | ModuleDeclaration | UseStatement | Debugger | Injection | RenderStatement | ViewRender | ChildrenSplice | ActionRender | StateUpdate
     | QueryDeclaration | GuardStatement | ForStatement | CreateStatement;
 
 
@@ -11,26 +11,26 @@ Statement: Declaration | ModuleDeclaration | UseStatement | Debugger | Injection
 // Shared Types
 ///////////////
 
-type Referenceable = Declaration | ParameterDeclaration | QueryDeclaration | ForStatement;
+type Referenceable = Declaration | VariantDeclaration | ParameterDeclaration | QueryDeclaration | ForStatement;
 
-type ScopeRelevantNode = UseStatement | Declaration | AppDeclaration | ParameterDeclaration | DataEntityDeclaration | DataTypeDeclaration | QueryDeclaration | ForStatement;
+type ScopeRelevantNode = UseStatement | Declaration | VariantDeclaration | AppDeclaration | ParameterDeclaration | DataEntityDeclaration | DataTypeDeclaration | QueryDeclaration | ForStatement;
 
 // ViewFragmentStatement groups view-ordered body items handled by `viewFragmentStatement` codegen (exhaustive switch); not every `Statement` is a fragment statement.
-type ViewFragmentStatement = ViewRender | Injection | ForStatement | Debugger | QueryDeclaration | GuardStatement | Declaration;
-type ViewStatement = ViewRender | Injection | AssignmentDeclaration | BlockDeclaration | Debugger | QueryDeclaration | GuardStatement | ForStatement;
+type ViewFragmentStatement = RenderStatement | ViewRender | ChildrenSplice | Injection | ForStatement | Debugger | QueryDeclaration | GuardStatement | Declaration;
+type ViewStatement = RenderStatement | ViewRender | ChildrenSplice | Injection | AssignmentDeclaration | BlockDeclaration | Debugger | QueryDeclaration | GuardStatement | ForStatement;
 type TopLevelStatement = Declaration | UseStatement | Injection | Debugger | QueryDeclaration;
 type ActionStatement = StateUpdate | Injection | Debugger | AssignmentDeclaration | BlockDeclaration | ActionRender | CreateStatement;
 
 // ArgumentListHost groups the call-site nodes that own an `ArgumentList`. Generic argument-binding logic
 // (see `tao-argument-bindings.ts`) keys off this union, so adding a new host kind (e.g. function calls)
 // only requires extending this type and the resolver's callee dispatch.
-type ArgumentListHost = ViewRender | ActionRender;
+type ArgumentListHost = RenderStatement | ViewRender | ActionRender;
 
 // Shared Statements
 ////////////////////
 
 RuntimeDeclaration: AppDeclaration | AssignmentDeclaration | BlockDeclaration;
-Declaration: RuntimeDeclaration | TypeDeclaration | DataDeclaration;
+Declaration: RuntimeDeclaration | VariantDeclaration | TypeDeclaration | DataDeclaration;
 
 PrimitiveType returns string: 'text' | 'number' | 'boolean' | 'action' | 'view';
 
@@ -87,7 +87,13 @@ AppDeclaration:
     type='app' name=ID '{' appStatements += AppStatement* '}';
 
 AppStatement:
-    AppUiStatement | AppProviderStatement | OnStatement;
+    AppUiStatement | AppProviderStatement | AppDesignBlock | OnStatement;
+
+AppDesignBlock:
+    'design' '{' description=AppDesignDescription '}';
+
+AppDesignDescription:
+    'description' value=StringTemplateExpression;
 
 AppUiStatement:
     'ui' ui=[Referenceable:ID];
@@ -178,16 +184,45 @@ ModuleDeclaration:
 
 BlockDeclaration: ViewDeclaration | ActionDeclaration;
 
-ViewDeclaration: type='view' name=ID parameterList=ParameterList? block=Block;
+ViewDeclaration: type=ViewDeclarationKind name=ID parameterList=ParameterList? designSpec=DesignSpec? layoutClause=LayoutClause? block=Block;
+ViewDeclarationKind returns string: 'ui' | 'frame' | 'layout';
 ActionDeclaration: type='action' name=ID parameterList=ParameterList? block=Block;
+VariantDeclaration: 'variant' name=ID '=' target=[Referenceable:ID] designSpec=DesignSpec?;
+DesignSpec: '<' description=StringTemplateExpression '>';
 
 
 // View-only statements
 ///////////////////////
 
+RenderStatement:
+    'render' (injection=Injection | view=[Declaration:ID] argumentList=ArgumentList? layoutClause=LayoutClause? block=Block?);
+
 ViewRender:
-    view=[Declaration:ID] argumentList=ArgumentList? block=Block?;
-type RenderNode = ViewRender | Injection;
+    view=[Declaration:ID] argumentList=ArgumentList? layoutClause=LayoutClause? block=Block?;
+ChildrenSplice:
+    type='@@children';
+type RenderNode = RenderStatement | ViewRender | ChildrenSplice | Injection;
+
+// View Layout specs
+////////////////////
+
+LayoutClause:
+    '[' (entries+=LayoutEntry (',' entries+=LayoutEntry)* )? ','? ']';
+
+LayoutEntry:
+    terms+=LayoutTerm+;
+
+LayoutTerm:
+    LayoutWord | LayoutPercentLiteral | LayoutNumberLiteral;
+
+LayoutWord:
+    value=ID | value=('spread-inset' | 'spread-balanced');
+
+LayoutNumberLiteral:
+    negative?='-'? value=NUMBER;
+
+LayoutPercentLiteral:
+    negative?='-'? value=NUMBER '%';
 
 // Action-only statements
 /////////////////////////

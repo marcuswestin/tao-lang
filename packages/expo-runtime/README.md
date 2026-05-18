@@ -13,6 +13,7 @@ All Tao apps run in Expo, but the host platform differs:
 
 When building runtime-dependent behavior:
 
+- Treat React Native/Expo as the authority for all UI runtime behavior: layout, styling, transforms, animation, gestures, accessibility, navigation, media, and platform APIs.
 - Keep compiler output and `@tao/tao-runtime` helpers platform-neutral by default.
 - Put platform branching in the Expo/runtime layer or a clearly named runtime helper, not inline throughout generated Tao app code.
 - Treat React Native APIs as the common surface only after checking their web behavior under `react-native-web`.

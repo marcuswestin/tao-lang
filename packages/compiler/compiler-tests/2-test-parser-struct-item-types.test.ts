@@ -4,7 +4,7 @@ describe('struct/item types', () => {
   test('parses `type Person is { Name text, Age number }` flat struct declaration', async () => {
     const doc = await parseAST(`
       type Person is { Name text, Age number }
-      view V { }
+      ui V { }
     `)
     const decl = doc.statements.first.as_TypeDeclaration
     decl.expect('name').toBe('Person')
@@ -17,7 +17,7 @@ describe('struct/item types', () => {
   test('parses nested struct field declaration `Job { Title text }`', async () => {
     const doc = await parseAST(`
       type Person is { Name text, Job { Title text } }
-      view V { }
+      ui V { }
     `)
     doc.statements.first.as_TypeDeclaration.base.as_StructTypeExpression.fields[1].match({
       name: 'Job',
@@ -31,7 +31,7 @@ describe('struct/item types', () => {
   test('parses typed struct literal `Person { Name "Ro", Age 40 }`', async () => {
     const doc = await parseAST(`
       type Person is { Name text, Age number }
-      view V {
+      ui V {
         alias Ro = Person { Name "Ro", Age 40 }
       }
     `)
@@ -45,7 +45,7 @@ describe('struct/item types', () => {
   test('parses parameter typed by a declared struct type', async () => {
     const doc = await parseAST(`
       type Person is { Name text }
-      view Profile P Person { }
+      ui Profile P Person { }
     `)
     doc.statements.second.as_ViewDeclaration.parameterList.parameters[0].match({
       name: 'P',
@@ -56,7 +56,7 @@ describe('struct/item types', () => {
   test('parses nested type reference `Person.Job` in parameter position', async () => {
     const doc = await parseAST(`
       type Person is { Name text, Job { Title text } }
-      view ShowJob J Person.Job { }
+      ui ShowJob J Person.Job { }
     `)
     doc.statements.second.as_ViewDeclaration.parameterList.parameters[0].match({
       type: { ref: { $refText: 'Person' }, segments: ['Job'] },

@@ -20,6 +20,19 @@ export type ParseError = {
   readonly errorCount: () => number
 }
 
+/** parseErrorFromMessages creates a ParseError-compatible object for non-Langium compiler diagnostics. */
+export function parseErrorFromMessages(messages: readonly string[]): ParseError {
+  return {
+    diagnostics: messages.map(message => ({ message } as VSCode_Diagnostic)),
+    errorCount: () => messages.length,
+    getHumanErrorMessage: () => messages.join('\n'),
+    getHumanErrorMessages: () => [...messages],
+    hasError: () => messages.length > 0,
+    lexerErrors: [],
+    parserErrors: [],
+  }
+}
+
 // Error helpers
 ////////////////
 
