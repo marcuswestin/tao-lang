@@ -25,6 +25,18 @@ async function writeAndCompile(code: string): Promise<string> {
   return result.files.map(f => f.content).join('\n')
 }
 
+/** writeAndCompileWithStdLib compiles a snippet with the checked-in Tao standard library available. */
+async function writeAndCompileWithStdLib(code: string): Promise<string> {
+  const tmpDir = FS.mkTmpDir(FS.joinPath(FS.tmpdir(), 'tao-codegen-bindings-stdlib-'))
+  const filePath = FS.joinPath(tmpDir, 'app.tao')
+  FS.writeFile(filePath, code)
+  const result = await compileTao({ file: filePath, stdLibRoot: STD_LIB_ROOT })
+  if (!result.ok) {
+    throw new Error(`Compile failed:\n${formatParseErrorHumanMessages(result.errorReport)}`)
+  }
+  return result.files.map(f => f.content).join('\n')
+}
+
 describe('codegen — call-site argument bindings:', () => {
   test('ViewRender emits one JSX prop per parameter, keyed by parameter name', async () => {
     const out = await writeAndCompile(`
@@ -109,6 +121,20 @@ describe('codegen — call-site argument bindings:', () => {
     expect(out).toContain('TR.Layout.resolveMerged({ view: "Box"')
     expect(out).toContain('[["rigid"],["hug"],["pad",8]]')
     expect(out).toContain('_ViewProps._taoLayoutEntries ?? []')
+  })
+
+  test('standard WrappingRow emits width-fill and height-hug public defaults', async () => {
+    const out = await writeAndCompileWithStdLib(`
+      use WrappingRow, Text from @tao/ui
+      app A { ui V }
+      ui V {
+        render WrappingRow {
+          Text "chip"
+        }
+      }
+    `)
+    expect(out).toContain('TR.Layout.resolveMerged({ view: "WrappingRow"')
+    expect(out).toContain('[["compress"],["width","fill"],["height","hug"]]')
   })
 
   test('ActionRender invocation emits a props bag keyed by the resolved parameter names', async () => {

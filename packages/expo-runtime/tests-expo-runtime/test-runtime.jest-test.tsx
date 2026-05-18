@@ -45,11 +45,37 @@ describe('runtime:', () => {
       overflow: 'hidden',
     })
 
+    expect(Layout.resolve({ view: 'Stack', entries: [] })).toMatchObject({
+      alignItems: 'center',
+      justifyContent: 'flex-start',
+      overflow: 'hidden',
+    })
+
     expect(Layout.resolve({ view: 'Box', entries: [['items', 'center']] })).toMatchObject({
       alignItems: 'center',
       justifyContent: 'center',
       overflow: 'hidden',
     })
+
+    expect(Layout.resolve({ view: 'WrappingRow', entries: [] })).toMatchObject({
+      alignItems: 'baseline',
+      justifyContent: 'flex-start',
+      overflow: 'hidden',
+    })
+
+    const wrappingRowDefaults = Layout.resolve({
+      view: 'WrappingRow',
+      parentDirection: 'column',
+      entries: [['compress'], ['width', 'fill'], ['height', 'hug']],
+    })
+    expect(wrappingRowDefaults).toMatchObject({
+      alignItems: 'baseline',
+      alignSelf: 'stretch',
+      flexShrink: 1,
+      justifyContent: 'flex-start',
+      overflow: 'hidden',
+    })
+    expect(wrappingRowDefaults).not.toHaveProperty('flexGrow')
 
     expect(Layout.resolve({ view: 'Row', entries: [['pad', 10, 'horizontal', 4]] })).toMatchObject({
       paddingBottom: 10,
@@ -107,6 +133,69 @@ describe('runtime:', () => {
     expect(flattenStyle(screen.getByTestId('label').props.style)).toMatchObject({
       alignSelf: 'center',
       width: 120,
+    })
+  })
+
+  test('applies standard container host styles through std-lib views', () => {
+    const screen = render(
+      <TR.Views.Col testID="col">
+        <TR.Views.Stack testID="stack">
+          <TR.Views.Box testID="box">
+            <TR.Views.WrappingRow testID="wrapping-row">
+              <TR.Views.Text>Chip</TR.Views.Text>
+            </TR.Views.WrappingRow>
+          </TR.Views.Box>
+        </TR.Views.Stack>
+      </TR.Views.Col>,
+    )
+
+    expect(flattenStyle(screen.getByTestId('col').props.style)).toMatchObject({
+      flexDirection: 'column',
+    })
+    expect(flattenStyle(screen.getByTestId('stack').props.style)).toMatchObject({
+      flexDirection: 'column',
+    })
+    expect(flattenStyle(screen.getByTestId('box').props.style)).toMatchObject({
+      flexDirection: 'row',
+    })
+    expect(flattenStyle(screen.getByTestId('wrapping-row').props.style)).toMatchObject({
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+    })
+  })
+
+  test('applies Tao text pressure props through std-lib text variants', () => {
+    const screen = render(
+      <>
+        <TR.Views.Text testID="text">Single line</TR.Views.Text>
+        <TR.Views.TextLabel testID="text-label" _taoLayout={labelLayoutStyle}>Label</TR.Views.TextLabel>
+        <TR.Views.MultiLineText testID="multi-line">Unlimited lines</TR.Views.MultiLineText>
+        <TR.Views.MultiLineText testID="limited-multi-line" lines={3} _taoLayout={labelLayoutStyle}>
+          Limited lines
+        </TR.Views.MultiLineText>
+        <TR.Views.Number testID="number">42</TR.Views.Number>
+      </>,
+    )
+
+    expect(screen.getByTestId('text').props).toMatchObject({
+      ellipsizeMode: 'tail',
+      numberOfLines: 1,
+    })
+    expect(screen.getByTestId('text-label').props).toMatchObject({
+      ellipsizeMode: 'clip',
+      numberOfLines: 1,
+    })
+    expect(flattenStyle(screen.getByTestId('text-label').props.style)).toMatchObject(labelLayoutStyle)
+    expect(screen.getByTestId('multi-line').props.numberOfLines).toBeUndefined()
+    expect(screen.getByTestId('multi-line').props.ellipsizeMode).toBeUndefined()
+    expect(screen.getByTestId('limited-multi-line').props).toMatchObject({
+      ellipsizeMode: 'tail',
+      numberOfLines: 3,
+    })
+    expect(flattenStyle(screen.getByTestId('limited-multi-line').props.style)).toMatchObject(labelLayoutStyle)
+    expect(screen.getByTestId('number').props).toMatchObject({
+      ellipsizeMode: 'tail',
+      numberOfLines: 1,
     })
   })
 

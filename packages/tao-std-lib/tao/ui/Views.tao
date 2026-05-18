@@ -4,6 +4,12 @@ share frame Box {
   ```
 }
 
+share frame Stack {
+  render inject ```ts
+    return TR.Views.Stack(_ViewProps)
+  ```
+}
+
 share layout Col {
   render inject ```ts
     return TR.Views.Col(_ViewProps)
@@ -16,6 +22,12 @@ share layout Row {
   ```
 }
 
+share layout WrappingRow {
+  render inject ```ts
+    return TR.Views.WrappingRow(_ViewProps)
+  ```
+}
+
 share ui Text Value text {
   render inject ```ts
     const tao_text = _ViewProps.Value.evaluate()
@@ -23,10 +35,24 @@ share ui Text Value text {
   ```
 }
 
+share ui TextLabel Value text {
+  render inject ```ts
+    const tao_text = _ViewProps.Value.evaluate()
+    return TR.Views.TextLabel({ _taoLayout: _ViewProps._taoLayout, children: [tao_text.jsValue] })
+  ```
+}
+
+share ui MultiLineText Value text {
+  render inject ```ts
+    const tao_text = _ViewProps.Value.evaluate()
+    return TR.Views.MultiLineText({ _taoLayout: _ViewProps._taoLayout, children: [tao_text.jsValue] })
+  ```
+}
+
 share ui Number Value number {
   render inject ```ts
     const tao_number = _ViewProps.Value.evaluate()
-    return TR.Views.Text({ _taoLayout: _ViewProps._taoLayout, children: [String(tao_number.jsValue)] })
+    return TR.Views.Number({ _taoLayout: _ViewProps._taoLayout, children: [String(tao_number.jsValue)] })
   ```
 }
 

@@ -1056,7 +1056,7 @@ function isContainerLayoutEntry(entry: AST.LayoutEntry): boolean {
 
 function viewDeclarationPublicSelfEntryValues(decl: AST.ViewDeclaration): readonly (readonly (string | number)[])[] {
   return [
-    ...kindDefaultSelfEntryValues(decl.type),
+    ...kindDefaultSelfEntryValues(decl),
     ...((decl.layoutClause?.entries ?? []).filter(entry => !isContainerLayoutEntry(entry)).map(entry =>
       layoutEntryValues(entry)
     )),
@@ -1067,8 +1067,11 @@ function viewDeclarationContainerEntryValues(decl: AST.ViewDeclaration): readonl
   return (decl.layoutClause?.entries ?? []).filter(isContainerLayoutEntry).map(entry => layoutEntryValues(entry))
 }
 
-function kindDefaultSelfEntryValues(kind: AST.ViewDeclarationKind): readonly (readonly (string | number)[])[] {
-  if (kind === 'layout') {
+function kindDefaultSelfEntryValues(decl: AST.ViewDeclaration): readonly (readonly (string | number)[])[] {
+  if (decl.type === 'layout' && decl.name === 'WrappingRow') {
+    return [['compress'], ['width', 'fill'], ['height', 'hug']]
+  }
+  if (decl.type === 'layout') {
     return [['compress'], ['fill']]
   }
   return [['rigid'], ['hug']]

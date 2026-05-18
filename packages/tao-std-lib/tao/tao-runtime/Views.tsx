@@ -7,12 +7,22 @@ type TaoLayoutProp = {
   _taoLayout?: TaoResolvedLayoutStyle
 }
 
-export const Views = {
-  Text: View<RN.TextProps>('Text', RN.Text, [{ color: 'white', padding: 10 } as RN.TextStyle]),
+type TaoTextProps = RN.TextProps & TaoLayoutProp
+type TaoMultiLineTextProps = TaoTextProps & {
+  lines?: number
+}
 
-  Box: FlexView('Box', RN.View, {}),
+export const Views = {
+  Text: TextView('Text', { numberOfLines: 1, ellipsizeMode: 'tail' }),
+  TextLabel: TextView('TextLabel', { numberOfLines: 1, ellipsizeMode: 'clip' }),
+  MultiLineText: MultiLineTextView('MultiLineText'),
+  Number: TextView('Number', { numberOfLines: 1, ellipsizeMode: 'tail' }),
+
+  Box: FlexView('Box', RN.View, { flexDirection: 'row' }),
+  Stack: FlexView('Stack', RN.View, { flexDirection: 'column' }),
   Col: FlexView('Col', RN.View, { flexDirection: 'column' }),
   Row: FlexView('Row', RN.View, { flexDirection: 'row' }),
+  WrappingRow: FlexView('WrappingRow', RN.View, { flexDirection: 'row', flexWrap: 'wrap' }),
 
   Button: ButtonView('Button', {}),
 }
@@ -28,6 +38,40 @@ function View<P extends { style?: RN.StyleProp<any> }>(
       ...componentProps,
       style: [baseStyles, _taoLayout, style],
     } as P)
+  }
+
+  Wrapped.displayName = viewDisplayName
+  return Wrapped
+}
+
+function TextView(
+  viewDisplayName: string,
+  taoTextProps: Pick<RN.TextProps, 'ellipsizeMode' | 'numberOfLines'>,
+) {
+  const Wrapped = (props: TaoTextProps) => {
+    const { _taoLayout, style, ...textProps } = props
+    return React.createElement(RN.Text, {
+      ...textProps,
+      ...taoTextProps,
+      style: [_taoLayout, style],
+    })
+  }
+
+  Wrapped.displayName = viewDisplayName
+  return Wrapped
+}
+
+function MultiLineTextView(viewDisplayName: string) {
+  const Wrapped = (props: TaoMultiLineTextProps) => {
+    const { _taoLayout, style, lines, ...textProps } = props
+    const lineLimitProps = lines === undefined
+      ? {}
+      : { numberOfLines: lines, ellipsizeMode: 'tail' as const }
+    return React.createElement(RN.Text, {
+      ...textProps,
+      ...lineLimitProps,
+      style: [_taoLayout, style],
+    })
   }
 
   Wrapped.displayName = viewDisplayName

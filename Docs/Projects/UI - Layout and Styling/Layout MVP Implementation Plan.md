@@ -87,14 +87,20 @@ Avoid helper-only commits unless a step becomes too large to review coherently. 
   - Rejected `@@children` in `ui`, dynamic placement under guards/loops, unnamed caller children on `ui` calls, and caller container layout specs on `ui` calls.
   - Emitted `_ViewProps.children` at the splice point and routed caller `items`/`gap` entries to the directly containing child host through `_taoChildrenLayoutEntries`.
   - Added compiler, formatter, codegen, Expo runtime, and headless runtime coverage for caller child forwarding.
-- Step 5: complete in the current implementation commit.
+- Step 5: complete in `7a3fa13` (`feat(layout): merge public layout defaults`).
   - Added declaration-line layout clauses to `ui`, `frame`, and `layout` declarations.
   - Added validation for declaration-line clauses, `ui` container-default rejection, and declaration-line/public-root self-layout conflicts.
   - Added runtime `Layout.resolveMerged` so kind defaults, declaration defaults, internal root specs, and call-site overrides merge by Tao layout key before lowering to React Native style props.
   - Routed public self overrides through raw `_taoLayoutEntries`/`_taoLayoutParentDirection` for generated declarations while preserving resolved `_taoLayout` for trusted native/std-lib injection roots.
   - Routed declaration and caller container defaults to the direct `@@children` host through merged entry sets.
   - Added parser, validation, codegen, formatter, Expo runtime, and headless runtime coverage for public defaults and merge behavior.
-- Steps 6 through 8: pending.
+- Step 6: complete in the current implementation commit.
+  - Added the missing standard UI declarations for `Stack`, `WrappingRow`, `TextLabel`, `MultiLineText`, and `Number` as trusted std-lib/runtime wrappers.
+  - Finalized runtime host lowering for `Box`, `Stack`, `Row`, `Col`, and `WrappingRow`, including `WrappingRow`'s `flexWrap: "wrap"` root.
+  - Added runtime text pressure props for `Text`, `TextLabel`, `MultiLineText`, line-limited `MultiLineText`, and `Number`.
+  - Added standard `WrappingRow` public defaults of `compress + width fill + height hug` in the existing standard-container default path.
+  - Expanded the std-lib render scenario and Expo allowlist so the MVP std-lib views compile and render in both runtime suites.
+- Steps 7 and 8: pending.
 
 ## Step 1. Declaration Kind Cutover
 
@@ -485,6 +491,17 @@ Suggested validation:
 ./agent expo-runtime test
 ./agent headless-test-runtime test
 ```
+
+Completion notes:
+
+- Std-lib `Views.tao` now exports `Box`, `Stack`, `Col`, `Row`, `WrappingRow`, `Text`, `TextLabel`, `MultiLineText`, `Number`, and `Button`.
+- The React Native runtime wrappers now own deterministic text pressure behavior and host direction/wrap props, while layout sizing/alignment still flows through `TR.Layout`.
+- `MultiLineText` exposes the unlimited Tao view and the runtime line-limit forwarding path; a general optional/named trailing argument surface remains the right way to expose source-level `Lines N` without parser/compiler special casing.
+- Runtime validation for this step used:
+  - `./agent compiler test`;
+  - `./agent test formatter`;
+  - `./agent expo-runtime test`;
+  - `./agent headless-test-runtime test`.
 
 ## Step 7. App And Fixture Migration
 
