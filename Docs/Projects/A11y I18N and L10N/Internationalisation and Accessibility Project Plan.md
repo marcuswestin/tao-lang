@@ -55,7 +55,7 @@ This document is a starting brief for designing Tao accessibility, international
 - How should Tao represent left-to-right and right-to-left direction?
 - Should logical layout terms such as `start` and `end` be preferred over physical `left` and `right` in app-facing syntax?
 - If both physical and logical terms exist, which are allowed in reusable components?
-- How do `Row`, `Col`, `pack`, `spread`, `pin`, padding, inset, and child self-alignment adapt under RTL?
+- How do `Row`, `Col`, `items`, spread variants, padding, inset, and child self-alignment adapt under RTL?
 - Which React Native `I18nManager` behavior should Tao rely on, and which behavior should Tao own?
 - How should icons, chevrons, progress indicators, and navigation affordances mirror in RTL?
 

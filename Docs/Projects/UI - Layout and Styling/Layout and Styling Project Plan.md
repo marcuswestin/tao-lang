@@ -4,7 +4,7 @@ Tao's visual surface covers positioning, sizing, spacing, appearance, themes, an
 
 ## Status
 
-- **Layout syntax:** implementation underway; grammar, validation, codegen, and runtime shapes are defined.
+- **Layout syntax:** implementation underway. The current branch has bracketed clause parsing, validation, codegen, and runtime support, while the active language contract is defined in `UI Layout Specification`.
 - **Theme system:** core model decided; theme is a primitive dictionary, values propagate down the view tree, and adaptation selector syntax remains open.
 - **Styling syntax:** deferred until the theme/value pipeline is proven; `( ... )` is the leading delimiter candidate.
 - **Transforms and motion:** deferred into a separate project track.
@@ -20,7 +20,9 @@ Tao's visual surface covers positioning, sizing, spacing, appearance, themes, an
 
 ## Document Map
 
-- [UI Layout Design Doc](./UI%20Layout/UI%20Layout%20Design%20Doc.md): authoritative layout syntax, validation, runtime mapping, and key/value catalog.
+- [UI Layout Concepts](../../Tao%20Language%20Design/UI%20Layout%20Concepts.md): human-facing layout model and examples.
+- [UI Layout Specification](../../Tao%20Language%20Design/UI%20Layout%20Specification.md): active layout syntax, validation, merge behavior, runtime mapping, and deferrals.
+- [UI Declaration and Render Slots Specification](../../Tao%20Language%20Design/UI%20Declaration%20and%20Render%20Slots%20Specification.md): declaration kinds, render roots, `@@children`, named slots, renderer slots, and fragment boundaries.
 - [UI Theme Design Doc](./UI%20Themes/UI%20Theme%20Design%20Doc.md): theme primitives, propagation, adaptation, variants, and defaults.
 - [UI Styling Design Doc](./UI%20Styling/UI%20Styling%20Design%20Doc.md): styling boundary, likely syntax, and unresolved styling choices.
 - [UI Styling Syntax Exploration](./UI%20Styling/UI%20Styling%20Syntax%20Exploration.md): styling alternatives, property catalog, token ideas, and design-system references.
@@ -49,15 +51,7 @@ Implementation details:
 - Codegen: pass the validated layout parameters and values to a Tao runtime helper at each render site.
 - Runtime: translate Tao layout parameters and values to React Native style props and merge them with existing view styles.
 
-Frozen v1 surface:
-
-- Flow: `row`, `column`, `wrap`, `nowrap`.
-- Children arrangement: `top`, `right`, `bottom`, `left`, `center`, `stretch`, `pack`, `spread`, `around`, `evenly`.
-- Spacing: `gap`, `row_gap`, `column_gap`, `pad`, side-specific `pad`, `margin`, side-specific `margin`.
-- Size and flex: `width`, `height`, `min_width`, `max_width`, `min_height`, `max_height`, `grow`, `shrink`, `basis`.
-- Self layout: `centered`, `stretched`, `packed`.
-- Position and layering: `relative`, `absolute`, `top`, `right`, `bottom`, `left`, `z`.
-- Percent values are included for size, basis, and offsets in v1; raw numeric values remain React Native logical pixels/points.
+The active language surface is intentionally not repeated here. See [UI Layout Specification](../../Tao%20Language%20Design/UI%20Layout%20Specification.md) for the current contract and [UI Layout Concepts](../../Tao%20Language%20Design/UI%20Layout%20Concepts.md) for examples.
 
 Exit criteria:
 

@@ -1,6 +1,6 @@
 # UI Styling and Theme Syntax Exploration
 
-This is the compressed-but-thorough exploration of Tao styling, theming, and design-system vocabulary, sibling to the [UI layout rationale](../UI%20Layout/UI%20Layout%20Design%20Doc.md#exploration-and-vocabulary-rationale). It absorbs the styling, theme, color, spacing/radius, and design-system material from the raw [UI Layout and Styling Raw Notes](../../../Archive/UI%20Layout%20and%20Styling%20Raw%20Notes.md) archive and organizes it without losing the original exploratory voice.
+This is the compressed-but-thorough exploration of Tao styling, theming, and design-system vocabulary. Active layout concepts now live in [UI Layout Concepts](../../../Tao%20Language%20Design/UI%20Layout%20Concepts.md), and the layout contract lives in [UI Layout Specification](../../../Tao%20Language%20Design/UI%20Layout%20Specification.md). This document absorbs styling, theme, color, spacing/radius, and design-system material from the raw [UI Layout and Styling Raw Notes](../../../Archive/UI%20Layout%20and%20Styling%20Raw%20Notes.md) archive and organizes it without losing the original exploratory voice.
 
 The current authoritative direction is intentionally light and lives in [UI Styling Design Doc](./UI%20Styling%20Design%20Doc.md). Use this exploration doc when revisiting style vocabulary, deciding theme syntax, listing properties to cover, or planning the design-system surface. It is not implementation permission; the design doc and [Layout and Styling Project Plan](../Layout%20and%20Styling%20Project%20Plan.md) remain the source of truth.
 
@@ -26,9 +26,9 @@ The current preferred styling direction is deliberately narrow:
 Example (illustrative, not v1):
 
 ```tao
-Col [top left, gap 16, pad 24] (bg app) {
+Col [items top left, gap 16, pad 24] (bg app) {
   Text "Dashboard" (text display, color text_primary)
-  Button "Save", Save [centered] (primary)
+  Button "Save", Save [aligned center] (primary)
 }
 ```
 
@@ -44,7 +44,7 @@ The split is intentional and load-bearing. Layout is geometry and flow. Styling 
 - padding
 - margin
 - width / height / min / max
-- grow / shrink / basis
+- growth, compression, and size pressure
 - position and offsets
 
 ### Styling owns
@@ -476,7 +476,7 @@ A standing principle from the WIP that styling and theming need to honor:
 
 - Apps should look nice with zero theme configuration.
 - Layouts should be easy to write without thinking about defaults.
-- Defaults should err on visible/readable rather than collapsed/invisible (see [Empty view and defaults problem](#empty-view-and-defaults-problem-cross-link-with-depth)).
+- Defaults should err on visible/readable rather than collapsed/invisible; layout-specific empty-container questions live in the [UI Layout Specification review queue](../../../Tao%20Language%20Design/UI%20Layout%20Specification.md#20-review-queue).
 - Tasteful defaults per app or per theme are a dedicated design step, not an accident of values picked for the first sample.
 
 Open questions:
@@ -485,185 +485,11 @@ Open questions:
 - How do app-level defaults interact with library-provided defaults?
 - How are defaults chosen so they do not silently mask missing theme work in user apps?
 
-## Layout-Adjacent Material Not Captured Elsewhere
+## Layout-Adjacent Material
 
-These items came out of the WIP layout discussion but did not fully land in the layout design doc or layout exploration. They are preserved here so they are not lost.
+Older layout-adjacent notes were harvested into the non-normative review queue in [UI Layout Specification](../../../Tao%20Language%20Design/UI%20Layout%20Specification.md#20-review-queue), and the original source docs now live in [Archive](../../../Archive/). This styling exploration should not contain a second layout catalog or a second list of layout spellings.
 
-### React Native flexbox observations
-
-Most of these are reflected in the current layout doc; they are restated here because the WIP voice was specific:
-
-- `BASIS` is the same as `width` inside a Row; same as `height` inside a Col.
-- `flexGrow`/`flexShrink` only apply to `width` inside a Row; only to `height` inside a Col.
-- In RN, views hug content down to 0 by default. Two children with `flexGrow: 1/3` will only consume `2/3` of the parent.
-- In a Row with non-0 height: a child fills parent height because `alignItems: 'stretch'` is the RN default.
-- In a Row with 0 height: a child hugs and becomes its own content's height.
-- In a Row with `alignItems: 'flex-start'`: a child hugs and becomes its own content's height.
-- A Row child with `height: 50` is `50` regardless.
-- In a wrapped Row: each line becomes its own "mini flex container on the main axis"; `alignContent` distributes space between/around lines.
-- RN defaults differ from web:
-  - `flexDirection: 'column'` (web is `row`).
-  - `alignContent: 'flex-start'` (web is `stretch`).
-  - `alignItems: 'stretch'` (matches web).
-  - `flexShrink: 0` (web is `1`).
-  - `flex` accepts only one number.
-
-### Sizing concept names that did not win
-
-- `claim_space N` / `claim_space N%` (basis-ish abstraction).
-- `claim_ratio N` (flex-ish abstraction).
-- `resize_ratio N` (flex-ish abstraction).
-- `[fill hug]` positional tuple (rejected).
-- `[100px 50% 20% 20px]` positional tuple (rejected).
-- `width fill-parent` / `height hug-content` (longer than Figma `fill`/`hug`; not preferred).
-- `[width HORZ, height VERT]` tuple ordering (not chosen).
-- Should `resize` and `width/height` ever be allowed at the same time? (open).
-
-### Property-name vocabulary that did not win
-
-For child arrangement:
-
-- `items ...` (familiar from `alignItems`, but does not naturally cover main-axis distribution).
-- `align ...` (short, but hides the `justifyContent`/`alignItems` split).
-- `content ...`, `layout ...`, `flow ...`, `distribute ...`, `gravity ...` (various synonyms explored).
-- Compass / abbreviations: `[north west]`, `[nw]`, `[t, stretch]`, `[tr]` (rejected as less aligned with Figma/RN vocabulary).
-
-For self alignment:
-
-- `aligned right`, `aligned center`, `aligned bottom`, `stretched` (the adjective form survived for the bare cases; explicit `aligned ...` did not).
-- Explicit `self center` / `self stretch` / `self start` / `self end` (kept as a deferred fallback if adjective words become insufficient).
-
-For distribution:
-
-- `spread-hug`, `spread-hug-tight` (mapped to `space-around`/`space-evenly`; expressive but wordy).
-- Raw `space-between`, `space-around`, `space-evenly` (CSS-accurate but feels less Tao/Figma).
-- `distributed` (vague; rejected).
-- `[Row align top, distribute spread]` split (deferred fallback if bare values get ambiguous).
-
-### Overflow, scroll, wrap, clipping
-
-- `overflow` naming explored: `[clip hide]`, `[clip scroll]`, `[clip visible]`, plus the more direct `overflow hidden`.
-- `scroll` should not be a casual layout word: RN scroll usually means a `ScrollView`, not just `overflow: 'scroll'`. Naming a layout word `scroll` risks hiding view choice behind a property.
-- `wrap` is layout. `wrap reverse` is plausible. The default direction (wrap vs nowrap) is unsettled — RN defaults to `nowrap`.
-- `[clip hidden]` may end up as `overflow: 'hidden'`, but the surface name is unsettled.
-
-### Position, offset, layering, order
-
-- `absolute`, `relative`, physical `top`/`right`/`bottom`/`left`, and `z N` are the surviving v1 candidates.
-- `offset X Y` (e.g. `[offset 10 -5%]`) needs a clearer distinction from margin and transform; deferred.
-- `[3d N]` was an early name for stacking; rejected unless a real 3D behavior shows up in RN.
-- `[order N]` — change render order in layout flow; deferred (no current RN target).
-- `[reverse]` — reverse content order; useful for flow direction but needs precise behavior.
-- `position static` — RN/version caveats; deferred. Notes: offsets do not apply, and child elements skip this node for containing-block calculations.
-
-### Display, contents, box layout
-
-- `display none` / `hidden` — useful to hide without removing from the tree; later.
-- `display flex` — explicit; later (RN's effective default is flex anyway).
-- `display contents` — possibly useful for semantically named wrapper views (`Foo Bar { ... }` could project its layout through), but RN support and semantics need a dedicated decision; deferred.
-- `box-layout content` / "box layout" — early sketch for choosing whether spacing/borders count from content edge, padding edge, or border edge (`box-sizing` analog). Default would be border. Surface name is open; deferred.
-
-### Direction and localization
-
-- `flow ltr` / `flow rtl` was the early surface for direction.
-- Approach idea: try first to flip ALL physical properties under `flow rtl`; only mark explicit instances to ignore.
-- Logical layout terms `start`/`end` will likely come in alongside RTL design rather than retrofitted onto `left`/`right`.
-- Full localization story belongs to the [Internationalisation and Accessibility Project Plan](../../A11y%20I18N%20and%20L10N/Internationalisation%20and%20Accessibility%20Project%20Plan.md) track.
-
-### Aspect ratio and measure functions
-
-- `aspect_ratio N` — RN `aspectRatio`; useful, deferred until core size syntax is stable.
-- Measure functions — too advanced for layout v1; preserved as a research note.
-
-### React Native layout props not yet captured in Tao layout vocabulary
-
-A pass over [React Native 0.81 Layout Props](https://reactnative.dev/docs/0.81/layout-props) surfaced these props that exist in RN but were not represented in the layout docs at the time of writing. The canonical per-key entries (with surface spellings, values, status, and examples) have since been added to the [Layout Key And Value Catalog](../UI%20Layout/UI%20Layout%20Design%20Doc.md#layout-key-and-value-catalog). The notes below preserve the rationale and the open questions so they are not lost as the catalog evolves.
-
-#### `flex` (single-number shorthand)
-
-- RN's `flex` is a number with RN-specific semantics, not the CSS shorthand:
-  - `flex: positive N` is equivalent to `{ flexGrow: N, flexShrink: 1, flexBasis: 0 }`.
-  - `flex: 0` makes the component sized strictly by `width`/`height`; inflexible.
-  - `flex: -1` is normally sized by `width`/`height`, but shrinks to `minWidth`/`minHeight` when needed.
-- Tao currently exposes `basis`, `grow`, and `shrink` separately and a deferred `fill N`/`hug`/`fixed N` Figma-style vocabulary.
-- Open question: should there be a single Tao surface that maps to RN's `flex N` (e.g. `fill N`, or a dedicated `flex N`), and how should `flex 0` and `flex -1` be expressed (or rejected) when authors lean on the all-in-one form?
-
-#### `boxSizing`
-
-- RN now exposes `boxSizing: 'border-box' | 'content-box'`. `border-box` is the default. This is the actual prop the WIP's "box-layout" idea was reaching for.
-- Defaulting to `border-box` matches the historical Yoga behavior, so most existing Tao examples already assume it.
-- Tao should decide whether to expose `box_sizing border|content`, force `border-box`, or surface only an explicit "content edge" escape hatch when layout needs `content-box`.
-- Status proposal: later, but flagged as a real prop rather than an exploration.
-
-#### Per-side border widths as layout
-
-- RN treats border widths as layout props because they affect geometry: `borderTopWidth`, `borderRightWidth`, `borderBottomWidth`, `borderLeftWidth`, `borderStartWidth`, `borderEndWidth`.
-- The Tao layout doc currently lists only the uniform `border_width` and marks it deferred because most users think of border as visual styling.
-- Per-side widths still belong to the layout lane in RN. Tao should at minimum:
-  - Acknowledge per-side `border_top`/`border_right`/`border_bottom`/`border_left` as deferred layout, not styling.
-  - Reserve `border_start`/`border_end` for the logical/RTL pass.
-  - Decide whether `border_color`/`border_style` (style props that often co-travel with width) live with the layout `border *` words or only in styling.
-
-#### `inset` family (New Architecture)
-
-RN's New Architecture exposes CSS-Logical inset shorthands. None are captured in the current Tao position/offset vocabulary:
-
-- `inset N` — same effect as setting all of `top`, `right`, `bottom`, `left`.
-- `insetBlock N` — equivalent to `top` + `bottom`.
-- `insetBlockStart N` — equivalent to `top`.
-- `insetBlockEnd N` — equivalent to `bottom`.
-- `insetInline N` — equivalent to `right` + `left`.
-- `insetInlineStart N` — `left` in ltr, `right` in rtl.
-- `insetInlineEnd N` — `right` in ltr, `left` in rtl.
-
-Notes:
-
-- These ride the New Architecture availability story, so Tao should make the dependency explicit rather than silently emitting them.
-- Tao's `top`/`right`/`bottom`/`left` cover the per-edge cases. The shorthand and logical surfaces are real asks for absolute/relative positioning ergonomics.
-
-#### `isolation` (New Architecture)
-
-- RN's New Architecture ships `isolation: 'auto' | 'isolate'`, which forms a [stacking context](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_positioned_layout/Stacking_context) without touching `zIndex` or `position`.
-- This belongs to the same lane as `z` (zIndex). Without it, sibling stacking contexts are tied to `position` and `transform`, and authors have no clean way to scope layering.
-- Tao should either expose `stacking auto|isolate` (or `layer isolate`) or document that isolation is implied by Tao's stacking model.
-- Status proposal: later, alongside any rework of `z`/zIndex semantics.
-
-#### CSS-Logical margin and padding shorthands
-
-RN exposes the full CSS-Logical surface. The Tao layout doc lists only `margin_start`/`margin_end` and `pad_start`/`pad_end`. The broader logical shorthand family is not yet captured:
-
-- Margin: `marginBlock`, `marginBlockStart`, `marginBlockEnd`, `marginInline`, `marginInlineStart`, `marginInlineEnd`.
-- Padding: `paddingBlock`, `paddingBlockStart`, `paddingBlockEnd`, `paddingInline`, `paddingInlineStart`, `paddingInlineEnd`.
-
-Notes:
-
-- `*Block` is vertical (top/bottom in horizontal writing modes); `*Inline` is horizontal (left/right in ltr).
-- `*Block`/`*Inline` are RTL-aware shorthands that complement the per-side `start`/`end` props Tao already plans to defer.
-- Tao does not need to mirror every CSS-Logical name, but the design pass for RTL/I18N should pick a consistent vocabulary and either expose the shorthand axes or explicitly justify dropping them.
-
-#### Default differences worth re-stating in Tao terms
-
-RN defaults that Tao codegen and validation should be conscious of (already noted elsewhere, restated here for the layout-prop audit):
-
-- `flexDirection` defaults to `column` (web defaults to `row`).
-- `alignContent` defaults to `flex-start` (web defaults to `stretch`; Yoga-on-web also defaults to `stretch`).
-- `alignItems` defaults to `stretch` (matches web).
-- `flexShrink` defaults to `0` (web defaults to `1`).
-- `flex` accepts a single number (web accepts a CSS shorthand string).
-- `boxSizing` defaults to `border-box` (web's CSS default is `content-box`).
-
-### Empty view and defaults problem (cross-link with depth)
-
-The preserved empty-view problem statement and option set are summarized here. Specific WIP options worth preserving:
-
-- Force `flexGrow > 0` by default so empty containers stay visible.
-- Special-case empty elements with a `min_width`/`min_height`.
-- Provide two compile modes:
-  - **production**: empty elements may collapse, matching RN behavior.
-  - **layout development**: empty elements get `grow 1` or a min size to stay visible.
-- Require container elements like `Row` and `Col` to have content, surfacing emptiness as a parse/validation error.
-- Mirror Figma: every node carries width/height even when hugging; truly empty views must be marked invisible explicitly.
-- Question: should a fully empty Row/Col ever be visible by default?
+When styling or theme work needs a layout fact, link to the active layout concepts/specification pair instead of restating layout vocabulary here.
 
 ## Design System References
 

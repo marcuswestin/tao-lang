@@ -40,7 +40,7 @@ Layout owns geometry and flow:
 - padding
 - margin
 - width/height/min/max
-- grow/shrink/basis
+- growth, compression, and size pressure
 - position and offsets
 
 Transforms and motion are separate from both. Accessibility, localization, adaptation, and interactions are also separate design tracks.
@@ -65,9 +65,9 @@ Rules to validate later:
 Example only, not v1 layout implementation:
 
 ```tao
-Col [top left, gap 16, pad 24] (bg app) {
+Col [items top left, gap 16, pad 24] (bg app) {
   Text "Dashboard" (text display, color text_primary)
-  Button "Save", Save [centered] (primary)
+  Button "Save", Save [aligned center] (primary)
 }
 ```
 

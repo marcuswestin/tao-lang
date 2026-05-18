@@ -762,3 +762,14 @@ named render slots
 ```
 
 These should be added only when Tao has a human-facing concept that is clearer than exposing the underlying runtime property directly.
+
+## 20. Review Queue
+
+This section is non-normative. Items here were preserved from older layout exploration docs because they may contain useful implementation or research material, but they have not been reviewed into the active contract above. Nothing in this section changes what Tao accepts, rejects, or lowers.
+
+- React Native/Yoga default behavior still needs a focused verification pass for empty roots, grow/compress pressure, stretch, wrapped lines, and `alignContent`.
+- Static analysis for literally empty containers may be useful, but it needs to be reconciled with conditionals, loops, slots, and query-driven empty states.
+- Scroll behavior should be designed as a real scroll container/view, not as raw `overflow scroll`.
+- `display: contents` may help semantic wrappers, but it needs a React Native support and failure-mode review before it enters Tao.
+- `aspectRatio`, measure functions, `boxSizing`, logical start/end values, inset shorthands, `z`/layering, and outside-bounds effects remain separate design reviews.
+- Border width affects geometry in React Native, but `border` and `radius` remain styling concepts unless Tao deliberately promotes a geometry-affecting border model.
