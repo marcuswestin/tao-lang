@@ -1,0 +1,49 @@
+app LayoutShowcaseApp {
+   ui RootView
+}
+
+use Box, Button, Col, MultiLineText, Number, Row, Stack, Text, TextLabel, WrappingRow from @tao/ui
+
+ui RootView {
+   render Col [items top stretch, gap 10, pad 12] {
+      Text "Layout Showcase"
+      Row [items center spread, gap 8, pad horizontal 4] {
+         TextLabel "items+gap"
+         Number 42 [aligned center, width 60]
+         Button "No-op", action { } [aligned center, width 120]
+      }
+      Box [items center left, gap 6, pad 8, width fill, height 44, compress] {
+         Text "Box fill width" [aligned center, grow]
+         Text "rigid" [aligned center, rigid]
+      }
+      Stack [items top stretch, gap 4, pad vertical 6, width fill] {
+         Text "Stack stretched child" [stretched]
+         MultiLineText "MultiLineText can wrap naturally in this showcase."
+      }
+      Row [items stretch spread, gap 6, height 48, width fill] {
+         Box [width 80, height fill, rigid] {
+            Text "fixed"
+         }
+         Box [width fill, height hug, grow, compress] {
+            Text "growing"
+         }
+      }
+      WrappingRow [gap 4, pad 4] {
+         Text "wrap-one"
+         Text "wrap-two"
+         Text "wrap-three"
+      }
+      LineLimitedText "Line limited multiline text clamps through runtime forwarding." [width fill]
+   }
+}
+
+ui LineLimitedText Value text {
+   render inject ```ts
+      const tao_text = _ViewProps.Value.evaluate()
+      return TR.Views.MultiLineText({
+         _taoLayout: _ViewProps._taoLayout,
+         lines: 2,
+         children: [tao_text.jsValue],
+      })
+   ```
+}

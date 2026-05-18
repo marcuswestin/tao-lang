@@ -94,13 +94,17 @@ Avoid helper-only commits unless a step becomes too large to review coherently. 
   - Routed public self overrides through raw `_taoLayoutEntries`/`_taoLayoutParentDirection` for generated declarations while preserving resolved `_taoLayout` for trusted native/std-lib injection roots.
   - Routed declaration and caller container defaults to the direct `@@children` host through merged entry sets.
   - Added parser, validation, codegen, formatter, Expo runtime, and headless runtime coverage for public defaults and merge behavior.
-- Step 6: complete in the current implementation commit.
+- Step 6: complete in `977aa3d` (`feat(std-lib): finalize layout MVP views`).
   - Added the missing standard UI declarations for `Stack`, `WrappingRow`, `TextLabel`, `MultiLineText`, and `Number` as trusted std-lib/runtime wrappers.
   - Finalized runtime host lowering for `Box`, `Stack`, `Row`, `Col`, and `WrappingRow`, including `WrappingRow`'s `flexWrap: "wrap"` root.
   - Added runtime text pressure props for `Text`, `TextLabel`, `MultiLineText`, line-limited `MultiLineText`, and `Number`.
   - Added standard `WrappingRow` public defaults of `compress + width fill + height hug` in the existing standard-container default path.
   - Expanded the std-lib render scenario and Expo allowlist so the MVP std-lib views compile and render in both runtime suites.
-- Steps 7 and 8: pending.
+- Step 7: complete in the current implementation commit.
+  - Confirmed active Tao fixtures no longer use `view` declarations or old layout-v1 words; remaining old layout words are deliberate validation rejection cases.
+  - Added an active `Layout Showcase` test app that exercises `items`, `gap`, `pad`, dimensions, fill/hug/grow/compress/rigid, `aligned`, `stretched`, `WrappingRow`, text variants, and line-limited runtime forwarding.
+  - Added the showcase to the Expo shared-scenario allowlist so it runs under both Expo and headless runtime scenario suites.
+- Step 8: pending.
 
 ## Step 1. Declaration Kind Cutover
 
@@ -540,6 +544,16 @@ Suggested validation:
 ./agent expo-runtime test
 ./agent headless-test-runtime test
 ```
+
+Completion notes:
+
+- Active fixture migration did not require broad syntax churn because earlier steps had already removed old `view` declarations and layout-v1 clauses from active apps.
+- `Apps/Test Apps/Layout Showcase/` is the broad MVP layout scenario for this step.
+- Runtime validation for this step used:
+  - `./agent compiler test`;
+  - `./agent test formatter`;
+  - `./agent expo-runtime test`;
+  - `./agent headless-test-runtime test`.
 
 ## Step 8. Cleanup And Verification
 
