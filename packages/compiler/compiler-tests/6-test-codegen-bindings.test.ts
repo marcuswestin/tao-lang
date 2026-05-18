@@ -142,6 +142,104 @@ ui HarnessRoot {
 
 const STD_LIB_ROOT = FS.resolvePath(FS.joinPath(__dirname, '../../tao-std-lib'))
 
+/** writeAndCompileWithStdLib compiles a snippet with the checked-in Tao standard library available. */
+async function writeAndCompileWithStdLib(code: string): Promise<string> {
+  const tmpDir = FS.mkTmpDir(FS.joinPath(FS.tmpdir(), 'tao-codegen-bindings-stdlib-'))
+  const filePath = FS.joinPath(tmpDir, 'app.tao')
+  FS.writeFile(filePath, code)
+  const result = await compileTao({ file: filePath, stdLibRoot: STD_LIB_ROOT })
+  if (!result.ok) {
+    throw new Error(`Compile failed:\n${formatParseErrorHumanMessages(result.errorReport)}`)
+  }
+  return result.files.map(f => f.content).join('\n')
+}
+
+describe('codegen — layout emission:', () => {
+  test('ViewRender emits layout specs through the Tao runtime resolver', async () => {
+    const out = await writeAndCompile(`
+      app A { ui V }
+      layout Row {
+        render inject \`\`\`ts return TR.Views.Row(_ViewProps) \`\`\`
+      }
+      ui Text Value text {
+        render inject \`\`\`ts return null \`\`\`
+      }
+      ui V {
+        render Row [items center spread, gap 12] {
+          Text "x" [aligned center, width fill max 400]
+        }
+      }
+    `)
+    expect(out).toContain('TR.Layout.resolveMerged({ view: "Row"')
+    expect(out).toContain('[["items","center","spread"],["gap",12]]')
+    expect(out).toContain('TR.Layout.resolveMerged({ view: "Text"')
+    expect(out).toContain('[["aligned","center"],["width","fill","max",400]]')
+    expect(out).toContain('parentDirection: "row"')
+  })
+
+  test('frame caller children are forwarded and caller container layout routes to @@children host', async () => {
+    const out = await writeAndCompile(`
+      app A { ui V }
+      frame Stack {
+        render inject \`\`\`ts return TR.Views.Stack(_ViewProps) \`\`\`
+      }
+      ui Text Value text {
+        render inject \`\`\`ts return null \`\`\`
+      }
+      frame Card [gap 12] {
+        render Stack [pad 12] {
+          @@children
+        }
+      }
+      ui V {
+        render Card [width 320, gap 8] {
+          Text "inside"
+        }
+      }
+    `)
+    expect(out).toContain('_taoChildrenLayoutEntries={[["gap",8]]}')
+    expect(out).toContain('_taoLayoutEntries={[["width",320]]}')
+    expect(out).toContain('TR.Layout.resolveMerged({ view: "Card"')
+    expect(out).toContain('TR.Layout.resolveMerged({ view: "Stack"')
+    expect(out).toContain('[["gap",12]]')
+    expect(out).toContain('_ViewProps._taoLayoutEntries ?? []')
+    expect(out).toContain('{_ViewProps.children}')
+  })
+
+  test('declaration defaults merge onto public roots and call-site self overrides stay raw', async () => {
+    const out = await writeAndCompile(`
+      app A { ui V }
+      frame Box {
+        render inject \`\`\`ts return TR.Views.Box(_ViewProps) \`\`\`
+      }
+      ui Pill [pad 8] {
+        render Box { }
+      }
+      ui V {
+        render Pill [width 320, pad horizontal 4]
+      }
+    `)
+    expect(out).toContain('_taoLayoutEntries={[["width",320],["pad","horizontal",4]]}')
+    expect(out).toContain('TR.Layout.resolveMerged({ view: "Box"')
+    expect(out).toContain('[["rigid"],["hug"],["pad",8]]')
+    expect(out).toContain('_ViewProps._taoLayoutEntries ?? []')
+  })
+
+  test('standard WrappingRow emits width-fill and height-hug public defaults', async () => {
+    const out = await writeAndCompileWithStdLib(`
+      use WrappingRow, Text from @tao/ui
+      app A { ui V }
+      ui V {
+        render WrappingRow {
+          Text "chip"
+        }
+      }
+    `)
+    expect(out).toContain('TR.Layout.resolveMerged({ view: "WrappingRow"')
+    expect(out).toContain('[["compress"],["width","fill"],["height","hug"]]')
+  })
+})
+
 describe('codegen — app provider selection and overrides:', () => {
   test('app provider override emits Memory provider registration, memory open params, and no instantdb import', async () => {
     const tmpDir = FS.mkTmpDir(FS.joinPath(FS.tmpdir(), 'tao-codegen-data-provider-'))
