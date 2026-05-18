@@ -1,10 +1,11 @@
 # Named Renders Plan
 
-- [ ] TODO: Consider requiring single view `render` statement
-  - If not, need to decide if of a view shows up in the render tree. And if functionally that becomes a fragment with all of its children.
+This document covers named slots, renderer slots, and variadic child passing.
+The current source of truth for declaration-kind semantics is
+[UI and View Declaration Design Spec](./UI%20and%20View%20Declaration%20Design%20Spec.md).
 
 ```tao
-view Header {
+ui Header {
   render Row {
     ...
   }
@@ -19,14 +20,19 @@ This captures the current discussion state for passing rendered child elements a
 
 Tao needs to distinguish several overlapping concepts:
 
-- **Element-like render**: renders one UI thing and does not accept child UI.
-- **Container view**: accepts and renders child UI.
-- **Plain view**: can render one root UI or multiple UI statements depending on its body and future root model.
+- **Declaration-owned UI**: a `ui` declaration owns its descendant structure and
+  does not accept unnamed child UI.
+- **Child-receiving view**: a `view` declaration accepts rendered child UI,
+  named slots, renderer slots, or some combination.
+- **Material root**: both `ui` and `view` declarations use one explicit render
+  root under the current root model.
 - **Named slot**: a named UI part supplied by a caller, such as `@header` or `@empty`.
 - **Renderer slot**: a named view function supplied by a caller and invoked with data, such as `@row Task`.
 - **Variadic children**: all unnamed top-level child renders, captured as `@@children`.
 
-These are not necessarily separate declaration keywords. They can be capabilities of `view` declarations: a view may accept named slots, renderer slots, variadic children, ordinary value parameters, or some combination.
+Under the current full-language direction, unnamed child passing belongs to
+`view`; `ui` may accept caller-provided rendered content only through declared
+named slots.
 
 ## Current Preferred Syntax
 
@@ -351,14 +357,13 @@ List keys:
 - Whether call-site `@slot` uses `->`, a block, or both.
 - Whether `@view row Item` is clearer than `@row Item`; current preference is the shorter `@row Item`.
 - Whether value-returning slots such as `@key` are part of this system or a later typed callback system.
-- Whether ordinary view declarations and slot-accepting view declarations need different keywords; current preference is no, keep `view` and add capabilities.
-- Whether "element" should become a distinct type for renderers that cannot accept children.
+- Whether a lower-level `element` concept is ever needed beyond `ui` and `view`.
 - How to represent fixed child counts and variadic child constraints in type checking.
 - How slot override/patching composes with default named parts declared inside a view.
 
 ## Current Recommendation
 
-Start with explicit slot declarations and only view-returning slots:
+Start with explicit slot declarations and only rendered-UI-returning slots:
 
 ```tao
 view List Items {
@@ -383,4 +388,6 @@ view Col {
 }
 ```
 
-Defer inference, non-view value slots, non-identifiable list keys, and separate `element` declarations until the first implementation proves the basic model.
+Defer inference, value-returning slots, non-identifiable list keys, and any
+lower-level `element` concept until the first implementation proves the basic
+model.

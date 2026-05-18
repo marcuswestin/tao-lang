@@ -23,6 +23,7 @@ These are the main feature areas that define Tao as a UI-app language.
 - Themes and typed values come after raw layout and before styling; see [UI Theme Design Doc](./Projects/UI%20-%20Layout%20and%20Styling/UI%20Themes/UI%20Theme%20Design%20Doc.md).
 - Styling comes after the theme/value model; see [UI Styling Design Doc](./Projects/UI%20-%20Layout%20and%20Styling/UI%20Styling/UI%20Styling%20Design%20Doc.md).
 - Named renders, lambda view arguments, view children, containers, and atoms live in [Named Renders Plan](./Projects/Views%20-%20Named%20Renders,%20Lambda%20View%20Arguments,%20View%20Children,%20Containers%20and%20Atoms/Named%20Renders%20Plan.md).
+- The proposed `ui`/`view` declaration split lives in [UI and View Declaration Design Spec](./Projects/Views%20-%20Named%20Renders,%20Lambda%20View%20Arguments,%20View%20Children,%20Containers%20and%20Atoms/UI%20and%20View%20Declaration%20Design%20Spec.md).
 - Animations, interactions, internationalisation, accessibility, and adaptation each have separate project plans under `Docs/Projects/`.
 
 ## Data, IO, And State
