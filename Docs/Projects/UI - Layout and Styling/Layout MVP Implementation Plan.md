@@ -75,13 +75,19 @@ Avoid helper-only commits unless a step becomes too large to review coherently. 
   - Rewrote layout validation for item slot claims, parent-axis self alignment, size/pressure conflicts, numeric rules, legacy/deferred word rejection, and malformed entries.
   - Updated serialized layout specs and runtime lowering to emit React Native/Yoga style props through the Tao runtime resolver, including `overflow: "hidden"` defaults.
   - Updated parser, validation, codegen, formatter, runtime tests, and the active Kitchen Sink layout fixture.
-- Step 3: complete in the current implementation commit.
+- Step 3: complete in `e6da059` (`feat(ui): add material render roots`).
   - Added `render` statements as material public roots for `ui`, `frame`, and `layout` declarations.
   - Enforced exactly one top-level root, rejected nested roots, and rejected non-view render targets.
   - Changed app codegen to return the explicit render root instead of implicitly returning all body statements.
   - Routed `render` through scoping, type checking, layout validation, import discovery, formatter behavior, and runtime lowering.
   - Migrated std-lib declarations, active test apps, compiler fixtures, formatter coverage, Expo runtime fixtures, and shared runtime scenarios to explicit roots.
-- Steps 4 through 8: pending.
+- Step 4: complete in the current implementation commit.
+  - Added `@@children` syntax and formatting.
+  - Required ordinary `frame` and `layout` declarations to place one static hosted splice, while preserving trusted raw-injection/native wrappers that forward `_ViewProps.children`.
+  - Rejected `@@children` in `ui`, dynamic placement under guards/loops, unnamed caller children on `ui` calls, and caller container layout specs on `ui` calls.
+  - Emitted `_ViewProps.children` at the splice point and routed caller `items`/`gap` entries to the directly containing child host through `_taoChildrenLayoutEntries`.
+  - Added compiler, formatter, codegen, Expo runtime, and headless runtime coverage for caller child forwarding.
+- Steps 5 through 8: pending.
 
 ## Step 1. Declaration Kind Cutover
 
@@ -334,6 +340,17 @@ Suggested validation:
 ./agent expo-runtime test
 ./agent headless-test-runtime test
 ```
+
+Completion notes:
+
+- `@@children` is now part of the parser, formatter, validator, and React runtime codegen.
+- Compiler tests cover required/static placement, duplicate splices, ui rejection, ui call child rejection, ui container-layout rejection, and codegen routing to the child host.
+- Runtime validation for this step used:
+  - `./agent compiler test`;
+  - `./agent test formatter`;
+  - `./agent expo-runtime test`;
+  - `./agent headless-test-runtime test`;
+  - `./agent tsc --noEmit --noUnusedLocals -p packages/compiler/tsconfig.json`.
 
 ## Step 5. Public Layout Defaults And Merge Rules
 

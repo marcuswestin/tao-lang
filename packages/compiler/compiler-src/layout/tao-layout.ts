@@ -15,9 +15,18 @@ export function serializeLayoutClause(
   clause: AST.LayoutClause,
   opts: { parentDirection?: TaoLayoutDirection } = {},
 ): SerializedTaoLayoutSpec {
+  return serializeLayoutEntries(viewName, clause.entries, opts)
+}
+
+/** serializeLayoutEntries converts parsed layout entries into the compact runtime layout spec. */
+export function serializeLayoutEntries(
+  viewName: string,
+  entries: readonly AST.LayoutEntry[],
+  opts: { parentDirection?: TaoLayoutDirection } = {},
+): SerializedTaoLayoutSpec {
   const spec: SerializedTaoLayoutSpec = {
     view: viewName,
-    entries: clause.entries.map(entry => layoutEntryValues(entry)),
+    entries: entries.map(entry => layoutEntryValues(entry)),
   }
   if (opts.parentDirection !== undefined) {
     spec.parentDirection = opts.parentDirection

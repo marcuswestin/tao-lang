@@ -93,6 +93,97 @@ describe('material render root validation:', () => {
   })
 })
 
+describe('caller children validation:', () => {
+  test('frame with one static @@children validates and accepts caller children', async () => {
+    await parseTaoFully(`
+      frame Stack { render inject \`\`\`ts return null \`\`\` }
+      ui Text Value text { render inject \`\`\`ts return null \`\`\` }
+      frame Card {
+        render Stack {
+          @@children
+        }
+      }
+      ui Root {
+        render Card {
+          Text "inside"
+        }
+      }
+    `)
+  })
+
+  test('ordinary frame without @@children fails validation', async () => {
+    const report = await parseASTWithErrors(`
+      frame Stack { render inject \`\`\`ts return null \`\`\` }
+      frame Card {
+        render Stack { }
+      }
+    `)
+    expectHumanMessagesContain(report, validationMessages.missingChildrenSplice('frame', 'Card'))
+  })
+
+  test('@@children in ui fails validation', async () => {
+    const report = await parseASTWithErrors(`
+      frame Stack { render inject \`\`\`ts return null \`\`\` }
+      ui Bad {
+        render Stack {
+          @@children
+        }
+      }
+    `)
+    expectHumanMessagesContain(report, validationMessages.childrenSpliceInUi)
+  })
+
+  test('duplicate @@children fails validation', async () => {
+    const report = await parseASTWithErrors(`
+      frame Stack { render inject \`\`\`ts return null \`\`\` }
+      frame Card {
+        render Stack {
+          @@children
+          @@children
+        }
+      }
+    `)
+    expectHumanMessagesContain(report, validationMessages.duplicateChildrenSplice)
+  })
+
+  test('@@children inside guard is not static', async () => {
+    const report = await parseASTWithErrors(`
+      frame Stack { render inject \`\`\`ts return null \`\`\` }
+      frame Card {
+        render Stack {
+          guard {
+            @@children
+          }
+        }
+      }
+    `)
+    expectHumanMessagesContain(report, validationMessages.childrenSpliceMustBeStatic)
+  })
+
+  test('ui calls reject unnamed caller children', async () => {
+    const report = await parseASTWithErrors(`
+      ui Text Value text { render inject \`\`\`ts return null \`\`\` }
+      ui Leaf { render inject \`\`\`ts return null \`\`\` }
+      ui Root {
+        render Leaf {
+          Text "extra"
+        }
+      }
+    `)
+    expectHumanMessagesContain(report, validationMessages.uiCallCannotHaveChildren)
+  })
+
+  test('ui calls reject caller container layout specs', async () => {
+    const report = await parseASTWithErrors(`
+      ui Leaf { render inject \`\`\`ts return null \`\`\` }
+      ui Root {
+        render Leaf [gap 8]
+      }
+    `)
+    expectHumanMessagesContain(report, validationMessages.uiCallCannotHaveContainerLayout)
+  })
+})
+
 describe('statement placement validation:', () => {
   test('state update in view body fails validation', async () => {
     const report = await parseASTWithErrors(`

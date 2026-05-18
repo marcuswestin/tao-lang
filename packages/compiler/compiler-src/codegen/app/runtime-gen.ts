@@ -18,7 +18,7 @@ import { AST } from '@parser/parser'
 import { Assert, Stream, switch_safe } from '@shared'
 import { standardContainerDirection } from '@shared/layout/layout-axis'
 import { throwUnexpectedBehaviorError } from '@shared/TaoErrors'
-import { serializeLayoutClause } from '../../layout/tao-layout'
+import { layoutEntryValues, serializeLayoutEntries } from '../../layout/tao-layout'
 import {
   collectionSlugFromPlural,
   queryDeclarationAliasName,
@@ -96,6 +96,7 @@ class RuntimeGen {
       ActionDeclaration: (n) => this.ActionDeclaration(n),
       RenderStatement: (n) => this.RenderStatement(n),
       ViewRender: (n) => this.ViewRender(n),
+      ChildrenSplice: (n) => this.ChildrenSplice(n),
       ActionRender: (n) => this.ActionRender(n),
       TypeDeclaration: (n) => this.TypeDeclaration(n),
       DataDeclaration: (n) => this.dataDeclarationRuntime(n),
@@ -470,6 +471,7 @@ class RuntimeGen {
     return switch_safe.type(stmt, {
       RenderStatement: n => this.RenderStatement(n),
       ViewRender: n => this.renderNode(n),
+      ChildrenSplice: n => this.renderNode(n),
       Injection: n => this.renderNode(n),
       ForStatement: n => this.ForStatement(n),
       Debugger: n => this.Debugger(n),
@@ -588,6 +590,7 @@ class RuntimeGen {
     return switch_safe.type(renderNode, {
       RenderStatement: (stmt) => this.RenderStatement(stmt),
       ViewRender: (stmt) => this.ViewRender(stmt),
+      ChildrenSplice: (stmt) => this.ChildrenSplice(stmt),
       Injection: (stmt) => compileNode(stmt)`{ ${this.Injection(stmt)} }`,
     })
   }
@@ -627,14 +630,15 @@ class RuntimeGen {
         )
         const argumentList = this.viewRenderArgumentList(viewRender, viewDecl)
         const layoutProp = this.viewRenderLayoutSpec(viewRender, viewDecl)
+        const childrenLayoutProp = this.viewRenderChildrenLayoutEntriesProp(viewRender, viewDecl)
         const scopeProp = this.viewScopeProp(viewDecl)
         if (!isBlockWithStatements(viewRender.block)) {
           return compileNode(viewRender)`
-            <${viewDecl.name}${scopeProp} ${argumentList}${layoutProp}/>
+            <${viewDecl.name}${scopeProp} ${argumentList}${layoutProp}${childrenLayoutProp}/>
           `
         } else {
           return compileNode(viewRender)`
-            <${viewDecl.name}${scopeProp} ${argumentList}${layoutProp}>
+            <${viewDecl.name}${scopeProp} ${argumentList}${layoutProp}${childrenLayoutProp}>
               ${compileNodeList(viewRender.block.statements, stmt => this.viewRenderBlockStatement(stmt))}
             </${viewDecl.name}>
           `
@@ -646,15 +650,66 @@ class RuntimeGen {
 
   /** viewRenderLayoutSpec emits the serialized layout spec for the runtime layout resolver. */
   viewRenderLayoutSpec(viewRender: ViewRenderHost, viewDecl: AST.ViewDeclaration): Compiled {
-    if (viewRender.layoutClause === undefined) {
+    const selfEntries = this.viewRenderSelfLayoutEntries(viewRender, viewDecl)
+    const routesChildrenLayout = renderHostDirectlyContainsChildrenSplice(viewRender)
+    if (selfEntries.length === 0 && !routesChildrenLayout) {
       return compileNoop()
     }
-    const spec = serializeLayoutClause(viewDecl.name, viewRender.layoutClause, {
+    const spec = serializeLayoutEntries(viewDecl.name, selfEntries, {
       parentDirection: parentViewDirection(viewRender),
     })
-    return compileNode(viewRender.layoutClause)`
+    const callerChildrenLayout = compileNode(viewRender)`
+      (_ViewProps._taoChildrenLayoutEntries === undefined
+        ? {}
+        : TR.Layout.resolve({ view: ${JSON.stringify(viewDecl.name)}, entries: _ViewProps._taoChildrenLayoutEntries }))
+    `
+
+    if (selfEntries.length === 0) {
+      return compileNode(viewRender)`
+        _taoLayout={_ViewProps._taoChildrenLayoutEntries === undefined
+          ? undefined
+          : TR.Layout.resolve({ view: ${
+        JSON.stringify(viewDecl.name)
+      }, entries: _ViewProps._taoChildrenLayoutEntries })}
+      `.append(' ')
+    }
+
+    if (routesChildrenLayout) {
+      return compileNode(viewRender.layoutClause ?? viewRender)`
+        _taoLayout={{ ...TR.Layout.resolve(${JSON.stringify(spec)}), ...${callerChildrenLayout} }}
+      `.append(' ')
+    }
+
+    return compileNode(viewRender.layoutClause ?? viewRender)`
       _taoLayout={TR.Layout.resolve(${JSON.stringify(spec)})}
     `.append(' ')
+  }
+
+  /** viewRenderChildrenLayoutEntriesProp passes caller container entries to a frame/layout's @@children host. */
+  viewRenderChildrenLayoutEntriesProp(viewRender: ViewRenderHost, viewDecl: AST.ViewDeclaration): Compiled {
+    if (viewRender.layoutClause === undefined || !viewDeclarationRoutesCallerContainerLayout(viewDecl)) {
+      return compileNoop()
+    }
+    const entries = viewRender.layoutClause.entries.filter(isContainerLayoutEntry).map(entry =>
+      layoutEntryValues(entry)
+    )
+    if (entries.length === 0) {
+      return compileNoop()
+    }
+    return compileNode(viewRender.layoutClause)`
+      _taoChildrenLayoutEntries={${JSON.stringify(entries)}}
+    `.append(' ')
+  }
+
+  private viewRenderSelfLayoutEntries(
+    viewRender: ViewRenderHost,
+    viewDecl: AST.ViewDeclaration,
+  ): readonly AST.LayoutEntry[] {
+    const entries = viewRender.layoutClause?.entries ?? []
+    if (!viewDeclarationRoutesCallerContainerLayout(viewDecl)) {
+      return entries
+    }
+    return entries.filter(entry => !isContainerLayoutEntry(entry))
   }
 
   viewRenderBlockStatement(stmt: AST.Statement): Compiled {
@@ -668,6 +723,9 @@ class RuntimeGen {
     if (AST.isViewRender(stmt)) {
       return this.renderNode(stmt)
     }
+    if (AST.isChildrenSplice(stmt)) {
+      return this.renderNode(stmt)
+    }
     if (AST.isInjection(stmt)) {
       return compileNode(stmt)`{${this.Injection(stmt)}}`
     }
@@ -675,6 +733,10 @@ class RuntimeGen {
       return this.ForStatement(stmt)
     }
     return this.Statement(stmt)
+  }
+
+  ChildrenSplice(node: AST.ChildrenSplice): Compiled {
+    return compileNode(node)`{_ViewProps.children}`
   }
 
   // Scope
@@ -888,6 +950,39 @@ function parentViewDirection(node: ViewRenderHost): ReturnType<typeof standardCo
     }
   }
   return undefined
+}
+
+function renderHostDirectlyContainsChildrenSplice(node: ViewRenderHost): boolean {
+  return node.block?.statements.some(AST.isChildrenSplice) ?? false
+}
+
+function viewDeclarationRoutesCallerContainerLayout(decl: AST.ViewDeclaration): boolean {
+  return decl.type !== 'ui' && viewDeclarationUsesChildrenSplice(decl)
+}
+
+function viewDeclarationUsesChildrenSplice(decl: AST.ViewDeclaration): boolean {
+  const stack = [...decl.block.statements]
+  while (stack.length > 0) {
+    const stmt = stack.pop()!
+    if (AST.isChildrenSplice(stmt)) {
+      return true
+    }
+    if (AST.isDeclaration(stmt)) {
+      continue
+    }
+    if (
+      AST.isRenderStatement(stmt) || AST.isViewRender(stmt) || AST.isGuardStatement(stmt) || AST.isForStatement(stmt)
+    ) {
+      stack.push(...(stmt.block?.statements ?? []))
+    }
+  }
+  return false
+}
+
+function isContainerLayoutEntry(entry: AST.LayoutEntry): boolean {
+  const values = layoutEntryValues(entry)
+  const head = values[0]
+  return head === 'items' || head === 'gap'
 }
 
 /** stripTsFenceFromTsCodeBlock removes outer ```ts / ``` fences from an embedded TS code block for executable emit. */

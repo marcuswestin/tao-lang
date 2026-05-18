@@ -234,6 +234,15 @@ describe('Formatter', () => {
           }
       }
     `)
+  testFormatter('caller children splice')
+    .format(`frame Card {render Stack [ gap   12 ]{@@children}}`)
+    .equals(`
+      frame Card {
+          render Stack [gap 12] {
+              @@children
+          }
+      }
+    `)
   testFormatter('view render with multiline layout clause')
     .format(`
       ui MyView {

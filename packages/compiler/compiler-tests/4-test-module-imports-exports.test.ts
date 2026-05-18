@@ -179,7 +179,7 @@ describe('cross-module import resolution (use statement)', () => {
     const result = await parseMultipleFiles([
       {
         path: '/project/ui/buttons.tao',
-        code: `share ui Button { render inject \`\`\`ts return null \`\`\` }`,
+        code: `share frame Button { render inject \`\`\`ts return null \`\`\` }`,
       },
       {
         path: '/project/ui/inputs.tao',

@@ -62,6 +62,32 @@ describe('codegen — call-site argument bindings:', () => {
     )
   })
 
+  test('frame caller children are forwarded and caller container layout routes to @@children host', async () => {
+    const out = await writeAndCompile(`
+      app A { ui V }
+      frame Stack {
+        render inject \`\`\`ts return null \`\`\`
+      }
+      ui Text Value text {
+        render inject \`\`\`ts return null \`\`\`
+      }
+      frame Card {
+        render Stack [pad 12] {
+          @@children
+        }
+      }
+      ui V {
+        render Card [width 320, gap 8] {
+          Text "inside"
+        }
+      }
+    `)
+    expect(out).toContain('_taoChildrenLayoutEntries={[["gap",8]]}')
+    expect(out).toContain('TR.Layout.resolve({"view":"Card","entries":[["width",320]]})')
+    expect(out).toMatch(/TR\.Layout\.resolve\(\{ view: "Stack", entries: _ViewProps\._taoChildrenLayoutEntries \}\)/)
+    expect(out).toContain('{_ViewProps.children}')
+  })
+
   test('ActionRender invocation emits a props bag keyed by the resolved parameter names', async () => {
     const out = await writeAndCompile(`
       app A { ui V }

@@ -3,7 +3,7 @@ grammar TaoLang
 entry TaoFile:
     statements += Statement*;
 
-Statement: Declaration | ModuleDeclaration | UseStatement | Debugger | Injection | RenderStatement | ViewRender | ActionRender | StateUpdate
+Statement: Declaration | ModuleDeclaration | UseStatement | Debugger | Injection | RenderStatement | ViewRender | ChildrenSplice | ActionRender | StateUpdate
     | QueryDeclaration | GuardStatement | ForStatement | CreateStatement;
 
 
@@ -16,8 +16,8 @@ type Referenceable = Declaration | ParameterDeclaration | QueryDeclaration | For
 type ScopeRelevantNode = UseStatement | Declaration | AppDeclaration | ParameterDeclaration | DataEntityDeclaration | DataTypeDeclaration | QueryDeclaration | ForStatement;
 
 // ViewFragmentStatement groups view-ordered body items handled by `viewFragmentStatement` codegen (exhaustive switch); not every `Statement` is a fragment statement.
-type ViewFragmentStatement = RenderStatement | ViewRender | Injection | ForStatement | Debugger | QueryDeclaration | GuardStatement | Declaration;
-type ViewStatement = RenderStatement | ViewRender | Injection | AssignmentDeclaration | BlockDeclaration | Debugger | QueryDeclaration | GuardStatement | ForStatement;
+type ViewFragmentStatement = RenderStatement | ViewRender | ChildrenSplice | Injection | ForStatement | Debugger | QueryDeclaration | GuardStatement | Declaration;
+type ViewStatement = RenderStatement | ViewRender | ChildrenSplice | Injection | AssignmentDeclaration | BlockDeclaration | Debugger | QueryDeclaration | GuardStatement | ForStatement;
 type TopLevelStatement = Declaration | UseStatement | Injection | Debugger | QueryDeclaration;
 type ActionStatement = StateUpdate | Injection | Debugger | AssignmentDeclaration | BlockDeclaration | ActionRender | CreateStatement;
 
@@ -242,7 +242,9 @@ RenderStatement:
 
 ViewRender:
     view=[Declaration:ID] argumentList=ArgumentList? layoutClause=LayoutClause? block=Block?;
-type RenderNode = RenderStatement | ViewRender | Injection;
+ChildrenSplice:
+    type='@@children';
+type RenderNode = RenderStatement | ViewRender | ChildrenSplice | Injection;
 
 // View Layout specs
 ////////////////////

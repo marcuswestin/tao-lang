@@ -181,7 +181,21 @@ function makeNeedleApp() {
 
     ui RootView {
       alias TextValue = "${needle}"
-      render Text TextValue
+      render Wrapper {
+        Text TextValue
+      }
+    }
+
+    frame Stack {
+        render inject \`\`\`ts
+          return TR.Views.Col(_ViewProps)
+        \`\`\`
+    }
+
+    frame Wrapper {
+      render Stack {
+        @@children
+      }
     }
 
     ui Text Value text {

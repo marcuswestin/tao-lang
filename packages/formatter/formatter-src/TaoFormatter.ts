@@ -39,6 +39,7 @@ export default class TaoFormatter extends AbstractFormatter {
       ActionDeclaration: (n) => this.formatActionDeclaration(n),
       RenderStatement: (n) => this.formatRenderStatement(n),
       ViewRender: (n) => this.formatViewRender(n),
+      ChildrenSplice: (n) => this.formatChildrenSplice(n),
       LayoutClause: (n) => this.formatLayoutClause(n),
       LayoutEntry: (n) => this.formatLayoutEntry(n),
       LayoutWord: (n) => this.formatLayoutWord(n),
@@ -432,6 +433,10 @@ export default class TaoFormatter extends AbstractFormatter {
     if (node.block) {
       this._spaceBeforeProperty(node, 'block')
     }
+  }
+
+  private formatChildrenSplice(_node: AST.ChildrenSplice): void {
+    // No intra-node spacing.
   }
 
   private formatLayoutClause(node: AST.LayoutClause): void {

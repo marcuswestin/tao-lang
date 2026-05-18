@@ -15,7 +15,7 @@ describe('alias validation', () => {
 
   test('no error for same alias name in different scopes', async () => {
     await resolveReferences(`
-      ui Container { render inject \`\`\`ts return null \`\`\` }
+      frame Container { render inject \`\`\`ts return null \`\`\` }
       ui MyView {
         render inject \`\`\`ts return null \`\`\`
         alias X = 1
