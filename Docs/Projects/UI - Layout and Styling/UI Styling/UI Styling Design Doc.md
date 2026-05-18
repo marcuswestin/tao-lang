@@ -6,7 +6,7 @@ The theme model and value propagation design lives in [UI Theme Design Doc](../U
 
 ## Current Decision
 
-- Styling is not part of layout v1.
+- Styling is not part of the layout MVP.
 - Styling will not use `[ ... ]`.
 - `< ... >` is deferred.
 - `( ... )` is deferred.

@@ -15,7 +15,7 @@ This is a hard migration. Remove implementation choices that do not match the ac
 - Replace user-facing `view` declarations with `ui`, `frame`, and `layout`.
 - Add material public roots through explicit `render` statements.
 - Add opaque caller children through `@@children`.
-- Replace the old layout v1 words with the spec vocabulary:
+- Replace the old layout words with the spec vocabulary:
 
   ```text
   items | aligned | stretched
@@ -70,7 +70,7 @@ Avoid helper-only commits unless a step becomes too large to review coherently. 
 
 - Step 1: complete in `adb1dde` (`feat(layout): cut over UI declaration keywords`).
 - Step 2: complete in `56f7cde` (`feat(layout): implement MVP layout vocabulary`).
-  - Replaced the old layout-v1 bracket vocabulary with the MVP heads: `items`, `aligned`, `stretched`, `width`, `height`, `fill`, `hug`, `grow`, `compress`, `rigid`, `gap`, and `pad`.
+  - Replaced the old bracketed layout vocabulary with the MVP heads: `items`, `aligned`, `stretched`, `width`, `height`, `fill`, `hug`, `grow`, `compress`, `rigid`, `gap`, and `pad`.
   - Added shared standard-container direction/default helpers for `Row`, `Col`, `Box`, `Stack`, and `WrappingRow`.
   - Rewrote layout validation for item slot claims, parent-axis self alignment, size/pressure conflicts, numeric rules, legacy/deferred word rejection, and malformed entries.
   - Updated serialized layout specs and runtime lowering to emit React Native/Yoga style props through the Tao runtime resolver, including `overflow: "hidden"` defaults.
@@ -100,11 +100,15 @@ Avoid helper-only commits unless a step becomes too large to review coherently. 
   - Added runtime text pressure props for `Text`, `TextLabel`, `MultiLineText`, line-limited `MultiLineText`, and `Number`.
   - Added standard `WrappingRow` public defaults of `compress + width fill + height hug` in the existing standard-container default path.
   - Expanded the std-lib render scenario and Expo allowlist so the MVP std-lib views compile and render in both runtime suites.
-- Step 7: complete in the current implementation commit.
-  - Confirmed active Tao fixtures no longer use `view` declarations or old layout-v1 words; remaining old layout words are deliberate validation rejection cases.
+- Step 7: complete in `a0246e3` (`test(layout): migrate layout fixtures`).
+  - Confirmed active Tao fixtures no longer use `view` declarations or old layout words; remaining old layout words are deliberate validation rejection cases.
   - Added an active `Layout Showcase` test app that exercises `items`, `gap`, `pad`, dimensions, fill/hug/grow/compress/rigid, `aligned`, `stretched`, `WrappingRow`, text variants, and line-limited runtime forwarding.
   - Added the showcase to the Expo shared-scenario allowlist so it runs under both Expo and headless runtime scenario suites.
-- Step 8: pending.
+- Step 8: complete in the current implementation commit.
+  - Removed remaining legacy-layout wording from active layout/styling project docs.
+  - Fixed runtime layout padding-token narrowing so generated runtime copies type-check after scenario tests create `_gen` app trees.
+  - Added regression coverage for merging padding entries that include a non-string runtime token.
+  - Re-ran final generation, compiler/formatter filters, Expo/headless runtime suites, repo check, fix, and prep-commit.
 
 ## Step 1. Declaration Kind Cutover
 
@@ -547,7 +551,7 @@ Suggested validation:
 
 Completion notes:
 
-- Active fixture migration did not require broad syntax churn because earlier steps had already removed old `view` declarations and layout-v1 clauses from active apps.
+- Active fixture migration did not require broad syntax churn because earlier steps had already removed old `view` declarations and legacy layout clauses from active apps.
 - `Apps/Test Apps/Layout Showcase/` is the broad MVP layout scenario for this step.
 - Runtime validation for this step used:
   - `./agent compiler test`;
@@ -594,6 +598,20 @@ Final verification:
 ```
 
 `./agent fix` and `./agent prep-commit` should run before the final implementation commit. If either changes files, inspect the diff before committing.
+
+Completion notes:
+
+- Active code, std-lib declarations, tests, and scenarios no longer depend on user-facing `view` declarations or removed layout words. Legacy words remain only in validation rejection coverage and historical/deferred design notes.
+- `./agent check` surfaced generated-runtime TypeScript errors in copied `Layout.ts`; the fix now lives in the std-lib runtime source so generated Expo/headless trees type-check consistently.
+- Final validation for this step used:
+  - `./agent gen`;
+  - `./agent test compiler`;
+  - `./agent test formatter`;
+  - `./agent expo-runtime test`;
+  - `./agent headless-test-runtime test`;
+  - `./agent fix`;
+  - `./agent check`;
+  - `./agent prep-commit`.
 
 ## Key Files
 

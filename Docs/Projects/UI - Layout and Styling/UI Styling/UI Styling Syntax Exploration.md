@@ -15,7 +15,7 @@ Status meanings used below:
 
 The current preferred styling direction is deliberately narrow:
 
-- Styling is not part of layout v1.
+- Styling is not part of the layout MVP.
 - `[ ... ]` is layout only; styling will not reuse it.
 - The leading styling delimiter candidate is `( ... )`, but it is not committed.
 - `< ... >` is deferred and has been reserved/rejected for various roles already.

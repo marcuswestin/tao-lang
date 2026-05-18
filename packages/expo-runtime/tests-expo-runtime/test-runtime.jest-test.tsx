@@ -116,6 +116,23 @@ describe('runtime:', () => {
     })
   })
 
+  test('ignores non-string pad tokens while merging layout padding entries', () => {
+    expect(
+      Layout.resolveMerged({
+        view: 'Box',
+        entrySets: [
+          [['pad', 'top', 6]],
+          [['pad', undefined as unknown as string, 'horizontal', 3]],
+        ],
+      }),
+    ).toMatchObject({
+      paddingBottom: 0,
+      paddingLeft: 3,
+      paddingRight: 3,
+      paddingTop: 6,
+    })
+  })
+
   test('applies Tao layout styles through std-lib Row and Text views', () => {
     const screen = render(
       <TR.Views.Row testID="row" _taoLayout={rowLayoutStyle}>

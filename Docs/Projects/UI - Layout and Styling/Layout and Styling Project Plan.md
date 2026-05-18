@@ -69,7 +69,7 @@ Scope:
 
 - Define the theme declaration model and typed theme value categories.
 - Decide how theme values flow into layout spacing, sizing, and future styling.
-- Decide how raw layout values and named theme values coexist after layout v1.
+- Decide how raw layout values and named theme values coexist after the layout MVP.
 - Decide type safety rules for theme properties, layout specs, style values, and inline overrides.
 - Decide how app defaults are selected or generated while preserving the core tenet that everything works out of the box.
 - Decide whether theme values are compile-time constants, runtime-resolved values, or both.
@@ -154,7 +154,7 @@ Initial direction:
 
 - Bare alignment words need known container direction. Validation must not guess silently.
 - Scroll behavior should not be hidden behind layout syntax because React Native scroll usually means `ScrollView`.
-- Theme support can easily outgrow layout v1; keep it deferred until raw layout works.
+- Theme support can easily outgrow the layout MVP; keep it deferred until raw layout works.
 - Styling should not start until theme values and typed token flow are decided.
 - Empty views can collapse in React Native; debug defaults or validation can be considered after core layout works.
 - Custom views need a future way to declare their container/layout role so bare child-arrangement words can be axis-validated outside known built-ins such as `Row`, `Col`, and explicit `row`/`column`.

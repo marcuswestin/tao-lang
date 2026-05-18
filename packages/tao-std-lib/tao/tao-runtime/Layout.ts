@@ -135,6 +135,9 @@ function padEntrySides(entry: TaoLayoutEntry): Record<'top' | 'right' | 'bottom'
       setAll(term)
       continue
     }
+    if (typeof term !== 'string') {
+      continue
+    }
     const value = entry[++i]
     if (value === undefined) {
       continue
@@ -353,6 +356,9 @@ function applyPad(style: TaoResolvedLayoutStyle, entry: TaoLayoutEntry): void {
     const term = entry[i]
     if (typeof term === 'number' || isPercentString(term)) {
       setAll(term)
+      continue
+    }
+    if (typeof term !== 'string') {
       continue
     }
     const value = entry[++i]
