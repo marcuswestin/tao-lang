@@ -2,26 +2,51 @@
 
 Purpose: explain the intended Tao design-inference experience for humans.
 
-This document describes why Tao design is not primarily a manually-authored theme dictionary, how the common source surface should feel, and how the generated design graph reaches React Native/Expo. The raw settled contract lives in [UI Design Inference Specification](./UI%20Design%20Inference%20Specification.md).
+This document describes why Tao design is not primarily a manually-authored theme dictionary, how design specs and variants should feel, and how the accepted design graph reaches React Native/Expo. The formal contract lives in [UI Design Inference Specification](./UI%20Design%20Inference%20Specification.md).
 
-## Core Idea
+## Core Principle
 
-Tao apps should look coherent with very little design code.
+The developer writes meaning. Tao generates presentation.
 
-Instead of asking every app author to build a full theme dictionary up front, Tao starts from intent:
+Tao source should name what a thing is for:
+
+```tao
+app InvoiceApp {
+  design {
+    description "calm financial tool for clear invoice review"
+  }
+
+  ui InvoiceScreen
+}
+
+variant DangerAction = ActionButton <"destructive action that needs restraint">
+```
+
+The author is not expected to start by choosing a full color palette, spacing scale, shadow catalog, or platform-specific style table. Tao turns source-level intent into accepted design metadata and then compiles that metadata into deterministic React Native/Expo output.
+
+## From Meaning To Presentation
+
+Design inference starts from intent:
 
 ```text
-app description
-+ view and variant names
-+ optional human descriptions
+app design description
++ declaration and variant names
++ optional design specs
 + platform/runtime context
 + accepted generated metadata
 = resolved app design
 ```
 
-The developer writes UI and meaning. Tao generates a design graph that includes theme tokens, composite styles, adaptive style tables, motion-related values later, and platform-aware outputs.
+The generated design graph includes:
 
-Theme is still important, but it is not the top-level concept. A theme is one generated part of the app design.
+- semantic roles;
+- composite roles such as actions, surfaces, and text treatments;
+- generated design tokens and theme values;
+- resolved style tables;
+- adaptation overlays;
+- later motion and accessibility-related generated values.
+
+Theme is still important, but it is not the top-level authoring model. A theme is one generated and resolved subsystem inside the broader app design graph.
 
 ## Why Not A Traditional Theme Dictionary
 
@@ -33,27 +58,9 @@ surface = white
 spacing.medium = 12
 ```
 
-That works for design-system experts, but it makes a new app author answer too many questions before the app has enough shape.
+That works for design-system experts, but it asks app authors to define visual primitives before the app has enough shape.
 
 Tao starts one level higher:
-
-```tao
-app InvoiceApp {
-  design {
-    description "calm financial tool for clear invoice review"
-  }
-
-  render InvoiceScreen
-}
-```
-
-From this, Tao can generate a coherent design direction and then refine it as named views and variants appear.
-
-The design remains inspectable. The generated result is not magic at runtime. It is accepted into deterministic design metadata and compiled like the rest of the app.
-
-## App Design
-
-The app owns one coherent design.
 
 ```tao
 app NotesApp {
@@ -61,63 +68,27 @@ app NotesApp {
     description "quiet writing app with warm focus and excellent long-form readability"
   }
 
-  render NotesScreen
+  ui NotesScreen
 }
 ```
 
-The app design description is the highest-level input. It tells Tao what the app should feel like, not which exact colors to use.
+From this, Tao can generate a coherent design direction and refine it as named views and variants appear. The result is inspectable and accepted into deterministic project metadata before production builds use it.
 
-V1 keeps this intentionally small:
+## Design Specs
 
-```tao
-design {
-  description "..."
-}
-```
-
-Later versions may add more typed fields such as audience, brand, density, seed colors, typography, or platform preferences. V1 only needs the description.
-
-## View Variants
-
-Most local visual differences should be named.
+A design spec is a small source-level design hint attached to a declaration or variant.
 
 ```tao
-variant Button = tao.Button
-variant WarningButton = Button
-variant DangerButton = WarningButton <"brighter, redder">
-```
-
-A `variant` is design-only in V1. It keeps the same API and render behavior as its target. It does not add wrappers, icons, children, slots, or new arguments.
-
-The variant chain becomes design input:
-
-```text
-tao.Button
-Button
-WarningButton
-DangerButton
-"brighter, redder"
-```
-
-That chain is enough for Tao to infer that `WarningButton` should behave visually like a warning action, and that `DangerButton` should be a stronger version of it.
-
-If a component needs different structure, it should be a real view, not a design-only variant.
-
-## Local Descriptions
-
-Declarations and variants can carry a short human description:
-
-```tao
-frame BodyText Value text <"clear, concise, easy to read"> {
+ui BodyText Value text <"clear, concise, easy to read"> {
   render Text Value
 }
 ```
 
-The description is semantic input for design generation. It is not a raw style clause. It does not mean "set these exact properties."
+The spec describes intent. It is not a style clause and does not set exact properties.
 
-In V1, `< ... >` contains only a string description. Missing `< ... >` does not turn inference off. Tao still infers from the app description, kind/root type, view or variant name, and variant chain.
+In V1, a design spec is only a string description in `<"...">` form. Missing design specs do not disable inference. Tao still infers from app design, declaration kind, root type, names, and variant chains.
 
-Render-site descriptions are deferred:
+Render-site design specs are deferred:
 
 ```tao
 render Button <"elevated">
@@ -126,38 +97,94 @@ render Button <"elevated">
 That is not V1. If a distinct look matters, give it a name:
 
 ```tao
-variant ElevatedButton = Button <"elevated">
+variant ElevatedAction = ActionButton <"elevated supporting action">
 ```
 
-## Always-On Inference
+## View Variants
 
-Every used named view participates in design inference.
-
-For a plain view:
+Most local visual differences should be named.
 
 ```tao
-frame InvoiceCard Invoice {
-  render Stack {
-    Text Invoice.CustomerName
-    Text Invoice.Amount
-    Button "Pay now", PayInvoice
-  }
-}
+use Button from @tao/ui
+
+variant ActionButton = Button
+variant WarningAction = ActionButton
+variant DangerAction = WarningAction <"stronger destructive action">
 ```
 
-Tao can infer from:
+A `variant` is design-only in V1. It keeps the same API and render behavior as its target. It does not add wrappers, icons, children, slots, or new arguments.
+
+The variant chain becomes design input:
 
 ```text
-app design description
-frame
-InvoiceCard
+Button
+ActionButton
+WarningAction
+DangerAction
+"stronger destructive action"
 ```
 
-V1 does not inspect the body or parameter names for design inference. That keeps the first system stable and simple. Body-aware and parameter-aware inference are useful later additions.
+If a component needs different structure, it should be a real view. Structural variants are reserved for later design.
 
-## One App Design, Not Subtree Themes
+## Composite Roles
 
-The chosen direction is one coherent app design.
+Tao design revolves around composites, not individual tokens.
+
+Examples:
+
+```text
+composite.action.primary
+composite.action.warning
+composite.action.danger
+composite.text.supporting
+composite.surface.card
+```
+
+A composite role is an internal design unit that says what kind of presentation a source identity needs. Tokens and style tables are emitted from composites:
+
+```text
+source intent -> semantic role -> composite role -> resolved tokens/styles
+```
+
+This keeps source code semantic while still allowing the generated runtime to use concrete colors, spacing, typography, shadows, borders, opacity, motion values, and transforms.
+
+## Identity Layers
+
+Tao keeps identity layers separate so design metadata can be cached, reviewed, migrated, and reused.
+
+```text
+Source identity
+  declaration or variant chain from Tao source
+
+Design spec identity
+  source identity + app design input + optional design spec string
+
+Semantic identity
+  inferred role and composite meaning
+
+Resolved style key
+  stable generated key used by runtime helpers
+
+Runtime context key
+  active adaptation and interaction-state context
+```
+
+For example:
+
+```text
+Source identity:       DangerAction
+Design spec identity:  DangerAction + "stronger destructive action"
+Semantic identity:     destructive warning action
+Composite role:        composite.action.danger
+Resolved style key:    style.action.danger
+Runtime context key:   ios + dark + compact + pressed
+```
+
+The human author mostly sees source names and design specs. The compiler and runtime use the later layers.
+
+## One App Design
+
+The app owns one coherent design.
 
 Tao should not encourage this as the normal model:
 
@@ -169,9 +196,9 @@ Local differences should usually be expressed through:
 
 - named variants;
 - view names;
-- semantic descriptions;
-- generated composite style assignments;
-- later explicit style systems.
+- design specs;
+- generated composite role assignments;
+- later explicit appearance systems.
 
 This keeps the app harmonious and prevents the view tree from becoming a stack of unrelated theme contexts.
 
@@ -190,54 +217,15 @@ Tao source
 
 `tao.design.lock` is accepted project state. Production builds use it.
 
-Dev mode may generate suggestions in a hidden artifact. The dev app can preview those suggestions, but they are not production design state until accepted.
+Dev mode may generate suggestions in a hidden `.tao.design.lock` artifact. The dev app can preview those suggestions, but they are not production design state until accepted.
 
-This is similar in spirit to dependency locking:
+The compiler does not ask an LLM how to style a button. It reads accepted design metadata and generated tables. Production builds fail when accepted design metadata is stale or missing for required entries.
 
-```text
-human intent       -> source files
-accepted resolution -> lock file
-```
-
-## Deterministic Compilation
-
-Design inference can use heuristics and later AI-assisted tools, but compilation must stay deterministic.
-
-The compiler does not ask an LLM how to style a button. It reads accepted design metadata and generated tables.
-
-Production builds fail when accepted design metadata is stale or missing for required entries. Dev mode can be more flexible by generating suggestions in the background.
-
-## Generated TypeScript Runtime
+## Generated Runtime
 
 V1 targets React Native/Expo directly through generated TypeScript.
 
-Conceptual shape:
-
-```ts
-export const theme = {
-  color: {
-    background: '#F8F7F4',
-    surface: '#FFFFFF',
-    primary: '#3B5BDB',
-    text: '#171717',
-  },
-  spacing: {
-    sm: 8,
-    md: 12,
-    lg: 20,
-  },
-} as const
-
-export const styles = StyleSheet.create({
-  Button: {
-    backgroundColor: theme.color.primary,
-    padding: theme.spacing.md,
-    borderRadius: 12,
-  },
-})
-```
-
-The real shape should expose resolver helpers, because many facts are runtime-only.
+Conceptual output:
 
 ```ts
 const design = createTaoDesign({
@@ -246,17 +234,17 @@ const design = createTaoDesign({
   adaptations,
 })
 
-export function useTaoStyle(name) {
+export function useTaoStyle(name, state) {
   const context = useTaoDesignContext()
-  return design.resolveStyle(name, context)
+  return design.resolveStyle(name, context, state)
 }
 ```
 
-Generated views should call stable helpers. The helper owns adaptation, fallback, and merge behavior.
+Generated views call stable helpers. The helper owns adaptation, fallback, and overlay composition. Runtime style-object memoization is a later performance concern, not a required V1 contract.
 
-## Adaptation
+## Adaptation And State
 
-V1 design resolution must adapt at runtime for core React Native/Expo facts:
+V1 design resolution adapts at runtime for core React Native/Expo facts:
 
 - color scheme;
 - platform;
@@ -264,7 +252,15 @@ V1 design resolution must adapt at runtime for core React Native/Expo facts:
 - screen size;
 - reduced motion.
 
-The generated module starts with base values and applies active overlays in a deterministic order:
+V1 also supports interaction-state overlays for interactive composites:
+
+- `default`;
+- `pressed`;
+- `disabled`;
+- `focused`;
+- `selected`.
+
+The generated module starts with base values, applies active adaptation overlays, then applies the active interaction-state overlay.
 
 ```text
 base
@@ -273,9 +269,10 @@ colorScheme
 screenSize
 textScale
 reducedMotion
+state
 ```
 
-Later overlays replace earlier properties. Every generated style has a base fallback.
+`loading` is deferred because it may affect component behavior, data state, or rendered structure.
 
 High contrast, locale, RTL, pointer/hover, keyboard, and device posture are deferred.
 
@@ -283,9 +280,7 @@ High contrast, locale, RTL, pointer/hover, keyboard, and device posture are defe
 
 Style Dictionary is useful as an export and interoperability target, but it is not the V1 runtime target.
 
-Tao keeps its own design lock because it needs semantic provenance, suggestion status, source identities, analyzer versions, and accepted/resolved metadata. Later, Tao can emit DTCG or Style Dictionary-compatible tokens for documentation, native resource generation, or design-tool integration.
-
-V1 compiles to generated TypeScript for React Native/Expo.
+Tao keeps its own design lock because it needs semantic provenance, suggestion status, source identities, analyzer versions, accepted/resolved metadata, composite roles, and runtime style keys. Later, Tao can emit DTCG or Style Dictionary-compatible tokens for documentation, native resource generation, or design-tool integration.
 
 ## What The User Writes
 
@@ -297,41 +292,42 @@ app InvoiceApp {
     description "calm financial tool for clear invoice review"
   }
 
-  render InvoiceScreen
+  ui InvoiceScreen
 }
 
-variant PrimaryButton = tao.Button
-variant WarningButton = PrimaryButton
-variant DangerButton = WarningButton <"stronger destructive action">
+use Button, Col, Stack, Text from @tao/ui
 
-layout InvoiceScreen {
+variant PrimaryAction = Button <"main positive action">
+variant DangerAction = PrimaryAction <"stronger destructive action">
+
+ui InvoiceScreen <"review screen with clear financial hierarchy"> {
   render Col [gap 16, pad 20] {
     InvoiceCard CurrentInvoice
-    DangerButton "Delete invoice", DeleteInvoice
+    DangerAction "Delete invoice", DeleteInvoice
   }
 }
 
-frame InvoiceCard Invoice <"trustworthy document card with clear financial hierarchy"> {
+ui InvoiceCard Invoice <"trustworthy document card with clear financial hierarchy"> {
   render Stack [gap 8, pad 16] {
     Text Invoice.CustomerName
     Text Invoice.Amount
     BodyText Invoice.Description
-    PrimaryButton "Pay now", PayInvoice
+    PrimaryAction "Pay now", PayInvoice
   }
 }
 
-frame BodyText Value text <"clear, concise, easy to read"> {
+ui BodyText Value text <"clear, concise, easy to read"> {
   render Text Value
 }
 ```
 
-The author gives Tao meaningful names and a few descriptions. Tao resolves the design system, stores accepted metadata, and generates deterministic React Native/Expo styles.
+The author gives Tao meaningful names and a few descriptions. Tao resolves the design graph, stores accepted metadata, and generates deterministic React Native/Expo styles.
 
 ## Deferred Complexity
 
 The first version deliberately avoids:
 
-- render-site design metadata;
+- render-site design specs;
 - explicit token dictionaries;
 - raw colors and spacing in design source;
 - subtree theme replacement;
@@ -340,6 +336,6 @@ The first version deliberately avoids:
 - node labels for sub-view styling;
 - structural variants;
 - Style Dictionary runtime output;
+- runtime style memoization requirements;
+- semantic capability diagnostics;
 - AI in the compile path.
-
-These are not rejected forever. They are held back so the first model stays understandable.

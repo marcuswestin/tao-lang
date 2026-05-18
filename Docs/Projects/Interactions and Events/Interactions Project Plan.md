@@ -65,19 +65,19 @@ Questions:
 - Which events are first-class for v1: `press`, `long_press`, `focus`, `blur`, `hover_in`, `hover_out`, `change`, `submit`, `scroll`, `swipe`, `drag`, `pinch`?
 - Which events map to React Native `Pressable`, `TextInput`, `ScrollView`, Gesture Handler, or other Expo/RN APIs?
 - Which events work on iOS, Android, web, and headless tests?
-- How do event handlers interact with visual state modifiers such as `when pressed`?
+- How do event handlers interact with design-state overlays such as `pressed`, `disabled`, `focused`, and `selected`?
 
 Example:
 
 ```tao
 Button "Save", Save {
-  when pressed (motion press)
-
   on press {
     do Save
   }
 }
 ```
+
+V1 design inference may generate `pressed`, `disabled`, `focused`, and `selected` appearance overlays for interactive composites. Explicit `when pressed` style/motion syntax is a future interaction/design integration topic.
 
 ## Action Lifecycle Events
 

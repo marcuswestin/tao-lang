@@ -39,7 +39,7 @@ Out of scope for this layout MVP:
 margin | border/radius | scroll containers | raw overflow syntax
 raw wrap syntax | raw absolute positioning | z/layer | order/reverse
 aspect ratio | display contents | measure functions | animations/transitions
-general unit syntax | theme tokens | localization mirroring
+general unit syntax | design tokens | localization mirroring
 native/atom injection | events | state | queries | named render slots | rich/editable/selectable text
 ```
 
@@ -161,7 +161,7 @@ Example:
 
 ```tao
 ui Pill Label text [compress, pad 8] {
-  render Box <bg muted> {
+  render Box {
     Text Label
   }
 }
@@ -629,11 +629,7 @@ Layout syntax:
 [ ... ]
 ```
 
-Future style syntax:
-
-```text
-< ... >
-```
+Future appearance syntax is not specified here. V1 design specs use `<"description">` on declarations and variants; do not treat angle brackets as a chosen style delimiter.
 
 Style properties are not layout:
 
@@ -753,7 +749,7 @@ display contents
 measure functions
 animations/transitions
 general unit syntax
-theme tokens
+design tokens
 safe-area and keyboard-aware layout
 responsive/adaptive container queries
 grid/table/masonry layout

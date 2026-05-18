@@ -1,31 +1,32 @@
 # Layout and Styling Project Plan
 
-Tao's visual surface covers positioning, sizing, spacing, appearance, themes, and their interaction with React Native/Expo.
+Tao's visual surface covers positioning, sizing, spacing, generated design values, explicit appearance, and their interaction with React Native/Expo.
 
 ## Status
 
 - **Layout syntax:** implementation underway. The current branch has bracketed clause parsing, validation, codegen, and runtime support, while the active language contract is defined in `UI Layout Specification`.
-- **Theme system:** core model decided; theme is a primitive dictionary, values propagate down the view tree, and adaptation selector syntax remains open.
-- **Styling syntax:** deferred until the theme/value pipeline is proven; `( ... )` is the leading delimiter candidate.
+- **Design inference:** active direction decided; Tao starts from app intent, design specs, variants, composite roles, accepted design metadata, and React Native/Expo lowering.
+- **Styling syntax:** deferred until the design/value pipeline is proven; no delimiter or inline style surface is chosen.
 - **Transforms and motion:** deferred into a separate project track.
 
 ## Key Decisions
 
 - `[ ... ]` is the layout delimiter; styling will not reuse it.
-- Layout v1 uses actual values, not theme tokens.
-- Themes declare named primitives and do not know about specific views.
-- Views own their styling and reference theme tokens by property type.
-- Raw literals remain escape hatches; named tokens are the normal path once themes exist.
-- Default themes should provide tasteful app-specific defaults without required configuration.
+- Layout v1 uses actual values, not design tokens.
+- Design specs describe intent on declarations and variants; they are not style clauses.
+- Composite roles are the internal presentation unit; generated tokens and styles are emitted from composites.
+- Raw style literals and source-authored token dictionaries are deferred.
+- Default design should provide tasteful app-specific output without required configuration.
 
 ## Document Map
 
 - [UI Layout Concepts](../../Tao%20Language%20Design/UI%20Layout%20Concepts.md): human-facing layout model and examples.
 - [UI Layout Specification](../../Tao%20Language%20Design/UI%20Layout%20Specification.md): active layout syntax, validation, merge behavior, runtime mapping, and deferrals.
 - [UI Declaration and Render Slots Specification](../../Tao%20Language%20Design/UI%20Declaration%20and%20Render%20Slots%20Specification.md): declaration kinds, render roots, `@@children`, named slots, renderer slots, and fragment boundaries.
-- [UI Theme Design Doc](./UI%20Themes/UI%20Theme%20Design%20Doc.md): theme primitives, propagation, adaptation, variants, and defaults.
-- [UI Styling Design Doc](./UI%20Styling/UI%20Styling%20Design%20Doc.md): styling boundary, likely syntax, and unresolved styling choices.
-- [UI Styling Syntax Exploration](./UI%20Styling/UI%20Styling%20Syntax%20Exploration.md): styling alternatives, property catalog, token ideas, and design-system references.
+- [UI Design Inference Project Plan](./UI%20Design/UI%20Design%20Inference%20Project%20Plan.md): design inference implementation plan, lock workflow, composites, and runtime lowering.
+- [UI Design Inference Concepts](../../Tao%20Language%20Design/UI%20Design%20Inference%20Concepts.md): human-facing design-inference model and examples.
+- [UI Design Inference Specification](../../Tao%20Language%20Design/UI%20Design%20Inference%20Specification.md): active design syntax, validation, locking, resolution, runtime mapping, and deferrals.
+- [UI Appearance Future Work](./UI%20Design/UI%20Appearance%20Future%20Work.md): non-authoritative future styling and React Native style-surface notes.
 - [UI Layout and Styling Raw Notes](../../Archive/UI%20Layout%20and%20Styling%20Raw%20Notes.md): historical notes only.
 
 ## Step 1. Layout Syntax Only
@@ -36,7 +37,7 @@ Scope:
 
 - Add optional `[ ... ]` layout clauses to view renders.
 - Use raw layout values only: lowercase words and numeric values.
-- Do not implement themes, named tokens, styling, transforms, animation, or interaction syntax.
+- Do not implement design inference, named tokens, styling, transforms, animation, or interaction syntax.
 - Allow one layout clause per render statement.
 - Reject top-level layout statements in view bodies.
 - Generate the parsed layout parameters and values at the render site.
@@ -61,37 +62,37 @@ Exit criteria:
 - Codegen tests show structured layout data emitted at render sites.
 - Runtime tests show Row/Col child layout and self layout map to React Native styles.
 
-## Step 2. Themes, Values, And Type Safety
+## Step 2. Design Inference, Values, And Type Safety
 
-Goal: decide how Tao themes work before implementing styling.
+Goal: implement Tao design inference before implementing a general styling language.
 
 Scope:
 
-- Define the theme declaration model and typed theme value categories.
-- Decide how theme values flow into layout spacing, sizing, and future styling.
-- Decide how raw layout values and named theme values coexist after the layout MVP.
-- Decide type safety rules for theme properties, layout specs, style values, and inline overrides.
-- Decide how app defaults are selected or generated while preserving the core tenet that everything works out of the box.
-- Decide whether theme values are compile-time constants, runtime-resolved values, or both.
-- Decide how adaptation modes such as dark mode, platform, screen size, text scale, reduced motion, and locale affect theme values.
-- Decide style/theme override hierarchy and diagnostics.
+- Parse app `design` descriptions, declaration/variant design specs, and design-only variants.
+- Generate semantic identity, composite roles, resolved tokens, resolved style keys, and runtime adaptation/state tables.
+- Use accepted `tao.design.lock` metadata for production builds and hidden `.tao.design.lock` suggestions for dev review.
+- Keep raw style literals and explicit source-authored token dictionaries deferred.
+- Decide type safety rules for generated resolved token categories and runtime resolver keys.
+- Preserve the core tenet that everything works out of the box with tasteful app-specific defaults.
+- Decide how adaptation modes such as color scheme, platform, screen size, text scale, and reduced motion affect resolved design values.
+- Keep high contrast, locale, RTL, pointer/hover, keyboard, and device posture as later design axes.
 
 Exit criteria:
 
-- A reviewer can explain how a spacing, color, or text style value is declared, typed, resolved, validated, and emitted.
-- Invalid value-type usage has a planned diagnostic shape.
-- The model covers default themes and app-specific theme variation without required app configuration.
-- Styling syntax can build on a concrete typed value system.
+- A reviewer can explain how source intent becomes semantic identity, composite roles, resolved style keys, generated tokens, and React Native/Expo output.
+- Invalid design specs, missing accepted entries, stale locks, and resolver fallback gaps have planned diagnostics.
+- The model covers app-specific visual defaults without required app configuration.
+- Future styling syntax can build on a concrete design/value pipeline.
 
 ## Step 3. Styling Syntax And Style Coverage
 
-Goal: design and implement styling after the theme/value pipeline is clear, without letting styling leak into `[ ... ]`.
+Goal: design and implement styling after the design/value pipeline is clear, without letting styling leak into `[ ... ]`.
 
 Scope:
 
-- Decide the styling delimiter, with `( ... )` as the leading candidate.
-- Define typed style values and style references using the theme/value model.
-- Decide inline style override rules.
+- Decide whether explicit appearance uses a delimiter, keyword, named declaration, or another source surface.
+- Define typed style values and style references using the design/value model.
+- Decide whether inline style escape hatches exist and how they interact with accepted design metadata.
 - Cover React Native view styles, text styles, image styles, shadows/elevation, opacity, borders, radius, color, typography, and component variants.
 - Decide how unsupported, platform-specific, or native-library-specific style surfaces are represented.
 - Generate React Native `StyleSheet.create` output plus Tao runtime helpers unless an external library becomes necessary.
@@ -99,7 +100,7 @@ Scope:
 Exit criteria:
 
 - Layout remains geometry-only.
-- Styling supports at least text, color, background, radius, border, shadow, opacity, and variants.
+- Styling supports at least text, color, background, radius, border, shadow, opacity, and generated/design variants.
 - Generated TSX remains readable and avoids creating ad-hoc static style objects on every render.
 
 ## Step 4. Transforms And Motion
@@ -154,7 +155,7 @@ Initial direction:
 
 - Bare alignment words need known container direction. Validation must not guess silently.
 - Scroll behavior should not be hidden behind layout syntax because React Native scroll usually means `ScrollView`.
-- Theme support can easily outgrow the layout MVP; keep it deferred until raw layout works.
-- Styling should not start until theme values and typed token flow are decided.
+- Design support can easily outgrow the layout MVP; keep it behind raw layout until the design inference path is ready.
+- Styling should not start until design values, composites, and typed resolved style keys are decided.
 - Empty views can collapse in React Native; debug defaults or validation can be considered after core layout works.
 - Custom views need a future way to declare their container/layout role so bare child-arrangement words can be axis-validated outside known built-ins such as `Row`, `Col`, and explicit `row`/`column`.

@@ -1,14 +1,15 @@
 # UI Design Inference Specification
 
-Purpose: raw settled contract for Tao design inference.
+Purpose: define Tao's settled V1 design-inference contract.
 
-This is intentionally a decision dump. It records what has been decided so far without trying to polish the full final specification. The human-facing explanation lives in [UI Design Inference Concepts](./UI%20Design%20Inference%20Concepts.md).
+This document is the implementation-facing source of truth for design inference. The human-facing explanation lives in [UI Design Inference Concepts](./UI%20Design%20Inference%20Concepts.md).
 
 ## 1. Terminology
 
 - Use `design` as the primary term.
-- A design encompasses theme values, semantic tokens, composite styles, adaptive behavior, generated style helpers, and later motion/accessibility-related generated values.
+- A design encompasses semantic roles, composite roles, theme values, generated tokens, adaptive behavior, generated style helpers, and later motion/accessibility-related generated values.
 - A `theme` is a generated/resolved subsystem inside the broader design graph.
+- A `design spec` is source-level string intent attached to a declaration or variant.
 - Do not describe the chosen model as subtree theme overriding.
 - Do not describe LLMs or AI as part of the compile path.
 
@@ -22,7 +23,7 @@ app InvoiceApp {
     description "calm financial tool for clear invoice review"
   }
 
-  render InvoiceScreen
+  ui InvoiceScreen
 }
 ```
 
@@ -47,12 +48,12 @@ Deferred fields:
 - platform preferences;
 - accessibility preferences.
 
-## 3. Angle Metadata
+## 3. Design Specs
 
-V1 angle metadata contains only a string description.
+V1 design specs contain only a string description.
 
 ```tao
-frame BodyText Value text <"clear, concise, easy to read"> {
+ui BodyText Value text <"clear, concise, easy to read"> {
   render Text Value
 }
 ```
@@ -60,15 +61,15 @@ frame BodyText Value text <"clear, concise, easy to read"> {
 Settled rules:
 
 - `<"description">` is semantic input for design inference.
-- Missing angle metadata does not disable inference.
-- `< ... >` is legal on declarations and variants in V1.
-- `< ... >` is not legal on render sites in V1.
+- Missing design specs do not disable inference.
+- Design specs are legal on declarations and variants in V1.
+- Design specs are not legal on render sites in V1.
 - `<auto>` is not V1.
 - `<none>` is not V1.
 - `<name>` token/tag references are not V1.
-- Concrete style values inside `< ... >` are not V1.
+- Concrete style values inside design specs are not V1.
 
-Render-site metadata is deferred:
+Render-site design specs are deferred:
 
 ```tao
 render Button <"elevated">
@@ -77,7 +78,7 @@ render Button <"elevated">
 Use a named variant instead:
 
 ```tao
-variant ElevatedButton = Button <"elevated">
+variant ElevatedAction = ActionButton <"elevated">
 ```
 
 ## 4. View Variants
@@ -85,9 +86,11 @@ variant ElevatedButton = Button <"elevated">
 Use `variant` for design-only view specializations.
 
 ```tao
-variant Button = tao.Button
-variant WarningButton = Button
-variant DangerButton = WarningButton <"brighter, redder">
+use Button from @tao/ui
+
+variant ActionButton = Button
+variant WarningAction = ActionButton
+variant DangerAction = WarningAction <"brighter, redder">
 ```
 
 Settled rules:
@@ -98,23 +101,82 @@ Settled rules:
 - A variant does not add or remove children.
 - A variant does not add slots.
 - A variant does not change arguments.
-- A variant only changes design identity and therefore resolved style/theme metadata.
+- A variant only changes design identity and therefore semantic/resolved design metadata.
 - A variant target may be another variant.
 - The full variant chain participates in inference.
+- Structural variants are deferred.
 
 Example chain:
 
 ```text
-tao.Button
 Button
-WarningButton
-DangerButton
+ActionButton
+WarningAction
+DangerAction
 "brighter, redder"
 ```
 
-Structural variants are deferred.
+## 5. Identity Layers
 
-## 5. Always-On Inference
+V1 stores separate identity layers.
+
+```text
+sourceIdentity
+designSpecIdentity
+semanticIdentity
+compositeRole
+resolvedStyleKey
+runtimeContextKey
+```
+
+Layer definitions:
+
+- `sourceIdentity`: declaration or variant chain from Tao source after imports resolve.
+- `designSpecIdentity`: source identity plus app design input and optional design spec string.
+- `semanticIdentity`: inferred role meaning.
+- `compositeRole`: reusable internal presentation role.
+- `resolvedStyleKey`: stable generated key referenced by generated view code.
+- `runtimeContextKey`: active adaptation and interaction-state context used by resolver helpers.
+
+Example:
+
+```text
+sourceIdentity:      app:InvoiceApp/view:DangerAction
+designSpecIdentity: sourceIdentity + appDesign + "brighter, redder"
+semanticIdentity:   destructive warning action
+compositeRole:      composite.action.danger
+resolvedStyleKey:   style.action.danger
+runtimeContextKey:  ios.dark.compact.pressed
+```
+
+Design lock staleness uses design input identity, not runtime context identity.
+
+## 6. Composite Roles
+
+Composite roles are first-class internal design units.
+
+Examples:
+
+```text
+composite.action.primary
+composite.action.warning
+composite.action.danger
+composite.text.body
+composite.text.supporting
+composite.surface.card
+composite.surface.warning
+```
+
+Settled rules:
+
+- Composites are generated from design intent and semantic identity.
+- Resolved tokens and style tables are emitted from composites.
+- Tokens are not the primary Tao source authoring model.
+- Composite role names use `composite.<role>.<name>`.
+- Composite roles participate in rationale/provenance output.
+- Standard-library role defaults map to composite roles.
+
+## 7. Always-On Inference
 
 Every used named view gets design inference.
 
@@ -122,9 +184,9 @@ There is no V1 opt-out marker.
 
 Settled rules:
 
-- Missing `< ... >` still infers from source identity.
+- Missing design specs still infer from source identity.
 - Standard-library views are not exempt from inference.
-- The inference engine may be conservative with standard-library structural views, but it still assigns at least one design tag/composite entry to every used named view identity.
+- The inference engine may be conservative with standard-library structural views, but it still assigns at least one design tag or composite entry to every used named view identity.
 - The underlying root type/kind participates in the identity chain.
 
 Example identity chain:
@@ -134,7 +196,9 @@ variant WarningRow = Row
 => [layout, Row, WarningRow]
 ```
 
-## 6. V1 Inference Inputs
+Future work may collapse trivial structural wrappers internally if lock noise becomes a real problem. That is not a V1 source rule.
+
+## 8. V1 Inference Inputs
 
 V1 inference uses design identity context, not full UI analysis.
 
@@ -145,7 +209,7 @@ Included inputs:
 - underlying root type of a variant chain;
 - declaration or variant name;
 - variant chain;
-- optional `<"description">` string;
+- optional design spec string;
 - analyzer version;
 - design lock schema version.
 
@@ -156,11 +220,11 @@ Excluded from V1 inference:
 - internal render nodes;
 - whole-app repeated-pattern analysis;
 - call-site context;
-- render-site metadata.
+- render-site design specs.
 
 Body-aware, parameter-aware, and whole-app inference are deferred.
 
-## 7. Lock Staleness
+## 9. Lock Staleness
 
 V1 design lock staleness uses design inputs only.
 
@@ -170,7 +234,7 @@ Staleness inputs:
 - view kind/root type;
 - variant chain;
 - declaration or variant names;
-- `<"description">` strings;
+- design spec strings;
 - analyzer version;
 - design lock schema version.
 
@@ -183,7 +247,7 @@ Excluded from V1 staleness:
 
 A body edit alone does not stale a V1 design lock entry.
 
-## 8. Accepted And Suggested Metadata
+## 10. Accepted And Suggested Metadata
 
 Accepted design metadata lives in:
 
@@ -209,12 +273,13 @@ Settled rules:
 - Production builds read only `tao.design.lock`.
 - Production validation and generated import paths reject hidden suggestion artifacts.
 - `tao design` analyzes and generates design suggestions into `.tao.design.lock`.
-- `tao design update` accepts all current suggestions.
+- `tao design update` accepts current suggestions.
 - Accepting suggestions uses an internal `acceptAndLockSuggestions` operation.
-- In V1, accepting suggestions overwrites `tao.design.lock` with `.tao.design.lock` when the two differ.
+- In V1, accepting suggestions overwrites `tao.design.lock` with `.tao.design.lock` when they differ, rewriting accepted entries to `accepted`.
 - Explicit source input wins over lock inference.
 - Accepted lock inference wins over deterministic defaults.
 - Deterministic defaults cover unresolved gaps only where the build mode permits it.
+- Low-confidence suggestions must be labelled before update; no special V1 partial-accept flow is required.
 
 Build mode rules:
 
@@ -222,7 +287,7 @@ Build mode rules:
 - Dev compilation may continue while suggestions are generated in the background.
 - Dev mode can apply generated suggestions to unresolved parts of the UI before they are accepted.
 
-## 9. Lock Payload
+## 11. Lock Payload
 
 `tao.design.lock` stores semantic and resolved design data.
 
@@ -235,6 +300,8 @@ appDesign
 entries
 generatedAt
 ```
+
+`generatedAt` is optional metadata. It must not participate in input hashes or stale checks.
 
 Entry shape:
 
@@ -250,8 +317,9 @@ provenance
 Semantic payload includes:
 
 - inferred descriptions;
+- semantic identity;
 - composite tags;
-- role mappings;
+- composite role mappings;
 - rationale;
 - provenance;
 - source identity;
@@ -261,9 +329,10 @@ Resolved payload includes:
 
 - concrete tokens;
 - adaptive token tables;
-- style keys;
+- resolved style keys;
 - resolved style objects or style tables;
-- platform/adaptation overlays.
+- platform/adaptation overlays;
+- interaction-state overlays.
 
 Required metadata direction:
 
@@ -272,6 +341,10 @@ Required metadata direction:
 - analyzer/model/profile version;
 - design input hash;
 - source identity;
+- design spec identity;
+- semantic identity;
+- composite role;
+- resolved style key;
 - accepted or suggested status;
 - provenance;
 - semantic payload;
@@ -287,7 +360,7 @@ accepted | suggested
 
 `tao.design.lock` normally contains accepted entries. `.tao.design.lock` may contain accepted and suggested entries.
 
-## 10. V1 Resolved Token Categories
+## 12. V1 Resolved Token Categories
 
 The design graph and generated runtime reserve typed categories for:
 
@@ -317,20 +390,7 @@ text.body
 motion.feedback.confirm
 ```
 
-Composite role names use:
-
-```text
-composite.<role>.<name>
-```
-
-Examples:
-
-```text
-composite.action.primary
-composite.surface.card
-```
-
-## 11. Generated TypeScript Target
+## 13. Generated TypeScript Target
 
 V1 compiles accepted design metadata into a generated TypeScript design module for React Native/Expo.
 
@@ -348,36 +408,12 @@ import { useTaoStyle } from './tao-design'
 
 Reusable runtime helpers live in the Tao runtime package and are imported by the generated design module.
 
-Conceptual output:
-
-```ts
-export const theme = {
-  color: {
-    background: '#F8F7F4',
-    surface: '#FFFFFF',
-    primary: '#3B5BDB',
-    text: '#171717',
-  },
-  spacing: {
-    sm: 8,
-    md: 12,
-    lg: 20,
-  },
-} as const
-
-export const styles = StyleSheet.create({
-  Button: {
-    backgroundColor: theme.color.primary,
-    padding: theme.spacing.md,
-    borderRadius: 12,
-  },
-})
-```
-
 Settled direction:
 
 - Generated TS stores resolved tokens.
+- Generated TS stores semantic composite role mappings.
 - Generated TS stores adaptive token/style tables.
+- Generated TS stores interaction-state overlays for interactive composites.
 - Generated TS stores generated React Native style objects/helpers.
 - Generated TS keeps semantic token structure; it is not StyleSheet-only.
 - React Native/Expo is the V1 runtime target.
@@ -386,7 +422,7 @@ Settled direction:
 
 Style Dictionary export is deferred.
 
-## 12. Runtime Resolver Helpers
+## 14. Runtime Resolver Helpers
 
 Generated TypeScript exposes resolver helpers backed by resolved tables.
 
@@ -399,9 +435,9 @@ const design = createTaoDesign({
   adaptations,
 })
 
-export function useTaoStyle(name) {
+export function useTaoStyle(name, state) {
   const context = useTaoDesignContext()
-  return design.resolveStyle(name, context)
+  return design.resolveStyle(name, context, state)
 }
 ```
 
@@ -411,16 +447,19 @@ Settled rules:
 - Tables are an internal/generated implementation detail.
 - Generated views call stable helpers such as `resolveStyle(...)` or `useTaoStyle(...)`.
 - The helper reads current runtime adaptation context.
+- The helper may receive current interaction state.
 - The helper owns fallback and overlay composition.
-- The compiler validates that referenced style keys exist.
+- The compiler validates that referenced resolved style keys exist.
 - Every resolver path needs a deterministic fallback.
 - V1 exposes `createTaoDesign({ tokens, styles, adaptations })`.
-- V1 exposes pure `resolveStyle(name, context)`.
-- V1 exposes hook `useTaoStyle(name)`.
+- V1 exposes pure `resolveStyle(name, context, state?)`.
+- V1 exposes hook `useTaoStyle(name, state?)`.
 - V1 exposes hook/provider support for `useTaoDesignContext()`.
 - V1 does not generate per-view hooks.
 
-## 13. V1 Runtime Adaptation Axes
+Runtime style-object memoization and stable StyleSheet reference caching are future performance work, not a required V1 contract.
+
+## 15. V1 Runtime Adaptation Axes
 
 V1 supports core runtime axes:
 
@@ -463,7 +502,41 @@ Text scale directly affects typography. Spacing scales only for text-adjacent/in
 
 Reduced motion collapses or disables generated motion helpers where present. The full motion language remains deferred.
 
-## 14. Adaptation Composition
+## 16. V1 Interaction State
+
+V1 design resolution supports state overlays for interactive composites.
+
+V1 states:
+
+```text
+default
+pressed
+disabled
+focused
+selected
+```
+
+Settled rules:
+
+- `default` is the base interactive state.
+- State overlays are emitted only for composites that need them.
+- State overlays use the same partial-object shape as adaptation overlays.
+- State overlays apply after adaptation overlays.
+- Later state overlays replace earlier resolved properties in the same way adaptation overlays do.
+- Every interactive composite needs a deterministic default fallback.
+
+Deferred states:
+
+- loading;
+- hovered;
+- invalid;
+- expanded;
+- dragged;
+- action lifecycle states.
+
+`loading` is deferred because it may affect component behavior, data/action lifecycle, or rendered structure.
+
+## 17. Adaptation Composition
 
 V1 adaptation composition uses ordered overlays.
 
@@ -476,6 +549,7 @@ Order:
 4. screenSize
 5. textScale
 6. reducedMotion
+7. state
 ```
 
 Settled rules:
@@ -492,7 +566,7 @@ Rejected for V1:
 - exact variant table for every axis combination;
 - custom resolver per style.
 
-## 15. Standard-Library Roles
+## 18. Standard-Library Roles
 
 Standard-library views participate in design inference through built-in canonical role entries versioned with the Tao standard library.
 
@@ -507,7 +581,7 @@ V1 base role direction:
 - `MultiLineText` receives body-like multiline typography by default.
 - `Button` receives an interactive action role by default.
 
-## 16. Diagnostics
+## 19. Diagnostics
 
 Production hard errors:
 
@@ -526,20 +600,22 @@ V1 review UI is CLI-first:
 
 - `tao design` prints grouped new, changed, stale, and low-confidence entries;
 - `tao design` writes `.tao.design.lock`;
-- `tao design update` accepts all suggestions by overwriting `tao.design.lock`;
+- `tao design update` accepts suggestions by overwriting `tao.design.lock`;
 - low-confidence entries must be labelled and include rationale before update.
 
-## 17. Libraries And Namespacing
+Semantic capability diagnostics are deferred. Later tooling may warn when a requested design spec conflicts with app design intent or asks for an unsupported platform capability.
+
+## 20. Libraries And Namespacing
 
 Library variants provide package-namespaced defaults.
 
 App variants can extend or specialize library variants through the app design graph without mutating the library.
 
-Design entries use package-qualified identities. App-local aliases are allowed only after resolving to a unique package source.
+Design entries use package-qualified identities after import resolution. App-local aliases are allowed only after resolving to a unique package source.
 
 V1 treats a renamed view or variant as delete plus create. Later tooling may migrate lock entries by matching compatible old/new identities and target chains.
 
-## 18. Style Dictionary
+## 21. Style Dictionary
 
 Style Dictionary is useful later as an export/interoperability target.
 
@@ -551,24 +627,27 @@ Settled V1 direction:
 - Keep `tao.design.lock` Tao-owned.
 - Later export should start with generated DTCG tokens, then optionally produce a full Style Dictionary package and documentation.
 
-## 19. Explicitly Not Chosen
+## 22. Explicitly Not Chosen
 
 These are not V1 decisions:
 
 - subtree theme replacement;
 - a primitive theme dictionary as the primary source authoring surface;
 - view-local `provide` style theme overrides;
-- render-site `< ... >`;
+- render-site design specs;
 - source-authored concrete token values;
 - AI or LLM calls during compilation;
 - generated structure changes from descriptions;
-- node labels as V1 theme identity;
-- Style Dictionary as the V1 runtime target.
+- node labels as V1 design identity;
+- Style Dictionary as the V1 runtime target;
+- runtime style memoization requirements;
+- semantic capability diagnostics.
 
-## 20. Deferred Questions
+## 23. Deferred Questions
 
 - The full standard-library role catalog beyond the V1 core roles.
 - The complete generated token catalog values for each category.
 - The IDE/LSP UI for reviewing and accepting low-confidence suggestions.
 - Body-aware inference details after V1 parser, lock, generated TypeScript, runtime resolver, and CLI accept/update flows are working end to end.
 - Full Style Dictionary package and documentation export after generated DTCG tokens exist.
+- Structural variants that add or remove rendered content.

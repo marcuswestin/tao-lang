@@ -46,7 +46,7 @@ display contents
 measure functions
 animations/transitions
 general unit syntax
-theme tokens
+design tokens
 localization mirroring
 native/atom injection beyond trusted std-lib wrappers
 events

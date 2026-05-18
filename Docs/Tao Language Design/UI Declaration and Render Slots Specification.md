@@ -45,7 +45,7 @@ ui Header User {
 }
 
 frame Card {
-  render Stack [gap 12, pad 16] <bg surface> {
+  render Stack [gap 12, pad 16] {
     @@children
   }
 }
@@ -201,7 +201,7 @@ Summary:
 - Declaration-owned internal layout belongs on the internal render nodes.
 - Direct standard-library layout views such as `Row`, `Col`, `Box`, `Stack`, and `WrappingRow` expose their full documented layout surface at their render site.
 
-Declaration authors should expose interior or container variation intentionally through parameters, variants, theme values, named parts, or a later layout-forwarding API.
+Declaration authors should expose interior or container variation intentionally through parameters, design variants, named parts, or a later layout-forwarding API.
 
 ## 8. Internal Fragments
 
@@ -214,7 +214,7 @@ Internal generated fragments are allowed for implementation convenience:
 - grouping slot output;
 - returning multiple generated children inside an already material root.
 
-Internal fragments cannot receive layout, styling, accessibility props, test IDs, event handlers, gesture handlers, theme boundaries, or animation hosts. Any feature needing one of those targets must use a material root.
+Internal fragments cannot receive layout, styling, accessibility props, test IDs, event handlers, gesture handlers, design/style targets, or animation hosts. Any feature needing one of those targets must use a material root.
 
 ## 9. Validation Expectations
 

@@ -47,12 +47,12 @@ Status fields:
 - Deferred: grid/table/masonry, absolute positioning, overflow/layers, container queries, measure functions, display-contents edge cases, and outside-bounds effects.
 - Project docs: [UI Layout Specification](./Tao%20Language%20Design/UI%20Layout%20Specification.md), [Layout and Styling Project Plan](./Projects/UI%20-%20Layout%20and%20Styling/Layout%20and%20Styling%20Project%20Plan.md), [Layout MVP Implementation Plan](./Projects/UI%20-%20Layout%20and%20Styling/Layout%20MVP%20Implementation%20Plan.md).
 
-## Styling, Themes, Tokens, Variants, And Visual Defaults
+## Design Inference, Appearance, Variants, And Visual Defaults
 
-- Status: Design: themes, typed values, style syntax, variants, bundles, token categories, and beautiful defaults are explored; Implementation: styling is deliberately behind raw layout, with runtime/style backend direction still thin.
-- MVP remaining: choose the v1 style delimiter and property surface, implement theme token resolution, define default theme generation/presets, and connect style validation/codegen to React Native style support.
-- Deferred: selector syntax, multi-axis adaptation, advanced variants, interaction-state styling, complex font loading, broad effects, and library/package theme negotiation.
-- Project docs: [UI Theme Design Doc](./Projects/UI%20-%20Layout%20and%20Styling/UI%20Themes/UI%20Theme%20Design%20Doc.md), [UI Styling Design Doc](./Projects/UI%20-%20Layout%20and%20Styling/UI%20Styling/UI%20Styling%20Design%20Doc.md), [UI Styling Syntax Exploration](./Projects/UI%20-%20Layout%20and%20Styling/UI%20Styling/UI%20Styling%20Syntax%20Exploration.md).
+- Status: Design: design inference is the active direction: app intent, design specs, variants, composite roles, accepted design locks, resolved style keys, and React Native/Expo lowering; Implementation: design inference is planned but not implemented.
+- MVP remaining: parse app design blocks, design specs, and design-only variants; implement accepted/suggested design locks; generate resolved design TypeScript; add runtime resolver helpers and diagnostics.
+- Deferred: explicit styling language, source-authored token dictionaries, render-site design specs, structural variants, Style Dictionary export, broad effects, and advanced adaptation axes.
+- Project docs: [UI Design Inference Concepts](./Tao%20Language%20Design/UI%20Design%20Inference%20Concepts.md), [UI Design Inference Specification](./Tao%20Language%20Design/UI%20Design%20Inference%20Specification.md), [UI Design Inference Project Plan](./Projects/UI%20-%20Layout%20and%20Styling/UI%20Design/UI%20Design%20Inference%20Project%20Plan.md), [UI Appearance Future Work](./Projects/UI%20-%20Layout%20and%20Styling/UI%20Design/UI%20Appearance%20Future%20Work.md).
 
 ## Navigation, Routing, Links, Typed Params, Tabs/Stacks, And Guarded Routes
 

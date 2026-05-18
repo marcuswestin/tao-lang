@@ -42,19 +42,19 @@ Examples:
 
 ```tao
 ui Button Label text {
-  render Box [pad 10] <bg accent> {
+  render Box [pad 10] {
     Text Label
   }
 }
 
 frame Card {
-  render Stack [pad 16, gap 8] <bg surface> {
+  render Stack [pad 16, gap 8] {
     @@children
   }
 }
 
 layout Page {
-  render Col [fill, gap 20, pad 24] <bg app> {
+  render Col [fill, gap 20, pad 24] {
     @@children
   }
 }
@@ -110,7 +110,7 @@ frame Toolbar {
 }
 
 frame Card {
-  render Stack [gap 10, pad 16] <bg surface> {
+  render Stack [gap 10, pad 16] {
     @@children
   }
 }
@@ -371,7 +371,7 @@ Use `pad` for space inside a view's own box.
 
 ```tao
 frame Card {
-  render Stack [pad 16, gap 8] <bg surface> {
+  render Stack [pad 16, gap 8] {
     @@children
   }
 }
@@ -429,7 +429,7 @@ A declaration can set overridable defaults on its public surface.
 
 ```tao
 ui Pill Label text [compress, pad 8] {
-  render Box <bg muted> {
+  render Box {
     Text Label
   }
 }
@@ -475,7 +475,7 @@ Tao layout should not expose every React Native/Yoga knob as everyday syntax. So
 outside spacing | border/radius | scroll containers | raw overflow | raw wrap
 raw absolute positioning | z/layer | order/reverse | aspect ratio
 display contents | measure functions | animations/transitions
-general unit syntax | theme tokens | localization mirroring
+general unit syntax | design tokens | localization mirroring
 ```
 
 They should enter Tao through human-facing concepts that are clearer than simply copying the underlying runtime property name.
@@ -484,11 +484,7 @@ They should enter Tao through human-facing concepts that are clearer than simply
 
 Layout uses `[ ... ]`.
 
-Style uses `< ... >`.
-
-```tao
-Card [pad 16] <bg surface, radius medium>
-```
+Design specs currently use `<"description">` on declarations and variants. A future explicit appearance syntax has not been chosen.
 
 `bg`, `radius`, `border`, `color`, `font`, `shadow`, `opacity`, and `transform` are style concerns, not layout vocabulary.
 

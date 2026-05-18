@@ -40,46 +40,15 @@ This document is a starting brief for Tao motion design: transforms, transitions
 - Should inline motion be allowed for prototyping, with named motion tokens preferred for production?
 - How do motion values compose when a base style, state override, and caller override all specify transforms or transitions?
 
-## Theme Token Questions
+## Design Value Questions
 
-Motion should use typed theme values, for example:
+Motion should eventually use resolved design values generated from accepted design metadata. Source-authored `theme app` motion dictionaries are not the current direction.
 
-```tao
-theme app {
-  duration {
-    instant 0
-    fast 140
-    normal 220
-    slow 360
-  }
-
-  duration reduced_motion {
-    fast 0
-    normal 0
-    slow 0
-  }
-
-  easing {
-    standard cubic 0.2 0 0 1
-    emphasized cubic 0.2 0 0 1.2
-    linear linear
-  }
-
-  transform {
-    lifted { y -2, scale 1.01 }
-    pressed { scale 0.98 }
-  }
-
-  motion {
-    enter { fade in, move y sm, duration fast, easing standard }
-    press { transform pressed, duration fast, easing standard }
-  }
-}
-```
+The design graph can later emit resolved motion values such as durations, easing curves, transform presets, and motion composites. V1 design inference only reserves the `motion` and `transform` categories and supports reduced-motion adaptation where generated motion helpers exist.
 
 Questions:
 
-- Which token types are required: `duration`, `delay`, `easing`, `spring`, `transform`, `transition`, `motion`, `animation`?
+- Which resolved design categories are required: `duration`, `delay`, `easing`, `spring`, `transform`, `transition`, `motion`, `animation`?
 - Should distances in transforms use `spacing` tokens?
 - Should rotation use typed angle values such as degrees/radians/turns?
 - Should opacity be a style token, a motion target, or both?
@@ -89,17 +58,12 @@ Questions:
 
 - How should motion attach to interaction states?
 
-```tao
-Button "Save", Save {
-  when pressed (motion press)
-  when disabled (opacity disabled)
-}
-```
+Future integration may connect interaction state to resolved motion composites. The current V1 design-state overlay covers `pressed`, `disabled`, `focused`, and `selected` for interactive composites, but a full motion language is deferred.
 
 - How should motion attach to view lifecycle?
 
 ```tao
-Toast Message (motion enter)
+Toast Message
 ```
 
 - How should motion attach to events?
@@ -141,18 +105,18 @@ on press {
 ## Example Sketches
 
 ```tao
-Box (transform lifted)
+Box
 ```
 
 ```tao
 Button "Save", Save {
-  when pressed (motion press)
+  // Future motion integration may attach resolved motion to pressed state.
 }
 ```
 
 ```tao
-Card Task (motion enter) {
-  when selected (transform lifted, transition fast standard)
+Card Task {
+  // Future motion integration may attach resolved transform/transition values to selected state.
 }
 ```
 
@@ -164,7 +128,7 @@ on every 1s {
 
 ```tao
 if ShowToast {
-  Toast Message (motion enter)
+  Toast Message
 }
 ```
 

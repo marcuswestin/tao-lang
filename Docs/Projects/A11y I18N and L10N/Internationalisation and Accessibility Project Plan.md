@@ -6,7 +6,7 @@ This document is a starting brief for designing Tao accessibility, international
 
 - Tao UI and app-runtime behavior targets React Native and Expo.
 - Accessibility, internationalization, and localization must map to React Native/Expo support, a Tao-owned runtime helper, or an explicit validation/runtime error.
-- These concerns should not be treated as afterthoughts on layout or styling. They affect theme adaptation, text rendering, navigation/focus behavior, semantic metadata, input handling, and generated runtime defaults.
+- These concerns should not be treated as afterthoughts on layout or styling. They affect design adaptation, text rendering, navigation/focus behavior, semantic metadata, input handling, and generated runtime defaults.
 - Tao should treat accessibility and internationalization similarly to data loading and error states: the language should make the expected cases visible, guide authors to handle them, and support compiler enforcement when teams want stricter guarantees.
 - Tao should prefer sane, tasteful defaults that work out of the box, while still allowing explicit overrides when the app needs them.
 
@@ -16,7 +16,7 @@ This document is a starting brief for designing Tao accessibility, international
 - **Accessibility**: roles, labels, hints, state, value, focus, announcements, reduced motion, contrast, text scaling, hit targets, and platform accessibility behavior.
 - **Internationalization (I18N)**: source-level support for locale-aware text, numbers, dates, pluralization, direction, and culture-specific formatting.
 - **Localization (L10N)**: app-specific translated strings and locale-specific assets or values.
-- **Adaptation**: runtime selection of theme values, behavior, and defaults based on system, device, platform, locale, direction, accessibility settings, and screen context.
+- **Adaptation**: runtime selection of resolved design values, behavior, and defaults based on system, device, platform, locale, direction, accessibility settings, and screen context.
 
 ## Core Questions
 
@@ -61,9 +61,9 @@ This document is a starting brief for designing Tao accessibility, international
 
 ## Adaptation Questions
 
-- Which adaptation axes belong in theme declarations: color scheme, breakpoint, platform, density, reduced motion, text scale, high contrast, locale, direction, pointer/hover capability, safe area, keyboard, and device class?
+- Which adaptation axes belong in generated design metadata: color scheme, breakpoint, platform, density, reduced motion, text scale, high contrast, locale, direction, pointer/hover capability, safe area, keyboard, and device class?
 - Should adaptation select token values only, or can it select view behavior?
-- Should inline conditions be allowed, or should views consume semantic tokens and let the theme/runtime select values?
+- Should inline conditions be allowed, or should views consume semantic/composite roles and let the design runtime select values?
 - How should adaptation priorities compose when multiple modes apply, such as `dark`, `tablet`, `rtl`, and `reduced_motion`?
 - How does Tao expose system values such as `system.color_scheme`, `screen.width`, `platform`, `locale`, `direction`, and accessibility preferences?
 
@@ -140,22 +140,13 @@ Text Title {
 Button "Save", Save {
   access label "Save draft"
   access hint "Writes changes to the server"
-  when disabled (opacity disabled)
+  // V1 design inference may generate disabled-state appearance for interactive composites.
 }
 ```
 
 ```tao
-theme app {
-  mode reduced_motion when system.prefers_reduced_motion
-  mode high_contrast when system.prefers_high_contrast
-  direction rtl when locale.direction is rtl
-
-  duration { fast 140 }
-  duration reduced_motion { fast 0 }
-
-  spacing { hit_target 44 }
-  spacing large_text { hit_target 52 }
-}
+// Future design adaptation axes may include high contrast, locale, RTL,
+// pointer/hover capability, keyboard, and device posture.
 ```
 
 ```tao
