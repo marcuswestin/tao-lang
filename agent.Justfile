@@ -5,7 +5,7 @@ AGENT_JUSTFILE := "--justfile agent.Justfile"
 
 # `./agent` is the effective whitelist of commands agents may run in this repo.
 
-READ_COMMANDS := "ls|cat|head|tail|wc|tree|less|bat|grep|rg|find|fd|sort|uniq|cut|tr|diff|jq|yq|echo|printf|pwd|id|date"
+READ_COMMANDS := "ls|cat|head|tail|wc|tree|less|bat|grep|rg|find|fd|sort|uniq|cut|sed|tr|diff|jq|yq|echo|printf|pwd|id|date"
 DIAGNOSTIC_COMMANDS := "tsc|dprint|oxlint"
 WRITE_COMMANDS := "mkdir|touch"
 AGENT_COMMANDS := READ_COMMANDS + "|" + DIAGNOSTIC_COMMANDS + "|" + WRITE_COMMANDS
