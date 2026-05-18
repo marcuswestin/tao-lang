@@ -9,7 +9,7 @@ Tao's design system should generate a coherent app design from source-level inte
 - **Source surface:** V1 should stay small: an inline app `design` block with one `description`, `variant` declarations, and optional string descriptions in `< ... >` on declarations and variants.
 - **Inference:** every used named view gets design inference. Missing angle metadata still infers from the app description, view kind/root type, declaration or variant name, and variant chain.
 - **Compilation target:** V1 lowers accepted design metadata to a generated TypeScript design module for React Native/Expo, not Style Dictionary output.
-- **Locking:** accepted design state belongs in `tao.design.lock`; dev-mode suggestions belong in a hidden suggestion artifact whose exact name is unsettled.
+- **Locking:** accepted design state belongs in `tao.design.lock`; dev-mode suggestions belong in `.tao.design.lock`.
 
 ## Scope
 
@@ -100,7 +100,7 @@ Work areas:
 
 - compute design-input identities from app description, kind/root type, variant chain, names, descriptions, analyzer version, and schema version;
 - write or read accepted `tao.design.lock`;
-- write or read a hidden suggestion artifact for dev-mode generated suggestions;
+- write or read `.tao.design.lock` for dev-mode generated suggestions;
 - detect stale accepted metadata from design inputs only;
 - keep AI or heuristic generation outside the hot compile path.
 
@@ -154,40 +154,51 @@ Exit criteria:
 - **Validation:** accepted design availability, V1 metadata restrictions, variant target compatibility, production stale-lock failures.
 - **Formatter:** canonical multiline app design blocks and compact variant declarations.
 - **Compiler:** design identity extraction, lock lookup, generated style key references, production/dev mode behavior.
-- **Runtime:** `createTaoDesign`, adaptation context, resolver helpers, `StyleSheet` integration.
-- **CLI:** design analyze/generate command, dev background generation, accept-suggestions command.
+- **Runtime:** `createTaoDesign`, typed adaptation context, `resolveStyle`, `useTaoStyle`, `StyleSheet` integration.
+- **CLI:** `tao design` for analysis/generation, `tao design update` for accepting generated suggestions.
 - **IDE/LSP:** surface suggestions, generated descriptions, stale metadata, and accepted/suggested diffs.
 - **Tests:** parser, formatter, validation, lock staleness, generated TS module, runtime adaptation, sample apps.
 - **Sample apps:** show app description, view variants, generated buttons/text/card-like components, and adaptation behavior.
 
-## Unanswered Questions
+## Settled Planning Decisions
 
-- Which resolved token categories are V1: color, spacing, radius, text, shadow, border, opacity, motion, font, size, elevation, transform?
-- What is the exact generated TypeScript helper API: `resolveStyle`, `useTaoStyle`, generated per-view hooks, or a mix?
-- What is the exact `tao.design.lock` schema?
-- What is the hidden suggestion artifact name?
-- Does accepting suggestions merge selected entries or overwrite the accepted lock from the suggestion graph first?
-- What command names should exist: `tao analyze design`, `tao design infer`, `tao design accept`, or something else?
-- How conservative should inference be for standard-library views such as `Row`, `Col`, `Text`, and `Button`?
-- How are standard-library base roles represented in the design graph?
-- What diagnostics are emitted for stale locks, missing generated entries, ambiguous inference, unsupported platform features, and resolver fallback gaps?
-- How should low-confidence suggestions be surfaced in dev mode?
-- How much rationale/provenance must be stored for each inferred entry?
-- What values are generated directly by Tao versus by a later AI-assisted tool?
-- How are generated values made stable across analyzer upgrades?
-- How does Tao prevent unaccepted hidden suggestions from leaking into production?
-- What is the exact runtime adaptation context shape?
-- Does the V1 screen-size axis use fixed breakpoints, measured window dimensions, or named classes?
-- How does text scale affect typography and layout spacing?
-- How does reduced motion affect motion tokens and style helpers when motion itself is still a separate project?
-- Are high contrast, locale, RTL, pointer/hover, keyboard, and device posture separate later axes or part of a broader accessibility/i18n design pass?
-- How should Style Dictionary export work later: generated DTCG tokens, a full Style Dictionary package, documentation output, or all three?
-- How do library-authored variants and app-authored variants interact?
-- How are design entries namespaced across packages?
-- What is the migration path if a variant or view is renamed?
-- When body-aware inference is added, which AST changes should stale design metadata?
-- Are node labels needed for testing, named parts, or future sub-view styling, and what syntax should they use?
-- Should render-site design strings ever be allowed for experiments, or should all distinct looks be named variants?
+- **V1 token categories:** generate and type resolved entries for `color`, `spacing`, `radius`, `text`, `font`, `shadow`, `border`, `opacity`, `motion`, `size`, `elevation`, and `transform`. Generators may emit only the entries actually referenced by the accepted design graph, but the schema and runtime helpers must reserve all listed categories.
+- **Generated helper API:** expose a small stable interface: `createTaoDesign({ tokens, styles, adaptations })`, pure `resolveStyle(name, context)`, hook `useTaoStyle(name)`, and hook/provider support for `useTaoDesignContext()`. Do not generate per-view hooks in V1.
+- **Accepted lock file:** `tao.design.lock`.
+- **Suggestion lock file:** `.tao.design.lock`.
+- **Lock schema:** use a Tao-owned structured object with `schemaVersion`, `analyzer`, `appDesign`, `entries`, and `generatedAt`. Each entry stores `identity`, `inputHash`, `status`, `semantic`, `resolved`, and `provenance`.
+- **Suggestion acceptance:** implement an internal `acceptAndLockSuggestions` operation. For V1, `.tao.design.lock` is a full copy of `tao.design.lock` plus suggestions. `tao design update` overwrites `tao.design.lock` with `.tao.design.lock` when they differ.
+- **Commands:** `tao design` analyzes/generates design suggestions. `tao design update` accepts all generated suggestions into `tao.design.lock`.
+- **Standard-library roles:** standard views participate in inference through built-in canonical role entries versioned with the Tao standard library. `Row`, `Col`, and `Stack` are structural by default: no visual surface, border, shadow, typography, or color by themselves, but they may receive spacing/layout defaults. `Text` receives body-like typography by default. `Button` receives an interactive action role by default.
+- **Diagnostics:** production emits hard errors for stale locks, missing accepted entries, and resolver fallback gaps. Development emits warnings for ambiguous inference and unsupported platform features when a deterministic fallback exists.
+- **Low-confidence suggestions:** show as reviewable dev suggestions, not accepted design state, with confidence, rationale, and one-click alternatives where tooling supports it.
+- **Rationale/provenance:** store source identity, input hash, analyzer version, model/profile, confidence, chosen role, and a short rationale for every inferred entry.
+- **Generation boundary:** V1 Tao compiles resolved style values from accepted lock data. AI-assisted tooling may propose semantic assignments and initial values before acceptance, but compilation never invokes AI.
+- **Analyzer stability:** lock analyzer/model/profile versions. Do not stale accepted entries on analyzer upgrades unless the project explicitly opts into regeneration or a schema migration requires it.
+- **Production isolation:** production builds read only `tao.design.lock`. Hidden suggestion artifacts are dev-only and rejected by production validation/import paths.
+- **Adaptation context:** generated typed runtime context contains `colorScheme`, `platform`, `textScale`, `screenSize`, and `reducedMotion`, with reserved room for later axes.
+- **Screen size classes:** V1 uses named classes derived from measured width in React Native points: `compact` below 600 and `regular` at 600 or above.
+- **Text scale:** text scale directly affects typography. Spacing scales only for text-adjacent/inset tokens, not all layout spacing globally.
+- **Reduced motion:** V1 exposes the axis and collapses or disables generated motion helpers where present, while the full motion language remains deferred.
+- **Deferred axes:** high contrast, locale, RTL, pointer/hover, keyboard, and device posture are later axes grouped under future accessibility, i18n, input-modality, and device-context passes.
+- **Style Dictionary export:** later export starts with generated DTCG tokens, then can optionally produce a full Style Dictionary package and documentation.
+- **Library/app interaction:** library variants provide package-namespaced defaults. App variants can extend or specialize library variants through the app design graph without mutating the library.
+- **Namespacing:** design entries use package-qualified identities. App-local aliases are allowed only after resolving to a unique package source.
+- **Renames:** V1 treats a renamed view or variant as delete plus create. Later tooling may migrate lock entries by matching compatible old/new identities and target chains.
+- **Future body-aware invalidation:** when body-aware inference exists, stale entries only for changes to render structure, child roles, meaningful text/content shape, interaction/state usage, or style-relevant calls.
+- **Future node labels:** later testing, named parts, and sub-view styling should use `@Name` or `@Name:` labels, separate from design metadata.
+- **Render-site strings:** V1 remains strict: distinct looks should be named variants. Render-site strings are deferred as a possible dev-only experiment surface.
+
+## Final Implementation Defaults
+
+- **Generated module path:** emit `_gen/tao-app/tao-design.ts` beside `_gen/tao-app/app-bootstrap.tsx`. Generated app files import it with `./tao-design`.
+- **Runtime helper source:** define reusable runtime helpers in the Tao runtime package, then import them from the generated design module.
+- **Lock serialization:** `tao.design.lock` and `.tao.design.lock` are deterministic JSON documents with two-space indentation, sorted object keys, and no comments.
+- **Standard-library role catalog:** `Row`, `Col`, `Stack`, `Box`, and `WrappingRow` use structural layout roles; `Text`, `TextLabel`, and `MultiLineText` use text roles; `Button` uses an interactive action role.
+- **Generated naming:** token names use lowercase dot paths prefixed by category, for example `color.background.app`, `spacing.inset.medium`, `text.body`, and `motion.feedback.confirm`. Composite role names use `composite.<role>.<name>`, for example `composite.action.primary` and `composite.surface.card`.
+- **Review UI:** V1 review is CLI-first. `tao design` prints a grouped summary of new, changed, stale, and low-confidence entries and writes `.tao.design.lock`. `tao design update` accepts all suggestions by overwriting `tao.design.lock`.
+- **Low-confidence entries:** low-confidence entries remain in `.tao.design.lock` until accepted. The CLI must label them as low-confidence and include rationale before update.
+- **Body-aware inference timing:** body-aware inference starts after V1 parser, lock, generated TypeScript, runtime resolver, and CLI accept/update flows are working end to end.
 
 ## Explicit Deferrals
 

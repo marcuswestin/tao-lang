@@ -191,15 +191,27 @@ Accepted design metadata lives in:
 tao.design.lock
 ```
 
-Dev-mode suggestions live in a hidden suggestion artifact. The exact filename is unsettled.
+Dev-mode suggestions live in:
+
+```text
+.tao.design.lock
+```
+
+Both files are deterministic JSON documents with two-space indentation, sorted object keys, and no comments.
 
 Settled rules:
 
 - `tao.design.lock` tracks current decided and accepted design metadata.
-- The hidden suggestion artifact tracks generated but unaccepted suggestions.
+- `.tao.design.lock` tracks generated but unaccepted suggestions.
+- `.tao.design.lock` is a full copy of `tao.design.lock` plus suggestions.
 - Dev mode may read accepted metadata plus hidden suggestions.
 - Production ignores unaccepted hidden suggestions.
-- Accepting suggestions merges or overwrites accepted lock entries. Exact workflow is unsettled.
+- Production builds read only `tao.design.lock`.
+- Production validation and generated import paths reject hidden suggestion artifacts.
+- `tao design` analyzes and generates design suggestions into `.tao.design.lock`.
+- `tao design update` accepts all current suggestions.
+- Accepting suggestions uses an internal `acceptAndLockSuggestions` operation.
+- In V1, accepting suggestions overwrites `tao.design.lock` with `.tao.design.lock` when the two differ.
 - Explicit source input wins over lock inference.
 - Accepted lock inference wins over deterministic defaults.
 - Deterministic defaults cover unresolved gaps only where the build mode permits it.
@@ -213,6 +225,27 @@ Build mode rules:
 ## 9. Lock Payload
 
 `tao.design.lock` stores semantic and resolved design data.
+
+Top-level shape:
+
+```text
+schemaVersion
+analyzer
+appDesign
+entries
+generatedAt
+```
+
+Entry shape:
+
+```text
+identity
+inputHash
+status
+semantic
+resolved
+provenance
+```
 
 Semantic payload includes:
 
@@ -236,6 +269,7 @@ Required metadata direction:
 
 - lock schema version;
 - analyzer version;
+- analyzer/model/profile version;
 - design input hash;
 - source identity;
 - accepted or suggested status;
@@ -243,11 +277,76 @@ Required metadata direction:
 - semantic payload;
 - resolved payload.
 
-Exact lock schema is unsettled.
+Analyzer/model/profile versions are pinned in the lock. Analyzer upgrades do not stale accepted entries unless the project explicitly opts into regeneration or a schema migration requires it.
 
-## 10. Generated TypeScript Target
+V1 status values:
+
+```text
+accepted | suggested
+```
+
+`tao.design.lock` normally contains accepted entries. `.tao.design.lock` may contain accepted and suggested entries.
+
+## 10. V1 Resolved Token Categories
+
+The design graph and generated runtime reserve typed categories for:
+
+```text
+color
+spacing
+radius
+text
+font
+shadow
+border
+opacity
+motion
+size
+elevation
+transform
+```
+
+Generators may emit only entries referenced by the accepted design graph, but the schema and runtime helper layer must reserve all listed categories.
+
+Generated token names use lowercase dot paths prefixed by category:
+
+```text
+color.background.app
+spacing.inset.medium
+text.body
+motion.feedback.confirm
+```
+
+Composite role names use:
+
+```text
+composite.<role>.<name>
+```
+
+Examples:
+
+```text
+composite.action.primary
+composite.surface.card
+```
+
+## 11. Generated TypeScript Target
 
 V1 compiles accepted design metadata into a generated TypeScript design module for React Native/Expo.
+
+Generated module path:
+
+```text
+_gen/tao-app/tao-design.ts
+```
+
+Generated app files import it as:
+
+```ts
+import { useTaoStyle } from './tao-design'
+```
+
+Reusable runtime helpers live in the Tao runtime package and are imported by the generated design module.
 
 Conceptual output:
 
@@ -287,7 +386,7 @@ Settled direction:
 
 Style Dictionary export is deferred.
 
-## 11. Runtime Resolver Helpers
+## 12. Runtime Resolver Helpers
 
 Generated TypeScript exposes resolver helpers backed by resolved tables.
 
@@ -315,10 +414,13 @@ Settled rules:
 - The helper owns fallback and overlay composition.
 - The compiler validates that referenced style keys exist.
 - Every resolver path needs a deterministic fallback.
+- V1 exposes `createTaoDesign({ tokens, styles, adaptations })`.
+- V1 exposes pure `resolveStyle(name, context)`.
+- V1 exposes hook `useTaoStyle(name)`.
+- V1 exposes hook/provider support for `useTaoDesignContext()`.
+- V1 does not generate per-view hooks.
 
-Exact helper API is unsettled.
-
-## 12. V1 Runtime Adaptation Axes
+## 13. V1 Runtime Adaptation Axes
 
 V1 supports core runtime axes:
 
@@ -338,7 +440,30 @@ Deferred axes:
 - device posture;
 - broader accessibility categories.
 
-## 13. Adaptation Composition
+Runtime context shape:
+
+```text
+colorScheme
+platform
+textScale
+screenSize
+reducedMotion
+```
+
+The generated type should reserve room for later axes.
+
+`screenSize` uses named classes derived from measured width in React Native points:
+
+```text
+compact = width < 600
+regular = width >= 600
+```
+
+Text scale directly affects typography. Spacing scales only for text-adjacent/inset tokens, not all layout spacing globally.
+
+Reduced motion collapses or disables generated motion helpers where present. The full motion language remains deferred.
+
+## 14. Adaptation Composition
 
 V1 adaptation composition uses ordered overlays.
 
@@ -367,7 +492,54 @@ Rejected for V1:
 - exact variant table for every axis combination;
 - custom resolver per style.
 
-## 14. Style Dictionary
+## 15. Standard-Library Roles
+
+Standard-library views participate in design inference through built-in canonical role entries versioned with the Tao standard library.
+
+V1 base role direction:
+
+- `Row`, `Col`, `Stack`, `Box`, and `WrappingRow` use structural layout roles.
+- Structural views have no visual surface, border, shadow, typography, or color by themselves.
+- Structural views may receive spacing/layout defaults.
+- `Text`, `TextLabel`, and `MultiLineText` use text roles.
+- `Text` receives body-like typography by default.
+- `TextLabel` receives single-line label typography by default.
+- `MultiLineText` receives body-like multiline typography by default.
+- `Button` receives an interactive action role by default.
+
+## 16. Diagnostics
+
+Production hard errors:
+
+- stale accepted lock entries;
+- missing accepted entries;
+- resolver fallback gaps.
+
+Development warnings:
+
+- ambiguous inference;
+- unsupported platform features when deterministic fallback exists.
+
+Low-confidence suggestions remain reviewable suggestions, not accepted design state. Tooling should show confidence, rationale, and one-click alternatives when available.
+
+V1 review UI is CLI-first:
+
+- `tao design` prints grouped new, changed, stale, and low-confidence entries;
+- `tao design` writes `.tao.design.lock`;
+- `tao design update` accepts all suggestions by overwriting `tao.design.lock`;
+- low-confidence entries must be labelled and include rationale before update.
+
+## 17. Libraries And Namespacing
+
+Library variants provide package-namespaced defaults.
+
+App variants can extend or specialize library variants through the app design graph without mutating the library.
+
+Design entries use package-qualified identities. App-local aliases are allowed only after resolving to a unique package source.
+
+V1 treats a renamed view or variant as delete plus create. Later tooling may migrate lock entries by matching compatible old/new identities and target chains.
+
+## 18. Style Dictionary
 
 Style Dictionary is useful later as an export/interoperability target.
 
@@ -377,9 +549,9 @@ Settled V1 direction:
 - Do not make Style Dictionary the primary runtime output.
 - Do not make Tao language semantics depend on Style Dictionary config structure.
 - Keep `tao.design.lock` Tao-owned.
-- Later, Tao can emit DTCG or Style Dictionary-compatible tokens from accepted design metadata.
+- Later export should start with generated DTCG tokens, then optionally produce a full Style Dictionary package and documentation.
 
-## 15. Explicitly Not Chosen
+## 19. Explicitly Not Chosen
 
 These are not V1 decisions:
 
@@ -393,19 +565,10 @@ These are not V1 decisions:
 - node labels as V1 theme identity;
 - Style Dictionary as the V1 runtime target.
 
-## 16. Deferred Questions
+## 20. Deferred Questions
 
-- Which resolved token categories are V1?
-- What is the exact generated TypeScript helper API?
-- What is the exact lock schema?
-- What is the hidden suggestion artifact filename?
-- What is the accept-suggestions command and merge behavior?
-- How conservative should standard-library inference be?
-- How should diagnostics explain stale, missing, ambiguous, or unsupported design metadata?
-- How should screen size classes be represented?
-- How should text scale change typography and layout spacing?
-- How should reduced motion affect style helpers before the motion project is implemented?
-- How should package/library design entries be namespaced?
-- How should view/variant renames migrate lock entries?
-- When should body-aware inference be introduced?
-- How should Style Dictionary export be shaped later?
+- The full standard-library role catalog beyond the V1 core roles.
+- The complete generated token catalog values for each category.
+- The IDE/LSP UI for reviewing and accepting low-confidence suggestions.
+- Body-aware inference details after V1 parser, lock, generated TypeScript, runtime resolver, and CLI accept/update flows are working end to end.
+- Full Style Dictionary package and documentation export after generated DTCG tokens exist.
