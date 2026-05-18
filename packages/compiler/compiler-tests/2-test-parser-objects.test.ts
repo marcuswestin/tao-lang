@@ -3,8 +3,8 @@ import { describe, expect, expectParseHasHumanErrors, parseAST, test } from './t
 describe('objects, member access, nested set', () => {
   test('parses object literal and member access', async () => {
     const doc = await parseAST(`
-      view Text Value text { }
-      view V {
+      ui Text Value text { }
+      ui V {
         alias O = { x 1, y 2 }
         Text O.x
       }
@@ -15,7 +15,7 @@ describe('objects, member access, nested set', () => {
 
   test('set bare state name has root S and empty properties path', async () => {
     const doc = await parseAST(`
-      view V {
+      ui V {
         state S = 1
         action A {
           set S = 2
@@ -30,7 +30,7 @@ describe('objects, member access, nested set', () => {
 
   test('parses nested state update path', async () => {
     const doc = await parseAST(`
-      view V {
+      ui V {
         state S = { a 1 }
         action A {
           set S.a = 2
@@ -45,7 +45,7 @@ describe('objects, member access, nested set', () => {
 
   test('parses single-property object literal', async () => {
     const doc = await parseAST(`
-      view V {
+      ui V {
         alias A = { x 1 }
       }
     `)
@@ -55,7 +55,7 @@ describe('objects, member access, nested set', () => {
 
   test('parses multi-property object literal', async () => {
     const doc = await parseAST(`
-      view V {
+      ui V {
         alias A = { x 1, y "two" }
       }
     `)
@@ -66,7 +66,7 @@ describe('objects, member access, nested set', () => {
 
   test('parses nested object literals two and three levels deep', async () => {
     const doc = await parseAST(`
-      view V {
+      ui V {
         alias A2 = { inner { x 1 } }
         alias A3 = { a { b { c 1 } } }
       }
@@ -82,7 +82,7 @@ describe('objects, member access, nested set', () => {
 
   test('parses chained member access one to three dots', async () => {
     const doc = await parseAST(`
-      view V {
+      ui V {
         alias A = { x { y { z 1 } } }
         alias B1 = A.x
         alias B2 = A.x.y
@@ -102,7 +102,7 @@ describe('objects, member access, nested set', () => {
 
   test('parses nested state update paths at two and three levels and compound +=', async () => {
     const doc = await parseAST(`
-      view V {
+      ui V {
         state S = { x { y { z 0 } }, count 0 }
         action A2 { set S.x.y = 2 }
         action A3 { set S.x.y.z = 3 }
@@ -121,7 +121,7 @@ describe('objects, member access, nested set', () => {
 
   test('parses object literal as state initializer', async () => {
     const doc = await parseAST(`
-      view V {
+      ui V {
         state S = { a 1 }
       }
     `)
@@ -134,7 +134,7 @@ describe('objects, member access, nested set', () => {
 
   test('parses object literal with trailing comma after last property', async () => {
     const doc = await parseAST(`
-      view V {
+      ui V {
         alias O = { x 1, y 2, }
       }
     `)
@@ -145,7 +145,7 @@ describe('objects, member access, nested set', () => {
 
   test('empty object literal `{ }` does not parse as ObjectLiteral (requires at least one property)', async () => {
     await expectParseHasHumanErrors(`
-      view V {
+      ui V {
         alias E = { }
       }
     `)
@@ -153,7 +153,7 @@ describe('objects, member access, nested set', () => {
 
   test('object literal in alias value position parses as ObjectLiteral AST', async () => {
     const doc = await parseAST(`
-      view V {
+      ui V {
         alias O = { a 1 }
       }
     `)

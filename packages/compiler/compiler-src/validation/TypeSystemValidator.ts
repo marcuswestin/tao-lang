@@ -549,7 +549,7 @@ function validateActionRenderCallee(node: AST.ActionRender, report: Reporter<AST
  * diagnostics). */
 function calleeKind(ref: AST.Declaration): string {
   if (AST.isViewDeclaration(ref)) {
-    return 'view'
+    return ref.type
   }
   if (AST.isAssignmentDeclaration(ref)) {
     return ref.type

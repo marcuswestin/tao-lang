@@ -4,7 +4,7 @@ app ObjectsApp {
    ui Main
 }
 
-view Main {
+ui Main {
    state Pet = {
       name "cat",
       age 0,

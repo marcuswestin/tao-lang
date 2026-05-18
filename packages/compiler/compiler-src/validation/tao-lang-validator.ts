@@ -24,9 +24,9 @@ import { makeValidater, type Reporter } from './ValidationReporter'
 
 /** validationMessages are the exact diagnostics for TaoFile and Block placement rules, merged with type-system messages. */
 export const validationMessages = {
-  viewBody: 'Only view/alias/state/action/inject statements are allowed in a view body.',
+  viewBody: 'Only ui/frame/layout/alias/state/action/inject statements are allowed in a UI body.',
   actionBody: 'Only state/action/inject and set (state update) statements are allowed in an action body.',
-  topLevel: 'Only alias/state/view/action/inject/use statements are allowed at file level.',
+  topLevel: 'Only alias/state/ui/frame/layout/action/inject/use statements are allowed at file level.',
   duplicateAppProvider: 'App can only have one provider declaration.',
   duplicateAppProviderRelated: 'Another provider declaration here.',
   unknownAppDataProvider: unknownTaoAppDataProviderMessage,
@@ -156,7 +156,7 @@ export const validator: langium.ValidationChecks<AST.TaoLangAstType> = {
     for (const stmt of uiStatements) {
       const ref = stmt.ui.ref
       if (ref !== undefined && !AST.isViewDeclaration(ref)) {
-        report.error('App ui must be a view.', { node: stmt, property: 'ui' })
+        report.error('App ui must reference a ui, frame, or layout declaration.', { node: stmt, property: 'ui' })
       }
     }
   }),
@@ -225,9 +225,11 @@ function validateSetTargetsState(node: AST.StateUpdate, report: Reporter<AST.Sta
 
 /** getStateUpdateTargetKind returns the kind of binding targeted by `set` (caller must pass a non-assignment reference). */
 function getStateUpdateTargetKind(ref: Exclude<AST.Referenceable, AST.AssignmentDeclaration>) {
+  if (AST.isViewDeclaration(ref)) {
+    return ref.type
+  }
   return switch_safe(ref.$type, {
     ParameterDeclaration: () => 'parameter',
-    ViewDeclaration: () => 'view',
     ActionDeclaration: () => 'action',
     AppDeclaration: () => 'app',
     TypeDeclaration: () => 'type',

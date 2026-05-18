@@ -6,7 +6,7 @@ app HandlersStateAndActionsApp {
 
 state GlobalCount = 300
 
-view RootView {
+ui RootView {
    state Count1 = 100
    Number GlobalCount
    Row {

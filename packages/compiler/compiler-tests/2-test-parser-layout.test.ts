@@ -3,8 +3,8 @@ import { describe, expect, expectParseHasHumanErrors, parseAST, test } from './t
 describe('layout syntax parser:', () => {
   test('parses empty layout clause', async () => {
     const doc = await parseAST(`
-      view Row { }
-      view Root {
+      layout Row { }
+      ui Root {
         Row []
       }
     `)
@@ -15,8 +15,8 @@ describe('layout syntax parser:', () => {
 
   test('parses no-arg render with layout clause', async () => {
     const doc = await parseAST(`
-      view Row { }
-      view Root {
+      layout Row { }
+      ui Root {
         Row [top left]
       }
     `)
@@ -28,9 +28,9 @@ describe('layout syntax parser:', () => {
 
   test('parses render with args and layout clause', async () => {
     const doc = await parseAST(`
-      view Button Title text, Action action { }
+      ui Button Title text, Action action { }
       action Save { }
-      view Root {
+      ui Root {
         Button "Save", Save [width 120, height 44]
       }
     `)
@@ -43,9 +43,9 @@ describe('layout syntax parser:', () => {
 
   test('parses render with layout clause before block', async () => {
     const doc = await parseAST(`
-      view Col { }
-      view Text Value text { }
-      view Root {
+      layout Col { }
+      ui Text Value text { }
+      ui Root {
         Col [gap 8] {
           Text "child" [centered]
         }
@@ -60,8 +60,8 @@ describe('layout syntax parser:', () => {
 
   test('parses multiline layout clause', async () => {
     const doc = await parseAST(`
-      view Row { }
-      view Root {
+      layout Row { }
+      ui Root {
         Row [
           center spread,
           gap 12
@@ -78,8 +78,8 @@ describe('layout syntax parser:', () => {
 
   test('reports malformed layout clause', async () => {
     const report = await expectParseHasHumanErrors(`
-      view Row { }
-      view Root {
+      layout Row { }
+      ui Root {
         Row [gap 8,,]
       }
     `)

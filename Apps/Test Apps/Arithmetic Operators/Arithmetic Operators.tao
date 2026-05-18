@@ -8,7 +8,7 @@ state GlobalCount = 0
 
 alias Name = "Ro"
 
-view RootView {
+ui RootView {
    state LocalCount = 100
    alias Greeting = "Hello"
    Row {

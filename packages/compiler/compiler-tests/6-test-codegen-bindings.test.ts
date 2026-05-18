@@ -29,9 +29,9 @@ describe('codegen — call-site argument bindings:', () => {
   test('ViewRender emits one JSX prop per parameter, keyed by parameter name', async () => {
     const out = await writeAndCompile(`
       app A { ui V }
-      view Btn Title text, OnPress action { }
+      ui Btn Title text, OnPress action { }
       action H { }
-      view V {
+      ui V {
         Btn "x", H
       }
     `)
@@ -42,8 +42,8 @@ describe('codegen — call-site argument bindings:', () => {
   test('ViewRender emits layout specs through the Tao runtime resolver', async () => {
     const out = await writeAndCompile(`
       app A { ui V }
-      view Row { }
-      view V {
+      layout Row { }
+      ui V {
         Row [center spread, gap 12]
       }
     `)
@@ -54,7 +54,7 @@ describe('codegen — call-site argument bindings:', () => {
     const out = await writeAndCompile(`
       app A { ui V }
       action LogEvent Message text, Level number { }
-      view V {
+      ui V {
         action Outer {
           do LogEvent "submitted", 1
         }
@@ -68,7 +68,7 @@ describe('codegen — call-site argument bindings:', () => {
     const out = await writeAndCompile(`
       app A { ui V }
       action Notify { }
-      view V {
+      ui V {
         action Outer {
           do Notify
         }
@@ -81,7 +81,7 @@ describe('codegen — call-site argument bindings:', () => {
     const out = await writeAndCompile(`
       app A { ui V }
       action Inner { }
-      view V {
+      ui V {
         action Outer {
           do Inner {
             debugger
@@ -116,7 +116,7 @@ app HarnessApp {
   ui HarnessRoot
 }
 
-view HarnessRoot {
+ui HarnessRoot {
   Text "ok"
 }
 `
@@ -164,7 +164,7 @@ describe('codegen — app provider selection and overrides:', () => {
         }
       }
       app HarnessApp { ui HarnessRoot }
-      view HarnessRoot { }
+      ui HarnessRoot { }
     `)
     expect(out).toContain(
       '"events":{"Title":{"type":"string"},"Host":{"type":"any"},"Attendees":{"type":"any"}}',
@@ -220,7 +220,7 @@ describe('codegen — app provider selection and overrides:', () => {
       query FirstData get FirstItem as FirstRows
       query SecondData get SecondItem as SecondRows
       app HarnessApp { ui HarnessRoot }
-      view HarnessRoot { }
+      ui HarnessRoot { }
     `,
     )
     const result = await compileTao({ file: filePath, stdLibRoot: STD_LIB_ROOT })
@@ -255,7 +255,7 @@ describe('codegen — app provider selection and overrides:', () => {
       use SharedData from ./db
       query SharedData get Item as Rows
       app HarnessApp { ui HarnessRoot }
-      view HarnessRoot { }
+      ui HarnessRoot { }
     `,
     )
     const result = await compileTao({ file: mainPath, stdLibRoot: STD_LIB_ROOT })
@@ -288,7 +288,7 @@ describe('codegen — app provider selection and overrides:', () => {
       query D get one Person
         > where Email = "ro@example.test"
       app A { ui V }
-      view V { }
+      ui V { }
     `)
     expect(out).toContain('cardinality: "many"')
     expect(out).toContain('collection: "people"')
@@ -342,7 +342,7 @@ describe('codegen — app provider selection and overrides:', () => {
       use SharedData from ./db
       query SharedData get Item as Rows
       app HarnessApp { ui HarnessRoot }
-      view HarnessRoot { }
+      ui HarnessRoot { }
     `,
     )
     const result = await compileTao({ file: mainPath, stdLibRoot: STD_LIB_ROOT })

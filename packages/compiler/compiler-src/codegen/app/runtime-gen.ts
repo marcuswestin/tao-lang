@@ -571,7 +571,9 @@ class RuntimeGen {
     alias: 'Alias',
     state: 'AppState',
     action: 'Action',
-    view: 'ViewState',
+    ui: 'ViewState',
+    frame: 'ViewState',
+    layout: 'ViewState',
     app: '<unsupported in runtimeTypes>',
   } as const
 

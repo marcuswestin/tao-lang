@@ -3,7 +3,7 @@ import { describe, expect, expectParseHasHumanErrors, parseAST, test } from './t
 describe('ObjectLiteral vs Block grammar invariant', () => {
   test('alias value `{ x 1 }` is an ObjectLiteral, not a Block', async () => {
     const doc = await parseAST(`
-      view V {
+      ui V {
         alias O = { x 1 }
       }
     `)
@@ -14,7 +14,7 @@ describe('ObjectLiteral vs Block grammar invariant', () => {
 
   test('state initializer `{ x 1 }` is an ObjectLiteral, not a Block', async () => {
     const doc = await parseAST(`
-      view V {
+      ui V {
         state S = { x 1 }
       }
     `)
@@ -24,13 +24,13 @@ describe('ObjectLiteral vs Block grammar invariant', () => {
   })
 
   test('view body `{}` is a Block, not an ObjectLiteral', async () => {
-    const doc = await parseAST(`view V { }`)
+    const doc = await parseAST(`ui V { }`)
     doc.statements.first.as_ViewDeclaration.block.match({ $type: 'Block' })
   })
 
   test('action body `{}` is a Block, not an ObjectLiteral', async () => {
     const doc = await parseAST(`
-      view V {
+      ui V {
         action A { }
       }
     `)
@@ -39,8 +39,8 @@ describe('ObjectLiteral vs Block grammar invariant', () => {
 
   test('inline action expression body is a Block, not an ObjectLiteral', async () => {
     const doc = await parseAST(`
-      view Btn Title text, OnPress action { }
-      view V {
+      ui Btn Title text, OnPress action { }
+      ui V {
         Btn "t", action { }
       }
     `)
@@ -50,9 +50,9 @@ describe('ObjectLiteral vs Block grammar invariant', () => {
 
   test('`{` after a view callee parses as ViewRender block, not an argument ObjectLiteral', async () => {
     const doc = await parseAST(`
-      view Text Value text { }
-      view Inner { }
-      view Outer {
+      ui Text Value text { }
+      ui Inner { }
+      ui Outer {
         Inner { Text "x" }
       }
     `)
@@ -64,7 +64,7 @@ describe('ObjectLiteral vs Block grammar invariant', () => {
 
   test('object-literal-shaped content `{ x 1 }` in a view body does not parse as an ObjectLiteral', async () => {
     await expectParseHasHumanErrors(`
-      view V {
+      ui V {
         x 1
       }
     `)
@@ -72,8 +72,8 @@ describe('ObjectLiteral vs Block grammar invariant', () => {
 
   test('object-literal-shaped content in an inline action body does not parse as an ObjectLiteral', async () => {
     await expectParseHasHumanErrors(`
-      view Btn Title text, OnPress action { }
-      view V {
+      ui Btn Title text, OnPress action { }
+      ui V {
         Btn "t", action { x 1 }
       }
     `)

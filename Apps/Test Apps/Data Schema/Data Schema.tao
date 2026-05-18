@@ -45,7 +45,7 @@ app DataSchemaApp {
    ui RootView
 }
 
-view RootView {
+ui RootView {
    query MeetupData for Events as MyEvents
    > order Ordering desc
    guard {

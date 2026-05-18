@@ -141,12 +141,12 @@ function makeNeedleApp() {
   const code = `
     app KitchenSink { ui RootView }
 
-    view RootView {
+    ui RootView {
       alias TextValue = "${needle}"
       Text TextValue
     }
 
-    view Text Value text {
+    ui Text Value text {
         inject \`\`\`ts
           return TR.Views.Text({ children: [_ViewProps.Value.evaluate().jsValue] })
         \`\`\`

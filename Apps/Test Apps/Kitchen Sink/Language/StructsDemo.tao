@@ -5,7 +5,7 @@ type Item is {
    Price number
 }
 
-share view StructsDemo {
+share ui StructsDemo {
    state CartItem = Item {
       Sku "SKU-1",
       Price 9

@@ -2,7 +2,7 @@ app ValuesAndExpressionsApp {
     ui RootView
 }
 
-view RootView {
+ui RootView {
     alias AdaName = "Ada Lovelace Jr"
     alias AdaAge = 24
     alias AdaBornIn = 1815
@@ -17,7 +17,7 @@ view RootView {
     }
 }
 
-view PersonView person thing {
+ui PersonView person thing {
     Text person.name " is " person.age " years old, and was born {person.bornIn}."
     Text "So, it's now year "person.bornIn + person.age "??"
 }

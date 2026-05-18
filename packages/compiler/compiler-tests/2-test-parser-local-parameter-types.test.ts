@@ -1,9 +1,9 @@
 import { defined, describe, expect, parseAST, test } from './test-utils/test-harness'
 
 describe('local parameter types (Phase 1):', () => {
-  test('view Badge Title is text parses with localSuperType', async () => {
+  test('ui Badge Title is text parses with localSuperType', async () => {
     const doc = await parseAST(`
-      view Badge Title is text { }
+      ui Badge Title is text { }
     `)
     const p0 = doc.statements.first.as_ViewDeclaration.parameterList.parameters[0]
     p0.match({
@@ -15,7 +15,7 @@ describe('local parameter types (Phase 1):', () => {
 
   test('view with multiple local types parses correctly', async () => {
     const doc = await parseAST(`
-      view Button Title is text, Action is action { }
+      ui Button Title is text, Action is action { }
     `)
     doc.statements.first.as_ViewDeclaration.parameterList.parameters.match([
       { name: 'Title', localSuperType: defined },
@@ -25,7 +25,7 @@ describe('local parameter types (Phase 1):', () => {
 
   test('mixed local and explicit params parse correctly', async () => {
     const doc = await parseAST(`
-      view Card Title is text, Size number { }
+      ui Card Title is text, Size number { }
     `)
     const params = doc.statements.first.as_ViewDeclaration.parameterList.parameters
     params.match([
@@ -38,8 +38,8 @@ describe('local parameter types (Phase 1):', () => {
 
   test('typed literal with dotted constructor head parses as NamedTypeRef with segments', async () => {
     const doc = await parseAST(`
-      view Badge Title is text { }
-      view Root {
+      ui Badge Title is text { }
+      ui Root {
         Badge Badge.Title "x"
       }
     `)

@@ -36,7 +36,7 @@ describe('traceToEncodedSourceMapJson', () => {
   test('produces v3 map with mappings and absolute POSIX Tao paths in sources from a synthetic TraceRegion', () => {
     tmpDir = FS.mkTmpDir(FS.joinPath(FS.tmpdir(), 'tao-trace-sm-XXXXXX'))
     const taoPath = FS.joinPath(tmpDir, 'app.tao')
-    const taoText = 'app X { ui V }\nview V {}\n'
+    const taoText = 'app X { ui V }\nui V {}\n'
     FS.writeFile(taoPath, taoText)
 
     const root = buildSyntheticTrace(FS.pathToFileURL(taoPath).href, 6)

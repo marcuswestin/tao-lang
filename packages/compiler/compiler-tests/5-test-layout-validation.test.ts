@@ -2,17 +2,17 @@ import { expectHumanMessagesContain } from './test-utils/diagnostics'
 import { describe, expectParseHasHumanErrors, parseTaoFully, test } from './test-utils/test-harness'
 
 const BASE_VIEWS = `
-  view Row { }
-  view Col { }
-  view Box { }
-  view Text Value text { }
+  layout Row { }
+  layout Col { }
+  frame Box { }
+  ui Text Value text { }
 `
 
 describe('layout validation:', () => {
   test('accepts empty layout clause', async () => {
     await parseTaoFully(`
       ${BASE_VIEWS}
-      view Root {
+      ui Root {
         Row []
       }
     `)
@@ -21,7 +21,7 @@ describe('layout validation:', () => {
   test('accepts v1 container and self layout in known Row parent', async () => {
     await parseTaoFully(`
       ${BASE_VIEWS}
-      view Root {
+      ui Root {
         Row [top spread, gap 8] {
           Text "Name" [centered, width 120]
         }
@@ -32,7 +32,7 @@ describe('layout validation:', () => {
   test('rejects layout entry that does not start with a layout word', async () => {
     const report = await expectParseHasHumanErrors(`
       ${BASE_VIEWS}
-      view Root {
+      ui Root {
         Row [8]
       }
     `)
@@ -43,7 +43,7 @@ describe('layout validation:', () => {
   test('rejects unknown layout words', async () => {
     const report = await expectParseHasHumanErrors(`
       ${BASE_VIEWS}
-      view Root {
+      ui Root {
         Row [mystery]
       }
     `)
@@ -54,7 +54,7 @@ describe('layout validation:', () => {
   test('rejects duplicate scalar layout properties', async () => {
     const report = await expectParseHasHumanErrors(`
       ${BASE_VIEWS}
-      view Root {
+      ui Root {
         Row [width 100, width 200]
       }
     `)
@@ -65,7 +65,7 @@ describe('layout validation:', () => {
   test('rejects child axis conflicts after resolving Row axis', async () => {
     const report = await expectParseHasHumanErrors(`
       ${BASE_VIEWS}
-      view Root {
+      ui Root {
         Row [left right]
       }
     `)
@@ -76,7 +76,7 @@ describe('layout validation:', () => {
   test('rejects child arrangement when container direction is unknown', async () => {
     const report = await expectParseHasHumanErrors(`
       ${BASE_VIEWS}
-      view Root {
+      ui Root {
         Box [center]
       }
     `)
@@ -87,7 +87,7 @@ describe('layout validation:', () => {
   test('rejects styling words inside layout', async () => {
     const report = await expectParseHasHumanErrors(`
       ${BASE_VIEWS}
-      view Root {
+      ui Root {
         Row [color primary]
       }
     `)
@@ -98,7 +98,7 @@ describe('layout validation:', () => {
   test('rejects deferred React Native layout props', async () => {
     const report = await expectParseHasHumanErrors(`
       ${BASE_VIEWS}
-      view Root {
+      ui Root {
         Row [aspect_ratio 1]
       }
     `)
@@ -109,7 +109,7 @@ describe('layout validation:', () => {
   test('rejects self layout without a parent axis', async () => {
     const report = await expectParseHasHumanErrors(`
       ${BASE_VIEWS}
-      view Root {
+      ui Root {
         Text "Label" [centered]
       }
     `)
@@ -120,7 +120,7 @@ describe('layout validation:', () => {
   test('rejects offsets without position mode', async () => {
     const report = await expectParseHasHumanErrors(`
       ${BASE_VIEWS}
-      view Root {
+      ui Root {
         Box [top 8]
       }
     `)
@@ -131,7 +131,7 @@ describe('layout validation:', () => {
   test('rejects percent values outside supported range', async () => {
     const report = await expectParseHasHumanErrors(`
       ${BASE_VIEWS}
-      view Root {
+      ui Root {
         Box [width 120%]
       }
     `)
@@ -142,7 +142,7 @@ describe('layout validation:', () => {
   test('rejects negative values for non-negative layout properties', async () => {
     const report = await expectParseHasHumanErrors(`
       ${BASE_VIEWS}
-      view Root {
+      ui Root {
         Row [gap -5]
       }
     `)
@@ -153,7 +153,7 @@ describe('layout validation:', () => {
   test('rejects min width greater than max width', async () => {
     const report = await expectParseHasHumanErrors(`
       ${BASE_VIEWS}
-      view Root {
+      ui Root {
         Box [min_width 200, max_width 100]
       }
     `)
@@ -164,7 +164,7 @@ describe('layout validation:', () => {
   test('rejects width with both left and right offsets', async () => {
     const report = await expectParseHasHumanErrors(`
       ${BASE_VIEWS}
-      view Root {
+      ui Root {
         Box [absolute, width 320, left 8, right 8]
       }
     `)

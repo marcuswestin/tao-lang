@@ -16,7 +16,7 @@ describe('parse — data schema:', () => {
         provider InstantDB { appId "test-app" }
         ui RootView
       }
-      view RootView { }
+      ui RootView { }
     `)
     doc.statements.first.as_AppDeclaration.appStatements[0].as_AppProviderStatement.match({
       provider: 'InstantDB',
@@ -135,7 +135,7 @@ describe('parse — data schema:', () => {
         People Person { Name text }
       }
       app MyApp { ui RootView }
-      view RootView { }
+      ui RootView { }
     `)
     expect(doc.statements.length).toBe(3)
     void doc.statements[0].as_DataDeclaration
@@ -175,7 +175,7 @@ describe('parse — data schema:', () => {
       action Add {
         create D.Item { N "a" }
       }
-      view V {
+      ui V {
         for It in Rows {
           Text "x"
         }

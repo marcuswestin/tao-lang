@@ -1,36 +1,36 @@
-share view Box {
+share frame Box {
   inject ```ts
     return TR.Views.Box(_ViewProps)
   ```
 }
 
-share view Col {
+share layout Col {
   inject ```ts
     return TR.Views.Col(_ViewProps)
   ```
 }
 
-share view Row {
+share layout Row {
   inject ```ts
     return TR.Views.Row(_ViewProps)
   ```
 }
 
-share view Text Value text {
+share ui Text Value text {
   inject ```ts
     const tao_text = _ViewProps.Value.evaluate()
     return TR.Views.Text({ _taoLayout: _ViewProps._taoLayout, children: [tao_text.jsValue] })
   ```
 }
 
-share view Number Value number {
+share ui Number Value number {
   inject ```ts
     const tao_number = _ViewProps.Value.evaluate()
     return TR.Views.Text({ _taoLayout: _ViewProps._taoLayout, children: [String(tao_number.jsValue)] })
   ```
 }
 
-share view Button Title text, Action action {
+share ui Button Title text, Action action {
   inject ```ts
     return TR.Views.Button({
       _taoLayout: _ViewProps._taoLayout,

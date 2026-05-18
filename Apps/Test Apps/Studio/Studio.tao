@@ -6,14 +6,14 @@ app TaoStudio {
 
 state GlobalCount = 100
 
-view RootView {
+ui RootView {
    Text "Hello World"
    CountView { }
    Text "Global Count: " { }
    Button "${ GlobalCount }", GlobalIncrementAction { }
 }
 
-view CountView {
+ui CountView {
    state LocalCount = 200
    Text "Local Count:" { }
    Button "${ LocalCount }", LocalIncrementAction { }
@@ -27,7 +27,7 @@ view CountView {
       set LocalCount += 1
       set GlobalCount += 1
    }
-   view SubCountView {
+   ui SubCountView {
       Text "Sub Count 1:" { }
       Button "${ SubCount }", SubIncrementAction { }
    }

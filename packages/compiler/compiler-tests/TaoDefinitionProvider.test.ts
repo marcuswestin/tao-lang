@@ -23,10 +23,10 @@ describe('TaoDefinitionProvider', () => {
   test('getDefinition on imported name in use statement returns link to declaration', async () => {
     const result = await parseMultipleFiles(
       [
-        { path: '/project/app.tao', code: 'use Text from @tao/ui\nview MyView { }' },
+        { path: '/project/app.tao', code: 'use Text from @tao/ui\nui MyView { }' },
         {
           path: '/tao-std-lib/tao/ui/Views.tao',
-          code: 'share view Text Text text { inject ```ts return null ``` }',
+          code: 'share ui Text Text text { inject ```ts return null ``` }',
         },
       ],
       { stdLibRoot: '/tao-std-lib' },
@@ -42,8 +42,8 @@ describe('TaoDefinitionProvider', () => {
 
   test('getDefinition on same-module imported name returns link to declaration', async () => {
     const result = await parseMultipleFiles([
-      { path: '/project/app.tao', code: 'use Button\nview MyView { }' },
-      { path: '/project/other.tao', code: 'view Button { }' },
+      { path: '/project/app.tao', code: 'use Button\nui MyView { }' },
+      { path: '/project/other.tao', code: 'ui Button { }' },
     ])
 
     const link = expectSingle(await getDefinitionAt(result, '/project/app.tao', 0, 4))

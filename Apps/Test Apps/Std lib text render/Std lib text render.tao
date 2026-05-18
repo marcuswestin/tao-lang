@@ -4,7 +4,7 @@ app StdLibTextRenderApp {
 
 use Col, Row, Text from @tao/ui
 
-view RootView {
+ui RootView {
    Col {
       Row {
          Text "Hello from std lib" { }

@@ -3,7 +3,7 @@ import { describe, resolveReferences, test } from './test-utils/test-harness'
 describe('scope resolution', () => {
   test('alias reference resolves to alias statement', async () => {
     const doc = await resolveReferences(`
-      view MyView {
+      ui MyView {
         alias X = 1
         alias Y = X
       }
@@ -15,8 +15,8 @@ describe('scope resolution', () => {
 
   test('alias used as view argument resolves', async () => {
     const doc = await resolveReferences(`
-      view Text Value text { }
-      view MyView {
+      ui Text Value text { }
+      ui MyView {
         alias Msg = "hi"
         alias Check = Msg
       }
@@ -28,8 +28,8 @@ describe('scope resolution', () => {
 
   test('view parameter resolves as identifier reference', async () => {
     const doc = await resolveReferences(`
-      view Text Value text { }
-      view MyView Label text {
+      ui Text Value text { }
+      ui MyView Label text {
         alias X = Label
       }
     `)
@@ -40,8 +40,8 @@ describe('scope resolution', () => {
 
   test('multiple aliases resolve independently', async () => {
     const doc = await resolveReferences(`
-      view Text Value text { }
-      view MyView {
+      ui Text Value text { }
+      ui MyView {
         alias A = "hello"
         alias B = 42
         alias Check = A

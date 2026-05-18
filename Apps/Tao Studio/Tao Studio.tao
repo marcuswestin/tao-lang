@@ -4,6 +4,6 @@ app TaoStudio {
    ui RootView
 }
 
-view RootView {
+ui RootView {
    Text "Hello World"
 }

@@ -2,7 +2,7 @@ use Text, Button, Row, Col, Number from @tao/ui
 
 state GlobalN = 2
 
-share view ExpressionsDemo {
+share ui ExpressionsDemo {
    state LocalN = 10
    alias Greeting = "Hello"
    alias Name = "Tao"

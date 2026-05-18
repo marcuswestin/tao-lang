@@ -12,7 +12,7 @@ type Person is {
    }
 }
 
-view Main {
+ui Main {
    state Ro = Person {
       Name "Ro",
       Age 40,

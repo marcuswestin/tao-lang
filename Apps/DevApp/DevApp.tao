@@ -6,7 +6,7 @@ app TaoStudio {
 
 state GlobalCount = 100
 
-view RootView {
+ui RootView {
    Text "DEV APP"
    Number GlobalCount
    Button "Click me", StartDebugger { }

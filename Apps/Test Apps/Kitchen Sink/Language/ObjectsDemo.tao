@@ -1,6 +1,6 @@
 use Text, Button, Col from @tao/ui
 
-share view ObjectsDemo {
+share ui ObjectsDemo {
    state Box = {
       label "tao",
       qty 1,

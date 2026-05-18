@@ -15,7 +15,7 @@ describe('use statement parsing', () => {
   test('parses use statement with single import', async () => {
     const doc = await parseAST(`
       use PublicView from ./ui/views
-      view MyView { }
+      ui MyView { }
     `)
     const useStmt = doc.statements.first.as_UseStatement
     expect(useStmt.modulePath).toBe('./ui/views')
@@ -25,7 +25,7 @@ describe('use statement parsing', () => {
   test('parses use statement with multiple imports', async () => {
     const doc = await parseAST(`
       use PublicView, AnotherView, ThirdView from ./ui/views
-      view MyView { }
+      ui MyView { }
     `)
     const useStmt = doc.statements.first.as_UseStatement
     expect(useStmt.modulePath).toBe('./ui/views')
@@ -35,7 +35,7 @@ describe('use statement parsing', () => {
   test('parses use statement with parent path', async () => {
     const doc = await parseAST(`
       use Button from ../shared/components
-      view MyView { }
+      ui MyView { }
     `)
     const useStmt = doc.statements.first.as_UseStatement
     expect(useStmt.modulePath).toBe('../shared/components')
@@ -46,7 +46,7 @@ describe('use statement parsing', () => {
     const doc = await parseAST(`
       use PublicView from ./ui/views
       use Button, Input from ./ui/components
-      view MyView { }
+      ui MyView { }
     `)
     expect(doc.statements.length).toBe(3)
     expect(doc.statements[0].as_UseStatement.modulePath).toBe('./ui/views')
@@ -56,7 +56,7 @@ describe('use statement parsing', () => {
   test('parses same-module use statement (no from clause)', async () => {
     const doc = await parseAST(`
       use Button
-      view MyView { }
+      ui MyView { }
     `)
     const useStmt = doc.statements.first.as_UseStatement
     useStmt.expect('modulePath').toBeUndefined()
@@ -66,7 +66,7 @@ describe('use statement parsing', () => {
   test('parses same-module use statement with multiple imports', async () => {
     const doc = await parseAST(`
       use Button, Input, Label
-      view MyView { }
+      ui MyView { }
     `)
     const useStmt = doc.statements.first.as_UseStatement
     useStmt.expect('modulePath').toBeUndefined()
@@ -79,14 +79,14 @@ describe('multi-file module parsing', () => {
     const result = await parseMultipleFiles([
       {
         path: '/project/ui/views.tao',
-        code: `share view PublicView { }`,
+        code: `share ui PublicView { }`,
       },
       {
         path: '/project/app.tao',
         code: `
           use PublicView from ./ui/views
           app MyApp { ui MainView }
-          view MainView { }
+          ui MainView { }
         `,
       },
     ])
@@ -100,13 +100,13 @@ describe('cross-module import resolution (use statement)', () => {
     const result = await parseMultipleFiles([
       {
         path: '/project/ui/views.tao',
-        code: `share view Button { }`,
+        code: `share ui Button { }`,
       },
       {
         path: '/project/app.tao',
         code: `
           use Button from ./ui/views
-          view MainView {
+          ui MainView {
             Button
           }
         `,
@@ -121,13 +121,13 @@ describe('cross-module import resolution (use statement)', () => {
     const result = await parseMultipleFiles([
       {
         path: '/project/ui/views.tao',
-        code: `share view Button { }`,
+        code: `share ui Button { }`,
       },
       {
         path: '/project/app.tao',
         code: `
           use NonExistent from ./ui/views
-          view MainView { }
+          ui MainView { }
         `,
       },
     ])
@@ -140,13 +140,13 @@ describe('cross-module import resolution (use statement)', () => {
     const result = await parseMultipleFiles([
       {
         path: '/project/ui/views.tao',
-        code: `view InternalView { }`, // Not shared - only visible within ui/ module
+        code: `ui InternalView { }`, // Not shared - only visible within ui/ module
       },
       {
         path: '/project/app.tao',
         code: `
           use InternalView from ./ui/views
-          view MainView { }
+          ui MainView { }
         `,
       },
     ])
@@ -159,13 +159,13 @@ describe('cross-module import resolution (use statement)', () => {
     const result = await parseMultipleFiles([
       {
         path: '/project/ui/views.tao',
-        code: `hide view PrivateView { }`, // Explicitly private to this file
+        code: `hide ui PrivateView { }`, // Explicitly private to this file
       },
       {
         path: '/project/app.tao',
         code: `
           use PrivateView from ./ui/views
-          view MainView { }
+          ui MainView { }
         `,
       },
     ])
@@ -178,17 +178,17 @@ describe('cross-module import resolution (use statement)', () => {
     const result = await parseMultipleFiles([
       {
         path: '/project/ui/buttons.tao',
-        code: `share view Button { }`,
+        code: `share ui Button { }`,
       },
       {
         path: '/project/ui/inputs.tao',
-        code: `share view TextInput { }`,
+        code: `share ui TextInput { }`,
       },
       {
         path: '/project/app.tao',
         code: `
           use Button, TextInput from ./ui
-          view MainView {
+          ui MainView {
             Button { TextInput }
           }
         `,
@@ -202,13 +202,13 @@ describe('cross-module import resolution (use statement)', () => {
     const result = await parseMultipleFiles([
       {
         path: '/project/kitchen/counter/KnifeBlock.tao',
-        code: `share view KnifeBlock { }`,
+        code: `share ui KnifeBlock { }`,
       },
       {
         path: '/project/kitchen/Kitchen Sink.tao',
         code: `
           use KnifeBlock from ./counter
-          view MainView {
+          ui MainView {
             KnifeBlock { }
           }
         `,
@@ -222,13 +222,13 @@ describe('cross-module import resolution (use statement)', () => {
     const result = await parseMultipleFiles([
       {
         path: '/project/app/components/counter/KnifeBlock.tao',
-        code: `share view KnifeBlock { }`,
+        code: `share ui KnifeBlock { }`,
       },
       {
         path: '/project/app/Kitchen.tao',
         code: `
           use KnifeBlock from ./components/counter
-          view Text {
+          ui Text {
             KnifeBlock { }
           }
         `,
@@ -242,13 +242,13 @@ describe('cross-module import resolution (use statement)', () => {
     const result = await parseMultipleFiles([
       {
         path: '/project/src/ui/components/buttons/Button.tao',
-        code: `share view Button { }`,
+        code: `share ui Button { }`,
       },
       {
         path: '/project/src/app.tao',
         code: `
           use Button from ./ui/components/buttons
-          view MainView {
+          ui MainView {
             Button { }
           }
         `,
@@ -263,10 +263,10 @@ describe('cross-module import resolution (use statement)', () => {
       {
         path: '/project/app/Views.tao',
         code: `
-          share view SharedView { }
-          hide view FileView { }
-          view DefaultView { }
-          view TestView {
+          share ui SharedView { }
+          hide ui FileView { }
+          ui DefaultView { }
+          ui TestView {
             SharedView { }
             FileView { }
             DefaultView { }
@@ -282,13 +282,13 @@ describe('cross-module import resolution (use statement)', () => {
     const result = await parseMultipleFiles([
       {
         path: '/project/shared/components/Button.tao',
-        code: `share view Button { }`,
+        code: `share ui Button { }`,
       },
       {
         path: '/project/app/views/Login.tao',
         code: `
           use Button from ../../shared/components
-          view LoginView {
+          ui LoginView {
             Button { }
           }
         `,
@@ -302,13 +302,13 @@ describe('cross-module import resolution (use statement)', () => {
     const result = await parseMultipleFiles([
       {
         path: '/project/app/Fridge.tao',
-        code: `share view FridgeView { }`,
+        code: `share ui FridgeView { }`,
       },
       {
         path: '/project/app/kitchen/Kitchen.tao',
         code: `
           use FridgeView from ../
-          view KitchenView {
+          ui KitchenView {
             FridgeView { }
           }
         `,
@@ -323,13 +323,13 @@ describe('cross-module import resolution (use statement)', () => {
       const result = await parseMultipleFiles([
         {
           path: '/project/ui/buttons.tao',
-          code: `view Button { }`,
+          code: `ui Button { }`,
         },
         {
           path: '/project/ui/forms.tao',
           code: `
           use Button
-          view LoginForm {
+          ui LoginForm {
             Button
           }
         `,
@@ -343,13 +343,13 @@ describe('cross-module import resolution (use statement)', () => {
       const result = await parseMultipleFiles([
         {
           path: '/project/ui/buttons.tao',
-          code: `share view Button { }`,
+          code: `share ui Button { }`,
         },
         {
           path: '/project/ui/forms.tao',
           code: `
           use Button
-          view LoginForm {
+          ui LoginForm {
             Button
           }
         `,
@@ -363,12 +363,12 @@ describe('cross-module import resolution (use statement)', () => {
       const result = await parseMultipleFiles([
         {
           path: '/project/ui/buttons.tao',
-          code: `view Button { }`,
+          code: `ui Button { }`,
         },
         {
           path: '/project/ui/forms.tao',
           code: `
-          view LoginForm {
+          ui LoginForm {
             Button
           }
         `,
@@ -383,13 +383,13 @@ describe('cross-module import resolution (use statement)', () => {
       const result = await parseMultipleFiles([
         {
           path: '/project/ui/buttons.tao',
-          code: `hide view PrivateHelper { }`,
+          code: `hide ui PrivateHelper { }`,
         },
         {
           path: '/project/ui/forms.tao',
           code: `
           use PrivateHelper
-          view LoginForm {
+          ui LoginForm {
             PrivateHelper
           }
         `,
@@ -404,17 +404,17 @@ describe('cross-module import resolution (use statement)', () => {
       const result = await parseMultipleFiles([
         {
           path: '/project/ui/buttons.tao',
-          code: `view Button { }`,
+          code: `ui Button { }`,
         },
         {
           path: '/project/ui/labels.tao',
-          code: `share view Label { }`,
+          code: `share ui Label { }`,
         },
         {
           path: '/project/ui/forms.tao',
           code: `
           use Button, Label
-          view LoginForm {
+          ui LoginForm {
             Button { }
             Label { }
           }
@@ -439,7 +439,7 @@ describe('module system edge cases', () => {
         path: '/project/app.tao',
         code: `
           use Button from ./non/existent/path
-          view MainView { }
+          ui MainView { }
         `,
       },
     ])
@@ -452,17 +452,17 @@ describe('module system edge cases', () => {
     const result = await parseMultipleFiles([
       {
         path: '/project/ui/buttons.tao',
-        code: `view Button { }`,
+        code: `ui Button { }`,
       },
       {
         path: '/project/ui/special-buttons.tao',
-        code: `view Button { }`,
+        code: `ui Button { }`,
       },
       {
         path: '/project/ui/forms.tao',
         code: `
           use Button
-          view Form {
+          ui Form {
             Button
           }
         `,
@@ -476,14 +476,14 @@ describe('module system edge cases', () => {
     const result = await parseMultipleFiles([
       {
         path: '/project/ui/buttons.tao',
-        code: `share view Button { }`,
+        code: `share ui Button { }`,
       },
       {
         path: '/project/app.tao',
         code: `
           use Button from ./ui/buttons
-          view Button { }
-          view MainView {
+          ui Button { }
+          ui MainView {
             Button
           }
         `,
@@ -499,16 +499,16 @@ describe('module system edge cases', () => {
       {
         path: '/project/ui/components.tao',
         code: `
-          share view Button { }
-          share view Input { }
-          share view Label { }
+          share ui Button { }
+          share ui Input { }
+          share ui Label { }
         `,
       },
       {
         path: '/project/app.tao',
         code: `
           use Button, Input, Label from ./ui/components
-          view Form {
+          ui Form {
             Label { }
             Input { }
             Button { }
@@ -524,13 +524,13 @@ describe('module system edge cases', () => {
     const result = await parseMultipleFiles([
       {
         path: '/project/ui/internal.tao',
-        code: `view InternalHelper { }`, // No 'share' modifier
+        code: `ui InternalHelper { }`, // No 'share' modifier
       },
       {
         path: '/project/app.tao',
         code: `
           use InternalHelper from ./ui/internal
-          view MainView { }
+          ui MainView { }
         `,
       },
     ])
@@ -544,16 +544,16 @@ describe('module system edge cases', () => {
       {
         path: '/project/ui/mixed.tao',
         code: `
-          share view PublicButton { }
-          hide view PrivateHelper { }
-          view ModuleOnlyView { }
+          share ui PublicButton { }
+          hide ui PrivateHelper { }
+          ui ModuleOnlyView { }
         `,
       },
       {
         path: '/project/app.tao',
         code: `
           use PublicButton from ./ui/mixed
-          view MainView {
+          ui MainView {
             PublicButton
           }
         `,
@@ -570,7 +570,7 @@ describe('standard library imports (use @tao/...)', () => {
   test('parses use statement with @tao/ module path', async () => {
     const doc = await parseAST(`
       use Col from @tao/ui
-      view MyView { }
+      ui MyView { }
     `)
     const useStmt = doc.statements.first.as_UseStatement
     expect(useStmt.modulePath).toBe('@tao/ui')
@@ -580,7 +580,7 @@ describe('standard library imports (use @tao/...)', () => {
   test('parses use statement with multiple std-lib imports', async () => {
     const doc = await parseAST(`
       use Col, Row, Text from @tao/ui
-      view MyView { }
+      ui MyView { }
     `)
     const useStmt = doc.statements.first.as_UseStatement
     expect(useStmt.modulePath).toBe('@tao/ui')
@@ -593,7 +593,7 @@ describe('standard library imports (use @tao/...)', () => {
         path: '/project/app.tao',
         code: `
           use Col from @tao/ui
-          view MainView { }
+          ui MainView { }
         `,
       },
     ])
@@ -606,13 +606,13 @@ describe('standard library imports (use @tao/...)', () => {
     const result = await parseMultipleFiles([
       {
         path: '/tao-std-lib/tao/ui/Views.tao',
-        code: `share view Col { }`,
+        code: `share layout Col { }`,
       },
       {
         path: '/project/app.tao',
         code: `
           use Col from @tao/ui
-          view MainView {
+          ui MainView {
             Col
           }
         `,
@@ -627,16 +627,16 @@ describe('standard library imports (use @tao/...)', () => {
       {
         path: '/tao-std-lib/tao/ui/Views.tao',
         code: `
-          share view Col { }
-          share view Row { }
-          share view Text { }
+          share layout Col { }
+          share layout Row { }
+          share ui Text { }
         `,
       },
       {
         path: '/project/app.tao',
         code: `
           use Col, Row, Text from @tao/ui
-          view MainView {
+          ui MainView {
             Col {
               Row {
                 Text
@@ -654,13 +654,13 @@ describe('standard library imports (use @tao/...)', () => {
     const result = await parseMultipleFiles([
       {
         path: '/tao-std-lib/tao/ui/Views.tao',
-        code: `share view Col { }`,
+        code: `share layout Col { }`,
       },
       {
         path: '/project/app.tao',
         code: `
           use NonExistent from @tao/ui
-          view MainView { }
+          ui MainView { }
         `,
       },
     ], { stdLibRoot: STD_LIB_ROOT })
@@ -673,13 +673,13 @@ describe('standard library imports (use @tao/...)', () => {
     const result = await parseMultipleFiles([
       {
         path: '/tao-std-lib/tao/ui/Internal.tao',
-        code: `view InternalHelper { }`,
+        code: `ui InternalHelper { }`,
       },
       {
         path: '/project/app.tao',
         code: `
           use InternalHelper from @tao/ui
-          view MainView { }
+          ui MainView { }
         `,
       },
     ], { stdLibRoot: STD_LIB_ROOT })
@@ -692,18 +692,18 @@ describe('standard library imports (use @tao/...)', () => {
     const result = await parseMultipleFiles([
       {
         path: '/tao-std-lib/tao/ui/Views.tao',
-        code: `share view Col { }`,
+        code: `share layout Col { }`,
       },
       {
         path: '/project/components/Button.tao',
-        code: `share view Button { }`,
+        code: `share ui Button { }`,
       },
       {
         path: '/project/app.tao',
         code: `
           use Col from @tao/ui
           use Button from ./components
-          view MainView {
+          ui MainView {
             Col {
               Button
             }
@@ -719,18 +719,18 @@ describe('standard library imports (use @tao/...)', () => {
     const result = await parseMultipleFiles([
       {
         path: '/tao-std-lib/tao/ui/Views.tao',
-        code: `share view Col { }`,
+        code: `share layout Col { }`,
       },
       {
         path: '/tao-std-lib/tao/nav/Navigation.tao',
-        code: `share view TabBar { }`,
+        code: `share ui TabBar { }`,
       },
       {
         path: '/project/app.tao',
         code: `
           use Col from @tao/ui
           use TabBar from @tao/nav
-          view MainView {
+          ui MainView {
             Col {
               TabBar
             }
@@ -754,8 +754,8 @@ describe('type imports via use statement', () => {
         path: '/project/types/views.tao',
         code: `
           use Person
-          view Greet P Person { }
-          view Show {
+          ui Greet P Person { }
+          ui Show {
             Greet Person "Ro"
           }
         `,
@@ -775,8 +775,8 @@ describe('type imports via use statement', () => {
         path: '/project/app.tao',
         code: `
           use Person from ./types
-          view Greet P Person { }
-          view Main {
+          ui Greet P Person { }
+          ui Main {
             Greet Person { Name "Ro" }
           }
         `,
@@ -796,7 +796,7 @@ describe('type imports via use statement', () => {
         path: '/project/app.tao',
         code: `
           use Person from ./types
-          view Greet P Person { }
+          ui Greet P Person { }
         `,
       },
     ])
@@ -815,7 +815,7 @@ describe('type imports via use statement', () => {
         path: '/project/app.tao',
         code: `
           use Person from ./types
-          view Greet P Person { }
+          ui Greet P Person { }
         `,
       },
     ])
@@ -833,7 +833,7 @@ describe('type imports via use statement', () => {
       {
         path: '/project/app.tao',
         code: `
-          view Greet P Person { }
+          ui Greet P Person { }
         `,
       },
     ])
@@ -851,7 +851,7 @@ describe('type imports via use statement', () => {
       {
         path: '/project/types/views.tao',
         code: `
-          view Greet P Person { }
+          ui Greet P Person { }
         `,
       },
     ])
@@ -871,7 +871,7 @@ describe('type imports via use statement', () => {
         code: `
           use Person from ./types
           state Ro = Person { Name "Ro" }
-          view Main { }
+          ui Main { }
         `,
       },
     ])

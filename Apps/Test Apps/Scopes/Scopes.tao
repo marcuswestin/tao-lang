@@ -10,7 +10,7 @@ action FileAction {
    set FileState += 1
 }
 
-view RootView {
+ui RootView {
    state ViewState = 200
    Button "${ FileState }", FileAction { }
    Button "${ ViewState }", ViewAction { }

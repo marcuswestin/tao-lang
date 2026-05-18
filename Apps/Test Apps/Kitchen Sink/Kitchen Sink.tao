@@ -16,7 +16,7 @@ action BumpFileLevelDemo {
    set FileLevelDemoCounter += 1
 }
 
-view AppView {
+ui AppView {
    Text "Kitchen Sink"
    Text "Exercises types, state, scopes, objects, structs, expressions, actions, local param types, nested views, inject, and cross-folder `use`."
    Text "${ KitchenSinkVersion } · file-level state below"

@@ -3,7 +3,7 @@ import { describe, expect, parseAST, parseASTWithErrors, test } from './test-uti
 
 describe('parse:', () => {
   test('no newlines in code', async () => {
-    await parseAST(`app MyApp { ui MyView } view MyView { }`)
+    await parseAST(`app MyApp { ui MyView } ui MyView { }`)
   })
 
   test('basic app', async () => {
@@ -11,8 +11,8 @@ describe('parse:', () => {
         app MyApp {
             ui MyView
         }
-        view MyView {}
-        view Text {}
+        ui MyView {}
+        ui Text {}
     `)
 
     const appDeclaration = appFile.statements.first.as_AppDeclaration
@@ -24,17 +24,33 @@ describe('parse:', () => {
     expect(viewDeclaration.unwrap()).toEqual(uiView.unwrap())
   })
 
+  test('parses ui frame and layout declarations', async () => {
+    const appFile = await parseAST(`
+      ui Header { }
+      frame Card { }
+      layout Row { }
+    `)
+    appFile.statements.first.as_ViewDeclaration.expect('type').toBe('ui')
+    appFile.statements.second.as_ViewDeclaration.expect('type').toBe('frame')
+    appFile.statements[2].as_ViewDeclaration.expect('type').toBe('layout')
+  })
+
+  test('legacy view declaration keyword fails parsing', async () => {
+    const errorReport = await parseASTWithErrors(`view Legacy { }`)
+    expect(errorReport.parserErrors.length).toBeGreaterThan(0)
+  })
+
   test('reference validation errors', async () => {
     const errorReport = await parseASTWithErrors(`
         app MyApp {
             ui MyApp
         }
-        view MyView {
+        ui MyView {
             Text Value "Hello World"
         }
     `)
     expectHumanMessagesContain(errorReport, 'Could not resolve reference')
-    // When ui references an app name, resolution fails (Declaration includes views/aliases/actions). If it resolved, validator would report "App ui must be a view declaration".
+    // When ui references an app name, resolution fails (Declaration includes UI declarations/aliases/actions). If it resolved, validator would report that app ui must reference a UI declaration.
   })
 
   test('parses action with parameters and inject body', async () => {
@@ -54,8 +70,8 @@ describe('parse:', () => {
 
   test('parses anonymous inline action expression in view call argument', async () => {
     const doc = await parseAST(`
-      view Btn Title text, OnPress action { }
-      view V {
+      ui Btn Title text, OnPress action { }
+      ui V {
         state N = 0
         Btn "Go", action { set N = 1 }
       }

@@ -4,7 +4,7 @@ import { describe, parseASTWithErrors, resolveReferences, test } from './test-ut
 describe('alias validation', () => {
   test('error on duplicate alias names in the same scope', async () => {
     const errors = await parseASTWithErrors(`
-      view MyView {
+      ui MyView {
         alias X = 1
         alias X = 2
       }
@@ -14,8 +14,8 @@ describe('alias validation', () => {
 
   test('no error for same alias name in different scopes', async () => {
     await resolveReferences(`
-      view Container { }
-      view MyView {
+      ui Container { }
+      ui MyView {
         alias X = 1
         Container {
           alias X = 2
@@ -26,8 +26,8 @@ describe('alias validation', () => {
 
   test('error on unresolved identifier reference', async () => {
     const errors = await parseASTWithErrors(`
-      view Text Label text { }
-      view MyView {
+      ui Text Label text { }
+      ui MyView {
         Text Unknown
       }
     `)
@@ -36,7 +36,7 @@ describe('alias validation', () => {
 
   test('warning when alias shadows a view parameter', async () => {
     const errors = await parseASTWithErrors(`
-      view MyView Label text {
+      ui MyView Label text {
         alias Label = "shadowed"
       }
     `)

@@ -2,12 +2,12 @@ app SimpleTextRenderApp {
    ui RootView
 }
 
-view RootView {
+ui RootView {
    alias Greeting = "Hello from shared scenario"
    Text Greeting
 }
 
-view Text Value text {
+ui Text Value text {
    inject ```ts
       const text = _ViewProps.Value.evaluate()
       return TR.Views.Text({ children: [text.jsValue] })
