@@ -9,6 +9,16 @@ export type TaoLayoutItemSlots = {
   horizontal: string
 }
 
+export type TaoLayoutItemsNormalizationIssue =
+  | { kind: 'item-not-allowed'; word: string }
+  | { kind: 'item-axis-conflict'; word: string; existing: string; axis: TaoLayoutItemAxis }
+  | { kind: 'center-has-no-slot' }
+
+export type TaoLayoutItemsNormalization = {
+  slots: TaoLayoutItemSlots
+  issues: readonly TaoLayoutItemsNormalizationIssue[]
+}
+
 const standardContainerDirections: Record<string, TaoLayoutDirection> = {
   Row: 'row',
   Box: 'row',
@@ -72,6 +82,64 @@ export function itemWordAxis(word: string, direction: TaoLayoutDirection): TaoLa
     return 'horizontal'
   }
   return undefined
+}
+
+/** normalizeItemsTokens resolves `items` tokens into vertical/horizontal slots and validation issues. */
+export function normalizeItemsTokens(
+  viewName: string,
+  direction: TaoLayoutDirection,
+  words: readonly string[],
+  defaults: TaoLayoutItemSlots = defaultItemsForStandardContainer(viewName) ?? { vertical: 'top', horizontal: 'left' },
+): TaoLayoutItemsNormalization {
+  const result: Partial<TaoLayoutItemSlots> = {}
+  const claimed = new Map<TaoLayoutItemAxis, string>()
+  const issues: TaoLayoutItemsNormalizationIssue[] = []
+  let centerCount = 0
+
+  for (const word of words) {
+    if (word === 'center') {
+      centerCount++
+      continue
+    }
+
+    const axis = itemWordAxis(word, direction)
+    if (axis === undefined) {
+      issues.push({ kind: 'item-not-allowed', word })
+      continue
+    }
+
+    const existing = claimed.get(axis)
+    if (existing !== undefined) {
+      issues.push({ kind: 'item-axis-conflict', word, existing, axis })
+    } else {
+      claimed.set(axis, word)
+      result[axis] = word
+    }
+  }
+
+  if (centerCount > 2) {
+    issues.push({ kind: 'item-axis-conflict', word: 'center', existing: 'center', axis: 'horizontal' })
+  } else if (centerCount === 2 && claimed.size > 0) {
+    issues.push({ kind: 'center-has-no-slot' })
+  } else if (centerCount === 1 && claimed.has('vertical') && claimed.has('horizontal')) {
+    issues.push({ kind: 'center-has-no-slot' })
+  }
+
+  if (centerCount >= 2) {
+    result.vertical ??= 'center'
+    result.horizontal ??= 'center'
+  } else if (centerCount === 1) {
+    result.vertical ??= 'center'
+    result.horizontal ??= 'center'
+  }
+
+  return {
+    slots: {
+      vertical: result.vertical ?? defaults.vertical,
+      horizontal: result.horizontal ?? defaults.horizontal,
+    },
+    issues,
+  }
 }
 
 /** itemAxisStyleKey returns the React Native style key for a physical item slot in a container direction. */

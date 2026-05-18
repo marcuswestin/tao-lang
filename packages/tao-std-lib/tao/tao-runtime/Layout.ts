@@ -1,9 +1,9 @@
 import {
   defaultItemsForStandardContainer,
   itemAxisStyleKey,
-  itemWordAxis,
   itemWordReactNativeValue,
   layoutPaddingReactNativeKey,
+  normalizeItemsTokens,
   standardContainerDirection,
   type TaoLayoutDirection,
   type TaoLayoutItemAxis,
@@ -221,33 +221,11 @@ function normalizeItems(
   direction: TaoLayoutDirection,
   words: readonly TaoLayoutTerm[],
 ): TaoLayoutItemSlots {
-  const defaults = defaultItemsForStandardContainer(viewName) ?? { vertical: 'top', horizontal: 'left' }
-  const result: Partial<TaoLayoutItemSlots> = {}
-  let centerCount = 0
-  for (const term of words) {
-    if (typeof term !== 'string') {
-      continue
-    }
-    if (term === 'center') {
-      centerCount++
-      continue
-    }
-    const axis = itemWordAxis(term, direction)
-    if (axis !== undefined) {
-      result[axis] = term
-    }
-  }
-  if (centerCount >= 2) {
-    result.vertical ??= 'center'
-    result.horizontal ??= 'center'
-  } else if (centerCount === 1) {
-    result.vertical ??= 'center'
-    result.horizontal ??= 'center'
-  }
-  return {
-    vertical: result.vertical ?? defaults.vertical,
-    horizontal: result.horizontal ?? defaults.horizontal,
-  }
+  return normalizeItemsTokens(
+    viewName,
+    direction,
+    words.filter((word): word is string => typeof word === 'string'),
+  ).slots
 }
 
 function applyItems(

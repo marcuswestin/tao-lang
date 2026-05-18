@@ -3,7 +3,7 @@ import { AST } from '@parser/parser'
 import {
   defaultItemsForStandardContainer,
   isKnownItemWord,
-  itemWordAxis,
+  normalizeItemsTokens,
   standardContainerDirection,
   type TaoLayoutDirection,
   type TaoLayoutItemAxis,
@@ -298,32 +298,19 @@ function validateItemsEntry(
     return
   }
 
-  const claimed = new Map<TaoLayoutItemAxis, string>()
-  let centerCount = 0
-  for (const word of terms as string[]) {
-    if (word === 'center') {
-      centerCount++
-      continue
+  const normalized = normalizeItemsTokens(viewName, direction, terms as string[], defaults)
+  for (const issue of normalized.issues) {
+    switch (issue.kind) {
+      case 'item-not-allowed':
+        report.error(layoutValidationMessages.itemNotAllowed(issue.word, direction), entry)
+        continue
+      case 'item-axis-conflict':
+        report.error(layoutValidationMessages.itemAxisConflict(issue.word, issue.existing, issue.axis), entry)
+        continue
+      case 'center-has-no-slot':
+        report.error(layoutValidationMessages.centerHasNoSlot, entry)
+        continue
     }
-    const axis = itemWordAxis(word, direction)
-    if (axis === undefined) {
-      report.error(layoutValidationMessages.itemNotAllowed(word, direction), entry)
-      continue
-    }
-    const existing = claimed.get(axis)
-    if (existing !== undefined) {
-      report.error(layoutValidationMessages.itemAxisConflict(word, existing, axis), entry)
-    } else {
-      claimed.set(axis, word)
-    }
-  }
-
-  if (centerCount > 2) {
-    report.error(layoutValidationMessages.itemAxisConflict('center', 'center', 'horizontal'), entry)
-  } else if (centerCount === 2 && claimed.size > 0) {
-    report.error(layoutValidationMessages.centerHasNoSlot, entry)
-  } else if (centerCount === 1 && claimed.has('vertical') && claimed.has('horizontal')) {
-    report.error(layoutValidationMessages.centerHasNoSlot, entry)
   }
 }
 
