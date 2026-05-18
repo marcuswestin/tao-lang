@@ -92,6 +92,19 @@ describe('layout syntax parser:', () => {
     entries[2].terms.match([{ value: 'pad' }, { value: 10 }, { value: 'horizontal' }, { value: 4 }])
   })
 
+  test('parses declaration-line layout clause', async () => {
+    const doc = await parseAST(`
+      ui Pill Label text [compress, pad 8] {
+        render Box { }
+      }
+    `)
+
+    const entries = doc.statements.first.as_ViewDeclaration.layoutClause.entries
+    expect(entries).toHaveLength(2)
+    entries.first.terms.match([{ value: 'compress' }])
+    entries.second.terms.match([{ value: 'pad' }, { value: 8 }])
+  })
+
   test('reports malformed layout clause', async () => {
     const report = await expectParseHasHumanErrors(`
       layout Row { }

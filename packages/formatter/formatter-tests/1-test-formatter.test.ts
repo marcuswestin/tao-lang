@@ -193,6 +193,13 @@ describe('Formatter', () => {
     .equals(`
         ui Text value text, count number { }
     `)
+  testFormatter('view declaration with layout defaults')
+    .format(`ui Pill Label text [ pad   8 , rigid ] {render Box{}}`)
+    .equals(`
+        ui Pill Label text [pad 8, rigid] {
+            render Box { }
+        }
+    `)
   testFormatter('view render with args')
     .format(`ui MyView {Text "hello" {}}`)
     .equals(`

@@ -184,6 +184,50 @@ describe('caller children validation:', () => {
   })
 })
 
+describe('public layout defaults validation:', () => {
+  test('declaration-line self and container defaults validate', async () => {
+    await parseTaoFully(`
+      frame Stack { render inject \`\`\`ts return null \`\`\` }
+      frame Box { render inject \`\`\`ts return null \`\`\` }
+      ui Text Value text { render inject \`\`\`ts return null \`\`\` }
+      ui Pill Label text [compress, pad 8] {
+        render Box {
+          Text Label
+        }
+      }
+      frame Card [items top center, gap 12] {
+        render Stack {
+          @@children
+        }
+      }
+      ui Root {
+        render Card [gap 8] {
+          Pill "Beta"
+        }
+      }
+    `)
+  })
+
+  test('declaration-line public layout conflicts with root self layout', async () => {
+    const report = await parseASTWithErrors(`
+      frame Box { render inject \`\`\`ts return null \`\`\` }
+      ui Pill [pad 8] {
+        render Box [pad 12]
+      }
+    `)
+    expectHumanMessagesContain(report, validationMessages.declarationLayoutConflictsWithRoot('pad'))
+  })
+
+  test('ui declaration-line layout rejects container defaults', async () => {
+    const report = await parseASTWithErrors(`
+      ui Leaf [gap 8] {
+        render inject \`\`\`ts return null \`\`\`
+      }
+    `)
+    expectHumanMessagesContain(report, validationMessages.uiCallCannotHaveContainerLayout)
+  })
+})
+
 describe('statement placement validation:', () => {
   test('state update in view body fails validation', async () => {
     const report = await parseASTWithErrors(`

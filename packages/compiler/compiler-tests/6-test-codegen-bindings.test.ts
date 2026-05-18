@@ -56,10 +56,11 @@ describe('codegen — call-site argument bindings:', () => {
         }
       }
     `)
-    expect(out).toContain('TR.Layout.resolve({"view":"Row","entries":[["items","center","spread"],["gap",12]]})')
-    expect(out).toContain(
-      'TR.Layout.resolve({"view":"Text","entries":[["aligned","center"],["width","fill","max",400]],"parentDirection":"row"})',
-    )
+    expect(out).toContain('TR.Layout.resolveMerged({ view: "Row"')
+    expect(out).toContain('[["items","center","spread"],["gap",12]]')
+    expect(out).toContain('TR.Layout.resolveMerged({ view: "Text"')
+    expect(out).toContain('[["aligned","center"],["width","fill","max",400]]')
+    expect(out).toContain('parentDirection: "row"')
   })
 
   test('frame caller children are forwarded and caller container layout routes to @@children host', async () => {
@@ -71,7 +72,7 @@ describe('codegen — call-site argument bindings:', () => {
       ui Text Value text {
         render inject \`\`\`ts return null \`\`\`
       }
-      frame Card {
+      frame Card [gap 12] {
         render Stack [pad 12] {
           @@children
         }
@@ -83,9 +84,31 @@ describe('codegen — call-site argument bindings:', () => {
       }
     `)
     expect(out).toContain('_taoChildrenLayoutEntries={[["gap",8]]}')
-    expect(out).toContain('TR.Layout.resolve({"view":"Card","entries":[["width",320]]})')
-    expect(out).toMatch(/TR\.Layout\.resolve\(\{ view: "Stack", entries: _ViewProps\._taoChildrenLayoutEntries \}\)/)
+    expect(out).toContain('_taoLayoutEntries={[["width",320]]}')
+    expect(out).toContain('TR.Layout.resolveMerged({ view: "Card"')
+    expect(out).toContain('TR.Layout.resolveMerged({ view: "Stack"')
+    expect(out).toContain('[["gap",12]]')
+    expect(out).toContain('_ViewProps._taoChildrenLayoutEntries ?? []')
     expect(out).toContain('{_ViewProps.children}')
+  })
+
+  test('declaration defaults merge onto public roots and call-site self overrides stay raw', async () => {
+    const out = await writeAndCompile(`
+      app A { ui V }
+      frame Box {
+        render inject \`\`\`ts return null \`\`\`
+      }
+      ui Pill [pad 8] {
+        render Box { }
+      }
+      ui V {
+        render Pill [width 320, pad horizontal 4]
+      }
+    `)
+    expect(out).toContain('_taoLayoutEntries={[["width",320],["pad","horizontal",4]]}')
+    expect(out).toContain('TR.Layout.resolveMerged({ view: "Box"')
+    expect(out).toContain('[["rigid"],["hug"],["pad",8]]')
+    expect(out).toContain('_ViewProps._taoLayoutEntries ?? []')
   })
 
   test('ActionRender invocation emits a props bag keyed by the resolved parameter names', async () => {

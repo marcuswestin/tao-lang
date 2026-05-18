@@ -18,7 +18,7 @@ import {
   validateDuplicateIdentifier,
   validateUppercaseIdentifierName,
 } from './data'
-import { layoutValidationMessages, layoutValidator } from './LayoutValidator'
+import { layoutValidationMessages, layoutValidator, validateViewDeclarationLayoutClause } from './LayoutValidator'
 import { typeSystemValidationMessages, typeSystemValidator } from './TypeSystemValidator'
 import { makeValidater, type Reporter } from './ValidationReporter'
 
@@ -49,6 +49,8 @@ export const validationMessages = {
   childrenSpliceNeedsHost: '`@@children` must be directly inside a render host block.',
   uiCallCannotHaveChildren: 'ui declarations do not accept unnamed caller children.',
   uiCallCannotHaveContainerLayout: 'ui declarations do not accept caller container layout specs.',
+  declarationLayoutConflictsWithRoot: (key: string) =>
+    `Declaration-line layout '${key}' conflicts with the public render root layout. Put the overridable value on the declaration line or the private value on the render root, not both.`,
   ...identifierValidationMessages,
   ...layoutValidationMessages,
   ...typeSystemValidationMessages,
@@ -91,8 +93,11 @@ export const validator: langium.ValidationChecks<AST.TaoLangAstType> = {
   }),
 
   ViewDeclaration: makeValidater((decl, report) => {
+    validateViewDeclarationLayoutClause(decl, report)
     validateViewDeclarationRenderRoot(decl, report)
     validateViewDeclarationChildrenSplice(decl, report)
+    validateViewDeclarationContainerLayout(decl, report)
+    validateViewDeclarationPublicLayoutConflict(decl, report)
   }),
 
   ForStatement: makeValidater((node, report) => {
@@ -285,6 +290,48 @@ function validateViewDeclarationChildrenSplice(decl: AST.ViewDeclaration, report
   }
 }
 
+function validateViewDeclarationPublicLayoutConflict(
+  decl: AST.ViewDeclaration,
+  report: Reporter<AST.ViewDeclaration>,
+): void {
+  const declarationEntries = decl.layoutClause?.entries ?? []
+  if (declarationEntries.length === 0) {
+    return
+  }
+  const renderRoot = decl.block.statements.find(AST.isRenderStatement)
+  if (renderRoot?.layoutClause === undefined) {
+    return
+  }
+
+  const declarationKeys = new Map<string, AST.LayoutEntry>()
+  for (const entry of declarationEntries) {
+    const key = publicSelfLayoutConflictKey(entry)
+    if (key !== undefined) {
+      declarationKeys.set(key, entry)
+    }
+  }
+
+  for (const entry of renderRoot.layoutClause.entries) {
+    const key = publicSelfLayoutConflictKey(entry)
+    const declarationEntry = key === undefined ? undefined : declarationKeys.get(key)
+    if (key !== undefined && declarationEntry !== undefined) {
+      report.error(validationMessages.declarationLayoutConflictsWithRoot(key), declarationEntry)
+    }
+  }
+}
+
+function validateViewDeclarationContainerLayout(
+  decl: AST.ViewDeclaration,
+  report: Reporter<AST.ViewDeclaration>,
+): void {
+  if (decl.type !== 'ui') {
+    return
+  }
+  if (layoutClauseHasContainerEntries(decl.layoutClause)) {
+    report.error(validationMessages.uiCallCannotHaveContainerLayout, { node: decl, property: 'layoutClause' })
+  }
+}
+
 function validateRenderStatementPlacement(
   node: AST.RenderStatement,
   report: Reporter<AST.RenderStatement>,
@@ -358,6 +405,31 @@ function layoutClauseHasContainerEntries(clause: AST.LayoutClause | undefined): 
     const value = head === undefined ? undefined : layoutTermText(head)
     return value === 'items' || value === 'gap'
   }) ?? false
+}
+
+function publicSelfLayoutConflictKey(entry: AST.LayoutEntry): string | undefined {
+  const head = entry.terms[0]
+  const value = head === undefined ? undefined : layoutTermText(head)
+  switch (value) {
+    case 'items':
+    case 'gap':
+      return undefined
+    case 'aligned':
+    case 'stretched':
+      return 'alignSelf'
+    case 'fill':
+    case 'hug':
+      return 'size'
+    case 'grow':
+    case 'compress':
+    case 'rigid':
+      return 'pressure'
+    case 'width':
+    case 'height':
+    case 'pad':
+      return value
+  }
+  return value
 }
 
 function layoutTermText(term: AST.LayoutTerm): string | undefined {

@@ -19,12 +19,28 @@ export type TaoLayoutSpec = {
   readonly entries: readonly TaoLayoutEntry[]
 }
 
+export type TaoMergedLayoutSpec = {
+  readonly view: string
+  readonly parentDirection?: TaoLayoutDirection
+  readonly entrySets: readonly (readonly TaoLayoutEntry[] | undefined)[]
+}
+
 export type TaoResolvedLayoutStyle = Record<string, string | number>
 
 /** Layout exposes Tao layout resolution helpers used by generated render-site code. */
 export const Layout = {
+  resolveMerged,
   resolve,
 } as const
+
+/** resolveMerged merges layout entry sets by Tao layout key before resolving to React Native styles. */
+export function resolveMerged(spec: TaoMergedLayoutSpec): TaoResolvedLayoutStyle {
+  return resolve({
+    view: spec.view,
+    parentDirection: spec.parentDirection,
+    entries: mergeEntrySets(spec.entrySets),
+  })
+}
 
 /** resolve converts a validated Tao layout spec into React Native style properties. */
 export function resolve(spec: TaoLayoutSpec): TaoResolvedLayoutStyle {
@@ -40,6 +56,113 @@ export function resolve(spec: TaoLayoutSpec): TaoResolvedLayoutStyle {
   }
 
   return style
+}
+
+function mergeEntrySets(entrySets: readonly (readonly TaoLayoutEntry[] | undefined)[]): TaoLayoutEntry[] {
+  const merged = new Map<string, TaoLayoutEntry>()
+  for (const entries of entrySets) {
+    for (const entry of entries ?? []) {
+      const key = mergeKeyForEntry(entry)
+      if (key === undefined) {
+        continue
+      }
+      const existing = merged.get(key)
+      merged.set(key, key === 'pad' && existing !== undefined ? mergePadEntries(existing, entry) : entry)
+    }
+  }
+  return Array.from(merged.values())
+}
+
+function mergeKeyForEntry(entry: TaoLayoutEntry): string | undefined {
+  const head = entry[0]
+  switch (head) {
+    case 'aligned':
+    case 'stretched':
+      return 'alignSelf'
+    case 'fill':
+    case 'hug':
+      return 'size'
+    case 'grow':
+    case 'compress':
+    case 'rigid':
+      return 'pressure'
+    case 'items':
+    case 'width':
+    case 'height':
+    case 'gap':
+    case 'pad':
+      return head
+  }
+  return typeof head === 'string' ? head : undefined
+}
+
+function mergePadEntries(base: TaoLayoutEntry, override: TaoLayoutEntry): TaoLayoutEntry {
+  const sides = padEntrySides(base)
+  const overrideSides = padEntrySides(override)
+  for (const side of ['top', 'right', 'bottom', 'left'] as const) {
+    sides[side] = overrideSides[side] ?? sides[side]
+  }
+  const merged: TaoLayoutEntry = [
+    'pad',
+    'top',
+    sides.top ?? 0,
+    'right',
+    sides.right ?? 0,
+    'bottom',
+    sides.bottom ?? 0,
+    'left',
+    sides.left ?? 0,
+  ]
+  return merged
+}
+
+function padEntrySides(entry: TaoLayoutEntry): Record<'top' | 'right' | 'bottom' | 'left', TaoLayoutTerm | undefined> {
+  const sides: Record<'top' | 'right' | 'bottom' | 'left', TaoLayoutTerm | undefined> = {
+    top: undefined,
+    right: undefined,
+    bottom: undefined,
+    left: undefined,
+  }
+  const setAll = (value: TaoLayoutTerm) => {
+    sides.top = value
+    sides.right = value
+    sides.bottom = value
+    sides.left = value
+  }
+  for (let i = 1; i < entry.length; i++) {
+    const term = entry[i]
+    if (typeof term === 'number' || isPercentString(term)) {
+      setAll(term)
+      continue
+    }
+    const value = entry[++i]
+    if (value === undefined) {
+      continue
+    }
+    switch (term) {
+      case 'horizontal':
+        sides.left = value
+        sides.right = value
+        break
+      case 'vertical':
+        sides.top = value
+        sides.bottom = value
+        break
+      case 'top':
+        sides.top = value
+        break
+      case 'right':
+        sides.right = value
+        break
+      case 'bottom':
+        sides.bottom = value
+        break
+      case 'left':
+        sides.left = value
+        break
+    }
+  }
+  return sides
 }
 
 function applyLayoutEntry(

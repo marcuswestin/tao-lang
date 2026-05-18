@@ -14,6 +14,7 @@ import { makeValidater, type Reporter } from './ValidationReporter'
 type DimensionHead = 'width' | 'height'
 type DimensionMode = 'fill' | 'hug' | 'fixed'
 type LayoutRenderHost = AST.RenderStatement | AST.ViewRender
+type LayoutHost = LayoutRenderHost | AST.ViewDeclaration
 
 type ClauseState = {
   items?: AST.LayoutEntry
@@ -167,8 +168,20 @@ export const layoutValidator: Pick<langium.ValidationChecks<AST.TaoLangAstType>,
   }),
 }
 
+/** validateViewDeclarationLayoutClause validates declaration-line public layout defaults. */
+export function validateViewDeclarationLayoutClause(
+  node: AST.ViewDeclaration,
+  report: Reporter<AST.ViewDeclaration>,
+): void {
+  validateLayoutHostLayout(node, report as unknown as Reporter<LayoutHost>)
+}
+
 /** validateRenderHostLayout validates a render-site `[ ... ]` layout clause. */
 function validateRenderHostLayout(node: LayoutRenderHost, report: Reporter<LayoutRenderHost>): void {
+  validateLayoutHostLayout(node, report as unknown as Reporter<LayoutHost>)
+}
+
+function validateLayoutHostLayout(node: LayoutHost, report: Reporter<LayoutHost>): void {
   const clause = node.layoutClause
   if (clause === undefined) {
     return
@@ -186,10 +199,10 @@ function validateRenderHostLayout(node: LayoutRenderHost, report: Reporter<Layou
 }
 
 function validateLayoutEntry(
-  node: LayoutRenderHost,
+  node: LayoutHost,
   entry: AST.LayoutEntry,
   state: ClauseState,
-  report: Reporter<LayoutRenderHost>,
+  report: Reporter<LayoutHost>,
 ): void {
   const values = layoutEntryValues(entry)
   const head = values[0]
@@ -250,11 +263,11 @@ function validateLayoutEntry(
 }
 
 function validateItemsEntry(
-  node: LayoutRenderHost,
+  node: LayoutHost,
   entry: AST.LayoutEntry,
   values: TaoLayoutTermValue[],
   state: ClauseState,
-  report: Reporter<LayoutRenderHost>,
+  report: Reporter<LayoutHost>,
 ): void {
   if (state.items !== undefined) {
     report.error(layoutValidationMessages.duplicateProperty('items'), entry)
@@ -273,7 +286,7 @@ function validateItemsEntry(
     return
   }
 
-  const viewName = node.view?.$refText ?? '<unknown>'
+  const viewName = layoutHostViewName(node)
   const direction = viewDirection(node)
   if (direction === undefined) {
     report.error(layoutValidationMessages.itemsNeedsDirection(viewName), entry)
@@ -315,11 +328,11 @@ function validateItemsEntry(
 }
 
 function validateAlignedEntry(
-  node: LayoutRenderHost,
+  node: LayoutHost,
   entry: AST.LayoutEntry,
   values: TaoLayoutTermValue[],
   state: ClauseState,
-  report: Reporter<LayoutRenderHost>,
+  report: Reporter<LayoutHost>,
 ): void {
   if (values.length !== 2 || !isLayoutWord(values[1])) {
     report.error(layoutValidationMessages.malformedEntry(layoutEntryText(entry)), entry)
@@ -346,11 +359,11 @@ function validateAlignedEntry(
 }
 
 function validateStretchedEntry(
-  node: LayoutRenderHost,
+  node: LayoutHost,
   entry: AST.LayoutEntry,
   values: TaoLayoutTermValue[],
   state: ClauseState,
-  report: Reporter<LayoutRenderHost>,
+  report: Reporter<LayoutHost>,
 ): void {
   if (values.length !== 1) {
     report.error(layoutValidationMessages.malformedEntry(layoutEntryText(entry)), entry)
@@ -368,7 +381,7 @@ function validateStretchedEntry(
 function validateOneAlignSelf(
   entry: AST.LayoutEntry,
   state: ClauseState,
-  report: Reporter<LayoutRenderHost>,
+  report: Reporter<LayoutHost>,
 ): boolean {
   if (state.alignSelf !== undefined) {
     report.error(layoutValidationMessages.duplicateProperty('alignSelf'), entry)
@@ -383,7 +396,7 @@ function validateDimensionEntry(
   entry: AST.LayoutEntry,
   values: TaoLayoutTermValue[],
   state: ClauseState,
-  report: Reporter<LayoutRenderHost>,
+  report: Reporter<LayoutHost>,
 ): void {
   if (state.dimensions.has(head)) {
     report.error(layoutValidationMessages.duplicateProperty(head), entry)
@@ -432,7 +445,7 @@ function setDimensionMode(
   dim: { mode?: DimensionMode },
   mode: DimensionMode,
   entry: AST.LayoutEntry,
-  report: Reporter<LayoutRenderHost>,
+  report: Reporter<LayoutHost>,
 ): void {
   if (dim.mode !== undefined && dim.mode !== mode) {
     report.error(layoutValidationMessages.malformedEntry(layoutEntryText(entry)), entry)
@@ -450,7 +463,7 @@ function validateBareModeEntry(
   entry: AST.LayoutEntry,
   values: TaoLayoutTermValue[],
   state: ClauseState,
-  report: Reporter<LayoutRenderHost>,
+  report: Reporter<LayoutHost>,
 ): void {
   if (values.length !== 1) {
     report.error(layoutValidationMessages.malformedEntry(layoutEntryText(entry)), entry)
@@ -475,7 +488,7 @@ function validateGrowEntry(
   entry: AST.LayoutEntry,
   values: TaoLayoutTermValue[],
   state: ClauseState,
-  report: Reporter<LayoutRenderHost>,
+  report: Reporter<LayoutHost>,
 ): void {
   if (state.grow !== undefined) {
     report.error(layoutValidationMessages.duplicateProperty('grow'), entry)
@@ -498,7 +511,7 @@ function validatePressureEntry(
   entry: AST.LayoutEntry,
   values: TaoLayoutTermValue[],
   state: ClauseState,
-  report: Reporter<LayoutRenderHost>,
+  report: Reporter<LayoutHost>,
 ): void {
   if (values.length !== 1) {
     report.error(layoutValidationMessages.malformedEntry(layoutEntryText(entry)), entry)
@@ -524,7 +537,7 @@ function validateSingleNumberEntry(
   entry: AST.LayoutEntry,
   values: TaoLayoutTermValue[],
   state: ClauseState,
-  report: Reporter<LayoutRenderHost>,
+  report: Reporter<LayoutHost>,
 ): void {
   if (state.gap !== undefined) {
     report.error(layoutValidationMessages.duplicateProperty(head), entry)
@@ -543,7 +556,7 @@ function validatePadEntry(
   entry: AST.LayoutEntry,
   values: TaoLayoutTermValue[],
   state: ClauseState,
-  report: Reporter<LayoutRenderHost>,
+  report: Reporter<LayoutHost>,
 ): void {
   if (state.pad !== undefined) {
     report.error(layoutValidationMessages.duplicateProperty('pad'), entry)
@@ -576,9 +589,9 @@ function validatePadEntry(
 }
 
 function validateClauseState(
-  node: LayoutRenderHost,
+  node: LayoutHost,
   state: ClauseState,
-  report: Reporter<LayoutRenderHost>,
+  report: Reporter<LayoutHost>,
 ): void {
   if (state.bareFill !== undefined && state.dimensions.size > 0) {
     report.error(layoutValidationMessages.fillWithDimension, state.bareFill)
@@ -610,7 +623,7 @@ function validateNonNegativeNumber(
   key: string,
   value: TaoLayoutTermValue,
   entry: AST.LayoutEntry,
-  report: Reporter<LayoutRenderHost>,
+  report: Reporter<LayoutHost>,
 ): void {
   if (typeof value === 'number' && value < 0) {
     report.error(layoutValidationMessages.negativeNotAllowed(key), entry)
@@ -621,7 +634,7 @@ function validatePercent(
   key: string,
   value: TaoLayoutTermValue,
   entry: AST.LayoutEntry,
-  report: Reporter<LayoutRenderHost>,
+  report: Reporter<LayoutHost>,
 ): void {
   if (!isPercentString(value)) {
     return
@@ -632,11 +645,24 @@ function validatePercent(
   }
 }
 
-function viewDirection(node: LayoutRenderHost): TaoLayoutDirection | undefined {
+function viewDirection(node: LayoutHost): TaoLayoutDirection | undefined {
+  if (AST.isViewDeclaration(node)) {
+    return viewDeclarationChildrenHostDirection(node)
+  }
   return node.view === undefined ? undefined : standardContainerDirection(node.view.$refText)
 }
 
-function parentViewDirection(node: LayoutRenderHost): TaoLayoutDirection | undefined {
+function layoutHostViewName(node: LayoutHost): string {
+  if (AST.isViewDeclaration(node)) {
+    return viewDeclarationChildrenHost(node)?.view?.$refText ?? '<unknown>'
+  }
+  return node.view?.$refText ?? '<unknown>'
+}
+
+function parentViewDirection(node: LayoutHost): TaoLayoutDirection | undefined {
+  if (AST.isViewDeclaration(node)) {
+    return undefined
+  }
   let current: AST.Node | undefined = node.$container
   while (current !== undefined) {
     if (AST.isBlock(current)) {
@@ -647,6 +673,30 @@ function parentViewDirection(node: LayoutRenderHost): TaoLayoutDirection | undef
       current = owner
     } else {
       current = current.$container as AST.Node | undefined
+    }
+  }
+  return undefined
+}
+
+function viewDeclarationChildrenHostDirection(node: AST.ViewDeclaration): TaoLayoutDirection | undefined {
+  const host = viewDeclarationChildrenHost(node)
+  return host?.view === undefined ? undefined : standardContainerDirection(host.view.$refText)
+}
+
+function viewDeclarationChildrenHost(node: AST.ViewDeclaration): LayoutRenderHost | undefined {
+  const stack = [...node.block.statements]
+  while (stack.length > 0) {
+    const stmt = stack.pop()!
+    if (
+      (AST.isRenderStatement(stmt) || AST.isViewRender(stmt))
+      && (stmt.block?.statements.some(AST.isChildrenSplice) ?? false)
+    ) {
+      return stmt
+    }
+    if (
+      AST.isRenderStatement(stmt) || AST.isViewRender(stmt) || AST.isGuardStatement(stmt) || AST.isForStatement(stmt)
+    ) {
+      stack.push(...(stmt.block?.statements ?? []))
     }
   }
   return undefined

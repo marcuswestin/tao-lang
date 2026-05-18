@@ -18,7 +18,7 @@ import { AST } from '@parser/parser'
 import { Assert, Stream, switch_safe } from '@shared'
 import { standardContainerDirection } from '@shared/layout/layout-axis'
 import { throwUnexpectedBehaviorError } from '@shared/TaoErrors'
-import { layoutEntryValues, serializeLayoutEntries } from '../../layout/tao-layout'
+import { layoutEntryValues } from '../../layout/tao-layout'
 import {
   collectionSlugFromPlural,
   queryDeclarationAliasName,
@@ -650,39 +650,61 @@ class RuntimeGen {
 
   /** viewRenderLayoutSpec emits the serialized layout spec for the runtime layout resolver. */
   viewRenderLayoutSpec(viewRender: ViewRenderHost, viewDecl: AST.ViewDeclaration): Compiled {
-    const selfEntries = this.viewRenderSelfLayoutEntries(viewRender, viewDecl)
-    const routesChildrenLayout = renderHostDirectlyContainsChildrenSplice(viewRender)
-    if (selfEntries.length === 0 && !routesChildrenLayout) {
+    const layoutExpression = this.viewRenderResolvedLayoutExpression(viewRender, viewDecl)
+    const rawEntriesProp = this.viewRenderRawLayoutEntriesProp(viewRender, viewDecl)
+    const parentDirectionProp = this.viewRenderParentDirectionProp(viewRender, viewDecl)
+    if (layoutExpression === undefined && rawEntriesProp === undefined && parentDirectionProp === undefined) {
       return compileNoop()
     }
-    const spec = serializeLayoutEntries(viewDecl.name, selfEntries, {
-      parentDirection: parentViewDirection(viewRender),
-    })
-    const callerChildrenLayout = compileNode(viewRender)`
-      (_ViewProps._taoChildrenLayoutEntries === undefined
-        ? {}
-        : TR.Layout.resolve({ view: ${JSON.stringify(viewDecl.name)}, entries: _ViewProps._taoChildrenLayoutEntries }))
-    `
-
-    if (selfEntries.length === 0) {
-      return compileNode(viewRender)`
-        _taoLayout={_ViewProps._taoChildrenLayoutEntries === undefined
-          ? undefined
-          : TR.Layout.resolve({ view: ${
-        JSON.stringify(viewDecl.name)
-      }, entries: _ViewProps._taoChildrenLayoutEntries })}
-      `.append(' ')
-    }
-
-    if (routesChildrenLayout) {
-      return compileNode(viewRender.layoutClause ?? viewRender)`
-        _taoLayout={{ ...TR.Layout.resolve(${JSON.stringify(spec)}), ...${callerChildrenLayout} }}
-      `.append(' ')
-    }
-
     return compileNode(viewRender.layoutClause ?? viewRender)`
-      _taoLayout={TR.Layout.resolve(${JSON.stringify(spec)})}
+      ${layoutExpression === undefined ? '' : `_taoLayout={${layoutExpression}} `}
+      ${rawEntriesProp ?? ''}
+      ${parentDirectionProp ?? ''}
     `.append(' ')
+  }
+
+  private viewRenderResolvedLayoutExpression(
+    viewRender: ViewRenderHost,
+    viewDecl: AST.ViewDeclaration,
+  ): string | undefined {
+    const entrySetExpressions: string[] = []
+    const viewDeclPublicSelfEntries = viewDeclarationPublicSelfEntryValues(viewDecl)
+    if (viewDeclPublicSelfEntries.length > 0) {
+      entrySetExpressions.push(JSON.stringify(viewDeclPublicSelfEntries))
+    }
+
+    const selfEntries = this.viewRenderSelfLayoutEntryValues(viewRender, viewDecl)
+    if (selfEntries.length > 0) {
+      entrySetExpressions.push(JSON.stringify(selfEntries))
+    }
+
+    const publicRootOwner = publicRenderRootOwner(viewRender)
+    if (publicRootOwner !== undefined) {
+      const publicSelfEntries = viewDeclarationPublicSelfEntryValues(publicRootOwner)
+      if (publicSelfEntries.length > 0) {
+        entrySetExpressions.push(JSON.stringify(publicSelfEntries))
+      }
+      entrySetExpressions.push('_ViewProps._taoLayoutEntries ?? []')
+    }
+
+    const childrenHostOwner = childrenHostOwnerDeclaration(viewRender)
+    if (childrenHostOwner !== undefined) {
+      const declarationContainerEntries = viewDeclarationContainerEntryValues(childrenHostOwner)
+      if (declarationContainerEntries.length > 0) {
+        entrySetExpressions.push(JSON.stringify(declarationContainerEntries))
+      }
+      entrySetExpressions.push('_ViewProps._taoChildrenLayoutEntries ?? []')
+    }
+    if (entrySetExpressions.length === 0) {
+      return undefined
+    }
+    return layoutResolveMergedExpression(
+      viewDecl.name,
+      entrySetExpressions,
+      publicRootOwner === undefined
+        ? layoutDirectionLiteral(parentViewDirection(viewRender))
+        : '_ViewProps._taoLayoutParentDirection',
+    )
   }
 
   /** viewRenderChildrenLayoutEntriesProp passes caller container entries to a frame/layout's @@children host. */
@@ -701,15 +723,40 @@ class RuntimeGen {
     `.append(' ')
   }
 
-  private viewRenderSelfLayoutEntries(
+  private viewRenderSelfLayoutEntryValues(
     viewRender: ViewRenderHost,
     viewDecl: AST.ViewDeclaration,
-  ): readonly AST.LayoutEntry[] {
+  ): readonly (readonly (string | number)[])[] {
     const entries = viewRender.layoutClause?.entries ?? []
     if (!viewDeclarationRoutesCallerContainerLayout(viewDecl)) {
-      return entries
+      return entries.map(entry => layoutEntryValues(entry))
     }
-    return entries.filter(entry => !isContainerLayoutEntry(entry))
+    return entries.filter(entry => !isContainerLayoutEntry(entry)).map(entry => layoutEntryValues(entry))
+  }
+
+  private viewRenderRawLayoutEntriesProp(
+    viewRender: ViewRenderHost,
+    viewDecl: AST.ViewDeclaration,
+  ): string | undefined {
+    if (viewDeclarationPublicRootIsInjection(viewDecl)) {
+      return undefined
+    }
+    const entries = this.viewRenderSelfLayoutEntryValues(viewRender, viewDecl)
+    if (entries.length === 0) {
+      return undefined
+    }
+    return `_taoLayoutEntries={${JSON.stringify(entries)}} `
+  }
+
+  private viewRenderParentDirectionProp(viewRender: ViewRenderHost, viewDecl: AST.ViewDeclaration): string | undefined {
+    if (viewDeclarationPublicRootIsInjection(viewDecl)) {
+      return undefined
+    }
+    const parentDirection = parentViewDirection(viewRender)
+    if (parentDirection === undefined) {
+      return undefined
+    }
+    return `_taoLayoutParentDirection={${JSON.stringify(parentDirection)}} `
   }
 
   viewRenderBlockStatement(stmt: AST.Statement): Compiled {
@@ -956,6 +1003,28 @@ function renderHostDirectlyContainsChildrenSplice(node: ViewRenderHost): boolean
   return node.block?.statements.some(AST.isChildrenSplice) ?? false
 }
 
+function publicRenderRootOwner(node: ViewRenderHost): AST.ViewDeclaration | undefined {
+  if (!AST.isRenderStatement(node)) {
+    return undefined
+  }
+  const block = node.$container
+  if (!AST.isBlock(block) || !AST.isViewDeclaration(block.$container)) {
+    return undefined
+  }
+  return block.statements.find(AST.isRenderStatement) === node ? block.$container : undefined
+}
+
+function viewDeclarationPublicRootIsInjection(decl: AST.ViewDeclaration): boolean {
+  return decl.block.statements.find(AST.isRenderStatement)?.injection !== undefined
+}
+
+function childrenHostOwnerDeclaration(node: ViewRenderHost): AST.ViewDeclaration | undefined {
+  if (!renderHostDirectlyContainsChildrenSplice(node)) {
+    return undefined
+  }
+  return nearestViewDeclaration(node)
+}
+
 function viewDeclarationRoutesCallerContainerLayout(decl: AST.ViewDeclaration): boolean {
   return decl.type !== 'ui' && viewDeclarationUsesChildrenSplice(decl)
 }
@@ -983,6 +1052,56 @@ function isContainerLayoutEntry(entry: AST.LayoutEntry): boolean {
   const values = layoutEntryValues(entry)
   const head = values[0]
   return head === 'items' || head === 'gap'
+}
+
+function viewDeclarationPublicSelfEntryValues(decl: AST.ViewDeclaration): readonly (readonly (string | number)[])[] {
+  return [
+    ...kindDefaultSelfEntryValues(decl.type),
+    ...((decl.layoutClause?.entries ?? []).filter(entry => !isContainerLayoutEntry(entry)).map(entry =>
+      layoutEntryValues(entry)
+    )),
+  ]
+}
+
+function viewDeclarationContainerEntryValues(decl: AST.ViewDeclaration): readonly (readonly (string | number)[])[] {
+  return (decl.layoutClause?.entries ?? []).filter(isContainerLayoutEntry).map(entry => layoutEntryValues(entry))
+}
+
+function kindDefaultSelfEntryValues(kind: AST.ViewDeclarationKind): readonly (readonly (string | number)[])[] {
+  if (kind === 'layout') {
+    return [['compress'], ['fill']]
+  }
+  return [['rigid'], ['hug']]
+}
+
+function layoutResolveMergedExpression(
+  viewName: string,
+  entrySetExpressions: readonly string[],
+  parentDirectionExpression: string | undefined,
+): string {
+  const props = [
+    `view: ${JSON.stringify(viewName)}`,
+    `entrySets: [${entrySetExpressions.join(', ')}]`,
+  ]
+  if (parentDirectionExpression !== undefined) {
+    props.push(`parentDirection: ${parentDirectionExpression}`)
+  }
+  return `TR.Layout.resolveMerged({ ${props.join(', ')} })`
+}
+
+function layoutDirectionLiteral(direction: ReturnType<typeof standardContainerDirection>): string | undefined {
+  return direction === undefined ? undefined : JSON.stringify(direction)
+}
+
+function nearestViewDeclaration(node: AST.Node): AST.ViewDeclaration | undefined {
+  let current = node.$container as AST.Node | undefined
+  while (current !== undefined) {
+    if (AST.isViewDeclaration(current)) {
+      return current
+    }
+    current = current.$container as AST.Node | undefined
+  }
+  return undefined
 }
 
 /** stripTsFenceFromTsCodeBlock removes outer ```ts / ``` fences from an embedded TS code block for executable emit. */

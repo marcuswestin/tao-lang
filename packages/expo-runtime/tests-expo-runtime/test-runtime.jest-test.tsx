@@ -72,6 +72,22 @@ describe('runtime:', () => {
       maxWidth: 400,
       overflow: 'hidden',
     })
+
+    expect(
+      Layout.resolveMerged({
+        view: 'Box',
+        entrySets: [
+          [['pad', 8], ['rigid']],
+          [['pad', 'horizontal', 4], ['compress']],
+        ],
+      }),
+    ).toMatchObject({
+      flexShrink: 1,
+      paddingBottom: 8,
+      paddingLeft: 4,
+      paddingRight: 4,
+      paddingTop: 8,
+    })
   })
 
   test('applies Tao layout styles through std-lib Row and Text views', () => {

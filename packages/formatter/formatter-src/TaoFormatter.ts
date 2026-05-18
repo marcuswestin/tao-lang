@@ -387,6 +387,7 @@ export default class TaoFormatter extends AbstractFormatter {
   private formatViewDeclaration(node: AST.ViewDeclaration): void {
     this._spaceAroundName(node)
     this._spaceAfterProperty(node, 'parameterList')
+    this._spaceBeforeProperty(node, 'layoutClause')
   }
 
   private formatActionDeclaration(node: AST.ActionDeclaration): void {

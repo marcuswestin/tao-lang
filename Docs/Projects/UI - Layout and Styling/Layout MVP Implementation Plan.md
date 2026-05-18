@@ -81,13 +81,20 @@ Avoid helper-only commits unless a step becomes too large to review coherently. 
   - Changed app codegen to return the explicit render root instead of implicitly returning all body statements.
   - Routed `render` through scoping, type checking, layout validation, import discovery, formatter behavior, and runtime lowering.
   - Migrated std-lib declarations, active test apps, compiler fixtures, formatter coverage, Expo runtime fixtures, and shared runtime scenarios to explicit roots.
-- Step 4: complete in the current implementation commit.
+- Step 4: complete in `863c5e8` (`feat(ui): add caller children splice`).
   - Added `@@children` syntax and formatting.
   - Required ordinary `frame` and `layout` declarations to place one static hosted splice, while preserving trusted raw-injection/native wrappers that forward `_ViewProps.children`.
   - Rejected `@@children` in `ui`, dynamic placement under guards/loops, unnamed caller children on `ui` calls, and caller container layout specs on `ui` calls.
   - Emitted `_ViewProps.children` at the splice point and routed caller `items`/`gap` entries to the directly containing child host through `_taoChildrenLayoutEntries`.
   - Added compiler, formatter, codegen, Expo runtime, and headless runtime coverage for caller child forwarding.
-- Steps 5 through 8: pending.
+- Step 5: complete in the current implementation commit.
+  - Added declaration-line layout clauses to `ui`, `frame`, and `layout` declarations.
+  - Added validation for declaration-line clauses, `ui` container-default rejection, and declaration-line/public-root self-layout conflicts.
+  - Added runtime `Layout.resolveMerged` so kind defaults, declaration defaults, internal root specs, and call-site overrides merge by Tao layout key before lowering to React Native style props.
+  - Routed public self overrides through raw `_taoLayoutEntries`/`_taoLayoutParentDirection` for generated declarations while preserving resolved `_taoLayout` for trusted native/std-lib injection roots.
+  - Routed declaration and caller container defaults to the direct `@@children` host through merged entry sets.
+  - Added parser, validation, codegen, formatter, Expo runtime, and headless runtime coverage for public defaults and merge behavior.
+- Steps 6 through 8: pending.
 
 ## Step 1. Declaration Kind Cutover
 
@@ -410,6 +417,19 @@ Suggested validation:
 ./agent test compiler
 ./agent expo-runtime test
 ```
+
+Completion notes:
+
+- Declaration-line layout clauses are parsed and formatted as part of the declaration header.
+- Public root lowering now uses merged layout entry sets instead of shallow style object spreads, which keeps `pad` side overrides and pressure/default replacement deterministic.
+- Runtime validation for this step used:
+  - `./agent gen`;
+  - `./agent tsc --noEmit --noUnusedLocals -p packages/compiler/tsconfig.json`;
+  - `./agent compiler test`;
+  - `./agent test compiler`;
+  - `./agent test formatter`;
+  - `./agent expo-runtime test`;
+  - `./agent headless-test-runtime test`.
 
 ## Step 6. Standard Library MVP Views
 

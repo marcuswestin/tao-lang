@@ -229,7 +229,7 @@ ModuleDeclaration:
 
 BlockDeclaration: ViewDeclaration | ActionDeclaration;
 
-ViewDeclaration: type=ViewDeclarationKind name=ID parameterList=ParameterList? block=Block;
+ViewDeclaration: type=ViewDeclarationKind name=ID parameterList=ParameterList? layoutClause=LayoutClause? block=Block;
 ViewDeclarationKind returns string: 'ui' | 'frame' | 'layout';
 ActionDeclaration: type='action' name=ID parameterList=ParameterList? block=Block;
 
