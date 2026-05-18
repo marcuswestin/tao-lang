@@ -57,6 +57,7 @@ Tao is a programming language for building native and web apps.
 - Do not import generated files from main source code.
 - Use the return type of invoked functions instead of redeclaring an identical type.
 - Add JSDoc to exported or shared TypeScript functions: `/** fnName verbs description */`.
+- Format markdown tables for plain-text readability: pad cells so column pipes align vertically instead of using the shortest renderer-valid table form.
 - For new language features, update validation and formatter behavior when applicable, add tests, and feature the behavior in at least one `Apps/Test Apps/` app.
 
 ## Testing
