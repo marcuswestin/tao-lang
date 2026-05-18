@@ -29,10 +29,12 @@ describe('codegen — call-site argument bindings:', () => {
   test('ViewRender emits one JSX prop per parameter, keyed by parameter name', async () => {
     const out = await writeAndCompile(`
       app A { ui V }
-      ui Btn Title text, OnPress action { }
+      ui Btn Title text, OnPress action {
+        render inject \`\`\`ts return null \`\`\`
+      }
       action H { }
       ui V {
-        Btn "x", H
+        render Btn "x", H
       }
     `)
     expect(out).toMatch(/<Btn[\s\S]*?Title=\{/)
@@ -42,10 +44,14 @@ describe('codegen — call-site argument bindings:', () => {
   test('ViewRender emits layout specs through the Tao runtime resolver', async () => {
     const out = await writeAndCompile(`
       app A { ui V }
-      layout Row { }
-      ui Text Value text { }
+      layout Row {
+        render inject \`\`\`ts return null \`\`\`
+      }
+      ui Text Value text {
+        render inject \`\`\`ts return null \`\`\`
+      }
       ui V {
-        Row [items center spread, gap 12] {
+        render Row [items center spread, gap 12] {
           Text "x" [aligned center, width fill max 400]
         }
       }
@@ -61,6 +67,7 @@ describe('codegen — call-site argument bindings:', () => {
       app A { ui V }
       action LogEvent Message text, Level number { }
       ui V {
+        render inject \`\`\`ts return null \`\`\`
         action Outer {
           do LogEvent "submitted", 1
         }
@@ -75,6 +82,7 @@ describe('codegen — call-site argument bindings:', () => {
       app A { ui V }
       action Notify { }
       ui V {
+        render inject \`\`\`ts return null \`\`\`
         action Outer {
           do Notify
         }
@@ -88,6 +96,7 @@ describe('codegen — call-site argument bindings:', () => {
       app A { ui V }
       action Inner { }
       ui V {
+        render inject \`\`\`ts return null \`\`\`
         action Outer {
           do Inner {
             debugger
@@ -123,7 +132,7 @@ app HarnessApp {
 }
 
 ui HarnessRoot {
-  Text "ok"
+  render Text "ok"
 }
 `
 
@@ -170,7 +179,9 @@ describe('codegen — app provider selection and overrides:', () => {
         }
       }
       app HarnessApp { ui HarnessRoot }
-      ui HarnessRoot { }
+      ui HarnessRoot {
+        render inject \`\`\`ts return null \`\`\`
+      }
     `)
     expect(out).toContain(
       '"events":{"Title":{"type":"string"},"Host":{"type":"any"},"Attendees":{"type":"any"}}',
@@ -226,7 +237,9 @@ describe('codegen — app provider selection and overrides:', () => {
       query FirstData get FirstItem as FirstRows
       query SecondData get SecondItem as SecondRows
       app HarnessApp { ui HarnessRoot }
-      ui HarnessRoot { }
+      ui HarnessRoot {
+        render inject \`\`\`ts return null \`\`\`
+      }
     `,
     )
     const result = await compileTao({ file: filePath, stdLibRoot: STD_LIB_ROOT })
@@ -261,7 +274,9 @@ describe('codegen — app provider selection and overrides:', () => {
       use SharedData from ./db
       query SharedData get Item as Rows
       app HarnessApp { ui HarnessRoot }
-      ui HarnessRoot { }
+      ui HarnessRoot {
+        render inject \`\`\`ts return null \`\`\`
+      }
     `,
     )
     const result = await compileTao({ file: mainPath, stdLibRoot: STD_LIB_ROOT })
@@ -294,7 +309,9 @@ describe('codegen — app provider selection and overrides:', () => {
       query D get one Person
         > where Email = "ro@example.test"
       app A { ui V }
-      ui V { }
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
+      }
     `)
     expect(out).toContain('cardinality: "many"')
     expect(out).toContain('collection: "people"')
@@ -348,7 +365,9 @@ describe('codegen — app provider selection and overrides:', () => {
       use SharedData from ./db
       query SharedData get Item as Rows
       app HarnessApp { ui HarnessRoot }
-      ui HarnessRoot { }
+      ui HarnessRoot {
+        render inject \`\`\`ts return null \`\`\`
+      }
     `,
     )
     const result = await compileTao({ file: mainPath, stdLibRoot: STD_LIB_ROOT })

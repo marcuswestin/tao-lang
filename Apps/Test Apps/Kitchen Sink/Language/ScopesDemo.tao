@@ -4,7 +4,7 @@ state SharedOuter = 0
 
 share ui ScopesDemo {
    state ViewOnly = 0
-   Col {
+   render Col {
       Text "Scopes: nested state reaches file state"
       Row {
          Text "Outer (file):"

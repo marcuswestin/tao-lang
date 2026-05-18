@@ -22,7 +22,7 @@ share ui TypeMatching {
          Title "Engineer"
       }
    }
-   Col {
+   render Col {
       Text "Language: types & typed literals"
       Text "${ Hero.Name } — ${ Hero.Job.Title } (${ Hero.Age })"
       Button "Promote Job", action {

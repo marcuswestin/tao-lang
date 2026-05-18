@@ -4,7 +4,7 @@ state FileLevelCounter = 0
 
 share ui StateDemo {
    state ViewCounter = 0
-   Col {
+   render Col {
       Text "State & actions (file-level + view-level)"
       Row {
          Text "File:"

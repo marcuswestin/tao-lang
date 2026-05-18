@@ -11,7 +11,7 @@ describe('validation — app provider:', () => {
         provider InstantDB { appId "test" }
         ui Root
       }
-      ui Root { }
+      ui Root { render inject \`\`\`ts return null \`\`\` }
     `)
     expectHumanMessagesContain(report, validationMessages.duplicateAppProvider)
   })
@@ -22,7 +22,7 @@ describe('validation — app provider:', () => {
         provider AcmeDb { url "x" }
         ui Root
       }
-      ui Root { }
+      ui Root { render inject \`\`\`ts return null \`\`\` }
     `)
     expectHumanMessagesContain(report, validationMessages.unknownAppDataProvider('AcmeDb'))
   })
@@ -122,7 +122,7 @@ describe('validation — data schema:', () => {
         People Person { Name text }
       }
       app MyApp { ui MyView }
-      ui MyView { }
+      ui MyView { render inject \`\`\`ts return null \`\`\` }
     `)
   })
 
@@ -160,6 +160,7 @@ describe('validation — for / create:', () => {
       }
       query D get Item as Rows
       ui V {
+        render inject \`\`\`ts return null \`\`\`
         create D.Item { N "x" }
       }
       app A { ui V }
@@ -180,7 +181,7 @@ describe('validation — for / create:', () => {
         for I in Rows { }
       }
       app A { ui V }
-      ui V { Text "x" }
+      ui V { render Text "x" }
     `)
     expectHumanMessagesContain(
       report,
@@ -196,6 +197,7 @@ describe('validation — for / create:', () => {
       query D get first Item as One
       app A { ui V }
       ui V {
+        render inject \`\`\`ts return null \`\`\`
         for X in One { Text "x" }
       }
     `)
@@ -210,6 +212,7 @@ describe('validation — for / create:', () => {
       query D get Item as Rows
       app A { ui V }
       ui V {
+        render inject \`\`\`ts return null \`\`\`
         for X in Rows {
           query D get Item as Inner
           Text "x"
@@ -227,6 +230,7 @@ describe('validation — for / create:', () => {
       query D get Item as Rows
       app A { ui V }
       ui V {
+        render inject \`\`\`ts return null \`\`\`
         for X in Rows {
           guard { Text "loading" }
           Text "x"
@@ -245,7 +249,7 @@ describe('validation — for / create:', () => {
         create D.Item { Unknown "a" }
       }
       app A { ui V }
-      ui V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
     expectHumanMessagesContain(report, forCreateMessages.createUnknownField('Unknown'))
   })
@@ -258,7 +262,7 @@ describe('validation — for / create:', () => {
         \`\`\`
       }
       app A { ui V }
-      ui V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
     expectHumanMessagesContain(report, validationMessages.legacyIDBInjection)
   })
@@ -276,7 +280,7 @@ describe('validation — V1 data queries:', () => {
       query D get one Person
         > where Email = "ro@example.test"
       app A { ui V }
-      ui V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
   })
 
@@ -291,7 +295,7 @@ describe('validation — V1 data queries:', () => {
       query D get one Person
         > where id = "00000000-0000-0000-0000-000000000001"
       app A { ui V }
-      ui V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
   })
 
@@ -306,7 +310,7 @@ describe('validation — V1 data queries:', () => {
       query D get one Person
         > where Name = "Ro"
       app A { ui V }
-      ui V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
     expectHumanMessagesContain(report, queryValidationMessages.queryOneNeedsUniqueWhere)
   })
@@ -322,7 +326,7 @@ describe('validation — V1 data queries:', () => {
       query D get one Person
         > where Email = "ro@example.test" or Name = "Ro"
       app A { ui V }
-      ui V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
     expectHumanMessagesContain(report, queryValidationMessages.queryOneNeedsUniqueWhere)
   })
@@ -336,7 +340,7 @@ describe('validation — V1 data queries:', () => {
       query D for Events
         > where Host.Name = "Ro"
       app A { ui V }
-      ui V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
     expectHumanMessagesContain(
       report,
@@ -354,7 +358,7 @@ describe('validation — V1 data queries:', () => {
         > include Host
         > where Host.Name = "Ro"
       app A { ui V }
-      ui V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
   })
 
@@ -368,7 +372,7 @@ describe('validation — V1 data queries:', () => {
       query D for Events
         > where Host is CurrentUser
       app A { ui V }
-      ui V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
   })
 })

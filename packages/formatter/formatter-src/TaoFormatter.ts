@@ -37,6 +37,7 @@ export default class TaoFormatter extends AbstractFormatter {
       OnStatement: (n) => this.formatOnStatement(n),
       ViewDeclaration: (n) => this.formatViewDeclaration(n),
       ActionDeclaration: (n) => this.formatActionDeclaration(n),
+      RenderStatement: (n) => this.formatRenderStatement(n),
       ViewRender: (n) => this.formatViewRender(n),
       LayoutClause: (n) => this.formatLayoutClause(n),
       LayoutEntry: (n) => this.formatLayoutEntry(n),
@@ -416,6 +417,16 @@ export default class TaoFormatter extends AbstractFormatter {
   }
 
   private formatViewRender(node: AST.ViewRender): void {
+    this._spaceBeforeProperty(node, 'argumentList')
+    this._spaceBeforeProperty(node, 'layoutClause')
+    if (node.block) {
+      this._spaceBeforeProperty(node, 'block')
+    }
+  }
+
+  private formatRenderStatement(node: AST.RenderStatement): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('render').append(Formatting.oneSpace())
     this._spaceBeforeProperty(node, 'argumentList')
     this._spaceBeforeProperty(node, 'layoutClause')
     if (node.block) {

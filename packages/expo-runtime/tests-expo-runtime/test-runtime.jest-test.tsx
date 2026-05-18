@@ -181,11 +181,11 @@ function makeNeedleApp() {
 
     ui RootView {
       alias TextValue = "${needle}"
-      Text TextValue
+      render Text TextValue
     }
 
     ui Text Value text {
-        inject \`\`\`ts
+        render inject \`\`\`ts
           return TR.Views.Text({ children: [_ViewProps.Value.evaluate().jsValue] })
         \`\`\`
     }

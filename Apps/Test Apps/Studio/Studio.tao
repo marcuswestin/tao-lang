@@ -1,4 +1,4 @@
-use Text, Button from @tao/ui
+use Text, Button, Col from @tao/ui
 
 app TaoStudio {
    ui RootView
@@ -7,16 +7,16 @@ app TaoStudio {
 state GlobalCount = 100
 
 ui RootView {
-   Text "Hello World"
-   CountView { }
-   Text "Global Count: " { }
-   Button "${ GlobalCount }", GlobalIncrementAction { }
+   render Col {
+      Text "Hello World"
+      CountView { }
+      Text "Global Count: " { }
+      Button "${ GlobalCount }", GlobalIncrementAction { }
+   }
 }
 
 ui CountView {
    state LocalCount = 200
-   Text "Local Count:" { }
-   Button "${ LocalCount }", LocalIncrementAction { }
    action LocalIncrementAction {
       set LocalCount += 1
       set GlobalCount += 1
@@ -28,10 +28,16 @@ ui CountView {
       set GlobalCount += 1
    }
    ui SubCountView {
-      Text "Sub Count 1:" { }
-      Button "${ SubCount }", SubIncrementAction { }
+      render Col {
+         Text "Sub Count 1:" { }
+         Button "${ SubCount }", SubIncrementAction { }
+      }
    }
-   SubCountView { }
+   render Col {
+      Text "Local Count:" { }
+      Button "${ LocalCount }", LocalIncrementAction { }
+      SubCountView { }
+   }
 }
 
 action GlobalIncrementAction {

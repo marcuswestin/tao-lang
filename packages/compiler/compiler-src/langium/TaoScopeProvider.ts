@@ -16,7 +16,7 @@ const moduleScopedRefRules: readonly {
   readonly property: string
   readonly isContainer: (node: AST.Node) => boolean
 }[] = [
-  { property: 'view', isContainer: AST.isViewRender },
+  { property: 'view', isContainer: (node) => AST.isViewRender(node) || AST.isRenderStatement(node) },
   { property: 'action', isContainer: AST.isActionRender },
   { property: 'ui', isContainer: AST.isAppUiStatement },
   { property: 'ref', isContainer: AST.isNamedTypeRef },

@@ -77,14 +77,14 @@ export type EnclosingArgumentContext = {
 }
 
 /** findEnclosingArgumentContext walks ancestors to find the nearest ArgumentList owned by an
- * ArgumentListHost (ViewRender/ActionRender). Returns the host and resolved callee, or undefined
+ * ArgumentListHost (RenderStatement/ViewRender/ActionRender). Returns the host and resolved callee, or undefined
  * if the node is not in argument position. */
 export function findEnclosingArgumentContext(node: AST.Node): EnclosingArgumentContext | undefined {
   let current: AST.Node | undefined = node.$container
   while (current) {
     if (AST.isArgumentList(current)) {
       const host = current.$container
-      if (AST.isViewRender(host) || AST.isActionRender(host)) {
+      if (AST.isRenderStatement(host) || AST.isViewRender(host) || AST.isActionRender(host)) {
         const callee = getCalleeDeclaration(host)
         if (callee) {
           return { host, callee }

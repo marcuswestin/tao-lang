@@ -8,7 +8,7 @@ share ui ObjectsDemo {
          note "nested object state"
       }
    }
-   Col {
+   render Col {
       Text "Objects: literals, member paths, string templates"
       Text Box.label { }
       Text Box.meta.note { }

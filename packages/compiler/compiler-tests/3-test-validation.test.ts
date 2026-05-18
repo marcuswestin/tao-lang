@@ -20,9 +20,9 @@ describe('validation — integration smoke (full pipeline):', () => {
     const needle = Math.random().toString(36).substring(2, 15)
     const code = `
         app KitchenSink { ui RootView }
-        ui RootView { Text "${needle}" {} }
+        ui RootView { render Text "${needle}" {} }
         ui Text Value text {
-            inject \`\`\`ts return <RN.Text>{_ViewProps.Value}</RN.Text> \`\`\`
+            render inject \`\`\`ts return <RN.Text>{_ViewProps.Value}</RN.Text> \`\`\`
         }
     `
     const result = await parseTaoFully(code)
@@ -32,6 +32,7 @@ describe('validation — integration smoke (full pipeline):', () => {
   test('action nested in a view validates', async () => {
     await parseTaoFully(`
       ui V {
+        render inject \`\`\`ts return null \`\`\`
         action A {
           inject \`\`\`ts void 0 \`\`\`
         }
@@ -42,6 +43,7 @@ describe('validation — integration smoke (full pipeline):', () => {
   test('duplicate parameter and alias name in same view fails validation', async () => {
     const report = await parseASTWithErrors(`
       ui V X text {
+        render inject \`\`\`ts return null \`\`\`
         alias X = 1
       }
     `)
@@ -49,10 +51,53 @@ describe('validation — integration smoke (full pipeline):', () => {
   })
 })
 
+describe('material render root validation:', () => {
+  test('ui declaration without a render root fails validation', async () => {
+    const report = await parseASTWithErrors(`
+      ui V { }
+    `)
+    expectHumanMessagesContain(report, validationMessages.missingRenderRoot('ui', 'V'))
+  })
+
+  test('duplicate top-level render roots fail validation', async () => {
+    const report = await parseASTWithErrors(`
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
+        render inject \`\`\`ts return null \`\`\`
+      }
+    `)
+    expectHumanMessagesContain(report, validationMessages.duplicateRenderRoot)
+  })
+
+  test('nested render roots fail validation', async () => {
+    const report = await parseASTWithErrors(`
+      layout Row { render inject \`\`\`ts return null \`\`\` }
+      ui Text Value text { render inject \`\`\`ts return null \`\`\` }
+      ui V {
+        render Row {
+          render Text "nested"
+        }
+      }
+    `)
+    expectHumanMessagesContain(report, validationMessages.nestedRenderRoot)
+  })
+
+  test('render root cannot target an action', async () => {
+    const report = await parseASTWithErrors(`
+      action DoIt { }
+      ui V {
+        render DoIt
+      }
+    `)
+    expectHumanMessagesContain(report, validationMessages.renderMustReferenceView)
+  })
+})
+
 describe('statement placement validation:', () => {
   test('state update in view body fails validation', async () => {
     const report = await parseASTWithErrors(`
       ui V {
+        render inject \`\`\`ts return null \`\`\`
         state S = 1
         set S = 2
       }
@@ -63,6 +108,7 @@ describe('statement placement validation:', () => {
   test('use statement in view body fails validation', async () => {
     const report = await parseASTWithErrors(`
       ui V {
+        render inject \`\`\`ts return null \`\`\`
         use X from a/b
       }
     `)
@@ -71,7 +117,7 @@ describe('statement placement validation:', () => {
 
   test('view render at file level fails validation', async () => {
     const report = await parseASTWithErrors(`
-      ui Text Value text { }
+      ui Text Value text { render inject \`\`\`ts return null \`\`\` }
       Text "hi"
     `)
     expectHumanMessagesContain(report, validationMessages.topLevel)
@@ -88,6 +134,7 @@ describe('statement placement validation:', () => {
   test('module declaration in view body fails validation', async () => {
     const report = await parseASTWithErrors(`
       ui Outer {
+        render inject \`\`\`ts return null \`\`\`
         hide ui Inner { }
       }
     `)
@@ -96,8 +143,9 @@ describe('statement placement validation:', () => {
 
   test('view render in action body fails validation', async () => {
     const report = await parseASTWithErrors(`
-      ui Text Value text { }
+      ui Text Value text { render inject \`\`\`ts return null \`\`\` }
       ui V {
+        render inject \`\`\`ts return null \`\`\`
         action A {
           Text "x"
         }
@@ -108,9 +156,10 @@ describe('statement placement validation:', () => {
 
   test('view render in inline action expression body fails validation', async () => {
     const report = await parseASTWithErrors(`
-      ui Text Value text { }
-      ui Btn T text, A action { }
+      ui Text Value text { render inject \`\`\`ts return null \`\`\` }
+      ui Btn T text, A action { render inject \`\`\`ts return null \`\`\` }
       ui V {
+        render inject \`\`\`ts return null \`\`\`
         Btn "x", action {
           Text "bad"
         }
@@ -121,8 +170,9 @@ describe('statement placement validation:', () => {
 
   test('state update in inline action expression is allowed (same as named action body)', async () => {
     await parseTaoFully(`
-      ui B T text, A action { }
+      ui B T text, A action { render inject \`\`\`ts return null \`\`\` }
       ui V {
+        render inject \`\`\`ts return null \`\`\`
         state S = 0
         B "b", action { set S = 1 }
       }
@@ -132,6 +182,7 @@ describe('statement placement validation:', () => {
   test('state update in action body is allowed (not in view body)', async () => {
     await parseTaoFully(`
       ui V {
+        render inject \`\`\`ts return null \`\`\`
         state S = 1
         action A {
           set S = 2
@@ -143,7 +194,8 @@ describe('statement placement validation:', () => {
   test('app declaration in view body fails validation', async () => {
     const report = await parseASTWithErrors(`
       ui V {
-        ui X { }
+        render inject \`\`\`ts return null \`\`\`
+        ui X { render inject \`\`\`ts return null \`\`\` }
         app A { ui X }
       }
     `)
@@ -154,6 +206,7 @@ describe('statement placement validation:', () => {
     await parseTaoFully(`
       action LogEvent M text { }
       ui V {
+        render inject \`\`\`ts return null \`\`\`
         action Outer {
           do LogEvent "submitted"
         }
@@ -173,6 +226,7 @@ describe('statement placement validation:', () => {
     const report = await parseASTWithErrors(`
       action A { }
       ui V {
+        render inject \`\`\`ts return null \`\`\`
         do A
       }
     `)
@@ -181,8 +235,9 @@ describe('statement placement validation:', () => {
 
   test('action render targeting a view declaration fails validation', async () => {
     const report = await parseASTWithErrors(`
-      ui SomeView { }
+      ui SomeView { render inject \`\`\`ts return null \`\`\` }
       ui V {
+        render inject \`\`\`ts return null \`\`\`
         action Outer {
           do SomeView
         }
@@ -203,6 +258,7 @@ describe('state update RHS edge cases (parse + validate):', () => {
       state A = 10
       alias B = 20
       ui V {
+        render inject \`\`\`ts return null \`\`\`
         action CopyAliasToState {
           set A = B
         }
@@ -215,6 +271,7 @@ describe('state update RHS edge cases (parse + validate):', () => {
       state A = 1
       state B = 2
       ui V {
+        render inject \`\`\`ts return null \`\`\`
         action Combine {
           set B = A + 3
         }
@@ -227,6 +284,7 @@ describe('state update RHS edge cases (parse + validate):', () => {
       state FileN = 100
       alias Offset = 7
       ui V {
+        render inject \`\`\`ts return null \`\`\`
         state LocalN = 0
         action InitFromFileAndAlias {
           set LocalN = FileN + Offset
@@ -239,6 +297,7 @@ describe('state update RHS edge cases (parse + validate):', () => {
     await parseTaoFully(`
       state FileS = 0
       ui V {
+        render inject \`\`\`ts return null \`\`\`
         state LocalS = 5
         action PushUp {
           set FileS = LocalS
@@ -252,6 +311,7 @@ describe('state update RHS edge cases (parse + validate):', () => {
       state Base = 3
       state Acc = 10
       ui V {
+        render inject \`\`\`ts return null \`\`\`
         action AddBase {
           set Acc += Base
         }
@@ -264,6 +324,7 @@ describe('state update RHS edge cases (parse + validate):', () => {
       state A = 5
       state B = 0
       ui V {
+        render inject \`\`\`ts return null \`\`\`
         action T {
           set B = -A + 10
         }
@@ -276,6 +337,7 @@ describe('parameter declaration validation:', () => {
   test('duplicate parameter names in a view parameter list fail validation', async () => {
     const report = await parseASTWithErrors(`
       ui V X text, X text {
+        render inject \`\`\`ts return null \`\`\`
       }
     `)
     expectDuplicateIdentifier(report, 'X')
@@ -284,6 +346,7 @@ describe('parameter declaration validation:', () => {
   test('duplicate parameter names in an action parameter list fail validation', async () => {
     const report = await parseASTWithErrors(`
       ui V {
+        render inject \`\`\`ts return null \`\`\`
         action A X text, X text {
           inject \`\`\`ts void 0 \`\`\`
         }
@@ -295,7 +358,9 @@ describe('parameter declaration validation:', () => {
   test('parameter name same as nested view declaration in body fails validation', async () => {
     const report = await parseASTWithErrors(`
       ui V X text {
+        render inject \`\`\`ts return null \`\`\`
         ui X {
+          render inject \`\`\`ts return null \`\`\`
         }
       }
     `)
@@ -305,6 +370,7 @@ describe('parameter declaration validation:', () => {
   test('distinct parameter names in one view validate', async () => {
     await parseTaoFully(`
       ui V A text, B text {
+        render inject \`\`\`ts return null \`\`\`
       }
     `)
   })
@@ -312,7 +378,7 @@ describe('parameter declaration validation:', () => {
   test('shorthand parameter resolves local type declarations', async () => {
     await parseTaoFully(`
       type Title is text
-      ui V Title { }
+      ui V Title { render inject \`\`\`ts return null \`\`\` }
     `)
   })
 
@@ -328,7 +394,7 @@ describe('parameter declaration validation:', () => {
         path: '/workspace/main.tao',
         code: `
           use Person from ./types
-          ui V Person { }
+          ui V Person { render inject \`\`\`ts return null \`\`\` }
         `,
       },
     ])
@@ -343,8 +409,9 @@ describe('parameter declaration validation:', () => {
 describe('objects and nested state updates:', () => {
   test('object state and nested set validate', async () => {
     await parseTaoFully(`
-      ui Text Value text { }
+      ui Text Value text { render inject \`\`\`ts return null \`\`\` }
       ui V {
+        render inject \`\`\`ts return null \`\`\`
         state Pet = { name "c", age 1 }
         action Bump {
           set Pet.age = Pet.age + 1
@@ -356,6 +423,7 @@ describe('objects and nested state updates:', () => {
   test('duplicate object property names fail validation', async () => {
     const report = await parseASTWithErrors(`
       ui V {
+        render inject \`\`\`ts return null \`\`\`
         alias O = { x 1, x 2 }
       }
     `)
@@ -365,6 +433,7 @@ describe('objects and nested state updates:', () => {
   test('set on alias target fails validation', async () => {
     const report = await parseASTWithErrors(`
       ui V {
+        render inject \`\`\`ts return null \`\`\`
         alias A = 1
         action B {
           set A = 2
@@ -380,6 +449,7 @@ describe('objects and nested state updates:', () => {
   test('set on view parameter fails validation', async () => {
     const report = await parseASTWithErrors(`
       ui V N number {
+        render inject \`\`\`ts return null \`\`\`
         action A {
           set N = 1
         }
@@ -393,8 +463,9 @@ describe('objects and nested state updates:', () => {
 
   test('object alias, member access, string concat, and deep set path validate', async () => {
     await parseTaoFully(`
-      ui Text Value text { }
+      ui Text Value text { render inject \`\`\`ts return null \`\`\` }
       ui V {
+        render inject \`\`\`ts return null \`\`\`
         alias Foo = { bar "bar", baz "baz" }
         state Cat = { name "cat", age 1, human { name "Ro", age 40 } }
         action Rename { set Cat.name = "dog" }
@@ -408,6 +479,7 @@ describe('objects and nested state updates:', () => {
   test('set with parenthesized expression receiver does not parse (member access must start with a name)', async () => {
     const report = await parseASTWithErrors(`
       ui V {
+        render inject \`\`\`ts return null \`\`\`
         state S = { a 1 }
         action A { set (1 + 2).x = 1 }
       }
@@ -418,6 +490,7 @@ describe('objects and nested state updates:', () => {
   test('set with object literal receiver does not parse (member access must start with a name)', async () => {
     const report = await parseASTWithErrors(`
       ui V {
+        render inject \`\`\`ts return null \`\`\`
         state S = 1
         action A { set { a 1 }.a = 2 }
       }
@@ -427,8 +500,9 @@ describe('objects and nested state updates:', () => {
 
   test('Text value with object-shaped alias fails validation', async () => {
     const report = await parseASTWithErrors(`
-      ui Text Value text { }
+      ui Text Value text { render inject \`\`\`ts return null \`\`\` }
       ui V {
+        render inject \`\`\`ts return null \`\`\`
         alias O = { x 1 }
         Text O
       }
@@ -438,8 +512,9 @@ describe('objects and nested state updates:', () => {
 
   test('Text value with object-shaped state fails validation', async () => {
     const report = await parseASTWithErrors(`
-      ui Text Value text { }
+      ui Text Value text { render inject \`\`\`ts return null \`\`\` }
       ui V {
+        render inject \`\`\`ts return null \`\`\`
         state Cat = { name "cat" }
         Text Cat
       }
@@ -449,8 +524,9 @@ describe('objects and nested state updates:', () => {
 
   test('string literal plus object-shaped alias fails validation', async () => {
     const report = await parseASTWithErrors(`
-      ui Text Value text { }
+      ui Text Value text { render inject \`\`\`ts return null \`\`\` }
       ui V {
+        render inject \`\`\`ts return null \`\`\`
         alias O = { x 1 }
         Text "a" + O
       }
@@ -460,8 +536,9 @@ describe('objects and nested state updates:', () => {
 
   test('object-shaped alias on left of + (non-string right) fails validation', async () => {
     const report = await parseASTWithErrors(`
-      ui Text Value text { }
+      ui Text Value text { render inject \`\`\`ts return null \`\`\` }
       ui V {
+        render inject \`\`\`ts return null \`\`\`
         alias O = { x 1 }
         alias N = 2
         Text O + N
@@ -472,8 +549,9 @@ describe('objects and nested state updates:', () => {
 
   test('object-shaped alias on right of + (non-string left) fails validation', async () => {
     const report = await parseASTWithErrors(`
-      ui Text Value text { }
+      ui Text Value text { render inject \`\`\`ts return null \`\`\` }
       ui V {
+        render inject \`\`\`ts return null \`\`\`
         alias O = { x 1 }
         alias N = 2
         Text N + O
@@ -484,8 +562,9 @@ describe('objects and nested state updates:', () => {
 
   test('object-shaped value on a non-Text view render argument fails validation', async () => {
     const report = await parseASTWithErrors(`
-      ui Foo X text { }
+      ui Foo X text { render inject \`\`\`ts return null \`\`\` }
       ui V {
+        render inject \`\`\`ts return null \`\`\`
         alias O = { a 1 }
         Foo O
       }
@@ -495,7 +574,7 @@ describe('objects and nested state updates:', () => {
 
   test('member access to unknown property on state object fails validation', async () => {
     const report = await parseASTWithErrors(`
-      ui Text Value text { }
+      ui Text Value text { render inject \`\`\`ts return null \`\`\` }
       ui V {
         state Cat = { name "cat" }
         Text Cat.missing { }
@@ -506,7 +585,7 @@ describe('objects and nested state updates:', () => {
 
   test('member access to unknown property on alias object fails validation', async () => {
     const report = await parseASTWithErrors(`
-      ui Text Value text { }
+      ui Text Value text { render inject \`\`\`ts return null \`\`\` }
       ui V {
         alias O = { a 1 }
         Text O.b { }
@@ -517,7 +596,7 @@ describe('objects and nested state updates:', () => {
 
   test('member access on scalar alias fails validation', async () => {
     const report = await parseASTWithErrors(`
-      ui Text Value text { }
+      ui Text Value text { render inject \`\`\`ts return null \`\`\` }
       ui V {
         alias A = 1
         Text A.x { }
@@ -528,7 +607,7 @@ describe('objects and nested state updates:', () => {
 
   test('member access on scalar state fails validation', async () => {
     const report = await parseASTWithErrors(`
-      ui Text Value text { }
+      ui Text Value text { render inject \`\`\`ts return null \`\`\` }
       ui V {
         state S = 1
         Text S.x { }
@@ -539,7 +618,7 @@ describe('objects and nested state updates:', () => {
 
   test('deep member access descending into scalar field fails validation', async () => {
     const report = await parseASTWithErrors(`
-      ui Text Value text { }
+      ui Text Value text { render inject \`\`\`ts return null \`\`\` }
       ui V {
         state Cat = { name "cat", age 1 }
         Text Cat.age.nope { }
@@ -580,7 +659,7 @@ describe('objects and nested state updates:', () => {
 
   test('member access to missing terminal segment on a nested object fails validation', async () => {
     const report = await parseASTWithErrors(`
-      ui Text Value text { }
+      ui Text Value text { render inject \`\`\`ts return null \`\`\` }
       ui V {
         alias O = { a { b 1 } }
         Text O.a.missing { }
@@ -594,7 +673,7 @@ describe('struct/item type validation:', () => {
   test('flat struct type declaration validates cleanly', async () => {
     await parseTaoFully(`
       type Person is { Name text, Age number }
-      ui V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
   })
 
@@ -602,7 +681,7 @@ describe('struct/item type validation:', () => {
     await parseTaoFully(`
       type Person is { Name text, Age number }
       alias Ro = Person { Name "Ro", Age 40 }
-      ui V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
   })
 
@@ -610,7 +689,7 @@ describe('struct/item type validation:', () => {
     const report = await parseASTWithErrors(`
       type Person is { Name text, Age number }
       alias Bad = Person { Name "Ro", Age 40, Extra "oops" }
-      ui V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
     expectSomeHumanMessageSatisfies(
       report,
@@ -622,7 +701,7 @@ describe('struct/item type validation:', () => {
     const report = await parseASTWithErrors(`
       type Person is { Name text, Age number }
       alias Bad = Person { Name "Ro" }
-      ui V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
     expectSomeHumanMessageSatisfies(
       report,
@@ -634,7 +713,7 @@ describe('struct/item type validation:', () => {
     const report = await parseASTWithErrors(`
       type Person is { Name text, Age number }
       alias Bad = Person { Name "Ro", Age { Inner 1 } }
-      ui V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
     expectSomeHumanMessageSatisfies(
       report,
@@ -646,7 +725,7 @@ describe('struct/item type validation:', () => {
     const report = await parseASTWithErrors(`
       type Person is { Name text, Job { Title text } }
       alias Bad = Person { Name "Ro", Job { Wrong "x" } }
-      ui V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
     expectSomeHumanMessageSatisfies(
       report,
@@ -658,7 +737,7 @@ describe('struct/item type validation:', () => {
     const report = await parseASTWithErrors(`
       type Person is { Name text, Job { Title text, Salary number } }
       alias Bad = Person { Name "Ro", Job { Title "Builder" } }
-      ui V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
     expectSomeHumanMessageSatisfies(
       report,
@@ -670,7 +749,7 @@ describe('struct/item type validation:', () => {
     const report = await parseASTWithErrors(`
       type Person is { Name text, Job { Title text } }
       alias Bad = Person { Name "Ro", Job { Title { Nope 1 } } }
-      ui V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
     expectSomeHumanMessageSatisfies(
       report,
@@ -682,7 +761,7 @@ describe('struct/item type validation:', () => {
     const report = await parseASTWithErrors(`
       type Person is { Name text }
       alias Bad = Person "hello"
-      ui V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
     expectSomeHumanMessageSatisfies(report, m => m.includes('Person') && m.includes('struct literal'))
   })
@@ -690,7 +769,7 @@ describe('struct/item type validation:', () => {
   test('struct type declaration with duplicate field name fails validation', async () => {
     const report = await parseASTWithErrors(`
       type Person is { Name text, Name number }
-      ui V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
     expectHumanMessagesContain(report, "Duplicate struct field 'Name'")
   })
@@ -698,7 +777,7 @@ describe('struct/item type validation:', () => {
   test('struct field with lowercase name fails validation', async () => {
     const report = await parseASTWithErrors(`
       type Person is { name text }
-      ui V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
     expectSomeHumanMessageSatisfies(report, m => m.includes("'name'") && m.includes('uppercase'))
   })
@@ -706,8 +785,9 @@ describe('struct/item type validation:', () => {
   test('member access on typed struct alias resolves declared field', async () => {
     await parseTaoFully(`
       type Person is { Name text, Age number }
-      ui Text Value text { }
+      ui Text Value text { render inject \`\`\`ts return null \`\`\` }
       ui V {
+        render inject \`\`\`ts return null \`\`\`
         alias Ro = Person { Name "Ro", Age 40 }
         Text Ro.Name
       }
@@ -717,7 +797,7 @@ describe('struct/item type validation:', () => {
   test('member access on typed struct alias with unknown field fails validation', async () => {
     const report = await parseASTWithErrors(`
       type Person is { Name text, Age number }
-      ui Text Value text { }
+      ui Text Value text { render inject \`\`\`ts return null \`\`\` }
       ui V {
         alias Ro = Person { Name "Ro", Age 40 }
         Text Ro.Missing
@@ -729,14 +809,14 @@ describe('struct/item type validation:', () => {
   test('nested type reference Person.Job validates against declared nested struct', async () => {
     await parseTaoFully(`
       type Person is { Name text, Job { Title text } }
-      ui ShowJob J Person.Job { }
+      ui ShowJob J Person.Job { render inject \`\`\`ts return null \`\`\` }
     `)
   })
 
   test('nested type reference to missing nested type fails validation', async () => {
     const report = await parseASTWithErrors(`
       type Person is { Name text }
-      ui ShowJob J Person.Missing { }
+      ui ShowJob J Person.Missing { render inject \`\`\`ts return null \`\`\` }
     `)
     expectSomeHumanMessageSatisfies(report, m => m.includes('Person') && m.includes('Missing'))
   })
@@ -744,11 +824,12 @@ describe('struct/item type validation:', () => {
   test('member access on struct-typed parameter rejects unknown field', async () => {
     const report = await parseASTWithErrors(`
       type Person is { Name text, Age number }
-      ui Text Value text { }
+      ui Text Value text { render inject \`\`\`ts return null \`\`\` }
       ui Profile P Person {
+        render inject \`\`\`ts return null \`\`\`
         Text P.Missing
       }
-      ui V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
     expectSomeHumanMessageSatisfies(
       report,
@@ -759,11 +840,12 @@ describe('struct/item type validation:', () => {
   test('member access on Person.Job parameter rejects unknown nested field', async () => {
     const report = await parseASTWithErrors(`
       type Person is { Name text, Job { Title text } }
-      ui Text Value text { }
+      ui Text Value text { render inject \`\`\`ts return null \`\`\` }
       ui ShowJob J Person.Job {
+        render inject \`\`\`ts return null \`\`\`
         Text J.NotAField
       }
-      ui V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
     expectSomeHumanMessageSatisfies(
       report,
@@ -773,11 +855,12 @@ describe('struct/item type validation:', () => {
 
   test('member access on primitive-typed parameter rejects any property', async () => {
     const report = await parseASTWithErrors(`
-      ui Text Value text { }
+      ui Text Value text { render inject \`\`\`ts return null \`\`\` }
       ui Line N number {
+        render inject \`\`\`ts return null \`\`\`
         Text N.Too
       }
-      ui V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
     expectSomeHumanMessageSatisfies(report, m => m.includes('Too') && m.includes('not an object'))
   })
@@ -785,7 +868,7 @@ describe('struct/item type validation:', () => {
   test('unresolved view ref does not spuriously report object-in-view-arg for struct literal', async () => {
     const report = await parseASTWithErrors(`
       type Person is { Name text, Age number }
-      ui Show P Person { }
+      ui Show P Person { render inject \`\`\`ts return null \`\`\` }
       ui V {
         MissingView Person { Name "Ro", Age 40 }
       }
@@ -797,8 +880,9 @@ describe('struct/item type validation:', () => {
   test('struct literal argument to struct-typed parameter does not spuriously report object-in-view-arg', async () => {
     await parseTaoFully(`
       type Person is { Name text, Age number }
-      ui Show P Person { }
+      ui Show P Person { render inject \`\`\`ts return null \`\`\` }
       ui V {
+        render inject \`\`\`ts return null \`\`\`
         Show Person { Name "Ro", Age 40 }
       }
     `)
@@ -830,7 +914,7 @@ describe('local parameter types validation:', () => {
   test('localSuperType param does not trigger shorthand-not-a-type error', async () => {
     await parseTaoFully(`
       ui Badge Title is text {
-        inject \`\`\`ts void 0 \`\`\`
+        render inject \`\`\`ts void 0 \`\`\`
       }
     `)
   })
@@ -838,7 +922,7 @@ describe('local parameter types validation:', () => {
   test('view with both localSuperType and explicit params validates', async () => {
     await parseTaoFully(`
       ui Card Title is text, Size number {
-        inject \`\`\`ts void 0 \`\`\`
+        render inject \`\`\`ts void 0 \`\`\`
       }
     `)
   })
@@ -848,9 +932,10 @@ describe('dot-local type ref validation (Phase 2):', () => {
   test('Badge .Title "x" passes validation', async () => {
     await parseTaoFully(`
       ui Badge Title is text {
-        inject \`\`\`ts void 0 \`\`\`
+        render inject \`\`\`ts void 0 \`\`\`
       }
       ui Root {
+        render inject \`\`\`ts return null \`\`\`
         Badge .Title "x"
       }
     `)
@@ -858,9 +943,9 @@ describe('dot-local type ref validation (Phase 2):', () => {
 
   test('.Title outside argument context errors', async () => {
     const report = await parseASTWithErrors(`
-      ui Badge Title is text { }
+      ui Badge Title is text { render inject \`\`\`ts return null \`\`\` }
       alias X = .Title "x"
-      ui V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
     expectSomeHumanMessageSatisfies(
       report,
@@ -870,8 +955,9 @@ describe('dot-local type ref validation (Phase 2):', () => {
 
   test('.Subtitle errors when callee has no such local type', async () => {
     const report = await parseASTWithErrors(`
-      ui Badge Title is text { }
+      ui Badge Title is text { render inject \`\`\`ts return null \`\`\` }
       ui Root {
+        render inject \`\`\`ts return null \`\`\`
         Badge .Subtitle "x"
       }
     `)
@@ -881,8 +967,9 @@ describe('dot-local type ref validation (Phase 2):', () => {
   test('.Subtitle errors even if global Subtitle type exists (no fallback)', async () => {
     const report = await parseASTWithErrors(`
       type Subtitle is text
-      ui Badge Title is text { }
+      ui Badge Title is text { render inject \`\`\`ts return null \`\`\` }
       ui Root {
+        render inject \`\`\`ts return null \`\`\`
         Badge .Subtitle "x"
       }
     `)
@@ -893,9 +980,10 @@ describe('dot-local type ref validation (Phase 2):', () => {
     await parseTaoFully(`
       type PersonData is { Name text }
       ui Profile Person is PersonData {
-        inject \`\`\`ts void 0 \`\`\`
+        render inject \`\`\`ts void 0 \`\`\`
       }
       ui Root {
+        render inject \`\`\`ts return null \`\`\`
         Profile .Person { Name "Ro" }
       }
     `)
@@ -904,8 +992,9 @@ describe('dot-local type ref validation (Phase 2):', () => {
   test('.Person struct literal rejects unknown field', async () => {
     const report = await parseASTWithErrors(`
       type PersonData is { Name text }
-      ui Profile Person is PersonData { }
+      ui Profile Person is PersonData { render inject \`\`\`ts return null \`\`\` }
       ui Root {
+        render inject \`\`\`ts return null \`\`\`
         Profile .Person { Name "Ro", Age 30 }
       }
     `)
@@ -915,8 +1004,9 @@ describe('dot-local type ref validation (Phase 2):', () => {
   test('.Person struct literal rejects missing field', async () => {
     const report = await parseASTWithErrors(`
       type PersonData is { Name text, Age number }
-      ui Profile Person is PersonData { }
+      ui Profile Person is PersonData { render inject \`\`\`ts return null \`\`\` }
       ui Root {
+        render inject \`\`\`ts return null \`\`\`
         Profile .Person { Name "Ro" }
       }
     `)
@@ -927,9 +1017,10 @@ describe('dot-local type ref validation (Phase 2):', () => {
     await parseTaoFully(`
       type Title is text
       ui Badge Title is text {
-        inject \`\`\`ts void 0 \`\`\`
+        render inject \`\`\`ts void 0 \`\`\`
       }
       ui Root {
+        render inject \`\`\`ts return null \`\`\`
         Badge .Title "x"
       }
     `)
@@ -938,7 +1029,7 @@ describe('dot-local type ref validation (Phase 2):', () => {
   test('ambiguity warning mentions .Title for bare constructors', async () => {
     const report = await parseASTWithErrors(`
       type Title is text
-      ui Badge Title is text { }
+      ui Badge Title is text { render inject \`\`\`ts return null \`\`\` }
       ui Root {
         Badge Title "x"
       }
@@ -966,7 +1057,7 @@ describe('action local parameter types (Phase 3):', () => {
       action Use {
         do Bump .Step 3
       }
-      ui V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
   })
 
@@ -976,7 +1067,7 @@ describe('action local parameter types (Phase 3):', () => {
       action Use {
         do Bump .Amount 3
       }
-      ui V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
     expectSomeHumanMessageSatisfies(report, m => m.includes("'.Amount'") && m.includes('Bump'))
   })
@@ -985,7 +1076,7 @@ describe('action local parameter types (Phase 3):', () => {
     const report = await parseASTWithErrors(`
       action Bump Step is number { }
       alias X = .Step 3
-      ui V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
     expectSomeHumanMessageSatisfies(
       report,
@@ -1000,7 +1091,7 @@ describe('action local parameter types (Phase 3):', () => {
       action Use {
         do Bump Step 3
       }
-      ui V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
     const warnings = report.diagnostics.filter(d => d.severity === 2)
     expect(warnings.some(d => d.message.includes("'.Step'") && d.message.includes('Bump.Step'))).toBe(true)
@@ -1017,7 +1108,7 @@ describe('action local parameter types (Phase 3):', () => {
         do Bump .Step 3
         do Bump Bump.Step 4
       }
-      ui V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
   })
 
@@ -1028,7 +1119,7 @@ describe('action local parameter types (Phase 3):', () => {
         set Counter += Step
       }
       alias S = Bump.Step 3
-      ui V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
   })
 
@@ -1039,7 +1130,7 @@ describe('action local parameter types (Phase 3):', () => {
       action Use {
         do Bump .Amount 3
       }
-      ui V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
     expectSomeHumanMessageSatisfies(report, m => m.includes("'.Amount'") && m.includes('Bump'))
   })
@@ -1055,15 +1146,15 @@ describe('action local parameter types (Phase 3):', () => {
         do Bump Bump.Step 2
         do Bump .Step 3
       }
-      ui V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
   })
 
   test('view and action with same name triggers duplicate identifier error (callee identity guardrail)', async () => {
     const report = await parseASTWithErrors(`
-      ui Bump Step is text { }
+      ui Bump Step is text { render inject \`\`\`ts return null \`\`\` }
       action Bump Step is number { }
-      ui V { }
+      ui V { render inject \`\`\`ts return null \`\`\` }
     `)
     expectSomeHumanMessageSatisfies(report, m => m.includes('Duplicate') && m.includes('Bump'))
   })

@@ -12,26 +12,28 @@ action FileAction {
 
 ui RootView {
    state ViewState = 200
-   Button "${ FileState }", FileAction { }
-   Button "${ ViewState }", ViewAction { }
-   action ViewAction {
-      set ViewState += 1
-   }
-   Row {
-      state InnerState = 300
-      Button "${ InnerState }", InnerAction { }
-      action InnerAction {
-         set InnerState += 1
-         set FileState += 1
-      }
-      Col {
-         state DeepState = 400
-         Button "${ DeepState }", DeepAction { }
-         action DeepAction {
-            set DeepState += 1
+   render Col {
+      Button "${ FileState }", FileAction { }
+      Button "${ ViewState }", ViewAction { }
+      Row {
+         state InnerState = 300
+         Button "${ InnerState }", InnerAction { }
+         action InnerAction {
             set InnerState += 1
             set FileState += 1
          }
+         Col {
+            state DeepState = 400
+            Button "${ DeepState }", DeepAction { }
+            action DeepAction {
+               set DeepState += 1
+               set InnerState += 1
+               set FileState += 1
+            }
+         }
       }
+   }
+   action ViewAction {
+      set ViewState += 1
    }
 }

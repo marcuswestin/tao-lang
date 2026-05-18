@@ -15,7 +15,7 @@ ui Main {
          }
       }
    }
-   Col {
+   render Col {
       Text Pet.name { }
       Text Pet.owner.name { }
       Text Pet.owner.address.city { }

@@ -3,7 +3,7 @@ grammar TaoLang
 entry TaoFile:
     statements += Statement*;
 
-Statement: Declaration | ModuleDeclaration | UseStatement | Debugger | Injection | ViewRender | ActionRender | StateUpdate
+Statement: Declaration | ModuleDeclaration | UseStatement | Debugger | Injection | RenderStatement | ViewRender | ActionRender | StateUpdate
     | QueryDeclaration | GuardStatement | ForStatement | CreateStatement;
 
 
@@ -16,15 +16,15 @@ type Referenceable = Declaration | ParameterDeclaration | QueryDeclaration | For
 type ScopeRelevantNode = UseStatement | Declaration | AppDeclaration | ParameterDeclaration | DataEntityDeclaration | DataTypeDeclaration | QueryDeclaration | ForStatement;
 
 // ViewFragmentStatement groups view-ordered body items handled by `viewFragmentStatement` codegen (exhaustive switch); not every `Statement` is a fragment statement.
-type ViewFragmentStatement = ViewRender | Injection | ForStatement | Debugger | QueryDeclaration | GuardStatement | Declaration;
-type ViewStatement = ViewRender | Injection | AssignmentDeclaration | BlockDeclaration | Debugger | QueryDeclaration | GuardStatement | ForStatement;
+type ViewFragmentStatement = RenderStatement | ViewRender | Injection | ForStatement | Debugger | QueryDeclaration | GuardStatement | Declaration;
+type ViewStatement = RenderStatement | ViewRender | Injection | AssignmentDeclaration | BlockDeclaration | Debugger | QueryDeclaration | GuardStatement | ForStatement;
 type TopLevelStatement = Declaration | UseStatement | Injection | Debugger | QueryDeclaration;
 type ActionStatement = StateUpdate | Injection | Debugger | AssignmentDeclaration | BlockDeclaration | ActionRender | CreateStatement;
 
 // ArgumentListHost groups the call-site nodes that own an `ArgumentList`. Generic argument-binding logic
 // (see `tao-argument-bindings.ts`) keys off this union, so adding a new host kind (e.g. function calls)
 // only requires extending this type and the resolver's callee dispatch.
-type ArgumentListHost = ViewRender | ActionRender;
+type ArgumentListHost = RenderStatement | ViewRender | ActionRender;
 
 // Shared Statements
 ////////////////////
@@ -237,9 +237,12 @@ ActionDeclaration: type='action' name=ID parameterList=ParameterList? block=Bloc
 // View-only statements
 ///////////////////////
 
+RenderStatement:
+    'render' (injection=Injection | view=[Declaration:ID] argumentList=ArgumentList? layoutClause=LayoutClause? block=Block?);
+
 ViewRender:
     view=[Declaration:ID] argumentList=ArgumentList? layoutClause=LayoutClause? block=Block?;
-type RenderNode = ViewRender | Injection;
+type RenderNode = RenderStatement | ViewRender | Injection;
 
 // View Layout specs
 ////////////////////

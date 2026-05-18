@@ -75,8 +75,8 @@ describe('cli:', () => {
         appPath,
         `
         app Broken { ui RootView }
-        ui RootView { Text 42 }
-        ui Text Value text { }
+        ui RootView { render Text 42 }
+        ui Text Value text { render inject \`\`\`ts return null \`\`\` }
       `,
       )
       FS.mkdir(testRuntimeDir)
@@ -138,10 +138,10 @@ function getRandomUI() {
   const code = `
     app KitchenSink { ui RootView }
 
-    ui RootView { Text "${needle}" {} }
+    ui RootView { render Text "${needle}" {} }
 
     ui Text Value text {
-        inject \`\`\`ts return <RN.Text>{_ViewProps.Value}</RN.Text> \`\`\`
+        render inject \`\`\`ts return <RN.Text>{_ViewProps.Value}</RN.Text> \`\`\`
     }
   `
   return { code, needle }
@@ -166,6 +166,6 @@ function getDataApp(provider: 'Memory' | 'InstantDB') {
       ui HarnessRoot
     }
 
-    ui HarnessRoot { Text "Harness" }
+    ui HarnessRoot { render Text "Harness" }
   `
 }

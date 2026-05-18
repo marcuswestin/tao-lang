@@ -225,6 +225,15 @@ describe('Formatter', () => {
           }
       }
     `)
+  testFormatter('material render root with args, layout, and body')
+    .format(`ui MyView {render Row "title" [ items   center   left , gap   8 ]{Text "hello"{}}}`)
+    .equals(`
+      ui MyView {
+          render Row "title" [items center left, gap 8] {
+              Text "hello" { }
+          }
+      }
+    `)
   testFormatter('view render with multiline layout clause')
     .format(`
       ui MyView {

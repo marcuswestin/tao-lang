@@ -173,8 +173,11 @@ function walkViewStatement(
   uriToEmitPath: Map<string, string>,
   importMap: Map<string, Set<string>>,
 ): void {
-  if (AST.isViewRender(s)) {
-    const viewDecl = refResolved(s.view, 'ViewRender.view')
+  if (AST.isRenderStatement(s) || AST.isViewRender(s)) {
+    if (s.view === undefined) {
+      return
+    }
+    const viewDecl = refResolved(s.view, AST.isRenderStatement(s) ? 'RenderStatement.view' : 'ViewRender.view')
     const defDoc = LGM.AstUtils.getDocument(viewDecl)
     if (defDoc && defDoc.uri.toString() !== doc.uri.toString()) {
       const targetEmit = uriToEmitPath.get(defDoc.uri.toString())

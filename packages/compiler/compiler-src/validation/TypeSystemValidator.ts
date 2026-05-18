@@ -58,6 +58,7 @@ export const typeSystemValidator: Pick<
   | 'NamedTypeRef'
   | 'MemberAccessExpression'
   | 'BinaryExpression'
+  | 'RenderStatement'
   | 'ViewRender'
   | 'ActionRender'
 > = {
@@ -84,6 +85,10 @@ export const typeSystemValidator: Pick<
 
   BinaryExpression: makeValidater((node, report) => {
     validateNoObjectInPlusOperator(node, report)
+  }),
+
+  RenderStatement: makeValidater((node, report) => {
+    validateNoObjectInCallArgument(node, report)
   }),
 
   ViewRender: makeValidater((node, report) => {

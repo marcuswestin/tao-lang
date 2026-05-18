@@ -69,13 +69,19 @@ Avoid helper-only commits unless a step becomes too large to review coherently. 
 ## Implementation Status
 
 - Step 1: complete in `adb1dde` (`feat(layout): cut over UI declaration keywords`).
-- Step 2: complete in the current implementation commit.
+- Step 2: complete in `56f7cde` (`feat(layout): implement MVP layout vocabulary`).
   - Replaced the old layout-v1 bracket vocabulary with the MVP heads: `items`, `aligned`, `stretched`, `width`, `height`, `fill`, `hug`, `grow`, `compress`, `rigid`, `gap`, and `pad`.
   - Added shared standard-container direction/default helpers for `Row`, `Col`, `Box`, `Stack`, and `WrappingRow`.
   - Rewrote layout validation for item slot claims, parent-axis self alignment, size/pressure conflicts, numeric rules, legacy/deferred word rejection, and malformed entries.
   - Updated serialized layout specs and runtime lowering to emit React Native/Yoga style props through the Tao runtime resolver, including `overflow: "hidden"` defaults.
   - Updated parser, validation, codegen, formatter, runtime tests, and the active Kitchen Sink layout fixture.
-- Steps 3 through 8: pending.
+- Step 3: complete in the current implementation commit.
+  - Added `render` statements as material public roots for `ui`, `frame`, and `layout` declarations.
+  - Enforced exactly one top-level root, rejected nested roots, and rejected non-view render targets.
+  - Changed app codegen to return the explicit render root instead of implicitly returning all body statements.
+  - Routed `render` through scoping, type checking, layout validation, import discovery, formatter behavior, and runtime lowering.
+  - Migrated std-lib declarations, active test apps, compiler fixtures, formatter coverage, Expo runtime fixtures, and shared runtime scenarios to explicit roots.
+- Steps 4 through 8: pending.
 
 ## Step 1. Declaration Kind Cutover
 
@@ -269,6 +275,16 @@ Suggested validation:
 ./agent test compiler
 ./agent test formatter
 ```
+
+Completion notes:
+
+- `render` is now part of the parser, formatter, validator, type-system call-site checks, layout validation, and React runtime codegen.
+- Compiler tests cover missing roots, duplicate roots, nested roots, non-view render targets, render argument binding, layout-on-root lowering, and migrated module/import fixtures.
+- Runtime validation for this step used:
+  - `./agent compiler test`;
+  - `./agent test formatter`;
+  - `./agent expo-runtime test`;
+  - `./agent headless-test-runtime test`.
 
 ## Step 4. Caller Children And `@@children`
 

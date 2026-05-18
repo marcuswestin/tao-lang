@@ -1,6 +1,6 @@
 /** Horizontal rule for separating Kitchen Sink sections (raw React Native row). */
 share ui Divider {
-   inject ```ts
+   render inject ```ts
       return TR.Views.Row({
          style: {
             height: 4,

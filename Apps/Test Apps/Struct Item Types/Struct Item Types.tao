@@ -20,7 +20,7 @@ ui Main {
          Title "Builder"
       }
    }
-   Col {
+   render Col {
       Text Ro.Name { }
       Text Ro.Job.Title { }
       Text "${ Ro.Name } is ${ Ro.Age } and works as ${ Ro.Job.Title }" { }

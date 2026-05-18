@@ -1,14 +1,14 @@
 use Text, Col, Button, Number from @tao/ui
 
 ui Badge Title is text {
-   inject ```ts
+   render inject ```ts
       const tao_text = _ViewProps.Title.evaluate()
       return TR.Views.Text({ children: [tao_text.jsValue] })
    ```
 }
 
 ui Labeled Label is text, Content is text {
-   inject ```ts
+   render inject ```ts
       const label = _ViewProps.Label.evaluate()
       const content = _ViewProps.Content.evaluate()
       return TR.Views.Text({ children: [label.jsValue + ": " + content.jsValue] })
@@ -16,7 +16,7 @@ ui Labeled Label is text, Content is text {
 }
 
 ui Counter Label is text, Count number {
-   inject ```ts
+   render inject ```ts
       const label = _ViewProps.Label.evaluate()
       const count = _ViewProps.Count.evaluate()
       return TR.Views.Text({ children: [label.jsValue + " = " + String(count.jsValue)] })
@@ -24,7 +24,7 @@ ui Counter Label is text, Count number {
 }
 
 ui Btn Title is text, OnPress action {
-   inject ```ts
+   render inject ```ts
       return TR.Views.Button({
          title: _ViewProps.Title.evaluate().jsValue.toString(),
          onPress: () => _ViewProps.OnPress.invoke({}),
@@ -35,7 +35,7 @@ ui Btn Title is text, OnPress action {
 type Subtitle is text
 
 ui Banner Heading is text, Subtitle {
-   inject ```ts
+   render inject ```ts
       const heading = _ViewProps.Heading.evaluate()
       const subtitle = _ViewProps.Subtitle.evaluate()
       return TR.Views.Text({ children: [heading.jsValue + " / " + subtitle.jsValue] })
@@ -53,7 +53,7 @@ state ClickCount = 0
 /** View-local parameter types (`Name is text`), dot-local literals, action `do` with local param types. */
 
 share ui LocalParamsDemo {
-   Col {
+   render Col {
       Text "Local parameter types (views + actions)"
       Badge Title "Hello"
       Badge Badge.Title "World"

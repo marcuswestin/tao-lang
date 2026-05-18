@@ -28,6 +28,8 @@ import type { TaoAppConfig, TaoAppConfigObject } from './app-config'
 import { dataDeclarationToSerializedSchema } from './data-schema-serialization'
 import { compileQueryDeclaration, compileQueryMemberAccessExpression } from './query-plan-gen'
 
+type ViewRenderHost = AST.ViewRender | (AST.RenderStatement & { view: NonNullable<AST.RenderStatement['view']> })
+
 /** TaoResolvedAppProvider is the provider selected for the compiled app after Tao source + compile overrides. */
 export type TaoResolvedAppProvider = {
   name: string
@@ -92,6 +94,7 @@ class RuntimeGen {
       AssignmentDeclaration: (n) => this.AssignmentDeclaration(n),
       ViewDeclaration: (n) => this.ViewDeclaration(n),
       ActionDeclaration: (n) => this.ActionDeclaration(n),
+      RenderStatement: (n) => this.RenderStatement(n),
       ViewRender: (n) => this.ViewRender(n),
       ActionRender: (n) => this.ActionRender(n),
       TypeDeclaration: (n) => this.TypeDeclaration(n),
@@ -426,10 +429,6 @@ class RuntimeGen {
       .filter(decl => decl.type === 'state')
       .unique()
 
-    const viewBodyOrdered = block.statements.filter(
-      s => !AST.isQueryDeclaration(s) && !AST.isGuardStatement(s),
-    )
-
     const queryStmts = block.statements.filter(AST.isQueryDeclaration)
     const guardStmt = block.statements.find(AST.isGuardStatement)
     const guardQueries = queryStmts
@@ -442,6 +441,10 @@ class RuntimeGen {
       : compileNoop()
 
     const params = this.ViewParameterList(parameterList)
+    const renderRoot = block.statements.find(AST.isRenderStatement)
+    const renderedRoot = renderRoot === undefined
+      ? compileNode(viewDeclaration)`null`
+      : this.RenderStatement(renderRoot)
 
     return this.scoped(() =>
       compileNode(viewDeclaration)`
@@ -452,9 +455,7 @@ class RuntimeGen {
             ${compileNodeList(bindings, decl => this.reactiveBinding(decl))}
             ${compileNodeList(queryStmts, q => this.QueryDeclaration(q))}
             ${guardEarly}
-            return <>
-              ${compileNodeList(viewBodyOrdered, stmt => this.viewFragmentStatement(stmt))}
-            </>
+            return ${renderedRoot}
           }
         })
       `
@@ -467,6 +468,7 @@ class RuntimeGen {
       return this.Statement(stmt)
     }
     return switch_safe.type(stmt, {
+      RenderStatement: n => this.RenderStatement(n),
       ViewRender: n => this.renderNode(n),
       Injection: n => this.renderNode(n),
       ForStatement: n => this.ForStatement(n),
@@ -582,8 +584,9 @@ class RuntimeGen {
     return compileNode(decl)`_Scope.${decl.name}.useReactiveHandle()`
   }
 
-  renderNode(renderNode: AST.ViewRender | AST.Injection): Compiled {
+  renderNode(renderNode: AST.RenderNode): Compiled {
     return switch_safe.type(renderNode, {
+      RenderStatement: (stmt) => this.RenderStatement(stmt),
       ViewRender: (stmt) => this.ViewRender(stmt),
       Injection: (stmt) => compileNode(stmt)`{ ${this.Injection(stmt)} }`,
     })
@@ -594,7 +597,24 @@ class RuntimeGen {
     return new CompositeGeneratorNode('_ViewProps: any')
   }
 
+  RenderStatement(renderStatement: AST.RenderStatement): Compiled {
+    if (renderStatement.injection !== undefined) {
+      return this.Injection(renderStatement.injection)
+    }
+    if (renderStatement.view === undefined) {
+      return compileNode(renderStatement)`null`
+    }
+    return this.viewRenderHost(renderStatement as ViewRenderHost, 'RenderStatement.view')
+  }
+
   ViewRender(viewRender: AST.ViewRender): Compiled {
+    return this.viewRenderHost(viewRender, 'ViewRender.view')
+  }
+
+  viewRenderHost(
+    viewRender: ViewRenderHost,
+    diagnosticLabel: string,
+  ): Compiled {
     return compileNodePropertyRef(
       viewRender,
       'view',
@@ -603,7 +623,7 @@ class RuntimeGen {
           viewDecl,
           AST.isViewDeclaration,
           'ViewRender callee must resolve to a view declaration after validation.',
-          { callee: viewRender.view.$refText },
+          { callee: viewRender.view?.$refText },
         )
         const argumentList = this.viewRenderArgumentList(viewRender, viewDecl)
         const layoutProp = this.viewRenderLayoutSpec(viewRender, viewDecl)
@@ -620,12 +640,12 @@ class RuntimeGen {
           `
         }
       },
-      { requireResolved: true, diagnosticLabel: 'ViewRender.view' },
+      { requireResolved: true, diagnosticLabel },
     )
   }
 
   /** viewRenderLayoutSpec emits the serialized layout spec for the runtime layout resolver. */
-  viewRenderLayoutSpec(viewRender: AST.ViewRender, viewDecl: AST.ViewDeclaration): Compiled {
+  viewRenderLayoutSpec(viewRender: ViewRenderHost, viewDecl: AST.ViewDeclaration): Compiled {
     if (viewRender.layoutClause === undefined) {
       return compileNoop()
     }
@@ -641,6 +661,9 @@ class RuntimeGen {
     if (AST.isDeclaration(stmt)) {
       // Declarations are hoisted in views, so ignore it here
       return compileNoop()
+    }
+    if (AST.isRenderStatement(stmt)) {
+      return this.RenderStatement(stmt)
     }
     if (AST.isViewRender(stmt)) {
       return this.renderNode(stmt)
@@ -704,7 +727,7 @@ class RuntimeGen {
   /** viewRenderArgumentList emits JSX props for a `ViewRender`'s arguments using the resolver's bindings.
    * Each prop key is the resolved parameter name. Args without a binding (validation errors) are dropped
    * from emission to keep the JSX well-formed. */
-  viewRenderArgumentList(viewRender: AST.ViewRender, viewDecl: AST.ViewDeclaration): Compiled {
+  viewRenderArgumentList(viewRender: ViewRenderHost, viewDecl: AST.ViewDeclaration): Compiled {
     if (!viewRender.argumentList) {
       return compileNoop()
     }
@@ -851,13 +874,13 @@ function isNestedDeclaration(decl: AST.Declaration): boolean {
 }
 
 /** parentViewDirection returns the standard-container direction of the nearest render parent, when known. */
-function parentViewDirection(node: AST.ViewRender): ReturnType<typeof standardContainerDirection> {
+function parentViewDirection(node: ViewRenderHost): ReturnType<typeof standardContainerDirection> {
   let current: AST.Node | undefined = node.$container
   while (current !== undefined) {
     if (AST.isBlock(current)) {
       const owner = current.$container as AST.Node
-      if (AST.isViewRender(owner)) {
-        return standardContainerDirection(owner.view.$refText)
+      if (AST.isViewRender(owner) || AST.isRenderStatement(owner)) {
+        return owner.view === undefined ? undefined : standardContainerDirection(owner.view.$refText)
       }
       current = owner
     } else {

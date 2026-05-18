@@ -10,7 +10,7 @@ share ui StructsDemo {
       Sku "SKU-1",
       Price 9
    }
-   Col {
+   render Col {
       Text "Struct item types (`type … is { … }` + typed literals)"
       Text "${ CartItem.Sku } @ ${ CartItem.Price }"
       Button "discount", action {

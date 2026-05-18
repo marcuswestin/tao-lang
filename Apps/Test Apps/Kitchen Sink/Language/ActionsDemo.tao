@@ -3,7 +3,7 @@ use Text, Button, Col, Number from @tao/ui
 state Tally = 0
 
 share ui ActionsDemo {
-   Col {
+   render Col {
       Text "Action invocation: `do Callee …` + parameters"
       Number Tally
       Button "+3", Up3 { }

@@ -51,8 +51,8 @@ ui RootView {
    guard {
       Text "Loading..."
    }
-   Button "Create Event ${ EventCount }", CreateEvent
-   Col {
+   render Col {
+      Button "Create Event ${ EventCount }", CreateEvent
       Text "Data Schema Test App"
       for Event in MyEvents {
          Text "${ Event.Title}"

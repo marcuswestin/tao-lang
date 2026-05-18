@@ -36,6 +36,11 @@ export const validationMessages = {
     '`IDB` is no longer available in injected TypeScript; use compiled data/query/create statements or getTaoData instead.',
   parameterShorthandNotAType: (name: string) =>
     `Parameter shorthand '${name}' must match a local type declaration in this file/scope. Use '<name> <type>' for explicit type references (including imported types).`,
+  missingRenderRoot: (kind: string, name: string) =>
+    `${kind} '${name}' must declare exactly one top-level render statement.`,
+  duplicateRenderRoot: 'Only one top-level render statement is allowed in a ui/frame/layout declaration.',
+  nestedRenderRoot: '`render` is only allowed as a top-level statement inside a ui/frame/layout declaration.',
+  renderMustReferenceView: '`render` must target a ui, frame, or layout declaration.',
   ...identifierValidationMessages,
   ...layoutValidationMessages,
   ...typeSystemValidationMessages,
@@ -75,6 +80,10 @@ export const validator: langium.ValidationChecks<AST.TaoLangAstType> = {
     validateDuplicateIdentifier(param, report)
     validateUppercaseIdentifierName(param, report)
     validateParameterShorthandType(param, report)
+  }),
+
+  ViewDeclaration: makeValidater((decl, report) => {
+    validateViewDeclarationRenderRoot(decl, report)
   }),
 
   ForStatement: makeValidater((node, report) => {
@@ -167,13 +176,35 @@ export const validator: langium.ValidationChecks<AST.TaoLangAstType> = {
   ...forCreateValidator,
   ...queryValidator,
 
+  RenderStatement: (node, accept, services) => {
+    validateRenderStatement(node, accept)
+    runRenderStatementChecks(typeSystemValidator.RenderStatement, node, accept, services)
+    runRenderStatementChecks(layoutValidator.RenderStatement, node, accept, services)
+  },
+
   ViewRender: (node, accept, services) => {
     runViewRenderChecks(typeSystemValidator.ViewRender, node, accept, services)
     runViewRenderChecks(layoutValidator.ViewRender, node, accept, services)
   },
 }
 
+type RenderStatementCheckFn = (node: AST.RenderStatement, accept: AST.ValidationAcceptor, services: unknown) => void
 type ViewRenderCheckFn = (node: AST.ViewRender, accept: AST.ValidationAcceptor, services: unknown) => void
+
+function runRenderStatementChecks(
+  checks: langium.ValidationChecks<AST.TaoLangAstType>['RenderStatement'],
+  node: AST.RenderStatement,
+  accept: AST.ValidationAcceptor,
+  services: unknown,
+): void {
+  if (checks === undefined) {
+    return
+  }
+  for (const check of Array.isArray(checks) ? checks : [checks]) {
+    const runCheck = check as RenderStatementCheckFn
+    runCheck(node, accept, services)
+  }
+}
 
 function runViewRenderChecks(
   checks: langium.ValidationChecks<AST.TaoLangAstType>['ViewRender'],
@@ -187,6 +218,51 @@ function runViewRenderChecks(
   for (const check of Array.isArray(checks) ? checks : [checks]) {
     const runCheck = check as ViewRenderCheckFn
     runCheck(node, accept, services)
+  }
+}
+
+const validateRenderStatement = makeValidater((node: AST.RenderStatement, report) => {
+  validateRenderStatementPlacement(node, report)
+  validateRenderStatementTarget(node, report)
+})
+
+function validateViewDeclarationRenderRoot(decl: AST.ViewDeclaration, report: Reporter<AST.ViewDeclaration>): void {
+  const renderRoots = decl.block.statements.filter(AST.isRenderStatement)
+  if (renderRoots.length === 0) {
+    report.error(validationMessages.missingRenderRoot(decl.type, decl.name), { node: decl, property: 'block' })
+    return
+  }
+  if (renderRoots.length > 1) {
+    const first = renderRoots[0]!
+    report.error(validationMessages.duplicateRenderRoot, first, {
+      alsoCheck: () => {
+        const message = 'Another render statement here.'
+        return removeItemFrom(first, renderRoots).map((n) => ({ node: n, message }))
+      },
+    })
+  }
+}
+
+function validateRenderStatementPlacement(
+  node: AST.RenderStatement,
+  report: Reporter<AST.RenderStatement>,
+): void {
+  const block = node.$container
+  if (!AST.isBlock(block) || !AST.isViewDeclaration(block.$container)) {
+    report.error(validationMessages.nestedRenderRoot, node)
+  }
+}
+
+function validateRenderStatementTarget(
+  node: AST.RenderStatement,
+  report: Reporter<AST.RenderStatement>,
+): void {
+  const target = node.view?.ref
+  if (target === undefined) {
+    return
+  }
+  if (!AST.isViewDeclaration(target)) {
+    report.error(validationMessages.renderMustReferenceView, { node, property: 'view' })
   }
 }
 
@@ -245,6 +321,7 @@ function getBlockStatementContext(block: AST.Block): 'view' | 'action' | null {
   if (
     AST.isViewDeclaration(parent)
     || AST.isViewRender(parent)
+    || AST.isRenderStatement(parent)
     || AST.isGuardStatement(parent)
     || AST.isForStatement(parent)
   ) {

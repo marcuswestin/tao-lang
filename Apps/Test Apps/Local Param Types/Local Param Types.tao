@@ -7,7 +7,7 @@ app LocalParamTypesApp {
 // --- Single local param type ---
 
 ui Badge Title is text {
-   inject ```ts
+   render inject ```ts
       const tao_text = _ViewProps.Title.evaluate()
       return TR.Views.Text({ children: [tao_text.jsValue] })
    ```
@@ -16,7 +16,7 @@ ui Badge Title is text {
 // --- Multiple local param types ---
 
 ui Labeled Label is text, Content is text {
-   inject ```ts
+   render inject ```ts
       const label = _ViewProps.Label.evaluate()
       const content = _ViewProps.Content.evaluate()
       return TR.Views.Text({ children: [label.jsValue + ": " + content.jsValue] })
@@ -26,7 +26,7 @@ ui Labeled Label is text, Content is text {
 // --- Mix of local types and explicit types ---
 
 ui Counter Label is text, Count number {
-   inject ```ts
+   render inject ```ts
       const label = _ViewProps.Label.evaluate()
       const count = _ViewProps.Count.evaluate()
       return TR.Views.Text({ children: [label.jsValue + " = " + String(count.jsValue)] })
@@ -36,7 +36,7 @@ ui Counter Label is text, Count number {
 // --- Mix of local types and primitive types ---
 
 ui Btn Title is text, OnPress action {
-   inject ```ts
+   render inject ```ts
       return TR.Views.Button({
          title: _ViewProps.Title.evaluate().jsValue.toString(),
          onPress: () => _ViewProps.OnPress.invoke({})
@@ -49,7 +49,7 @@ ui Btn Title is text, OnPress action {
 type Subtitle is text
 
 ui Banner Heading is text, Subtitle {
-   inject ```ts
+   render inject ```ts
       const heading = _ViewProps.Heading.evaluate()
       const subtitle = _ViewProps.Subtitle.evaluate()
       return TR.Views.Text({ children: [heading.jsValue + " / " + subtitle.jsValue] })
@@ -75,7 +75,7 @@ action UseBump {
 state ClickCount = 0
 
 ui RootView {
-   Col {
+   render Col {
       // Three equivalent forms for local parameter types:
       Badge Title "Hello"
       Badge Badge.Title "World"

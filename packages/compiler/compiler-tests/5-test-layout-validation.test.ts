@@ -2,13 +2,13 @@ import { expectHumanMessagesContain } from './test-utils/diagnostics'
 import { describe, expectParseHasHumanErrors, parseTaoFully, test } from './test-utils/test-harness'
 
 const BASE_VIEWS = `
-  layout Row { }
-  layout Col { }
-  frame Box { }
-  frame Stack { }
-  layout WrappingRow { }
-  ui Panel { }
-  ui Text Value text { }
+  layout Row { render inject \`\`\`ts return null \`\`\` }
+  layout Col { render inject \`\`\`ts return null \`\`\` }
+  frame Box { render inject \`\`\`ts return null \`\`\` }
+  frame Stack { render inject \`\`\`ts return null \`\`\` }
+  layout WrappingRow { render inject \`\`\`ts return null \`\`\` }
+  ui Panel { render inject \`\`\`ts return null \`\`\` }
+  ui Text Value text { render inject \`\`\`ts return null \`\`\` }
 `
 
 describe('layout validation:', () => {
@@ -16,6 +16,8 @@ describe('layout validation:', () => {
     const report = await expectParseHasHumanErrors(`
       ${BASE_VIEWS}
       ui Root {
+        render inject \`\`\`ts return null \`\`\`
+        render inject \`\`\`ts return null \`\`\`
         Row []
       }
     `)
@@ -27,6 +29,7 @@ describe('layout validation:', () => {
     await parseTaoFully(`
       ${BASE_VIEWS}
       ui Root {
+        render inject \`\`\`ts return null \`\`\`
         Row [items top spread, gap 8, pad 10 horizontal 4] {
           Text "Name" [aligned center, width 120]
         }
@@ -38,6 +41,7 @@ describe('layout validation:', () => {
     await parseTaoFully(`
       ${BASE_VIEWS}
       ui Root {
+        render inject \`\`\`ts return null \`\`\`
         Row [items center]
         Row [items spread-inset top]
         Row [items spread-balanced bottom]
@@ -54,6 +58,7 @@ describe('layout validation:', () => {
     await parseTaoFully(`
       ${BASE_VIEWS}
       ui Root {
+        render inject \`\`\`ts return null \`\`\`
         Row {
           Text "A" [width fill max 400, height hug, grow, compress]
           Text "B" [width 50%, height min 20 max 80, grow 2, rigid]
@@ -67,6 +72,7 @@ describe('layout validation:', () => {
     const report = await expectParseHasHumanErrors(`
       ${BASE_VIEWS}
       ui Root {
+        render inject \`\`\`ts return null \`\`\`
         Row [8]
       }
     `)
@@ -78,6 +84,7 @@ describe('layout validation:', () => {
     const report = await expectParseHasHumanErrors(`
       ${BASE_VIEWS}
       ui Root {
+        render inject \`\`\`ts return null \`\`\`
         Row [mystery]
       }
     `)
@@ -89,6 +96,7 @@ describe('layout validation:', () => {
     const report = await expectParseHasHumanErrors(`
       ${BASE_VIEWS}
       ui Root {
+        render inject \`\`\`ts return null \`\`\`
         Row [width 100, width 200]
       }
     `)
@@ -100,6 +108,7 @@ describe('layout validation:', () => {
     const report = await expectParseHasHumanErrors(`
       ${BASE_VIEWS}
       ui Root {
+        render inject \`\`\`ts return null \`\`\`
         Row [items top, items left, gap 4, gap 8, pad 4, pad 8]
       }
     `)
@@ -113,6 +122,7 @@ describe('layout validation:', () => {
     const report = await expectParseHasHumanErrors(`
       ${BASE_VIEWS}
       ui Root {
+        render inject \`\`\`ts return null \`\`\`
         Row [items left right]
       }
     `)
@@ -124,6 +134,7 @@ describe('layout validation:', () => {
     const report = await expectParseHasHumanErrors(`
       ${BASE_VIEWS}
       ui Root {
+        render inject \`\`\`ts return null \`\`\`
         Col [items baseline left]
         Row [items stretch top]
         Row [items top left center]
@@ -139,6 +150,7 @@ describe('layout validation:', () => {
     const report = await expectParseHasHumanErrors(`
       ${BASE_VIEWS}
       ui Root {
+        render inject \`\`\`ts return null \`\`\`
         Panel [items center]
       }
     `)
@@ -150,6 +162,7 @@ describe('layout validation:', () => {
     const report = await expectParseHasHumanErrors(`
       ${BASE_VIEWS}
       ui Root {
+        render inject \`\`\`ts return null \`\`\`
         Row [color primary]
       }
     `)
@@ -161,6 +174,7 @@ describe('layout validation:', () => {
     const report = await expectParseHasHumanErrors(`
       ${BASE_VIEWS}
       ui Root {
+        render inject \`\`\`ts return null \`\`\`
         Row [aspect_ratio 1]
       }
     `)
@@ -172,6 +186,7 @@ describe('layout validation:', () => {
     const report = await expectParseHasHumanErrors(`
       ${BASE_VIEWS}
       ui Root {
+        render inject \`\`\`ts return null \`\`\`
         Text "Label" [aligned center]
       }
     `)
@@ -183,6 +198,7 @@ describe('layout validation:', () => {
     const report = await expectParseHasHumanErrors(`
       ${BASE_VIEWS}
       ui Root {
+        render inject \`\`\`ts return null \`\`\`
         Row {
           Text "Label" [aligned left]
           Text "Other" [aligned stretch]
@@ -198,6 +214,7 @@ describe('layout validation:', () => {
     const report = await expectParseHasHumanErrors(`
       ${BASE_VIEWS}
       ui Root {
+        render inject \`\`\`ts return null \`\`\`
         Box [width 120%]
       }
     `)
@@ -209,6 +226,7 @@ describe('layout validation:', () => {
     const report = await expectParseHasHumanErrors(`
       ${BASE_VIEWS}
       ui Root {
+        render inject \`\`\`ts return null \`\`\`
         Row [gap -5]
       }
     `)
@@ -220,6 +238,7 @@ describe('layout validation:', () => {
     const report = await expectParseHasHumanErrors(`
       ${BASE_VIEWS}
       ui Root {
+        render inject \`\`\`ts return null \`\`\`
         Row [pad 10%]
       }
     `)
@@ -231,6 +250,7 @@ describe('layout validation:', () => {
     const report = await expectParseHasHumanErrors(`
       ${BASE_VIEWS}
       ui Root {
+        render inject \`\`\`ts return null \`\`\`
         Box [width min 200 max 100]
       }
     `)
@@ -242,6 +262,7 @@ describe('layout validation:', () => {
     const report = await expectParseHasHumanErrors(`
       ${BASE_VIEWS}
       ui Root {
+        render inject \`\`\`ts return null \`\`\`
         Row {
           Text "A" [fill, width 320]
           Text "B" [hug, height 44]
@@ -261,6 +282,7 @@ describe('layout validation:', () => {
     await parseTaoFully(`
       ${BASE_VIEWS}
       ui Root {
+        render inject \`\`\`ts return null \`\`\`
         Row {
           Text "Label" [aligned center, height hug]
         }
@@ -272,6 +294,7 @@ describe('layout validation:', () => {
     const report = await expectParseHasHumanErrors(`
       ${BASE_VIEWS}
       ui Root {
+        render inject \`\`\`ts return null \`\`\`
         Row [centered]
         Row [packed]
         Row [wrap]

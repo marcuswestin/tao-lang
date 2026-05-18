@@ -492,7 +492,7 @@ function filterToCurrentlyUnbound(
 /** getCalleeDeclaration returns the resolved callee declaration for an argument-list host, or `undefined`
  * when the cross-reference is unresolved or points to a non-block declaration. */
 export function getCalleeDeclaration(host: AST.ArgumentListHost): CalleeDeclaration | undefined {
-  if (AST.isViewRender(host)) {
+  if (AST.isViewRender(host) || AST.isRenderStatement(host)) {
     const ref = host.view?.ref
     return AST.isViewDeclaration(ref) ? ref : undefined
   }

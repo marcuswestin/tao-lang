@@ -10,15 +10,17 @@ alias ButtonTitle = "Up by 3"
 
 type Title is text
 
-ui FancyButton Title, Action action { }
+ui FancyButton Title, Action action {
+   render Button Title, Action
+}
 
 ui Root {
-   FancyButton Title "test", action { }
+   render FancyButton Title "test", action { }
 }
 
 ui RootView {
-   Number Counter
-   Col {
+   render Col {
+      Number Counter
       Button ButtonTitle, UpBy3
       Button "Down by 1", DownBy1
       Button "Up by 3", UpBy3 { }
