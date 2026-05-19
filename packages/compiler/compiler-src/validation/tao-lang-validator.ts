@@ -9,10 +9,19 @@ import {
   variantHasCycle,
 } from '../design/variant-resolution'
 import {
+  buildTaoNavigationTree,
+  findNavigationTarget,
+  isNavigationTarget,
+  navigationDestinationIcons,
+  navigationDestinationParams,
+  navigationDestinationPath,
+  type TaoNavigationDestination,
+} from '../navigation/navigation-tree'
+import {
   actionParameterDataRowHandleEntity,
   queryDeclarationCardinality,
 } from '../query/query-model'
-import { resolveShorthandParameterType } from '../tao-type-shapes'
+import { parameterResolvedType, resolveShorthandParameterType } from '../tao-type-shapes'
 import {
   dataSchemaValidationMessages,
   dataSchemaValidator,
@@ -34,9 +43,20 @@ import { makeValidater, type Reporter } from './ValidationReporter'
 /** validationMessages are the exact diagnostics for TaoFile and Block placement rules, merged with type-system messages. */
 export const validationMessages = {
   viewBody: 'Only ui/frame/layout/alias/state/action/inject statements are allowed in a UI body.',
-  actionBody: 'Only state/action/inject and set (state update) statements are allowed in an action body.',
+  actionBody:
+    'Only state/action/inject, set (state update), create, and navigation statements are allowed in an action body.',
   topLevel:
-    'Only alias/state/ui/frame/layout/variant/action/data/query/inject/use statements are allowed at file level.',
+    'Only alias/state/ui/frame/layout/navigator/variant/action/data/query/inject/use statements are allowed at file level.',
+  appRootRequired: 'App must have exactly one root entry: ui or navigation.',
+  appRootExclusive: 'App can only have one root entry. Choose ui or navigation.',
+  duplicateAppUi: 'App can only have one UI declaration.',
+  duplicateAppUiRelated: 'Another ui declaration here.',
+  duplicateAppNavigation: 'App can only have one navigation declaration.',
+  duplicateAppNavigationRelated: 'Another navigation declaration here.',
+  appUiMustReferenceView: 'App ui must reference a ui, frame, layout, or variant declaration.',
+  appNavigationMustReferenceNavigator: 'App navigation must reference a navigator declaration.',
+  appNavigationMustReferenceLocalNavigator:
+    'App navigation must reference a navigator declared in the same source file for navigation v1.',
   duplicateAppProvider: 'App can only have one provider declaration.',
   duplicateAppProviderRelated: 'Another provider declaration here.',
   duplicateAppDesign: 'App can only have one design block.',
@@ -46,6 +66,47 @@ export const validationMessages = {
   variantMustReferenceView: '`variant` must target a ui, frame, layout, or another variant.',
   variantCycle: '`variant` target chain cannot contain a cycle.',
   duplicateObjectProperty: (name: string) => `Duplicate object property '${name}'.`,
+  duplicateNavigatorDestination: (name: string) => `Navigator destination '${name}' is declared more than once.`,
+  duplicateNavigatorDestinationRelated: 'Another destination with this name is declared here.',
+  duplicateNavigationActionParam: (name: string) => `Navigation action param '${name}' is provided more than once.`,
+  duplicateNavigationDestinationParam: (name: string) => `Navigation param '${name}' is declared more than once.`,
+  duplicateNavigationIcon: '`icon` can only be declared once per navigation destination.',
+  duplicateNavigationOptionRelated: 'First declaration is here.',
+  duplicateNavigationPath: '`path` can only be declared once per navigation destination.',
+  duplicateNavigationTitle: '`title` can only be declared once per navigation destination.',
+  navigationInitialDestinationParamsUnsupported:
+    'The first destination in a navigator cannot require params in navigation v1.',
+  navigationIconStackOnly: '`icon` is only supported on tab destinations.',
+  navigationPathMustBePlain: 'Navigation paths must be plain strings without interpolation.',
+  navigationPathMissingParam: (name: string) => `Navigation path placeholder ':${name}' has no matching param.`,
+  navigationParamMissingFromPath: (name: string) => `Navigation param '${name}' must appear in the path.`,
+  navigationParamMissingFromTarget: (name: string, target: string) =>
+    `Navigation param '${name}' has no matching parameter on target '${target}'.`,
+  navigationParamUnsupportedTargetType: (name: string, target: string) =>
+    `Navigation target '${target}' param '${name}' must be text, number, or boolean.`,
+  navigationTargetMissingParam: (name: string, target: string) =>
+    `Navigation target '${target}' requires param '${name}'.`,
+  navigationParamTypeMismatch: (name: string, expected: string, actual: string) =>
+    `Navigation param '${name}' is '${actual}' but target parameter expects '${expected}'.`,
+  navigationTabDestinationParamsUnsupported: 'Tab destinations cannot require params in navigation v1.',
+  navigationActionNeedsAppNavigation: 'Navigation actions require app-level navigation in the same source file.',
+  navigationActionUnknownTarget: (name: string) => `Navigation action targets unknown destination '${name}'.`,
+  navigationActionAmbiguousTarget: (name: string) => `Navigation action target '${name}' is ambiguous.`,
+  navigationPushTargetMustBeStack: (name: string) => `navigation push target '${name}' must be a stack destination.`,
+  navigationTabTargetMustBeTab: (name: string) => `navigation tab target '${name}' must be a tab destination.`,
+  navigationActionTargetMustBeRootDestination: (name: string) =>
+    `Navigation action target '${name}' must be declared directly in the app's root navigator.`,
+  navigationPopRequiresStack: 'navigation pop requires a reachable stack destination.',
+  navigationActionMissingParam: (name: string, target: string) =>
+    `Navigation action for '${target}' is missing param '${name}'.`,
+  navigationActionExtraParam: (name: string, target: string) =>
+    `Navigation action for '${target}' provides unknown param '${name}'.`,
+  navigationActionParamUnsupportedExpression: (name: string) =>
+    `Navigation action param '${name}' must evaluate to text, number, or boolean.`,
+  navigationActionParamTypeMismatch: (name: string, expected: string, actual: string) =>
+    `Navigation action param '${name}' is '${actual}' but destination expects '${expected}'.`,
+  navigationActionShorthandParamUnknown: (name: string) =>
+    `Navigation action shorthand param '${name}' must match a parameter on the enclosing action.`,
   setTargetMustBeState: (kind: string) => `'set' can only target a state binding, not a '${kind}'.`,
   legacyIDBInjection:
     '`IDB` is no longer available in injected TypeScript; use compiled data/query/create statements or getTaoData instead.',
@@ -174,19 +235,36 @@ export const validator: langium.ValidationChecks<AST.TaoLangAstType> = {
   AppDeclaration: makeValidater((declaration, report) => {
     validateDuplicateIdentifier(declaration, report)
     const uiStatements = declaration.appStatements.filter(AST.isAppUiStatement)
+    const navigationStatements = declaration.appStatements.filter(AST.isAppNavigationStatement)
     const providerStatements = declaration.appStatements.filter(AST.isAppProviderStatement)
     const designBlocks = declaration.appStatements.filter(AST.isAppDesignBlock)
 
-    if (uiStatements.length === 0) {
-      report.error('App must have a UI declaration.', { node: declaration, property: 'appStatements' })
+    if (uiStatements.length + navigationStatements.length === 0) {
+      report.error(validationMessages.appRootRequired, { node: declaration, property: 'appStatements' })
+    }
+
+    if (uiStatements.length > 0 && navigationStatements.length > 0) {
+      report.error(validationMessages.appRootExclusive, navigationStatements[0]!, {
+        alsoCheck: () => uiStatements.map((n) => ({ node: n, message: 'ui root declared here.' })),
+      })
     }
 
     if (uiStatements.length > 1) {
       const first = uiStatements[0]!
-      report.error('App can only have one UI declaration.', { node: first, property: 'ui' }, {
+      report.error(validationMessages.duplicateAppUi, { node: first, property: 'ui' }, {
         alsoCheck: () => {
-          const message = 'Another ui declaration here.'
+          const message = validationMessages.duplicateAppUiRelated
           return removeItemFrom(first, uiStatements).map((n) => ({ node: n, message }))
+        },
+      })
+    }
+
+    if (navigationStatements.length > 1) {
+      const first = navigationStatements[0]!
+      report.error(validationMessages.duplicateAppNavigation, { node: first, property: 'navigation' }, {
+        alsoCheck: () => {
+          const message = validationMessages.duplicateAppNavigationRelated
+          return removeItemFrom(first, navigationStatements).map((n) => ({ node: n, message }))
         },
       })
     }
@@ -222,12 +300,47 @@ export const validator: langium.ValidationChecks<AST.TaoLangAstType> = {
     for (const stmt of uiStatements) {
       const ref = stmt.ui.ref
       if (ref !== undefined && !isViewLikeDeclaration(ref)) {
-        report.error('App ui must reference a ui, frame, layout, or variant declaration.', {
+        report.error(validationMessages.appUiMustReferenceView, {
           node: stmt,
           property: 'ui',
         })
       }
     }
+
+    for (const stmt of navigationStatements) {
+      const ref = stmt.navigation.ref
+      if (ref !== undefined && !AST.isNavigatorDeclaration(ref)) {
+        report.error(validationMessages.appNavigationMustReferenceNavigator, {
+          node: stmt,
+          property: 'navigation',
+        })
+        continue
+      }
+      if (ref !== undefined && AST.Utils.findRootNode(ref) !== AST.Utils.findRootNode(stmt)) {
+        report.error(validationMessages.appNavigationMustReferenceLocalNavigator, {
+          node: stmt,
+          property: 'navigation',
+        })
+        continue
+      }
+      validateAppNavigationTree(stmt, report)
+    }
+  }),
+
+  NavigatorDeclaration: makeValidater((declaration, report) => {
+    validateNavigatorDeclaration(declaration, report)
+  }),
+
+  NavigationPushAction: makeValidater((node, report) => {
+    validateNavigationPushAction(node, report)
+  }),
+
+  NavigationPopAction: makeValidater((node, report) => {
+    validateNavigationPopAction(node, report)
+  }),
+
+  NavigationTabAction: makeValidater((node, report) => {
+    validateNavigationTabAction(node, report)
   }),
 
   ...typeSystemValidator,
@@ -284,6 +397,424 @@ function runViewRenderChecks(
     const runCheck = check as ViewRenderCheckFn
     runCheck(node, accept, services)
   }
+}
+
+function validateNavigatorDeclaration(
+  declaration: AST.NavigatorDeclaration,
+  report: Reporter<AST.NavigatorDeclaration>,
+): void {
+  const { destinations } = declaration.body
+  const seen = new Map<string, AST.StackDestination | AST.TabDestination>()
+  for (const destination of destinations) {
+    const first = seen.get(destination.name)
+    if (first !== undefined) {
+      report.error(validationMessages.duplicateNavigatorDestination(destination.name), {
+        node: destination,
+        property: 'name',
+      }, {
+        alsoCheck: () => ({ node: first, message: validationMessages.duplicateNavigatorDestinationRelated }),
+      })
+    } else {
+      seen.set(destination.name, destination)
+    }
+  }
+  const firstDestination = destinations[0]
+  if (firstDestination !== undefined && navigationDestinationParams(firstDestination).length > 0) {
+    report.error(validationMessages.navigationInitialDestinationParamsUnsupported, firstDestination)
+  }
+  for (const destination of destinations) {
+    const kind = AST.isStackDestination(destination) ? 'stack' : 'tab'
+    if (kind === 'tab' && navigationDestinationParams(destination).length > 0) {
+      report.error(validationMessages.navigationTabDestinationParamsUnsupported, destination)
+    }
+    validateLocalNavigationDestination(declaration, destination, kind, report)
+  }
+}
+
+function validateLocalNavigationDestination(
+  parentNavigator: AST.NavigatorDeclaration,
+  node: AST.StackDestination | AST.TabDestination,
+  kind: 'stack' | 'tab',
+  report: Reporter<AST.NavigatorDeclaration>,
+): void {
+  const targetName = node.target ?? node.name
+  const target = findNavigationTarget(node, targetName)
+  if (target === undefined) {
+    report.error(`Navigation destination '${node.name}' targets missing declaration '${targetName}'.`, node)
+  } else if (!isNavigationTarget(target)) {
+    report.error(
+      `Navigation destination '${node.name}' must target a ui, frame, layout, variant, or navigator declaration.`,
+      node,
+    )
+  }
+  validateNavigationDestination(
+    {
+      kind,
+      name: node.name,
+      node,
+      params: navigationDestinationParams(node),
+      parentNavigator,
+      path: navigationDestinationPath(node),
+      target: isNavigationTarget(target) ? target : undefined,
+      targetName,
+    },
+    report,
+  )
+}
+
+function validateAppNavigationTree(
+  appNavigation: AST.AppNavigationStatement,
+  report: Reporter<AST.AppDeclaration>,
+): void {
+  const tree = buildTaoNavigationTree(appNavigation)
+  for (const issue of tree.issues) {
+    report.error(issue.message, issue.node)
+  }
+  for (const destination of tree.destinations) {
+    validateNavigationDestination(destination, report)
+  }
+}
+
+function validateNavigationDestination(
+  destination: TaoNavigationDestination,
+  report: Reporter<AST.AppDeclaration | AST.NavigatorDeclaration>,
+): void {
+  validateNavigationDestinationOptionCardinality(destination, report)
+  if (destination.kind === 'stack') {
+    for (const icon of navigationDestinationIcons(destination.node)) {
+      report.error(validationMessages.navigationIconStackOnly, icon)
+    }
+  }
+  validateNavigationPathParams(destination, report)
+  validateNavigationTargetParams(destination, report)
+}
+
+function validateNavigationDestinationOptionCardinality(
+  destination: TaoNavigationDestination,
+  report: Reporter<AST.AppDeclaration | AST.NavigatorDeclaration>,
+): void {
+  validateSingleNavigationOption(
+    destination.node.options?.options.filter(AST.isNavigationTitleOption) ?? [],
+    validationMessages.duplicateNavigationTitle,
+    report,
+  )
+  validateSingleNavigationOption(
+    destination.node.options?.options.filter(AST.isNavigationPathOption) ?? [],
+    validationMessages.duplicateNavigationPath,
+    report,
+  )
+  validateSingleNavigationOption(
+    navigationDestinationIcons(destination.node),
+    validationMessages.duplicateNavigationIcon,
+    report,
+  )
+  const seenParams = new Map<string, AST.NavigationParamDeclaration>()
+  for (const param of destination.params) {
+    const first = seenParams.get(param.name)
+    if (first !== undefined) {
+      report.error(validationMessages.duplicateNavigationDestinationParam(param.name), param, {
+        alsoCheck: () => ({ node: first, message: validationMessages.duplicateNavigationOptionRelated }),
+      })
+    } else {
+      seenParams.set(param.name, param)
+    }
+  }
+}
+
+function validateSingleNavigationOption<T extends AST.Node>(
+  options: readonly T[],
+  message: string,
+  report: Reporter<AST.AppDeclaration | AST.NavigatorDeclaration>,
+): void {
+  const [first, ...duplicates] = options
+  if (first === undefined) {
+    return
+  }
+  for (const duplicate of duplicates) {
+    report.error(message, duplicate, {
+      alsoCheck: () => ({ node: first, message: validationMessages.duplicateNavigationOptionRelated }),
+    })
+  }
+}
+
+function validateNavigationPathParams(
+  destination: TaoNavigationDestination,
+  report: Reporter<AST.AppDeclaration | AST.NavigatorDeclaration>,
+): void {
+  if (destination.path === undefined) {
+    return
+  }
+  const path = stringTemplateTextOnlyLiteral(destination.path.value)
+  if (path === undefined) {
+    report.error(validationMessages.navigationPathMustBePlain, destination.path)
+    return
+  }
+  const placeholders = new Set([...path.matchAll(/:([A-Za-z_][\w_]*)/g)].map(match => match[1]!))
+  const paramNames = new Set(destination.params.map(param => param.name))
+  for (const placeholder of placeholders) {
+    if (!paramNames.has(placeholder)) {
+      report.error(validationMessages.navigationPathMissingParam(placeholder), destination.path)
+    }
+  }
+  for (const param of destination.params) {
+    if (!placeholders.has(param.name)) {
+      report.error(validationMessages.navigationParamMissingFromPath(param.name), param)
+    }
+  }
+}
+
+function validateNavigationTargetParams(
+  destination: TaoNavigationDestination,
+  report: Reporter<AST.AppDeclaration | AST.NavigatorDeclaration>,
+): void {
+  if (!destination.target || AST.isNavigatorDeclaration(destination.target)) {
+    return
+  }
+  const target = resolveVariantTargetView(destination.target)
+  if (target === undefined) {
+    return
+  }
+  const destinationParams = new Map(destination.params.map(param => [param.name, param]))
+  const targetParams = new Map((target.parameterList?.parameters ?? []).map(param => [param.name, param]))
+  const targetParamTypes = new Map<AST.ParameterDeclaration, AST.NavigationParamType>()
+  for (const targetParam of target.parameterList?.parameters ?? []) {
+    const targetType = navigationSafeParameterType(targetParam)
+    if (targetType === undefined) {
+      report.error(validationMessages.navigationParamUnsupportedTargetType(targetParam.name, target.name), targetParam)
+    } else {
+      targetParamTypes.set(targetParam, targetType)
+    }
+  }
+  for (const param of destination.params) {
+    const targetParam = targetParams.get(param.name)
+    if (targetParam === undefined) {
+      report.error(validationMessages.navigationParamMissingFromTarget(param.name, target.name), param)
+      continue
+    }
+    const targetType = targetParamTypes.get(targetParam)
+    if (targetType !== undefined && targetType !== param.type) {
+      report.error(validationMessages.navigationParamTypeMismatch(param.name, targetType, param.type), param)
+    }
+  }
+  for (const targetParam of target.parameterList?.parameters ?? []) {
+    if (!destinationParams.has(targetParam.name)) {
+      report.error(validationMessages.navigationTargetMissingParam(targetParam.name, target.name), destination.node)
+    }
+  }
+}
+
+function validateNavigationPushAction(
+  node: AST.NavigationPushAction,
+  report: Reporter<AST.NavigationPushAction>,
+): void {
+  const destination = navigationActionDestination(node, node.target, 'push', report)
+  if (destination !== undefined) {
+    validateNavigationActionPayload(node, destination, report)
+  }
+}
+
+function validateNavigationPopAction(
+  node: AST.NavigationPopAction,
+  report: Reporter<AST.NavigationPopAction>,
+): void {
+  const tree = navigationTreeForAction(node, report)
+  if (tree === undefined) {
+    return
+  }
+  if (!tree.destinations.some(destination => destination.kind === 'stack')) {
+    report.error(validationMessages.navigationPopRequiresStack, node)
+  }
+}
+
+function validateNavigationTabAction(
+  node: AST.NavigationTabAction,
+  report: Reporter<AST.NavigationTabAction>,
+): void {
+  const destination = navigationActionDestination(node, node.target, 'tab', report)
+  if (destination !== undefined) {
+    validateNavigationActionPayload(node, destination, report)
+  }
+}
+
+function navigationActionDestination<NodeT extends AST.NavigationPushAction | AST.NavigationTabAction>(
+  node: NodeT,
+  target: string,
+  action: 'push' | 'tab',
+  report: Reporter<NodeT>,
+): TaoNavigationDestination | undefined {
+  const tree = navigationTreeForAction(node, report)
+  if (tree === undefined) {
+    return undefined
+  }
+  const matches = tree.destinationsByName.get(target) ?? []
+  if (matches.length === 0) {
+    report.error(validationMessages.navigationActionUnknownTarget(target), node)
+    return undefined
+  }
+  if (matches.length > 1) {
+    report.error(validationMessages.navigationActionAmbiguousTarget(target), node)
+    return undefined
+  }
+  const destination = matches[0]!
+  if (action === 'push' && destination.kind !== 'stack') {
+    report.error(validationMessages.navigationPushTargetMustBeStack(target), node)
+    return undefined
+  }
+  if (action === 'tab' && destination.kind !== 'tab') {
+    report.error(validationMessages.navigationTabTargetMustBeTab(target), node)
+    return undefined
+  }
+  if (tree.root !== undefined && destination.parentNavigator !== tree.root) {
+    report.error(validationMessages.navigationActionTargetMustBeRootDestination(target), node)
+    return undefined
+  }
+  return destination
+}
+
+function validateNavigationActionPayload<NodeT extends AST.NavigationPushAction | AST.NavigationTabAction>(
+  node: NodeT,
+  destination: TaoNavigationDestination,
+  report: Reporter<NodeT>,
+): void {
+  const assignments = node.payload?.assignments ?? []
+  const assignmentByName = new Map<string, AST.NavigationActionParamAssignment>()
+  for (const assignment of assignments) {
+    const first = assignmentByName.get(assignment.name)
+    if (first !== undefined) {
+      report.error(validationMessages.duplicateNavigationActionParam(assignment.name), assignment, {
+        alsoCheck: () => ({ node: first, message: validationMessages.duplicateNavigationOptionRelated }),
+      })
+    } else {
+      assignmentByName.set(assignment.name, assignment)
+    }
+  }
+  const paramsByName = new Map(destination.params.map(param => [param.name, param]))
+  for (const param of destination.params) {
+    const assignment = assignmentByName.get(param.name)
+    if (assignment === undefined) {
+      report.error(validationMessages.navigationActionMissingParam(param.name, destination.name), node)
+      continue
+    }
+    const actualType = navigationPayloadValueType(assignment)
+    if (actualType === undefined) {
+      report.error(validationMessages.navigationActionParamUnsupportedExpression(param.name), assignment)
+    } else if (actualType !== param.type) {
+      report.error(
+        validationMessages.navigationActionParamTypeMismatch(param.name, param.type, actualType),
+        assignment,
+      )
+    }
+  }
+  for (const assignment of assignments) {
+    if (!paramsByName.has(assignment.name)) {
+      report.error(validationMessages.navigationActionExtraParam(assignment.name, destination.name), assignment)
+    } else if (assignment.value === undefined && navigationActionPayloadShorthandParam(assignment) === undefined) {
+      report.error(validationMessages.navigationActionShorthandParamUnknown(assignment.name), assignment)
+    }
+  }
+}
+
+function navigationTreeForAction<
+  NodeT extends AST.NavigationPushAction | AST.NavigationPopAction | AST.NavigationTabAction,
+>(
+  node: NodeT,
+  report: Reporter<NodeT>,
+): ReturnType<typeof buildTaoNavigationTree> | undefined {
+  const appNavigation = appNavigationForNode(node)
+  if (appNavigation === undefined) {
+    report.error(validationMessages.navigationActionNeedsAppNavigation, node)
+    return undefined
+  }
+  const tree = buildTaoNavigationTree(appNavigation)
+  if (tree.issues.length > 0) {
+    return undefined
+  }
+  return tree
+}
+
+function appNavigationForNode(node: AST.Node): AST.AppNavigationStatement | undefined {
+  const root = AST.Utils.findRootNode(node)
+  if (!AST.isTaoFile(root)) {
+    return undefined
+  }
+  for (const statement of root.statements) {
+    const declaration = AST.isModuleDeclaration(statement)
+      ? statement.declaration
+      : AST.isDeclaration(statement)
+      ? statement
+      : undefined
+    if (!AST.isAppDeclaration(declaration)) {
+      continue
+    }
+    const appNavigation = declaration.appStatements.find(AST.isAppNavigationStatement)
+    if (appNavigation !== undefined) {
+      return appNavigation
+    }
+  }
+  return undefined
+}
+
+function navigationSafeParameterType(param: AST.ParameterDeclaration): AST.NavigationParamType | undefined {
+  const resolved = parameterResolvedType(param)
+  if (resolved.kind !== 'primitive') {
+    return undefined
+  }
+  return isNavigationParamType(resolved.primitive) ? resolved.primitive : undefined
+}
+
+function navigationPayloadValueType(
+  assignment: AST.NavigationActionParamAssignment,
+): AST.NavigationParamType | undefined {
+  const value = assignment.value
+  if (value === undefined) {
+    const param = navigationActionPayloadShorthandParam(assignment)
+    return param === undefined ? undefined : navigationSafeParameterType(param)
+  }
+  if (AST.isStringTemplateExpression(value)) {
+    return 'text'
+  }
+  if (AST.isNumberLiteral(value)) {
+    return 'number'
+  }
+  if (AST.isBooleanLiteral(value)) {
+    return 'boolean'
+  }
+  if (AST.isUnaryExpression(value) && AST.isNumberLiteral(value.operand)) {
+    return 'number'
+  }
+  if (AST.isMemberAccessExpression(value) && value.properties.length === 0) {
+    const ref = value.root.ref
+    return AST.isParameterDeclaration(ref) ? navigationSafeParameterType(ref) : undefined
+  }
+  return undefined
+}
+
+function navigationActionPayloadShorthandParam(
+  assignment: AST.NavigationActionParamAssignment,
+): AST.ParameterDeclaration | undefined {
+  if (assignment.value !== undefined) {
+    return undefined
+  }
+  const action = nearestActionDeclaration(assignment)
+  return action?.parameterList?.parameters.find(param => param.name === assignment.name)
+}
+
+function nearestActionDeclaration(node: AST.Node): AST.ActionDeclaration | undefined {
+  let current: AST.Node | undefined = node.$container
+  while (current !== undefined) {
+    if (AST.isActionDeclaration(current)) {
+      return current
+    }
+    if (AST.isTaoFile(current)) {
+      return undefined
+    }
+    current = current.$container
+  }
+  return undefined
+}
+
+function isNavigationParamType(value: string): value is AST.NavigationParamType {
+  return value === 'text' || value === 'number' || value === 'boolean'
 }
 
 const validateRenderStatement = makeValidater((node: AST.RenderStatement, report) => {
@@ -628,6 +1159,7 @@ function getStateUpdateTargetKind(ref: Exclude<AST.Referenceable, AST.Assignment
     ParameterDeclaration: () => 'parameter',
     ActionDeclaration: () => 'action',
     AppDeclaration: () => 'app',
+    NavigatorDeclaration: () => 'navigator',
     VariantDeclaration: () => 'variant',
     TypeDeclaration: () => 'type',
     DataDeclaration: () => 'data',

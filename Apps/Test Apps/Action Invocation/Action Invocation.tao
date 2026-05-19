@@ -1,7 +1,13 @@
 use Number, Col, Button from @tao/ui
 
 app ActionInvocationApp {
-   ui RootView
+   navigation MainNavigation
+}
+
+navigator MainNavigation {
+   stack {
+      screen RootView
+   }
 }
 
 state Counter = 100

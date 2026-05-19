@@ -35,6 +35,8 @@ Work:
 - Add `Apps/Test Apps/Rooms/Rooms.tao` and `scenario.json`.
 - Model `Room` and `Message`.
 - Sketch screens for Pick Username, Room List, New Room, and Room Chat.
+- Use `app { navigation RoomsNavigation }` with a stack navigator for the
+  username gate, room list, new-room flow, and room chat screen.
 - Configure the app for the realtime provider path.
 
 Validation:
@@ -58,7 +60,8 @@ Work:
 - Show Pick Username until a non-empty username exists locally.
 - Query public rooms.
 - Create rooms with a name and created timestamp.
-- Navigate from room list to room chat.
+- Navigate from room list to room chat with `navigation push RoomChat { ... }`
+  and primitive room identity params declared on the destination.
 
 Validation:
 

@@ -1,7 +1,13 @@
 use Col, Text, Button from @tao/ui
 
 app StructItemTypesApp {
-   ui Main
+   navigation MainNavigation
+}
+
+navigator MainNavigation {
+   stack {
+      screen Main
+   }
 }
 
 type Person is {

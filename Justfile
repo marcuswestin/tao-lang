@@ -21,7 +21,8 @@ setup: _setup_git_repo
 BUN_TEST_ROOTS := "packages/shared packages/parser packages/formatter packages/compiler packages/tao-cli packages/ide-extension packages/tao-std-lib"
 BUN_TEST_NON_COMPILER_ROOTS := "packages/shared packages/parser packages/formatter packages/tao-cli packages/ide-extension packages/tao-std-lib"
 
-DEV_APP := "./Apps/Test Apps/TODOs/TODOs.tao"
+# DEV_APP := "./Apps/Test Apps/TODOs/TODOs.tao"
+DEV_APP := "./Apps/Test Apps/Navigation Dev/Navigation Dev.tao"
 
 # Run all components in watch mode (Expo web + Metro; iOS Simulator then physical iPhone after Metro is up via launcher).
 @dev DEVICE="roPhone" APP=DEV_APP:
@@ -30,6 +31,10 @@ DEV_APP := "./Apps/Test Apps/TODOs/TODOs.tao"
 # Run the Tao Expo runtime on a physical iOS device only (no full `just dev` stack).
 iphone DEVICE="roPhone":
     just expo-runtime device "{{ DEVICE }}"
+ios-run-simulator:
+    cd packages/expo-runtime && npx expo run:ios
+android-run-simulator AVD="":
+    bash packages/shared/scripts/android-emulator-start.sh "{{ AVD }}"
 
 # Run full battery of checks and builds to prepare for commit.
 prep-commit: _prep_commit

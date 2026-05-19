@@ -19,6 +19,7 @@ const moduleScopedRefRules: readonly {
   { property: 'view', isContainer: (node) => AST.isViewRender(node) || AST.isRenderStatement(node) },
   { property: 'action', isContainer: AST.isActionRender },
   { property: 'ui', isContainer: AST.isAppUiStatement },
+  { property: 'navigation', isContainer: AST.isAppNavigationStatement },
   { property: 'target', isContainer: AST.isVariantDeclaration },
   { property: 'ref', isContainer: AST.isNamedTypeRef },
   { property: 'namedRef', isContainer: AST.isDataFieldType },

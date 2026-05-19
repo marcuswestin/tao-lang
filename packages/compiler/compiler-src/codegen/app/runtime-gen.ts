@@ -23,8 +23,16 @@ import {
   isViewLikeDeclaration,
   resolveVariantTargetView,
   type TaoViewLikeDeclaration,
+  viewLikeUsesStatefulDesignStyle,
 } from '../../design/variant-resolution'
 import { layoutEntryValues } from '../../layout/tao-layout'
+import {
+  buildTaoNavigationIR,
+  type TaoNavigationDestinationIR,
+  type TaoNavigationIR,
+  type TaoNavigationNavigatorIR,
+  type TaoNavigationTargetIR,
+} from '../../navigation/navigation-ir'
 import {
   collectionSlugFromPlural,
   dataRowHandleForReference,
@@ -33,6 +41,7 @@ import {
 import { decodeTaoTemplateTextChunk } from '../tao-template-text-chunk'
 import type { TaoAppConfig, TaoAppConfigObject } from './app-config'
 import { dataDeclarationToSerializedSchema } from './data-schema-serialization'
+import { taoFileHasNavigationAction } from './import-header-gen'
 import { compileQueryDeclaration, compileQueryMemberAccessExpression } from './query-plan-gen'
 
 type ViewRenderHost = AST.ViewRender | (AST.RenderStatement & { view: NonNullable<AST.RenderStatement['view']> })
@@ -104,10 +113,14 @@ class RuntimeGen {
       ViewDeclaration: (n) => this.ViewDeclaration(n),
       VariantDeclaration: (n) => this.VariantDeclaration(n),
       ActionDeclaration: (n) => this.ActionDeclaration(n),
+      NavigatorDeclaration: (n) => this.NavigatorDeclaration(n),
       RenderStatement: (n) => this.RenderStatement(n),
       ViewRender: (n) => this.ViewRender(n),
       ChildrenSplice: (n) => this.ChildrenSplice(n),
       ActionRender: (n) => this.ActionRender(n),
+      NavigationPushAction: (n) => this.NavigationPushAction(n),
+      NavigationPopAction: (n) => this.NavigationPopAction(n),
+      NavigationTabAction: (n) => this.NavigationTabAction(n),
       TypeDeclaration: (n) => this.TypeDeclaration(n),
       DataDeclaration: (n) => this.dataDeclarationRuntime(n),
       QueryDeclaration: (n) => this.QueryDeclaration(n),
@@ -124,6 +137,7 @@ class RuntimeGen {
       AppDeclaration: (n) => this.AppDeclaration(n),
       ActionDeclaration: (n) => this.ActionDeclaration(n),
       ViewDeclaration: (n) => this.ViewDeclaration(n),
+      NavigatorDeclaration: (n) => this.NavigatorDeclaration(n),
       VariantDeclaration: (n) => this.VariantDeclaration(n),
       TypeDeclaration: (n) => this.TypeDeclaration(n),
       DataDeclaration: (n) => this.dataDeclarationRuntime(n),
@@ -133,6 +147,45 @@ class RuntimeGen {
   /** TypeDeclaration emits nothing at runtime — nominal types are a compile-time construct only. */
   TypeDeclaration(node: AST.TypeDeclaration): Compiled {
     return compileNode(node)``
+  }
+
+  NavigatorDeclaration(node: AST.NavigatorDeclaration): Compiled {
+    return compileNode(node)``
+  }
+
+  NavigationPushAction(node: AST.NavigationPushAction): Compiled {
+    return compileNode(node)`_taoNavigationRuntime.push(${JSON.stringify(node.target)}, ${
+      this.navigationActionParams(node, node.payload)
+    })`
+  }
+
+  NavigationPopAction(node: AST.NavigationPopAction): Compiled {
+    return compileNode(node)`_taoNavigationRuntime.pop()`
+  }
+
+  NavigationTabAction(node: AST.NavigationTabAction): Compiled {
+    return compileNode(node)`_taoNavigationRuntime.tab(${JSON.stringify(node.target)}, ${
+      this.navigationActionParams(node, node.payload)
+    })`
+  }
+
+  private navigationActionParams(
+    anchor: AST.NavigationPushAction | AST.NavigationTabAction,
+    payload: AST.NavigationActionPayload | undefined,
+  ): Compiled {
+    if (payload === undefined || payload.assignments.length === 0) {
+      return compileNode(anchor)`{}`
+    }
+    return compileNode(payload)`{
+      ${compileIndentedNodeList(payload.assignments, assignment => this.navigationActionParam(assignment))}
+    }`
+  }
+
+  private navigationActionParam(assignment: AST.NavigationActionParamAssignment): Compiled {
+    const value = assignment.value === undefined
+      ? compileNode(assignment)`_Scope.${assignment.name}`
+      : this.Expression(assignment.value)
+    return compileNode(assignment)`${JSON.stringify(assignment.name)}: ${value}.evaluate().jsValue,`
   }
 
   /** objectLiteralRuntime emits `TR.Object({ … })` for a Tao object literal (shared by expressions, assignments, nested properties, and `${…}` holes). */
@@ -279,6 +332,10 @@ class RuntimeGen {
   }
 
   AppDeclaration(declaration: AST.AppDeclaration): Compiled {
+    const navigation = declaration.appStatements.find(AST.isAppNavigationStatement)
+    if (navigation !== undefined) {
+      return this.AppNavigationDeclaration(declaration, navigation)
+    }
     const ui = declaration.appStatements.find(AST.isAppUiStatement)
     if (!ui) {
       return compileNoop()
@@ -297,6 +354,207 @@ class RuntimeGen {
           return <${uiTarget.name}${designStyle} />
         }; export const AppUIView = _AppUIView // TODO: Remove this
       `
+  }
+
+  private AppNavigationDeclaration(
+    declaration: AST.AppDeclaration,
+    appNavigation: AST.AppNavigationStatement,
+  ): Compiled {
+    const ir = buildTaoNavigationIR(appNavigation, this.codegenOpts.design)
+    if (ir === undefined) {
+      throwUnexpectedBehaviorError({
+        humanMessage: 'App navigation must produce a navigation IR after validation.',
+        logInfo: { navigation: appNavigation.navigation.$refText },
+      })
+    }
+    const navigationLinkingProp = this.navigationLinkingProp(ir)
+    return compileNode(declaration)`
+      ${this.navigationTabIconHelper(ir)}
+      const _taoNavigationRootRef = createNavigationContainerRef()
+      ${this.navigationActionRuntime(declaration)}
+      ${this.navigationRouteParamHelper(ir)}
+      ${this.navigationScreenComponents(ir.root)}
+      ${this.navigationNavigatorDefinitions(ir.root)}
+      const TaoAppNavigationRoot = createStaticNavigation(${navigationNavigatorConstName(ir.root)})
+      export function AppNavigationRoot(props: { onReady?: () => void }) {
+        return <TaoAppNavigationRoot ref={_taoNavigationRootRef}${navigationLinkingProp} onReady={props?.onReady} />
+      }
+    `
+  }
+
+  private navigationActionRuntime(declaration: AST.AppDeclaration): Compiled {
+    const root = AST.Utils.findRootNode(declaration)
+    if (!AST.isTaoFile(root) || !taoFileHasNavigationAction(root)) {
+      return compileNoop()
+    }
+    return compileNode(declaration)`
+      // v1: the navigation runtime is file-scoped. Navigation actions must live
+      // in the same Tao source file as app-level navigation until multi-file
+      // navigation action support exports or shares this runtime reference.
+      const _taoNavigationRuntime = createTaoNavigationRuntime(_taoNavigationRootRef, {
+        stackPush: StackActions.push,
+        stackPop: StackActions.pop,
+        tabJumpTo: TabActions.jumpTo,
+      })
+    `
+  }
+
+  private navigationScreenComponents(root: TaoNavigationNavigatorIR): string {
+    return collectNavigationDestinations(root)
+      .filter(destination => destination.target.kind === 'view')
+      .map(destination => this.navigationScreenComponent(destination))
+      .join('\n\n')
+  }
+
+  private navigationScreenComponent(destination: TaoNavigationDestinationIR): string {
+    if (destination.target.kind !== 'view') {
+      throwUnexpectedBehaviorError({
+        humanMessage: 'Navigation screen components are only emitted for view targets.',
+        logInfo: { destination: destination.name },
+      })
+    }
+    const target = destination.target
+    const designStyle = this.navigationScreenDesignStyleProp(target)
+    const designContext = target.designStyleKey === undefined
+      ? ''
+      : `  const _taoDesignContext = useTaoDesignContext()
+`
+    if (destination.params.length === 0) {
+      return `function ${navigationScreenComponentName(destination)}(_ScreenProps: any) {
+  void _ScreenProps
+${designContext}
+  return <${target.componentName}${designStyle} />
+}`
+    }
+    const props = destination.params
+      .map(param =>
+        `${param.name}={TR.Literal(_taoNavigationRouteParam(_routeParams.${param.name}, ${
+          JSON.stringify(param.type)
+        }, ${JSON.stringify(param.name)}))}`
+      )
+      .join(' ')
+    return `function ${navigationScreenComponentName(destination)}(_ScreenProps: any) {
+  const _routeParams = _ScreenProps.route?.params ?? {}
+${designContext}
+  return <${target.componentName} ${props}${designStyle} />
+}`
+  }
+
+  private navigationRouteParamHelper(ir: TaoNavigationIR): string {
+    if (!collectNavigationDestinations(ir.root).some(destination => destination.params.length > 0)) {
+      return ''
+    }
+    return `function _taoNavigationRouteParam(value: unknown, type: 'text' | 'number' | 'boolean', name: string) {
+  const fail = () => {
+    throw new Error(\`Invalid navigation param '\${name}': expected \${type}.\`)
+  }
+  if (type === 'number') {
+    const decoded = typeof value === 'number'
+      ? value
+      : typeof value === 'string' && value.trim() !== ''
+      ? Number(value)
+      : Number.NaN
+    if (Number.isFinite(decoded)) {
+      return decoded
+    }
+    fail()
+  }
+  if (type === 'boolean') {
+    if (typeof value === 'boolean') {
+      return value
+    }
+    if (value === 'true') {
+      return true
+    }
+    if (value === 'false') {
+      return false
+    }
+    fail()
+  }
+  if (typeof value === 'string') {
+    return value
+  }
+  fail()
+}`
+  }
+
+  private navigationLinkingProp(ir: TaoNavigationIR): string {
+    return collectNavigationDestinations(ir.root).some(destination => destination.path !== undefined)
+      ? ' linking={{ enabled: true }}'
+      : ''
+  }
+
+  private navigationScreenDesignStyleProp(target: Extract<TaoNavigationTargetIR, { kind: 'view' }>): string {
+    if (target.designStyleKey === undefined) {
+      return ''
+    }
+    const key = JSON.stringify(target.designStyleKey)
+    return target.designStyleStateful
+      ? ` _taoDesignStyle={(state) => resolveStyle(${key}, _taoDesignContext, state)}`
+      : ` _taoDesignStyle={resolveStyle(${key}, _taoDesignContext)}`
+  }
+
+  private navigationNavigatorDefinitions(root: TaoNavigationNavigatorIR): string {
+    const emitted = new Set<string>()
+    return navigationNavigatorsPostOrder(root)
+      .map(navigator => this.navigationNavigatorDefinition(navigator, emitted))
+      .filter(Boolean)
+      .join('\n\n')
+  }
+
+  private navigationNavigatorDefinition(
+    navigator: TaoNavigationNavigatorIR,
+    emitted: Set<string>,
+  ): string {
+    const constName = navigationNavigatorConstName(navigator)
+    if (emitted.has(constName)) {
+      return ''
+    }
+    emitted.add(constName)
+    const factory = navigator.kind === 'stack' ? 'createNativeStackNavigator' : 'createBottomTabNavigator'
+    const screens = navigator.destinations.map(destination => this.navigationDestinationConfig(destination)).join('\n')
+    return `const ${constName} = ${factory}({
+  screens: {
+${screens}
+  },
+})`
+  }
+
+  private navigationDestinationConfig(destination: TaoNavigationDestinationIR): string {
+    const screen = destination.target.kind === 'navigator'
+      ? navigationNavigatorConstName(destination.target.navigator)
+      : navigationScreenComponentName(destination)
+    const properties = [`screen: ${screen}`]
+    const options = this.navigationDestinationOptions(destination)
+    if (options !== undefined) {
+      properties.push(`options: ${options}`)
+    }
+    if (destination.path !== undefined) {
+      properties.push(`linking: { path: ${JSON.stringify(destination.path)} }`)
+    }
+    return `    ${destination.name}: { ${properties.join(', ')} },`
+  }
+
+  private navigationDestinationOptions(destination: TaoNavigationDestinationIR): string | undefined {
+    const entries: string[] = []
+    if (destination.title !== undefined) {
+      entries.push(`title: ${JSON.stringify(destination.title)}`)
+    }
+    if (destination.icon !== undefined) {
+      entries.push(`tabBarIcon: _taoNavigationTabIcon(${JSON.stringify(destination.icon.name)})`)
+    }
+    return entries.length === 0 ? undefined : `{ ${entries.join(', ')} }`
+  }
+
+  private navigationTabIconHelper(ir: TaoNavigationIR): string {
+    if (!collectNavigationDestinations(ir.root).some(destination => destination.icon !== undefined)) {
+      return ''
+    }
+    return `function _taoNavigationTabIcon(name: string) {
+  return function TaoNavigationTabIcon(props: { color: string; size: number }) {
+    return <Ionicons name={name as any} color={props.color} size={props.size} />
+  }
+}`
   }
 
   VariantDeclaration(declaration: AST.VariantDeclaration): Compiled {
@@ -322,6 +580,9 @@ class RuntimeGen {
       return compileNode(moduleDecl)`
         export const ${name} = ${this.actionLiteral(moduleDecl.declaration, name)}
       `
+    }
+    if (AST.isNavigatorDeclaration(moduleDecl.declaration)) {
+      return compileNoop()
     }
     const visibility = compileNodeProperty(moduleDecl, 'visibility', (val) => val ? 'export ' : '')
     const declaration = this.Statement(moduleDecl.declaration)
@@ -521,6 +782,7 @@ class RuntimeGen {
       AppDeclaration: () => compileNoop(),
       AssignmentDeclaration: () => compileNoop(),
       ViewDeclaration: () => compileNoop(),
+      NavigatorDeclaration: () => compileNoop(),
       VariantDeclaration: () => compileNoop(),
       ActionDeclaration: () => compileNoop(),
     })
@@ -636,6 +898,9 @@ class RuntimeGen {
   }
 
   typeDeclaration(declaration: AST.RuntimeDeclaration): Compiled {
+    if (AST.isNavigatorDeclaration(declaration)) {
+      return compileNoop()
+    }
     const runtimeType = this.runtimeTypes[declaration.type]
     return compileNode(declaration)`
       ${declaration.name}: ReturnType<_TaoRuntime['${runtimeType}']>
@@ -807,7 +1072,7 @@ class RuntimeGen {
   }
 
   private viewLikeUsesStatefulDesignStyle(viewLike: TaoViewLikeDeclaration): boolean {
-    return resolveVariantTargetView(viewLike)?.name === 'Button'
+    return viewLikeUsesStatefulDesignStyle(viewLike)
   }
 
   /** viewRenderLayoutSpec emits the serialized layout spec for the runtime layout resolver. */
@@ -1127,6 +1392,44 @@ class RuntimeGen {
     const iterator = AST.Utils.streamAllContents(node).iterator()
     return Stream.fromIterator(iterator)
   }
+}
+
+function collectNavigationDestinations(root: TaoNavigationNavigatorIR): TaoNavigationDestinationIR[] {
+  const out: TaoNavigationDestinationIR[] = []
+  collect(root)
+  return out
+
+  function collect(navigator: TaoNavigationNavigatorIR): void {
+    for (const destination of navigator.destinations) {
+      out.push(destination)
+      if (destination.target.kind === 'navigator') {
+        collect(destination.target.navigator)
+      }
+    }
+  }
+}
+
+function navigationNavigatorsPostOrder(root: TaoNavigationNavigatorIR): TaoNavigationNavigatorIR[] {
+  const out: TaoNavigationNavigatorIR[] = []
+  collect(root)
+  return out
+
+  function collect(navigator: TaoNavigationNavigatorIR): void {
+    for (const destination of navigator.destinations) {
+      if (destination.target.kind === 'navigator') {
+        collect(destination.target.navigator)
+      }
+    }
+    out.push(navigator)
+  }
+}
+
+function navigationNavigatorConstName(navigator: TaoNavigationNavigatorIR): string {
+  return `_TaoNavigator_${navigator.name}`
+}
+
+function navigationScreenComponentName(destination: TaoNavigationDestinationIR): string {
+  return `_TaoNavScreen_${destination.parentNavigatorName}_${destination.name}`
 }
 
 /** BlockWithStatements is a block with at least one statement. */

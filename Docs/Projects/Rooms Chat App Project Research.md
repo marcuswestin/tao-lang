@@ -34,7 +34,9 @@ Define the second flagship Buildable App MVP example: a minimal realtime chat ap
 - The data MVP plan already has Memory and InstantDB providers.
 - The data MVP plan treats real auth/session as out of scope, matching username-only chat.
 - `create` exists and `update` remains active MVP work; chat MVP mostly needs `create` for rooms and messages.
-- Navigation is still WIP at the Tao language level, so Rooms is a useful pressure test for stack-style navigation.
+- Tao navigation v1 now provides `app { navigation ... }`, `navigator`, stack
+  screens, typed primitive params, and navigation actions, so Rooms should use
+  that surface as a pressure test for stack-style navigation.
 - Existing provider capability work may need to prove live updates and relationship loading clearly before chat can be treated as done.
 
 ## External Research

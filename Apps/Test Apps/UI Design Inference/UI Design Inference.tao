@@ -4,7 +4,13 @@ app DesignInferenceDemo {
    design {
       description "calm launch operations dashboard for teams reviewing readiness, blockers, and next actions"
    }
-   ui LaunchReadinessDashboard
+   navigation MainNavigation
+}
+
+navigator MainNavigation {
+   stack {
+      screen LaunchReadinessDashboard
+   }
 }
 
 variant ActionButton = Button <"default app action with native platform behavior">

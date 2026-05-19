@@ -17,9 +17,10 @@ view state to be URL-addressable.
   contract for the chosen v1 surface.
 - Existing Tao apps currently use `app { ui RootView }`; navigation v1 changes
   app entry to `app { navigation MainNavigation }`.
-- The Expo runtime currently depends on Expo Router and React Navigation 7, with
-  `main` set to `expo-router/entry`. The selected design uses React Navigation 7
-  directly and removes Expo Router once the direct app shell is implemented.
+- At research time the Expo runtime depended on Expo Router and React Navigation
+  7, with `main` set to `expo-router/entry`. The selected design uses React
+  Navigation 7 directly and removes Expo Router once the direct app shell is
+  implemented.
 - `CORE_TENETS.md` requires Tao UI/runtime behavior to map to React Native/Expo,
   a Tao runtime helper, or a clear validation/runtime error.
 

@@ -1,11 +1,15 @@
 import { AST } from '@parser'
-import { AbstractFormatter, Formatting, FormattingRegion } from '@parser/lsp'
+import { AbstractFormatter, Formatting, type FormattingAction, FormattingRegion } from '@parser/lsp'
 import { NodePropName } from '@parser/parserASTExport'
 import { DocumentFormattingParams, TextEdit } from '@parser/vscode-languageserver'
 import { switch_safe } from '@shared'
 import extensivelyFormatInjectionBlocks from './injectionFormatter'
 
 const FORMAT_INJECTION_BLOCKS = true
+const INDENT_WITH_BLANK_LINE: FormattingAction = {
+  options: {},
+  moves: [{ tabs: 1, lines: 2 }],
+}
 
 /** TaoFormatter formats Tao sources with Langium’s node-centric model and optional injection re-indent. */
 export default class TaoFormatter extends AbstractFormatter {
@@ -34,10 +38,26 @@ export default class TaoFormatter extends AbstractFormatter {
       AppDesignBlock: (n) => this.formatAppDesignBlock(n),
       AppDesignDescription: (n) => this.formatAppDesignDescription(n),
       AppUiStatement: (n) => this.formatAppUiStatement(n),
+      AppNavigationStatement: (n) => this.formatAppNavigationStatement(n),
       AppProviderStatement: (n) => this.formatAppProviderStatement(n),
       AppProviderProperty: (n) => this.formatAppProviderProperty(n),
       OnStatement: (n) => this.formatOnStatement(n),
       ViewDeclaration: (n) => this.formatViewDeclaration(n),
+      NavigatorDeclaration: (n) => this.formatNavigatorDeclaration(n),
+      StackNavigator: (n) => this.formatStackNavigator(n),
+      TabsNavigator: (n) => this.formatTabsNavigator(n),
+      StackDestination: (n) => this.formatStackDestination(n),
+      TabDestination: (n) => this.formatTabDestination(n),
+      NavigationDestinationOptions: (n) => this.formatNavigationDestinationOptions(n),
+      NavigationTitleOption: (n) => this.formatNavigationTitleOption(n),
+      NavigationIconOption: (n) => this.formatNavigationIconOption(n),
+      NavigationPathOption: (n) => this.formatNavigationPathOption(n),
+      NavigationParamDeclaration: (n) => this.formatNavigationParamDeclaration(n),
+      NavigationPushAction: (n) => this.formatNavigationPushAction(n),
+      NavigationPopAction: (n) => this.formatNavigationPopAction(n),
+      NavigationTabAction: (n) => this.formatNavigationTabAction(n),
+      NavigationActionPayload: (n) => this.formatNavigationActionPayload(n),
+      NavigationActionParamAssignment: (n) => this.formatNavigationActionParamAssignment(n),
       VariantDeclaration: (n) => this.formatVariantDeclaration(n),
       DesignSpec: (n) => this.formatDesignSpec(n),
       ActionDeclaration: (n) => this.formatActionDeclaration(n),
@@ -250,6 +270,12 @@ export default class TaoFormatter extends AbstractFormatter {
     f.property('ui')
   }
 
+  private formatAppNavigationStatement(node: AST.AppNavigationStatement): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('navigation').append(Formatting.oneSpace())
+    f.property('navigation')
+  }
+
   private formatAppProviderStatement(node: AST.AppProviderStatement): void {
     const f = this.getNodeFormatter(node)
     f.keyword('provider').append(Formatting.oneSpace())
@@ -267,6 +293,128 @@ export default class TaoFormatter extends AbstractFormatter {
     f.keyword('on').append(Formatting.oneSpace())
     f.property('event').append(Formatting.oneSpace())
     f.node(node.handler)
+  }
+
+  private formatNavigatorDeclaration(node: AST.NavigatorDeclaration): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('navigator').append(Formatting.oneSpace())
+    f.property('name').append(Formatting.oneSpace())
+    const open = f.keyword('{')
+    const close = f.keyword('}')
+    f.interior(open, close).prepend(Formatting.indent())
+    f.node(node.body).prepend(Formatting.indent())
+    close.prepend(Formatting.newLine())
+  }
+
+  private formatStackNavigator(node: AST.StackNavigator): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('stack').append(Formatting.oneSpace())
+    this._indentBlock(node, 'destinations')
+    for (let i = 0; i < node.destinations.length; i++) {
+      const destination = node.destinations[i]
+      if (destination !== undefined) {
+        f.node(destination).prepend(i === 0 ? Formatting.indent() : INDENT_WITH_BLANK_LINE)
+      }
+    }
+  }
+
+  private formatTabsNavigator(node: AST.TabsNavigator): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('tabs').append(Formatting.oneSpace())
+    this._indentBlock(node, 'destinations')
+    for (let i = 0; i < node.destinations.length; i++) {
+      const destination = node.destinations[i]
+      if (destination !== undefined) {
+        f.node(destination).prepend(i === 0 ? Formatting.indent() : INDENT_WITH_BLANK_LINE)
+      }
+    }
+  }
+
+  private formatStackDestination(node: AST.StackDestination): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('screen').append(Formatting.oneSpace())
+    f.property('name')
+    if (node.target !== undefined) {
+      f.property('target').prepend(Formatting.oneSpace())
+    }
+    this._spaceBeforeProperty(node, 'options')
+  }
+
+  private formatTabDestination(node: AST.TabDestination): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('tab').append(Formatting.oneSpace())
+    f.property('name')
+    if (node.target !== undefined) {
+      f.property('target').prepend(Formatting.oneSpace())
+    }
+    this._spaceBeforeProperty(node, 'options')
+  }
+
+  private formatNavigationDestinationOptions(node: AST.NavigationDestinationOptions): void {
+    const f = this.getNodeFormatter(node)
+    this._indentBlock(node, 'options')
+    for (const option of node.options) {
+      f.node(option).prepend(Formatting.indent())
+    }
+  }
+
+  private formatNavigationTitleOption(node: AST.NavigationTitleOption): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('title').append(Formatting.oneSpace())
+  }
+
+  private formatNavigationIconOption(node: AST.NavigationIconOption): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('icon').append(Formatting.oneSpace())
+    f.property('source').append(Formatting.oneSpace())
+  }
+
+  private formatNavigationPathOption(node: AST.NavigationPathOption): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('path').append(Formatting.oneSpace())
+  }
+
+  private formatNavigationParamDeclaration(node: AST.NavigationParamDeclaration): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('param').append(Formatting.oneSpace())
+    f.property('name').append(Formatting.oneSpace())
+  }
+
+  private formatNavigationPushAction(node: AST.NavigationPushAction): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('navigation').append(Formatting.oneSpace())
+    f.property('action').append(Formatting.oneSpace())
+    f.property('target')
+    this._spaceBeforeProperty(node, 'payload')
+  }
+
+  private formatNavigationPopAction(node: AST.NavigationPopAction): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('navigation').append(Formatting.oneSpace())
+    f.property('action')
+  }
+
+  private formatNavigationTabAction(node: AST.NavigationTabAction): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('navigation').append(Formatting.oneSpace())
+    f.property('action').append(Formatting.oneSpace())
+    f.property('target')
+    this._spaceBeforeProperty(node, 'payload')
+  }
+
+  private formatNavigationActionPayload(node: AST.NavigationActionPayload): void {
+    const f = this.getNodeFormatter(node)
+    this._indentBlock(node, 'assignments')
+    for (const assignment of node.assignments) {
+      f.node(assignment).prepend(Formatting.indent())
+    }
+  }
+
+  private formatNavigationActionParamAssignment(node: AST.NavigationActionParamAssignment): void {
+    const f = this.getNodeFormatter(node)
+    if (node.value !== undefined) {
+      f.property('name').append(Formatting.oneSpace())
+    }
   }
 
   private formatQueryDeclaration(node: AST.QueryDeclaration): void {

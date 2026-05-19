@@ -50,7 +50,13 @@ app DataSchemaApp {
       apiURI "http://localhost:9020"
       websocketURI "ws://localhost:9020/runtime/session"
    }
-   ui RootView
+   navigation MainNavigation
+}
+
+navigator MainNavigation {
+   stack {
+      screen RootView
+   }
 }
 
 ui RootView {

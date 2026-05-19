@@ -57,11 +57,68 @@ export function taoFileHasTopLevelDataDeclaration(taoFile: AST.TaoFile): boolean
   return false
 }
 
-/** buildRuntimePreambleImports returns React / `providers/all` preamble lines for an emitted Tao RN module. */
+/** taoFileHasAppNavigation returns true when this module emits a navigation-rooted app. */
+export function taoFileHasAppNavigation(taoFile: AST.TaoFile): boolean {
+  for (const stmt of taoFile.statements) {
+    const decl = AST.isModuleDeclaration(stmt) ? stmt.declaration : stmt
+    if (AST.isAppDeclaration(decl) && decl.appStatements.some(AST.isAppNavigationStatement)) {
+      return true
+    }
+  }
+  return false
+}
+
+/** taoFileHasNavigationAction returns true when generated code will call the Tao navigation action runtime. */
+export function taoFileHasNavigationAction(taoFile: AST.TaoFile): boolean {
+  for (const node of AST.Utils.streamAllContents(taoFile)) {
+    if (AST.isNavigationPushAction(node) || AST.isNavigationPopAction(node) || AST.isNavigationTabAction(node)) {
+      return true
+    }
+  }
+  return false
+}
+
+/** taoFileHasStackNavigator returns true when generated app navigation config needs the native stack factory. */
+export function taoFileHasStackNavigator(taoFile: AST.TaoFile): boolean {
+  for (const node of AST.Utils.streamAllContents(taoFile)) {
+    if (AST.isStackNavigator(node)) {
+      return true
+    }
+  }
+  return false
+}
+
+/** taoFileHasTabNavigator returns true when generated app navigation config needs the bottom tab factory. */
+export function taoFileHasTabNavigator(taoFile: AST.TaoFile): boolean {
+  for (const node of AST.Utils.streamAllContents(taoFile)) {
+    if (AST.isTabsNavigator(node)) {
+      return true
+    }
+  }
+  return false
+}
+
+/** taoFileHasNavigationIcon returns true when generated navigation options need the Expo icon helper. */
+export function taoFileHasNavigationIcon(taoFile: AST.TaoFile): boolean {
+  for (const node of AST.Utils.streamAllContents(taoFile)) {
+    if (AST.isNavigationIconOption(node)) {
+      return true
+    }
+  }
+  return false
+}
+
+/** buildRuntimePreambleImports returns React / `providers/all` / navigation preamble lines for an emitted Tao RN module. */
 export function buildRuntimePreambleImports(
   taoFile: AST.TaoFile,
   importBase: string,
-): { reactImport: string; taoDataImport: string } {
+): {
+  iconImport: string
+  navigationImport: string
+  navigationRuntimeImport: string
+  reactImport: string
+  taoDataImport: string
+} {
   const taoDataImport = taoFileNeedsTaoDataImport(taoFile)
     ? (() => {
       const names = ['getTaoData']
@@ -72,7 +129,32 @@ export function buildRuntimePreambleImports(
     })()
     : ''
   const reactImport = taoFileUsesForLoop(taoFile) ? `import * as React from 'react'\n` : ''
-  return { reactImport, taoDataImport }
+  const navigationImport = navigationImportsForTaoFile(taoFile)
+  const navigationRuntimeImport = taoFileHasAppNavigation(taoFile) && taoFileHasNavigationAction(taoFile)
+    ? `import { createTaoNavigationRuntime } from '${importBase}use/@tao/tao-runtime/navigation-runtime'\n`
+    : ''
+  const iconImport = taoFileHasNavigationIcon(taoFile)
+    ? `import Ionicons from '@expo/vector-icons/Ionicons'\n`
+    : ''
+  return { iconImport, navigationImport, navigationRuntimeImport, reactImport, taoDataImport }
+}
+
+function navigationImportsForTaoFile(taoFile: AST.TaoFile): string {
+  if (!taoFileHasAppNavigation(taoFile)) {
+    return ''
+  }
+  const navigationNames = ['createNavigationContainerRef', 'createStaticNavigation']
+  if (taoFileHasNavigationAction(taoFile)) {
+    navigationNames.push('StackActions', 'TabActions')
+  }
+  const lines = [`import { ${navigationNames.join(', ')} } from '@react-navigation/native'`]
+  if (taoFileHasTabNavigator(taoFile)) {
+    lines.push(`import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'`)
+  }
+  if (taoFileHasStackNavigator(taoFile)) {
+    lines.push(`import { createNativeStackNavigator } from '@react-navigation/native-stack'`)
+  }
+  return `${lines.join('\n')}\n`
 }
 
 /** buildUriToTaoMap maps document URI string to TaoFile AST. */

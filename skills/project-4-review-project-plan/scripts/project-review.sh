@@ -4,15 +4,16 @@ set -euo pipefail
 usage() {
   cat <<'USAGE'
 Usage:
-  ./agent project-review [--mode plan|implementation] [--passes 1] [--base REF] [--research PATH] [--dry-run] <project-plan-path>
+  ./agent project-review [--mode plan|implementation] [--passes 1] [--base REF] [--research PATH] [--reviewers all|codex|claude] [--dry-run] <project-plan-path>
 
-Runs Codex and Claude review prompts for a Tao project plan or implementation.
+Runs selected reviewer prompts for a Tao project plan or implementation.
 
 Options:
   --mode MODE       Review mode: plan or implementation. Default: plan.
   --passes N        Compatibility option. Only 1 is allowed; apply fixes and rerun for another pass.
   --base REF        Base ref for implementation diffs. Default: main.
   --research PATH   Optional project research doc. Defaults to sibling Project Research doc when present.
+  --reviewers LIST  Reviewers to run: all, codex, or claude. Default: all.
   --dry-run         Write prompts/artifact folders but do not invoke CLIs.
   --help            Show this help.
 
@@ -217,6 +218,7 @@ PASSES="1"
 BASE_REF="main"
 DRY_RUN="0"
 RESEARCH_PATH_ARG=""
+REVIEWERS="all"
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -234,6 +236,10 @@ while [ "$#" -gt 0 ]; do
       ;;
     --research)
       RESEARCH_PATH_ARG="${2:-}"
+      shift 2
+      ;;
+    --reviewers)
+      REVIEWERS="${2:-}"
       shift 2
       ;;
     --dry-run)
@@ -255,6 +261,8 @@ while [ "$#" -gt 0 ]; do
 done
 
 [ "${MODE}" = "plan" ] || [ "${MODE}" = "implementation" ] || die "--mode must be plan or implementation"
+[ "${REVIEWERS}" = "all" ] || [ "${REVIEWERS}" = "codex" ] || [ "${REVIEWERS}" = "claude" ] ||
+  die "--reviewers must be all, codex, or claude"
 [[ "$PASSES" =~ ^[0-9]+$ ]] || die "--passes must be a number"
 [ "$PASSES" -eq 1 ] || die "--passes must be 1; apply fixes from each review round and rerun project-review for another pass"
 [ -n "${PLAN_PATH_ARG:-}" ] || die "missing project plan path"
@@ -356,17 +364,34 @@ for pass in $(seq 1 "$PASSES"); do
     continue
   fi
 
-  ( run_codex "$PROMPT_FILE" "$PASS_DIR" ) &
-  CODEX_PID="$!"
-  ( run_claude "$PROMPT_FILE" "$PASS_DIR" ) &
-  CLAUDE_PID="$!"
+  RUN_CODEX="0"
+  RUN_CLAUDE="0"
+  if [ "$REVIEWERS" = "all" ] || [ "$REVIEWERS" = "codex" ]; then
+    RUN_CODEX="1"
+  fi
+  if [ "$REVIEWERS" = "all" ] || [ "$REVIEWERS" = "claude" ]; then
+    RUN_CLAUDE="1"
+  fi
 
   CODEX_STATUS=0
   CLAUDE_STATUS=0
-  wait_with_timeout "$CODEX_PID" "codex review" "$TIMEOUT_SECONDS" || CODEX_STATUS="$?"
-  wait_with_timeout "$CLAUDE_PID" "claude review" "$TIMEOUT_SECONDS" || CLAUDE_STATUS="$?"
+  if [ "$RUN_CODEX" = "1" ]; then
+    ( run_codex "$PROMPT_FILE" "$PASS_DIR" ) &
+    CODEX_PID="$!"
+  fi
+  if [ "$RUN_CLAUDE" = "1" ]; then
+    ( run_claude "$PROMPT_FILE" "$PASS_DIR" ) &
+    CLAUDE_PID="$!"
+  fi
+  if [ "$RUN_CODEX" = "1" ]; then
+    wait_with_timeout "$CODEX_PID" "codex review" "$TIMEOUT_SECONDS" || CODEX_STATUS="$?"
+  fi
+  if [ "$RUN_CLAUDE" = "1" ]; then
+    wait_with_timeout "$CLAUDE_PID" "claude review" "$TIMEOUT_SECONDS" || CLAUDE_STATUS="$?"
+  fi
 
   {
+    echo "reviewers=$REVIEWERS"
     echo "codex_status=$CODEX_STATUS"
     echo "claude_status=$CLAUDE_STATUS"
   } > "$PASS_DIR/status.env"
@@ -377,7 +402,9 @@ for pass in $(seq 1 "$PASSES"); do
     echo
     echo "## Codex"
     echo
-    if [ -f "$PASS_DIR/codex-review.md" ]; then
+    if [ "$RUN_CODEX" != "1" ]; then
+      echo "_Codex skipped._"
+    elif [ -f "$PASS_DIR/codex-review.md" ]; then
       cat "$PASS_DIR/codex-review.md"
     else
       echo "_Codex failed; see codex.stderr._"
@@ -385,14 +412,23 @@ for pass in $(seq 1 "$PASSES"); do
     echo
     echo "## Claude"
     echo
-    if [ -f "$PASS_DIR/claude-review.md" ]; then
+    if [ "$RUN_CLAUDE" != "1" ]; then
+      echo "_Claude skipped._"
+    elif [ -f "$PASS_DIR/claude-review.md" ]; then
       cat "$PASS_DIR/claude-review.md"
     else
       echo "_Claude failed; see claude.stderr._"
     fi
   } > "$PREVIOUS_REVIEWS"
 
-  if [ "$CODEX_STATUS" -ne 0 ] || [ "$CLAUDE_STATUS" -ne 0 ]; then
+  FAILED="0"
+  if [ "$RUN_CODEX" = "1" ] && [ "$CODEX_STATUS" -ne 0 ]; then
+    FAILED="1"
+  fi
+  if [ "$RUN_CLAUDE" = "1" ] && [ "$CLAUDE_STATUS" -ne 0 ]; then
+    FAILED="1"
+  fi
+  if [ "$FAILED" = "1" ]; then
     echo "One or more reviewers failed. See $PASS_DIR" >&2
     echo "Project review artifacts: $ARTIFACT_DIR"
     echo

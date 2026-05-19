@@ -4,7 +4,7 @@ entry TaoFile:
     statements += Statement*;
 
 Statement: Declaration | ModuleDeclaration | UseStatement | Debugger | Injection | RenderStatement | ViewRender | ChildrenSplice | ActionRender | StateUpdate
-    | QueryDeclaration | GuardStatement | ForStatement | CreateStatement | UpdateStatement;
+    | NavigationActionStatement | QueryDeclaration | GuardStatement | ForStatement | CreateStatement | UpdateStatement;
 
 
 
@@ -19,7 +19,7 @@ type ScopeRelevantNode = UseStatement | Declaration | VariantDeclaration | AppDe
 type ViewFragmentStatement = RenderStatement | ViewRender | ChildrenSplice | Injection | ForStatement | Debugger | QueryDeclaration | GuardStatement | Declaration;
 type ViewStatement = RenderStatement | ViewRender | ChildrenSplice | Injection | AssignmentDeclaration | BlockDeclaration | Debugger | QueryDeclaration | GuardStatement | ForStatement;
 type TopLevelStatement = Declaration | UseStatement | Injection | Debugger | QueryDeclaration;
-type ActionStatement = StateUpdate | Injection | Debugger | AssignmentDeclaration | BlockDeclaration | ActionRender | CreateStatement | UpdateStatement;
+type ActionStatement = StateUpdate | Injection | Debugger | AssignmentDeclaration | BlockDeclaration | ActionRender | NavigationActionStatement | CreateStatement | UpdateStatement;
 
 // ArgumentListHost groups the call-site nodes that own an `ArgumentList`. Generic argument-binding logic
 // (see `tao-argument-bindings.ts`) keys off this union, so adding a new host kind (e.g. function calls)
@@ -29,7 +29,7 @@ type ArgumentListHost = RenderStatement | ViewRender | ActionRender;
 // Shared Statements
 ////////////////////
 
-RuntimeDeclaration: AppDeclaration | AssignmentDeclaration | BlockDeclaration;
+RuntimeDeclaration: AppDeclaration | NavigatorDeclaration | AssignmentDeclaration | BlockDeclaration;
 Declaration: RuntimeDeclaration | VariantDeclaration | TypeDeclaration | DataDeclaration;
 
 PrimitiveType returns string: 'text' | 'number' | 'boolean' | 'date' | 'action' | 'view';
@@ -87,7 +87,7 @@ AppDeclaration:
     type='app' name=ID '{' appStatements += AppStatement* '}';
 
 AppStatement:
-    AppUiStatement | AppProviderStatement | AppDesignBlock | OnStatement;
+    AppUiStatement | AppNavigationStatement | AppProviderStatement | AppDesignBlock | OnStatement;
 
 AppDesignBlock:
     'design' '{' description=AppDesignDescription '}';
@@ -97,6 +97,9 @@ AppDesignDescription:
 
 AppUiStatement:
     'ui' ui=[Referenceable:ID];
+
+AppNavigationStatement:
+    'navigation' navigation=[Referenceable:ID];
 
 AppProviderStatement:
     'provider' provider=ID '{' properties+=AppProviderProperty* '}';
@@ -230,6 +233,52 @@ VariantDeclaration: 'variant' name=ID '=' target=[Referenceable:ID] designSpec=D
 DesignSpec: '<' description=StringTemplateExpression '>';
 
 
+// Navigation
+/////////////
+
+NavigatorDeclaration:
+    'navigator' name=ID '{' body=NavigatorBody '}';
+
+NavigatorBody:
+    StackNavigator | TabsNavigator;
+
+StackNavigator:
+    'stack' '{' destinations+=StackDestination* '}';
+
+TabsNavigator:
+    'tabs' '{' destinations+=TabDestination* '}';
+
+StackDestination:
+    'screen' name=ID target=ID? options=NavigationDestinationOptions?;
+
+TabDestination:
+    'tab' name=ID target=ID? options=NavigationDestinationOptions?;
+
+NavigationDestinationOptions:
+    '{' options+=NavigationDestinationOption* '}';
+
+NavigationDestinationOption:
+    NavigationTitleOption | NavigationIconOption | NavigationPathOption | NavigationParamDeclaration;
+
+NavigationTitleOption:
+    'title' value=StringTemplateExpression;
+
+NavigationIconOption:
+    'icon' source=NavigationIconSource name=ID;
+
+NavigationIconSource returns string:
+    'system';
+
+NavigationPathOption:
+    'path' value=StringTemplateExpression;
+
+NavigationParamDeclaration:
+    'param' name=ID type=NavigationParamType;
+
+NavigationParamType returns string:
+    'text' | 'number' | 'boolean';
+
+
 // View-only statements
 ///////////////////////
 
@@ -280,6 +329,27 @@ StateUpdate:
 // action statements after the call.
 ActionRender:
     'do' action=[ActionDeclaration:ID] argumentList=ArgumentList? block=Block?;
+
+NavigationActionStatement:
+    NavigationPushAction | NavigationPopAction | NavigationTabAction;
+
+NavigationPushAction:
+    'navigation' action='push' target=ID payload=NavigationActionPayload?;
+
+NavigationPopAction:
+    'navigation' action='pop';
+
+NavigationTabAction:
+    'navigation' action='tab' target=ID payload=NavigationActionPayload?;
+
+NavigationActionPayload:
+    '{' assignments+=NavigationActionParamAssignment* '}';
+
+// Bare shorthand (`RoomId`) is only unambiguous for a single payload entry.
+// Use explicit `Name Value` assignments for multi-param payloads until the
+// payload grammar grows separators or another disambiguator.
+NavigationActionParamAssignment:
+    name=ID value=Expression?;
 
 // Parameters and Arguments
 ///////////////////////////

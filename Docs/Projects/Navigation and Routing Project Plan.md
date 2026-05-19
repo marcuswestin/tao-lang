@@ -105,6 +105,13 @@ Exit criteria:
 - Navigation examples parse into generated AST nodes.
 - Existing non-navigation parser tests remain green.
 
+Implementation note:
+
+- 2026-05-19: `./agent gen` rejected a sibling navigation grammar that reused
+  the main grammar's `StringTemplateExpression` rule. Navigation grammar is
+  inline in `packages/parser/tao-grammar.langium` for v1; splitting it into a
+  sibling grammar remains deferred cleanup.
+
 Suggested commit: `feat(navigation): add parser syntax`
 
 ### 2. Add Validation And Scoping
@@ -142,10 +149,9 @@ Work:
   path-bearing screen appears in the path.
 - Validate `navigation push` targets stack destinations, `navigation tab` targets
   tab destinations, and param payloads match declared destination params.
-- Reject ambiguous action targets. `navigation push` or `navigation pop` from a
-  view that is only reachable through a tab navigator is a validation error.
-  When the compiler cannot prove a valid stack or tab context from the navigation
-  tree, emit a diagnostic instead of generating best-effort dispatch.
+- Reject ambiguous action targets. V1 rejects `navigation pop` only when the app
+  navigation tree has no stack destination; precise action-context reachability
+  for nested tab-only views is deferred.
 
 Validation:
 
@@ -382,6 +388,25 @@ Exit criteria:
 
 Suggested commit: `feat(navigation): validate navigation v1`
 
+## Implementation Closure
+
+- 2026-05-19: Navigation v1 implementation is complete on the feature branch
+  and is ready for `project-6-review-implementation`.
+- Completed scope includes grammar, semantic validation, formatter support,
+  React Navigation 7 static config codegen, runtime navigation actions, direct
+  Expo app entry without Expo Router, migrated canonical test apps, headless
+  scenario support, and Expo shared-scenario smoke coverage.
+- Follow-up work remains deferred below: drawer navigation, guards/auth,
+  React Navigation 8, native tab backends, and broader URL/link policy.
+- 2026-05-19 implementation review follow-up tightened navigation validation
+  for duplicate options/params, primitive-only route params, duplicate child
+  navigator targets, imported app navigators, and root-navigator-only v1 action
+  targets; generated route params are now strictly decoded before Tao view
+  invocation, destination paths activate React Navigation static linking, and
+  navigation bootstraps are wrapped in `SafeAreaProvider`. V1 rejects required
+  params on tab destinations and initial navigator destinations until Tao has
+  defaults or explicit initial params.
+
 ## Deferrals
 
 - Drawer navigation.
@@ -392,15 +417,23 @@ Suggested commit: `feat(navigation): validate navigation v1`
 - Separate web routing backend.
 - Universal links and public URL policy.
 - Generated route documentation.
+- Optional/default navigation params.
+- Explicit `initial` route syntax.
 - Complete removal of legacy app-level `ui` syntax.
 - Destination `role` metadata and screen presentation roles.
 - Compile-time icon name validation against a platform-aware registry.
-- Broad nested navigator reachability validation for action targets.
+- Nested navigator action dispatch beyond root navigator destinations.
 - Query-string encoding for params not represented by path placeholders.
 - Push/navigate fallback semantics across stack, tab, and nested navigator
   boundaries.
+- Grammar redesign for unambiguous multi-param shorthand navigation payloads.
+- Full mounted React Navigation state-machine tests for compiled Tao navigation
+  actions.
 - Multi-file navigator-local destination scoping beyond the module/app tree
   needed for v1.
+- Multi-file navigation action runtime access. In v1, navigation actions require
+  app-level navigation in the same source file because the generated navigation
+  runtime reference is file-scoped.
 
 ## References
 

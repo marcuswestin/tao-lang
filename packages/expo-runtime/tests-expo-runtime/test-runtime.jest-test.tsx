@@ -16,11 +16,49 @@ const rowLayoutStyle = { gap: 8, justifyContent: 'space-between' } as const
 const labelLayoutStyle = { alignSelf: 'center', width: 120 } as const
 const buttonLayoutStyle = { alignSelf: 'center', width: 180 } as const
 
+type ExpoRuntimePackageJson = {
+  readonly dependencies?: Record<string, string>
+  readonly main?: string
+}
+
+type ExpoRuntimeAppJson = {
+  readonly expo?: {
+    readonly experiments?: Record<string, unknown>
+    readonly plugins?: unknown[]
+    readonly web?: {
+      readonly output?: string
+    }
+  }
+}
+
 describe('runtime:', () => {
   test('renders <MockTestView />', async () => {
     const MockTestView = () => <RN.Text>Hello Mock Test View</RN.Text>
     const res = await render(<MockTestView />).findByText('Hello Mock Test View')
     expect(res).toBeDefined()
+  })
+
+  test('uses a direct Expo root entry', () => {
+    const packageJsonPath = FS.resolvePath(__dirname, '../package.json')
+    const packageJson = JSON.parse(FS.readTextFile(packageJsonPath)) as ExpoRuntimePackageJson
+    const appJsonPath = FS.resolvePath(__dirname, '../app.json')
+    const appJson = JSON.parse(FS.readTextFile(appJsonPath)) as ExpoRuntimeAppJson
+    const entrySource = FS.readTextFile(FS.resolvePath(__dirname, '../index.ts'))
+    const runtimeEntrypointSource = FS.readTextFile(FS.resolvePath(__dirname, '../runtime-entrypoint.ts'))
+
+    expect(packageJson.main).toBe('index.ts')
+    expect(packageJson.dependencies?.['expo-router']).toBeUndefined()
+    expect(packageJson.dependencies?.['expo-splash-screen']).toBeDefined()
+    expect(appJson.expo?.plugins).not.toContain('expo-router')
+    expect(appJson.expo?.experiments?.['typedRoutes']).toBeUndefined()
+    expect(appJson.expo?.web?.output).toBe('single')
+    expect(entrySource).toContain('registerRootComponent(ExpoRuntimeEntrypoint)')
+    expect(entrySource).not.toContain('expo-router')
+    expect(runtimeEntrypointSource).toContain("import * as SplashScreen from 'expo-splash-screen'")
+    expect(runtimeEntrypointSource).toContain("hideNativeSplash('navigation ready')")
+    expect(runtimeEntrypointSource).toContain('RuntimeStartupErrorBoundary')
+    expect(FS.existsSync(FS.resolvePath(__dirname, '../app/_layout.tsx'))).toBe(false)
+    expect(FS.existsSync(FS.resolvePath(__dirname, '../app/index.tsx'))).toBe(false)
   })
 
   test('maps Tao layout specs to React Native style props', () => {

@@ -34,8 +34,34 @@ description: Implement a reviewed Tao project plan one intended step at a time o
    - run the validation named in the plan before treating the numbered step as complete, unless the step is intentionally intermediate and the plan defers that validation;
    - update the plan or roadmap with completed/deferred discoveries;
    - when a commit is meant to close the numbered step or a validation boundary, run `./agent prep-commit` before committing unless the user explicitly opted out.
+   - after each completed plan-step commit, post a concise progress overview in the conversation.
 7. Stop on validation failures that block the current validation boundary. Do not stop merely because an intentional intermediate commit has deferred checks.
 8. Update the roadmap status to `Implemented` when all planned implementation steps are complete, using the roadmap's project queue status values.
+
+## Step Progress Overview
+
+After each completed plan-step commit, report progress with a short, polished
+conversation update. Use a Markdown title and include:
+
+- Step completed: number and name.
+- Next step: number and name, or final review/merge preparation when no steps remain.
+- Completed count: `X of Y steps`.
+- Elapsed time: exact if tracked, otherwise a clear estimate.
+- Estimated time remaining: include a rough expected range for when the project
+  will likely be complete in about 80% of cases. This is an operational ETA, not
+  a promise; use practical ranges such as `about 45-75m` or `about 1-2h`.
+
+Example:
+
+```md
+**Project Progress**
+
+**Step Completed:** 6. Add Runtime Navigation Actions
+**Next Step:** 7. Remove Expo Router Shell
+**Completed:** 6 of 9 steps
+**Elapsed:** about 2h 10m
+**Estimate Remaining:** likely about 45-75m in the 80% case, mostly example migration and final validation
+```
 
 ## Output
 

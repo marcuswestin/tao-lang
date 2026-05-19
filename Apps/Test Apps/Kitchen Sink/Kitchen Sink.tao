@@ -9,7 +9,13 @@ alias KitchenSinkVersion = "demo bundle"
 state FileLevelDemoCounter = 0
 
 app KitchenSink {
-   ui AppView
+   navigation MainNavigation
+}
+
+navigator MainNavigation {
+   stack {
+      screen AppView
+   }
 }
 
 action BumpFileLevelDemo {

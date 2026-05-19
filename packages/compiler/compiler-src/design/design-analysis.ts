@@ -1,5 +1,6 @@
 import { AST, LGM } from '@parser'
 import { FS } from '@shared'
+import { buildTaoNavigationTree } from '../navigation/navigation-tree'
 import {
   designInputHash,
   makeEmptyDesignLock,
@@ -218,6 +219,15 @@ function collectDesignRequirements(opts: {
   const appUi = opts.app?.appStatements.find(AST.isAppUiStatement)
   if (isViewLikeDeclaration(appUi?.ui.ref)) {
     queued.push(appUi.ui.ref)
+  }
+  const appNavigation = opts.app?.appStatements.find(AST.isAppNavigationStatement)
+  if (appNavigation !== undefined) {
+    const tree = buildTaoNavigationTree(appNavigation)
+    for (const destination of tree.destinations) {
+      if (isViewLikeDeclaration(destination.target)) {
+        queued.push(destination.target)
+      }
+    }
   }
 
   while (queued.length > 0) {

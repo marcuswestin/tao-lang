@@ -1,7 +1,13 @@
 use Text, Col, Button, Number from @tao/ui
 
 app LocalParamTypesApp {
-   ui RootView
+   navigation MainNavigation
+}
+
+navigator MainNavigation {
+   stack {
+      screen RootView
+   }
 }
 
 // --- Single local param type ---

@@ -27,8 +27,8 @@ single Tao-owned navigation model.
 - Params are primitive or ID-like values only, not arbitrary Tao objects.
 - Navigation actions use `navigation push`, `navigation pop`, and `navigation tab`.
 - React Navigation 7 static config is the v1 runtime target.
-- Expo Router should be removed once the direct React Navigation app shell is in
-  place.
+- Expo Router is removed from the Tao Expo runtime; the direct React Navigation
+  app shell is the runtime entry path.
 
 ## Non-Goals
 
@@ -203,13 +203,11 @@ IR to the React Navigation backend. This preserves the option to add platform
 specific backends later, such as native tabs or another web routing backend,
 without changing Tao syntax.
 
-## Expo Router Removal
+## Expo Runtime Entry
 
-Expo Router is currently part of the Expo runtime shell, but Tao navigation v1
-does not use file-based routing as the semantic model. The navigation
-implementation should remove Expo Router once the direct Expo root entry is in
-place. The direct entry should register the compiled Tao app through Expo's
-`registerRootComponent` path and render the React Navigation root created from
+Tao navigation v1 does not use Expo file-based routing as the semantic model.
+The Expo runtime registers the compiled Tao app through Expo's
+`registerRootComponent` path and renders the React Navigation root created from
 the Tao navigation IR.
 
 ## Validation Rules
@@ -227,8 +225,8 @@ the Tao navigation IR.
 - Path placeholders must match declared params.
 - Navigation actions must target a declared destination reachable from the app
   navigation tree.
-- Param payloads in `navigation push` must match the destination param
-  declarations.
+- Param payloads in `navigation push` and `navigation tab` must match the
+  destination param declarations.
 
 ## Testing Requirements
 

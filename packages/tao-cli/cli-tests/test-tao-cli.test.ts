@@ -66,6 +66,32 @@ describe('cli:', () => {
     }
   })
 
+  test('compile syncs the generated runtime tree in place', async () => {
+    const { code, needle } = getRandomUI()
+    const tmpDir = FS.mkTmpDir(FS.joinPath(FS.tmpdir(), 'tao-cli-live-tree-test-'))
+    try {
+      const appPath = FS.joinPath(tmpDir, 'app.tao')
+      const testRuntimeDir = FS.joinPath(tmpDir, 'runtime')
+      const stalePath = FS.joinPath(testRuntimeDir, '_gen/tao-app/app/stale.tsx')
+      FS.writeFile(appPath, code)
+      FS.writeFile(stalePath, 'old generated file')
+
+      await TaoSDK_compile({
+        path: appPath,
+        runtimeDir: testRuntimeDir,
+        stdLibRoot,
+      })
+
+      const outputPath = FS.joinPath(testRuntimeDir, '_gen/tao-app/app-bootstrap.tsx')
+      const appModulePath = FS.joinPath(testRuntimeDir, '_gen/tao-app/app/app.tsx')
+      expect(FS.isFile(stalePath)).toBe(false)
+      expect(FS.isFile(outputPath)).toBe(true)
+      expect(FS.readTextFile(appModulePath)).toContain(needle)
+    } finally {
+      FS.rmDirectory(tmpDir)
+    }
+  })
+
   test('compile writes error app to outputFileName before throwing', async () => {
     const tmpDir = FS.mkTmpDir(FS.joinPath(FS.tmpdir(), 'tao-cli-error-output-test-'))
     try {
