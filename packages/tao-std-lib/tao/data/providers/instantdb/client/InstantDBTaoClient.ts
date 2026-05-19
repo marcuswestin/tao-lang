@@ -1,29 +1,27 @@
 import * as IDB from '@instantdb/react-native'
-import { Assert, switch_Exhaustive } from '../../../../tao-runtime/runtime-utils'
+import { Assert } from '../../../../tao-runtime/runtime-utils'
 import {
   evaluateRecordFields,
   registerTaoDataProvider,
   type TaoDataClient,
   type TaoDataProviderParams,
+  taoDataRowId,
   taoDatasetFieldIsIndexed,
   type TaoDatasetFieldShape,
   taoDatasetFieldType,
   type TaoDatasetShape,
+  type TaoDataUpdatePatch,
 } from '../../tao-data-client'
 import {
   buildQueryResult,
   evaluateQueryPlan,
   type TaoQueryPlan,
-  type TaoQueryPredicate,
   type TaoQueryResult,
   useReactiveQueryPlan,
 } from '../../tao-query'
-import {
-  evaluateTaoQueryPredicate,
-  projectTaoQueryRow,
-  taoQueryComparableValue,
-  taoQueryIsRecord,
-} from '../../tao-query-projection'
+import { instantQueryShape, instantResultRows } from './instant-query'
+import { assertInstantRecordMatchesEntityDecl } from './instant-record'
+import { instantInsertChunk, instantStrictUpdateChunk } from './instant-write'
 import { createTaoIDBClient } from './TaoIDBClient'
 
 type InstantDb = ReturnType<typeof IDB.init>
@@ -39,6 +37,7 @@ const iTypeFns: Record<string, () => ReturnType<typeof IDB.i.string>> = {
   string: () => IDB.i.string(),
   number: () => IDB.i.number(),
   boolean: () => IDB.i.boolean(),
+  date: () => IDB.i.date(),
 }
 
 /** buildInstantAttr turns Tao field metadata into InstantDB attr metadata. */
@@ -82,14 +81,6 @@ function coerceQueryShape<Q extends Record<string, unknown>>(q: Q): Q {
   return JSON.parse(JSON.stringify(q)) as Q
 }
 
-function getCollectionRows(data: unknown, collection: string): unknown[] {
-  if (!data || typeof data !== 'object') {
-    return []
-  }
-  const rows = (data as Record<string, unknown>)[collection]
-  return Array.isArray(rows) ? [...rows] : []
-}
-
 /** Shape of Instant’s internal reactor used only for cache peek (non-public API). */
 type InstantReactorPeek = { getPreviousResult: (query: unknown) => unknown }
 
@@ -110,53 +101,6 @@ function getInstantPreviousQueryResult(db: InstantDb, query: unknown): unknown {
   } catch {
     return undefined
   }
-}
-
-/** assertValueMatchesDeclaredTaoField throws when `value` is non-nullish but its JS type disagrees with Tao’s primitive name `declared`. */
-function assertValueMatchesDeclaredTaoField(
-  collection: string,
-  field: string,
-  declared: string,
-  value: unknown,
-): void {
-  if (value === null || value === undefined) {
-    return
-  }
-  if (declared === 'string') {
-    Assert(typeof value === 'string', `Instant insert ${collection}.${field}: expected string`)
-    return
-  }
-  if (declared === 'number') {
-    Assert(typeof value === 'number', `Instant insert ${collection}.${field}: expected number`)
-    return
-  }
-  if (declared === 'boolean') {
-    Assert(typeof value === 'boolean', `Instant insert ${collection}.${field}: expected boolean`)
-    return
-  }
-}
-
-/** assertNormalizedMatchesInstantEntityDecl throws on unknown keys or bad primitives; returns `record` for a linear call site (Tao-validated inserts should always pass). */
-function assertNormalizedMatchesInstantEntityDecl(
-  collection: string,
-  fieldTypes: Readonly<Record<string, string>>,
-  record: Record<string, unknown>,
-): Record<string, unknown> {
-  for (const key of Object.keys(record)) {
-    Assert(
-      key === 'id' || key in fieldTypes,
-      `Instant insert ${collection}: unknown field ${
-        JSON.stringify(key)
-      } (not declared on this collection for Instant)`,
-    )
-    if (key === 'id') {
-      continue
-    }
-    const declared = fieldTypes[key]
-    Assert(declared !== undefined, `Instant insert ${collection}: missing field type for ${JSON.stringify(key)}`)
-    assertValueMatchesDeclaredTaoField(collection, key, declared, record[key])
-  }
-  return record
 }
 
 /** optionalStringProviderParam returns an optional string provider parameter, rejecting non-string values. */
@@ -248,9 +192,20 @@ export class InstantDBTaoClient implements TaoDataClient {
     }
     const normalized = evaluateRecordFields(record)
     const fieldTypes = this.instantMergedEntityFieldTypes(collection)
-    const payload = assertNormalizedMatchesInstantEntityDecl(collection, fieldTypes, normalized)
+    const payload = assertInstantRecordMatchesEntityDecl(collection, fieldTypes, normalized)
     const rowId = IDB.id()
-    void this.db.transact((this.db.tx as any)[collection][rowId].update(omitId(payload)))
+    void this.db.transact(instantInsertChunk(this.db as any, collection, rowId, omitId(payload)))
+  }
+
+  update(collection: string, row: unknown, patch: TaoDataUpdatePatch): void {
+    if (!this.db) {
+      return
+    }
+    const rowId = taoDataRowId(row)
+    const normalized = evaluateRecordFields(patch)
+    const fieldTypes = this.instantMergedEntityFieldTypes(collection)
+    const payload = assertInstantRecordMatchesEntityDecl(collection, fieldTypes, normalized)
+    void this.db.transact(instantStrictUpdateChunk(this.db as any, collection, rowId, omitId(payload)))
   }
 
   /** instantMergedEntityFieldTypes mirrors `open`’s shallow merge of `entities` so insert checks match the Instant schema. */
@@ -264,61 +219,6 @@ registerTaoDataProvider('InstantDB', () => new InstantDBTaoClient())
 
 function fallbackResult(plan: TaoQueryPlan): TaoQueryResult {
   return buildQueryResult(plan.cardinality === 'one' ? null : [], true, null)
-}
-
-function instantQueryShape(plan: TaoQueryPlan): Record<string, unknown> {
-  // V1 serializes Tao relationships as Instant attributes (`any`), not links.
-  // Projection and relationship identity predicates run client-side over those returned attributes.
-  const body: Record<string, unknown> = {}
-  const queryOptions: Record<string, unknown> = {}
-  const where = instantWhere(plan.where)
-  if (where) {
-    queryOptions['where'] = where
-  }
-  if (Object.keys(queryOptions).length > 0) {
-    body['$'] = queryOptions
-  }
-  return { [plan.collection]: body }
-}
-
-function instantWhere(predicates: readonly TaoQueryPredicate[]): unknown {
-  const serverPredicates = predicates.filter(predicate => predicate.clientOnly !== true)
-  if (serverPredicates.length === 0) {
-    return undefined
-  }
-  const compiled = serverPredicates.map(instantPredicate)
-  if (compiled.length === 1) {
-    return compiled[0]
-  }
-  return { and: compiled }
-}
-
-function instantPredicate(predicate: TaoQueryPredicate): Record<string, unknown> {
-  return { [`${predicate.path.join('.')}`]: instantPredicateValue(predicate) }
-}
-
-function instantPredicateValue(predicate: TaoQueryPredicate): unknown {
-  const compared = taoQueryComparableValue(predicate.value, predicate.compareField)
-  return switch_Exhaustive(predicate.op, {
-    '=': () => compared,
-    '!=': () => ({ $ne: compared }),
-    '<': () => ({ $lt: predicate.value }),
-    '<=': () => ({ $lte: predicate.value }),
-    '>': () => ({ $gt: predicate.value }),
-    '>=': () => ({ $gte: predicate.value }),
-  })
-}
-
-/**
- * instantResultRows loads the collection from Instant, applies **every** `plan.where` predicate in JS
- * (including `clientOnly`), then projects. InstaQL `$where` only receives non-`clientOnly` predicates; if
- * those are empty, the SDK may return the full collection for that namespace before this filter runs.
- */
-function instantResultRows(data: unknown, plan: TaoQueryPlan): Record<string, unknown>[] {
-  return getCollectionRows(data, plan.collection)
-    .filter(taoQueryIsRecord)
-    .filter(row => plan.where.every(predicate => evaluateTaoQueryPredicate(row, predicate)))
-    .map(row => projectTaoQueryRow(row, plan.select))
 }
 
 /** instantStoreConfig returns optional Instant storage overrides requested by provider params. */

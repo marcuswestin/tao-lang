@@ -263,6 +263,201 @@ describe('validation — for / create:', () => {
     `)
     expectHumanMessagesContain(report, validationMessages.legacyIDBInjection)
   })
+
+  test('strict row-handle update passes for scalar and single-link fields', async () => {
+    await parseTaoFully(`
+      data D {
+        Events Event { Title text }
+        Rsvps Rsvp {
+          Status text,
+          Event,
+        }
+      }
+      action MarkGoing Rsvp, Event {
+        update Rsvp {
+          Status "going",
+          Event Event
+        }
+      }
+      app A { ui V }
+      ui V { render inject \`\`\`ts return null \`\`\` }
+    `)
+  })
+
+  test('strict row-handle update passes inside inline action bodies', async () => {
+    await parseTaoFully(`
+      data D {
+        Rsvps Rsvp { Status text }
+      }
+      query D.Rsvps as Rsvps { Status }
+      app A { ui V }
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
+        for Rsvp in Rsvps {
+          Button "Mark", action {
+            update Rsvp {
+              Status "going"
+            }
+          }
+        }
+      }
+      ui Button Title text, Action action {
+        render inject \`\`\`ts return null \`\`\`
+      }
+    `)
+  })
+
+  test('update target must be a row handle', async () => {
+    const report = await parseASTWithErrors(`
+      data D {
+        Rsvps Rsvp { Status text }
+      }
+      alias RsvpAlias = "not a row"
+      action X {
+        update RsvpAlias { Status "going" }
+      }
+      app A { ui V }
+      ui V { render inject \`\`\`ts return null \`\`\` }
+    `)
+    expectHumanMessagesContain(report, forCreateMessages.updateTargetMustBeRowHandle)
+  })
+
+  test('update rejects plural query aliases and explicitly typed scalar parameters', async () => {
+    const report = await parseASTWithErrors(`
+      data D {
+        Rsvps Rsvp { Status text }
+      }
+      query D.Rsvps as AllRsvps { Status }
+      action X Rsvp text {
+        update AllRsvps { Status "going" }
+        update Rsvp { Status "going" }
+      }
+      app A { ui V }
+      ui V { render inject \`\`\`ts return null \`\`\` }
+    `)
+    expectHumanMessagesContain(
+      report,
+      forCreateMessages.updateTargetMustBeRowHandle,
+      forCreateMessages.updateTargetMustBeRowHandle,
+    )
+  })
+
+  test('update validates fields and deferred relationship replacements', async () => {
+    const report = await parseASTWithErrors(`
+      data D {
+        Tags Tag { Name text }
+        Rsvps Rsvp {
+          Status text,
+          Tags [Tag],
+        }
+      }
+      action X Rsvp {
+        update Rsvp {
+          Unknown "x",
+          Tags Tags
+        }
+      }
+      app A { ui V }
+      ui V { render inject \`\`\`ts return null \`\`\` }
+    `)
+    expectHumanMessagesContain(
+      report,
+      forCreateMessages.updateUnknownField('Unknown'),
+      forCreateMessages.updateToManyRelationshipDeferred('Tags'),
+    )
+  })
+
+  test('date fields reject direct assignment literals', async () => {
+    const report = await parseASTWithErrors(`
+      data D {
+        Events Event { StartsAt date }
+      }
+      action X Event {
+        update Event {
+          StartsAt 123
+        }
+      }
+      app A { ui V }
+      ui V { render inject \`\`\`ts return null \`\`\` }
+    `)
+    expectHumanMessagesContain(report, forCreateMessages.dateFieldLiteralUnsupported('StartsAt'))
+  })
+
+  test('create validates date field literals', async () => {
+    const report = await parseASTWithErrors(`
+      data D {
+        Events Event { StartsAt date }
+      }
+      action X {
+        create D.Event {
+          StartsAt 123
+        }
+      }
+      app A { ui V }
+      ui V { render inject \`\`\`ts return null \`\`\` }
+    `)
+    expectHumanMessagesContain(report, forCreateMessages.dateFieldLiteralUnsupported('StartsAt'))
+  })
+
+  test('create shorthand assignments require matching in-scope values', async () => {
+    const report = await parseASTWithErrors(`
+      data D {
+        People Person { Name text }
+        Events Event {
+          Title text,
+          Host Person,
+        }
+      }
+      query D.Person as Host { id = "person-1" }
+      action X {
+        create D.Event { Title, Host }
+      }
+      app A { ui V }
+      ui V { render inject \`\`\`ts return null \`\`\` }
+    `)
+    expectHumanMessagesContain(report, forCreateMessages.createShorthandNeedsValue('Title'))
+  })
+
+  test('update requires at least one field assignment', async () => {
+    const report = await parseASTWithErrors(`
+      data D {
+        Rsvps Rsvp { Status text }
+      }
+      action X Rsvp {
+        update Rsvp { }
+      }
+      app A { ui V }
+      ui V { render inject \`\`\`ts return null \`\`\` }
+    `)
+    expectHumanMessagesContain(report, forCreateMessages.updateRequiresField)
+  })
+
+  test('update shorthand assignments require matching in-scope values', async () => {
+    const report = await parseASTWithErrors(`
+      data D {
+        People Person { Name text }
+        Events Event { Title text }
+        Rsvps Rsvp {
+          Status text,
+          Event,
+        }
+      }
+      query D.Person as Event { id = "person-1" }
+      action MissingStatus Rsvp {
+        update Rsvp { Status }
+      }
+      action WrongRelationship Rsvp {
+        update Rsvp { Event }
+      }
+      app A { ui V }
+      ui V { render inject \`\`\`ts return null \`\`\` }
+    `)
+    expectHumanMessagesContain(
+      report,
+      forCreateMessages.updateShorthandNeedsValue('Status'),
+      forCreateMessages.updateRelationshipWrongEntity('Event', 'Event', 'Person'),
+    )
+  })
 })
 
 describe('validation — selection-block data queries:', () => {
@@ -482,5 +677,214 @@ describe('validation — selection-block data queries:', () => {
       app A { ui V }
       ui V { render inject \`\`\`ts return null \`\`\` }
     `)
+  })
+
+  test('where filters, existence predicates, and order by pass validation', async () => {
+    await parseTaoFully(`
+      data D {
+        People Person { Name text }
+        Events Event {
+          Title text,
+          Active boolean,
+          StartsAt date indexed,
+          Ordering number indexed,
+          Host Person,
+        }
+      }
+      query D.Person as CurrentUser { id = "person-1" }
+      query D.Events {
+        Title,
+        StartsAt exists,
+        where Active = true and (Title != "draft" or StartsAt missing)
+        where Host = CurrentUser
+        order by Ordering desc
+      }
+      app A { ui V }
+      ui V { render inject \`\`\`ts return null \`\`\` }
+    `)
+  })
+
+  test('predicate entries validate scalar literal types and date literals', async () => {
+    const report = await parseASTWithErrors(`
+      data D {
+        Events Event {
+          Title text,
+          StartsAt date,
+          Active boolean,
+        }
+      }
+      query D.Events {
+        Title = 123,
+        StartsAt = 123,
+        Active = "yes",
+      }
+      app A { ui V }
+      ui V { render inject \`\`\`ts return null \`\`\` }
+    `)
+    expectHumanMessagesContain(
+      report,
+      queryValidationMessages.queryPredicateLiteralType('Title', 'text', 'number'),
+      queryValidationMessages.queryDateLiteralUnsupported('StartsAt'),
+      queryValidationMessages.queryPredicateLiteralType('Active', 'boolean', 'text'),
+    )
+  })
+
+  test('singular query may use unique equality inside where', async () => {
+    await parseTaoFully(`
+      data D {
+        People Person {
+          Email text unique,
+          Name text,
+        }
+      }
+      query D.Person {
+        Name,
+        where Email = "ro@example.test"
+      }
+      app A { ui V }
+      ui V { render inject \`\`\`ts return null \`\`\` }
+    `)
+  })
+
+  test('singular query rejects unique equality hidden behind or', async () => {
+    const report = await parseASTWithErrors(`
+      data D {
+        People Person {
+          Email text unique,
+          Name text,
+        }
+      }
+      query D.Person {
+        where Email = "a@example.test" or Email = "b@example.test"
+      }
+      app A { ui V }
+      ui V { render inject \`\`\`ts return null \`\`\` }
+    `)
+    expectHumanMessagesContain(report, queryValidationMessages.queryOneNeedsUniqueWhere)
+  })
+
+  test('where rejects bare boolean and relationship path traversal', async () => {
+    const report = await parseASTWithErrors(`
+      data D {
+        People Person { Name text }
+        Events Event {
+          Active boolean,
+          Host Person,
+        }
+      }
+      query D.Events {
+        where Active
+        where Host.Name = "Ro"
+      }
+      app A { ui V }
+      ui V { render inject \`\`\`ts return null \`\`\` }
+    `)
+    expectHumanMessagesContain(
+      report,
+      queryValidationMessages.queryBareWherePredicate('Active'),
+      queryValidationMessages.queryNestedRelationshipPath('Host.Name'),
+    )
+  })
+
+  test('nested relationship where validates against the nested entity', async () => {
+    const report = await parseASTWithErrors(`
+      data D {
+        Events Event {
+          Title text,
+          Rsvps [Rsvp],
+        }
+        Rsvps Rsvp {
+          Status text,
+        }
+      }
+      query D.Events {
+        Rsvps {
+          where Title = "Not an Rsvp field"
+        }
+      }
+      app A { ui V }
+      ui V { render inject \`\`\`ts return null \`\`\` }
+    `)
+    expectHumanMessagesContain(report, queryValidationMessages.queryPathUnknownField('Title', 'Rsvp'))
+  })
+
+  test('relationship predicate entries require matching row handles', async () => {
+    const report = await parseASTWithErrors(`
+      data D {
+        People Person {
+          Email text unique,
+        }
+        Events Event {
+          Host Person,
+          Title text,
+        }
+        Rsvps Rsvp {
+          Status text,
+        }
+      }
+      query D.Person as CurrentUser { Email = "ro@example.test" }
+      query D.Rsvp as CurrentRsvp { id = "rsvp-1" }
+      state HostId = "person-1"
+      query D.Events as BadScalar {
+        Host = HostId,
+        Title,
+      }
+      query D.Events as BadEntity {
+        Host = CurrentRsvp,
+        Title,
+      }
+      app A { ui V }
+      ui V { render inject \`\`\`ts return null \`\`\` }
+    `)
+    expectHumanMessagesContain(
+      report,
+      queryValidationMessages.queryRelationshipPredicateValue('Host'),
+      queryValidationMessages.queryRelationshipPredicateValueEntity('Host', 'Person', 'Rsvp'),
+    )
+  })
+
+  test('query existence operators must be exists or missing', async () => {
+    const report = await parseASTWithErrors(`
+      data D {
+        Events Event { Title text }
+      }
+      query D.Events {
+        Title maybe,
+        where Title present
+      }
+      app A { ui V }
+      ui V { render inject \`\`\`ts return null \`\`\` }
+    `)
+    expectHumanMessagesContain(
+      report,
+      queryValidationMessages.queryUnknownExistenceOperator('maybe', 'Title'),
+      queryValidationMessages.queryUnknownExistenceOperator('present', 'Title'),
+    )
+  })
+
+  test('order by requires one indexed scalar field', async () => {
+    const report = await parseASTWithErrors(`
+      data D {
+        People Person { Name text }
+        Events Event {
+          Title text,
+          Host Person,
+          Rank number indexed,
+        }
+      }
+      query D.Events {
+        Title,
+        order by Title
+        order by Host
+      }
+      app A { ui V }
+      ui V { render inject \`\`\`ts return null \`\`\` }
+    `)
+    expectHumanMessagesContain(
+      report,
+      queryValidationMessages.queryOrderDuplicate,
+      queryValidationMessages.queryOrderMustBeIndexed('Title'),
+      queryValidationMessages.queryOrderMustBeScalar('Host'),
+    )
   })
 })

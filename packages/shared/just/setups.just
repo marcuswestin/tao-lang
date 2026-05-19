@@ -26,15 +26,13 @@ _setup_git_repo:
     # Keep these as commands. Package-local Justfiles import this file, but do not define root recipes like `deps`.
     just deps
     just _setup_dprint_plugins
-    just _print_keybinding_install
     just gen build
+    just _print_keybinding_info
 
 _setup_dprint_plugins:
     dprint config update --yes
 
-_print_keybinding_install:
-    @echo "\n\tInstall keybinding for build and reload the extension."
-    @echo "\tAdd this to your ~/.vscode-keybindings.json file:"
+_print_keybinding_info:
+    @echo "\n\tInfo: Optional keybinding for build and reload extension."
+    @echo "\tAdd this to your ~/.vscode-keybindings.json file if it is not already installed:"
     @echo "\n\t\t"'{ "key": "cmd+shift+b", "command": "multiCommand.buildExtensionThenRestartHost" },\n'
-    @echo "\tThen press enter to continue..."
-    @read -r _

@@ -7,6 +7,7 @@ _concurrently_kill := "--kill-others --kill-others-on-fail"
 _concurrently_watch := _concurrently + ' --pad-prefix --prefix "[{time}] {name}" --timestamp-format "HH:mm:ss.SSS"'
 
 build: _install_deps
+    just cli build-lib {{ justfile_directory() }}/../../.builds/headless-test-runtime/_gen-tao-lib
 
 [no-quiet]
 test *FLAGS_AND_PATTERNS: build

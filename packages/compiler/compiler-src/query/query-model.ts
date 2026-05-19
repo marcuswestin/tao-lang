@@ -3,6 +3,11 @@ import { primitiveBaseOfDeclaredType, resolveTypeExpression } from '../tao-type-
 
 export type TaoQueryCardinality = 'many' | 'one'
 
+export type DataRowHandleResolution = {
+  readonly entity: AST.DataEntityDeclaration
+  readonly sourceKind: 'singleton-query' | 'query-row' | 'action-parameter'
+}
+
 export type QueryRowPathKind =
   | { readonly kind: 'primitive'; readonly primitive: AST.PrimitiveType }
   | { readonly kind: 'object' }
@@ -42,6 +47,67 @@ export function queryDeclarationCardinality(node: AST.QueryDeclaration): TaoQuer
 /** queryDeclarationEntity resolves the entity targeted by a selection-block query. */
 export function queryDeclarationEntity(node: AST.QueryDeclaration): AST.DataEntityDeclaration | undefined {
   return node.target?.ref
+}
+
+/** dataEntityNamedInFile finds a data entity visible from the Tao file that contains `anchor`.
+ * V1 row-handle shorthand does not resolve data entities across files. */
+export function dataEntityNamedInFile(anchor: AST.Node, name: string): AST.DataEntityDeclaration | undefined {
+  const root = AST.Utils.findRootNode(anchor)
+  if (!AST.isTaoFile(root)) {
+    return undefined
+  }
+  for (const dataDecl of root.statements.filter(AST.isDataDeclaration)) {
+    const entity = dataDecl.dataStatements
+      .filter(AST.isDataEntityDeclaration)
+      .find(e => e.name === name)
+    if (entity) {
+      return entity
+    }
+  }
+  return undefined
+}
+
+/** actionParameterDataRowHandleEntity resolves the V1 shorthand `action X Rsvp { ... }` row-handle form. */
+export function actionParameterDataRowHandleEntity(
+  param: AST.ParameterDeclaration,
+): AST.DataEntityDeclaration | undefined {
+  if (param.type || param.localSuperType) {
+    return undefined
+  }
+  let current: AST.Node | undefined = param.$container
+  while (current) {
+    if (AST.isActionDeclaration(current)) {
+      return dataEntityNamedInFile(param, param.name)
+    }
+    if (AST.isViewDeclaration(current) || AST.isTaoFile(current)) {
+      return undefined
+    }
+    current = current.$container
+  }
+  return undefined
+}
+
+/** dataRowHandleForReference resolves references that are guaranteed to denote one data row handle in V1. */
+export function dataRowHandleForReference(
+  ref: AST.Referenceable | undefined,
+): DataRowHandleResolution | undefined {
+  if (AST.isQueryDeclaration(ref)) {
+    if (queryDeclarationCardinality(ref) !== 'one') {
+      return undefined
+    }
+    const entity = queryDeclarationEntity(ref)
+    return entity ? { entity, sourceKind: 'singleton-query' } : undefined
+  }
+  if (AST.isForStatement(ref)) {
+    const query = ref.collection.ref
+    const entity = AST.isQueryDeclaration(query) ? queryDeclarationEntity(query) : undefined
+    return entity ? { entity, sourceKind: 'query-row' } : undefined
+  }
+  if (AST.isParameterDeclaration(ref)) {
+    const entity = actionParameterDataRowHandleEntity(ref)
+    return entity ? { entity, sourceKind: 'action-parameter' } : undefined
+  }
+  return undefined
 }
 
 /** queryDeclarationSourceText returns the source token text used when the entity reference is unresolved. */
@@ -197,7 +263,20 @@ function selectedQueryEntryForField(
   if (!block || block.entries.length === 0) {
     return undefined
   }
-  return block.entries.find(entry => normalizedQueryFieldPathSegments(entry.path, entity)[0] === fieldName)
+  return block.entries.find(entry =>
+    normalizedQueryFieldPathSegments(entry.path, entity)[0] === fieldName
+    && queryEntryProjects(entry, entity)
+  )
+}
+
+function queryEntryProjects(entry: AST.QuerySelectionEntry, entity: AST.DataEntityDeclaration): boolean {
+  if (entry.selection) {
+    return true
+  }
+  const fieldName = normalizedQueryFieldPathSegments(entry.path, entity)[0]
+  const field = entity.fields.find(f => f.name === fieldName)
+  const target = field ? dataFieldTarget(field) : undefined
+  return entry.op === undefined || target === undefined
 }
 
 function queryDefaultsSelectField(

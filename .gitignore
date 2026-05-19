@@ -3,6 +3,8 @@ node_modules
 *.tsbuildinfo
 .devenv
 .direnv
+.android
+local.properties
 
 # Generated files
 .builds

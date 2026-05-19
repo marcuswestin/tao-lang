@@ -10,6 +10,9 @@ data MeetupData {
    }
    Events Event {
       Title text,
+      Status text optional indexed,
+      Cancelled boolean indexed,
+      CreatedAt date optional indexed,
       Host Person,
       Ordering number indexed,
       Rsvps [Rsvp],
@@ -18,6 +21,7 @@ data MeetupData {
       Event,
       Person,
       Status default "going",
+      CreatedAt date optional indexed,
    }
 }
 
@@ -32,6 +36,7 @@ action CreateEvent {
    set EventCount += 1
    create MeetupData.Event {
       Title "New Event ${ EventCount }",
+      Cancelled false,
       Ordering EventCount,
       Host CurrentUser
    }
@@ -56,8 +61,16 @@ navigator MainNavigation {
 
 ui RootView {
    query MeetupData.Events as MyEvents {
-      Title,
+      Title exists,
       Ordering,
+      where Ordering >= 0
+      where Cancelled missing or Cancelled = false
+      order by Ordering desc
+      Rsvps {
+         Status,
+         where Status != "no" or Status missing
+         order by CreatedAt asc
+      },
    }
    query MeetupData.Events as EventDefaults
    query MeetupData.People as PersonDefaults
@@ -90,6 +103,11 @@ ui RootView {
       Text "Data Schema Test App"
       for MyEvent in MyEvents {
          Text "${ MyEvent.Title }"
+         Button "Update ${ MyEvent.Title }", action {
+            update MyEvent {
+               Title "Updated Event"
+            }
+         }
       }
       Text "All event defaults:"
       for DefaultEvent in EventDefaults {

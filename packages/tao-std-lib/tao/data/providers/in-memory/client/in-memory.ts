@@ -4,7 +4,9 @@ import {
   registerTaoDataProvider,
   type TaoDataClient,
   type TaoDataProviderParams,
+  taoDataRowId,
   type TaoDatasetShape,
+  type TaoDataUpdatePatch,
 } from '../../tao-data-client'
 import {
   buildQueryResult,
@@ -14,7 +16,12 @@ import {
   type TaoQueryResult,
   useReactiveQueryPlan,
 } from '../../tao-query'
-import { evaluateTaoQueryPredicate, projectTaoQueryRow } from '../../tao-query-projection'
+import {
+  evaluateTaoQueryFilter,
+  evaluateTaoQueryPredicate,
+  projectTaoQueryRow,
+  sortTaoQueryRows,
+} from '../../tao-query-projection'
 
 type CryptoLike = {
   randomUUID?: () => string
@@ -99,6 +106,21 @@ export class MemoryTaoData implements TaoDataClient {
     this.notifyBucket(collection)
   }
 
+  update(collection: string, row: unknown, patch: TaoDataUpdatePatch): void {
+    const id = taoDataRowId(row)
+    const prev = this.rows.get(collection) ?? []
+    const index = prev.findIndex(item => Reflect.get(item, 'id') === id)
+    if (index === -1) {
+      throw new Error(`Tao update target row '${id}' does not exist in '${collection}'.`)
+    }
+    const normalized = evaluateRecordFields(patch)
+    const { id: _ignoredId, ...patchWithoutId } = normalized
+    const next = [...prev]
+    next[index] = { ...prev[index]!, ...patchWithoutId, id }
+    this.rows.set(collection, next)
+    this.notifyBucket(collection)
+  }
+
   private snapshot(plan: TaoQueryPlan): TaoQueryResult {
     if (!this.initialized) {
       return buildQueryResult(plan.cardinality === 'one' ? null : [], true, null)
@@ -120,6 +142,8 @@ export class MemoryTaoData implements TaoDataClient {
     for (const predicate of plan.where) {
       out = out.filter(row => evaluateTaoQueryPredicate(row, predicate))
     }
+    out = out.filter(row => evaluateTaoQueryFilter(row, plan.filter))
+    out = sortTaoQueryRows(out, plan.orderBy)
     return out.map(row => projectTaoQueryRow(row, plan.select))
   }
 

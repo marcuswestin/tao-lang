@@ -61,6 +61,13 @@ describe('type checking — type declarations:', () => {
     `)
   })
 
+  test('type X is date parses and validates cleanly', async () => {
+    await parseTaoFully(`
+      type DueDate is date
+      ui V { render inject \`\`\`ts return null \`\`\` }
+    `)
+  })
+
   test('duplicate type name fails validation', async () => {
     const report = await parseASTWithErrors(`
       type FirstName is text
@@ -326,6 +333,29 @@ describe('type checking — operators and string templates:', () => {
       }
     `)
     expectHumanMessagesContain(report, 'not selected')
+  })
+
+  test('relationship predicates do not select relationship rows for member access', async () => {
+    const report = await parseASTWithErrors(`
+      data D {
+        People Person { Name text }
+        Events Event { Title text, Host Person }
+      }
+      app A { ui V }
+      ui Text Value text { render inject \`\`\`ts return null \`\`\` }
+      ui V {
+        query D.Person as CurrentUser { id = "person-1" }
+        query D.Events as HostedEvents {
+          Title,
+          Host = CurrentUser,
+        }
+        render inject \`\`\`ts return null \`\`\`
+        for Event in HostedEvents {
+          Text Event.Host.Name
+        }
+      }
+    `)
+    expectHumanMessagesContain(report, "Field 'Host' is not selected by query 'HostedEvents'.")
   })
 
   test('unary minus requires number operand', async () => {
@@ -654,6 +684,30 @@ describe('type checking — argument binding (actions):', () => {
       action LogEvent M text, L number { }
       action Outer {
         do LogEvent "submitted", 1
+      }
+    `)
+  })
+
+  test('do <Action> binds data row-handle arguments by entity', async () => {
+    await parseTaoFully(`
+      data D {
+        Rsvps Rsvp { Status text }
+      }
+      query D.Rsvps as Rsvps { Status }
+      action SetRsvpStatus Rsvp, Status text {
+        update Rsvp { Status }
+      }
+      app A { ui V }
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
+        for Rsvp in Rsvps {
+          Button "Go", action {
+            do SetRsvpStatus Rsvp, "going"
+          }
+        }
+      }
+      ui Button Title text, Action action {
+        render inject \`\`\`ts return null \`\`\`
       }
     `)
   })

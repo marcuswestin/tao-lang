@@ -31,6 +31,17 @@ in
     npm.enable = true;
   };
 
+  android = {
+    enable = true;
+    reactNative.enable = true;
+    platforms.version = [ "36" ];
+    buildTools.version = [ "36.0.0" "35.0.0" ];
+    ndk.version = [ "27.1.12297006" ];
+    abis = [ "arm64-v8a" ];
+    systemImageTypes = [ "google_apis_playstore" ];
+    android-studio.enable = false;
+  };
+
   packages = [
     nodePkg
     pkgs.cocoapods

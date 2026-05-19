@@ -9,6 +9,10 @@
     { "assertVisibleText": "Create Event 0" },
     { "pressVisibleText": "Create Event 0" },
     { "assertVisibleText": "New Event 1" },
-    { "pressVisibleText": "Create Event 1" }
+    { "assertVisibleText": "Update New Event 1" },
+    { "pressVisibleText": "Update New Event 1" },
+    { "assertVisibleText": "Updated Event" },
+    { "pressVisibleText": "Create Event 1" },
+    { "assertVisibleText": "New Event 2" }
   ]
 }

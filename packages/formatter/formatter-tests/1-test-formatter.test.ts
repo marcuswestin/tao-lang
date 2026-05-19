@@ -1181,4 +1181,53 @@ describe('Formatter — data schema:', () => {
       }
 
     `)
+
+  testFormatter('formats query where order and update syntax')
+    .format(`
+      data D {
+        Events Event { Title text, Active boolean, Ordering number indexed, StartsAt date indexed, Rsvps [Rsvp] }
+        Rsvps Rsvp { Status text, CreatedAt date indexed, Event }
+      }
+      query D.Events as Upcoming { Title, StartsAt exists, where Active=true and(Title!="draft" or StartsAt missing) order by Ordering desc Rsvps { Status, where Status!="no" or Status missing order by CreatedAt } }
+      action MarkGoing Rsvp {
+        update Rsvp { Status "going", Event }
+      }
+    `)
+    .equals(`
+
+      data D {
+          Events Event {
+              Title text,
+              Active boolean,
+              Ordering number indexed,
+              StartsAt date indexed,
+              Rsvps [Rsvp]
+          }
+          Rsvps Rsvp {
+              Status text,
+              CreatedAt date indexed,
+              Event
+          }
+      }
+
+      query D.Events as Upcoming {
+          Title,
+          StartsAt exists,
+          where Active = true and (Title != "draft" or StartsAt missing)
+          order by Ordering desc
+          Rsvps {
+              Status,
+              where Status != "no" or Status missing
+              order by CreatedAt
+          }
+      }
+
+      action MarkGoing Rsvp {
+          update Rsvp {
+              Status "going",
+              Event
+          }
+      }
+
+    `)
 })

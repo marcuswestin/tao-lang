@@ -228,4 +228,95 @@ describe('parse — data schema:', () => {
     defaultQuery.expect('name').toBe('Everyone')
     expect(defaultQuery.unwrap().selection).toBeUndefined()
   })
+
+  test('parses date fields and query where/order additions', async () => {
+    const doc = await parseAST(`
+      data D {
+        Events Event {
+          Status text,
+          Cancelled boolean,
+          Ordering number indexed,
+          CreatedAt date indexed,
+          Rsvps [Rsvp],
+        }
+        Rsvps Rsvp {
+          Status text,
+          CreatedAt date indexed,
+        }
+      }
+
+      query D.Events as Upcoming {
+        Status,
+        CreatedAt exists,
+        where Cancelled = false or Status != "draft" and CreatedAt missing
+        order by Ordering desc
+
+        Rsvps {
+          Status,
+          where Status != "no" or Status missing
+          order by CreatedAt
+        }
+      }
+    `)
+
+    const dataDecl = doc.statements[0].as_DataDeclaration
+    dataDecl.dataStatements[0].as_DataEntityDeclaration.fields[3].match({
+      name: 'CreatedAt',
+      type: { primitiveType: 'date' },
+    })
+
+    const query = doc.statements[1].as_QueryDeclaration
+    const selection = query.selection
+    selection.entries.match([
+      { path: { segments: ['Status'] } },
+      { path: { segments: ['CreatedAt'] }, existence: 'exists' },
+      { path: { segments: ['Rsvps'] } },
+    ])
+    selection.orderByClauses.only.match({ field: 'Ordering', direction: 'desc' })
+
+    const rootWhere = selection.whereClauses.only.expression.as_QueryLogicalExpression
+    rootWhere.expect('op').toBe('or')
+    rootWhere.right.as_QueryLogicalExpression.expect('op').toBe('and')
+    rootWhere.right.as_QueryLogicalExpression.right.as_QueryFieldPredicateExpression.match({
+      path: { segments: ['CreatedAt'] },
+      existence: 'missing',
+    })
+
+    const nestedSelection = selection.entries[2].selection
+    nestedSelection.orderByClauses.only.match({ field: 'CreatedAt' })
+    expect(nestedSelection.orderByClauses.only.unwrap().direction).toBeUndefined()
+    nestedSelection.whereClauses.only.expression.as_QueryLogicalExpression.right.as_QueryFieldPredicateExpression.match(
+      {
+        path: { segments: ['Status'] },
+        existence: 'missing',
+      },
+    )
+  })
+
+  test('parses update statements with create-style assignments', async () => {
+    const doc = await parseAST(`
+      data D {
+        Events Event { Title text }
+        Rsvps Rsvp {
+          Status text,
+          Event,
+        }
+      }
+
+      action MarkGoing Rsvp {
+        update Rsvp {
+          Status "going",
+          Event
+        }
+      }
+    `)
+
+    const update = doc.statements[1].as_ActionDeclaration.block.statements[0].as_UpdateStatement
+    expect(update.unwrap().target.$refText).toBe('Rsvp')
+    update.fields.match([
+      { field: 'Status', value: { $type: 'StringTemplateExpression' } },
+      { field: 'Event' },
+    ])
+    expect(update.fields[1].unwrap().value).toBeUndefined()
+  })
 })

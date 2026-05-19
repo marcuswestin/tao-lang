@@ -1,6 +1,6 @@
 ---
 name: project-5-implement-project
-description: Implement a reviewed Tao project plan one committable step at a time on a feature branch or worktree, validating and committing each coherent chunk.
+description: Implement a reviewed Tao project plan one intended step at a time on a feature branch or worktree, committing each coherent functional unit and validating at sensible boundaries.
 ---
 
 # Project 5: Implement Project
@@ -27,12 +27,15 @@ description: Implement a reviewed Tao project plan one committable step at a tim
 6. For each step:
    - re-read files before editing;
    - make only that step's changes;
-   - run the validation named in the plan;
+   - split the step into coherent units of functionality when the step is too large for one useful commit;
+   - commit each implemented unit of functionality, using the plan's suggested subject pattern or a tighter equivalent;
+   - prefer running the relevant checks or tests at each useful boundary, but do not require every intermediate commit to be fully implemented, fully working, or fully test-passing;
+   - skip checks or tests before an intermediate commit when running them would not provide meaningful signal for that incomplete unit, and record the deferred validation in the plan or implementation notes;
+   - run the validation named in the plan before treating the numbered step as complete, unless the step is intentionally intermediate and the plan defers that validation;
    - update the plan or roadmap with completed/deferred discoveries;
-   - run `./agent prep-commit`;
-   - commit the coherent chunk with the plan's suggested subject or a tighter equivalent;
-   - after the commit, post a concise progress overview in the conversation.
-7. Stop if validation fails and fix that step before continuing.
+   - when a commit is meant to close the numbered step or a validation boundary, run `./agent prep-commit` before committing unless the user explicitly opted out.
+   - after each completed plan-step commit, post a concise progress overview in the conversation.
+7. Stop on validation failures that block the current validation boundary. Do not stop merely because an intentional intermediate commit has deferred checks.
 8. Update the roadmap status to `Implemented` when all planned implementation steps are complete, using the roadmap's project queue status values.
 
 ## Step Progress Overview
@@ -71,5 +74,6 @@ Example:
 
 ## Validation
 
-- Use the plan's per-step validation.
-- Run `./agent prep-commit` before each commit.
+- Use the plan's per-step validation at step completion or at the validation boundary named in the plan.
+- Intermediate commits may defer checks or tests when the unit is intentionally incomplete; record that validation was deferred.
+- Run `./agent prep-commit` before commits that close a numbered step or validation boundary unless the user explicitly opted out.

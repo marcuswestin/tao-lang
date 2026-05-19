@@ -21,6 +21,23 @@ export function isUnderViewDeclaration(node: AST.Node): boolean {
   return false
 }
 
+/** directLiteralPrimitive returns the primitive kind of a direct literal expression used in data validators. */
+export function directLiteralPrimitive(expr: AST.Expression): AST.PrimitiveType | 'null' | undefined {
+  if (AST.isStringTemplateExpression(expr)) {
+    return 'text'
+  }
+  if (AST.isNumberLiteral(expr)) {
+    return 'number'
+  }
+  if (AST.isBooleanLiteral(expr)) {
+    return 'boolean'
+  }
+  if (AST.isNullLiteral(expr)) {
+    return 'null'
+  }
+  return undefined
+}
+
 /** validateUppercaseIdentifierName reports when a declaration / parameter name does not start with an uppercase letter. Tao keywords are matched by dedicated grammar rules (not `name=ID`) so they are naturally excluded. */
 export function validateUppercaseIdentifierName<NodeT extends AST.Node & { name?: string }>(
   node: NodeT,

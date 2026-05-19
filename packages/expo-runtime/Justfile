@@ -12,7 +12,7 @@ prebuild:
     bunx expo prebuild
 
 build: _deps
-    just cli build-lib {{ justfile_directory() }}/_gen-tao-lib
+    just cli build-lib {{ justfile_directory() }}/../../.builds/expo-runtime/_gen-tao-lib
 
 install-ios-platform:
     xcodebuild -downloadPlatform iOS
@@ -37,8 +37,11 @@ device-url:
     ip=$(bash "{{ justfile_directory() }}/../shared/scripts/lan-ipv4.sh")
     echo "exp+tao-expo-runtime://expo-development-client/?url=http%3A%2F%2F${ip}%3A{{ DEV_METRO_PORT }}"
 
-android: _deps
-    bunx expo start --android
+android *ARGS: _deps
+    bunx expo run:android {{ ARGS }}
+
+android-start *ARGS: _deps
+    bunx expo start --android {{ ARGS }}
 
 clean:
     rm -rf .expo

@@ -1,6 +1,10 @@
 import { AST } from '@parser/parser'
 import { isViewLikeDeclaration, resolveVariantTargetView } from '../design/variant-resolution'
-import { queryRowPathKind } from '../query/query-model'
+import {
+  actionParameterDataRowHandleEntity,
+  dataRowHandleForReference,
+  queryRowPathKind,
+} from '../query/query-model'
 import { staticObjectShapeOf } from '../static-object-shape'
 import {
   declaredStructShapeOfExpr,
@@ -71,6 +75,7 @@ export type ArgumentBindingResult = {
 type TypeFingerprint =
   | { readonly kind: 'primitive'; readonly primitive: AST.PrimitiveType; readonly nominal?: AST.TypeDeclaration }
   | { readonly kind: 'nominal-struct'; readonly decl: AST.TypeDeclaration }
+  | { readonly kind: 'data-row'; readonly entity: AST.DataEntityDeclaration }
   | { readonly kind: 'anonymous-struct' }
   | { readonly kind: 'unresolved' }
 
@@ -197,6 +202,10 @@ function reportMissingParameters(
 /** parameterTypeFingerprint resolves a parameter's declared type to a fingerprint.
  * For shorthand parameters (no explicit `type`), uses `parameterResolvedType`. */
 function parameterTypeFingerprint(param: AST.ParameterDeclaration): TypeFingerprint {
+  const rowEntity = actionParameterDataRowHandleEntity(param)
+  if (rowEntity) {
+    return { kind: 'data-row', entity: rowEntity }
+  }
   const resolved = parameterResolvedType(param)
   return resolvedTypeToFingerprint(resolved)
 }
@@ -247,6 +256,10 @@ function argumentValueFingerprint(expr: AST.Expression | AST.ObjectLiteral): Typ
     return { kind: 'anonymous-struct' }
   }
   if (AST.isMemberAccessExpression(expr)) {
+    const row = dataRowHandleForReference(expr.root.ref)
+    if (row && expr.properties.length === 0) {
+      return { kind: 'data-row', entity: row.entity }
+    }
     return memberAccessFingerprint(expr)
   }
   if (AST.isUnaryExpression(expr)) {
@@ -308,13 +321,22 @@ function memberAccessFingerprint(
     return { kind: 'primitive', primitive: 'action' }
   }
   if (AST.isParameterDeclaration(ref)) {
+    const rowEntity = actionParameterDataRowHandleEntity(ref)
+    if (rowEntity) {
+      return { kind: 'data-row', entity: rowEntity }
+    }
     return parameterTypeFingerprint(ref)
   }
   if (AST.isTypeDeclaration(ref)) {
     return { kind: 'unresolved' }
   }
   if (AST.isForStatement(ref)) {
-    return { kind: 'anonymous-struct' }
+    const row = dataRowHandleForReference(ref)
+    return row ? { kind: 'data-row', entity: row.entity } : { kind: 'anonymous-struct' }
+  }
+  if (AST.isQueryDeclaration(ref)) {
+    const row = dataRowHandleForReference(ref)
+    return row ? { kind: 'data-row', entity: row.entity } : { kind: 'unresolved' }
   }
   if (AST.isAssignmentDeclaration(ref)) {
     if (seen.has(ref)) {
@@ -458,6 +480,10 @@ function argFingerprintMatchesParam(arg: TypeFingerprint, param: TypeFingerprint
 
   if (param.kind === 'anonymous-struct' && arg.kind === 'anonymous-struct') {
     return true
+  }
+
+  if (param.kind === 'data-row' && arg.kind === 'data-row') {
+    return param.entity === arg.entity
   }
 
   return false

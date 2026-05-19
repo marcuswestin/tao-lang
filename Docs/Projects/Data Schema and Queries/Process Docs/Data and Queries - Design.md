@@ -1,12 +1,12 @@
-# Queries Design — Preferred
+# Data and Queries — Design
 
 > **How to read this document**
 >
 > - This file is the **current preferred** Tao data layer design (what we intend to build toward).
 > - **Forks, competing options, and debates** live in **[Queries Design - Alternatives.md](./Queries%20Design%20-%20Alternatives.md)** — follow links like _→ [Alternatives](…#anchor)_ instead of duplicating them here.
-> - **External language prior art** (GraphQL, Prisma, KQL, …): **[Prior Art - Query Languages.md](./Prior%20Art%20-%20Query%20Languages.md)**.
+> - **External language prior art** (GraphQL, Prisma, KQL, …): **[Data and Queries - Prio Art.md](./Data%20and%20Queries%20-%20Prio%20Art.md)**.
 > - **TanStack Query vs InstantDB** execution and bridge details: **[Runtime - TanStack Query and InstantDB.md](./Runtime%20-%20TanStack%20Query%20and%20InstantDB.md)**.
-> - **Target-only example fictions** (not valid Tao today): **[Example App - Target](./Example%20App%20-%20Target/README.md)**.
+> - **Target-only example fictions** (not valid Tao today): **[Example App - Target variants](./Example%20App%20-%20Target/variants/)**.
 
 ---
 
@@ -63,7 +63,7 @@ data Data {
 
 **Provider binding in app (preferred stance):** An `app` block may include `provider Name { key "value" }` while `data` stays schema-only. Every app has a provider; omitted provider defaults to Memory. Provider key-value pairs are passed through to provider init untyped, and only provider implementations validate their own params. Field metadata (`unique`, `indexed`, `optional`, `default`, cascades) remains schema metadata for codegen/provider use. _Alternatives_ (config only in TS, split files, …) → [Alternatives](./Queries%20Design%20-%20Alternatives.md#provider-config-placement).
 
-Ordering, limiting, and pagination are deferred until the read-query shape is stable.
+V1 ordering supports one direct scalar field per query block, restricted to fields marked `indexed` or `unique`. Limiting and pagination remain deferred until provider capability validation exists.
 
 ---
 
@@ -99,6 +99,8 @@ Schema → Provider → Runtime → Views
 query Data.Tasks as CompletedTasks {
   Title,
   Completed = true,
+  where Archived missing or Archived = false
+  order by Priority desc
   Owner = CurrentUser,
 }
 
@@ -120,12 +122,17 @@ query Data.Person as CurrentUser {
 - Query block entries are comma-separated. A bare scalar entry projects that field.
 - Querying an entity without a selection block, or with an empty selection block, projects all scalar fields on that entity, but does not automatically include linked entities.
 - Predicate entries (`Rating > 4.5`) both filter and project scalar fields.
-- Supported predicates are `=`, `!=`, `<`, `<=`, `>`, and `>=`; multiple predicates in the same block are ANDed.
+- Filter-only `where` statements are supported inside query blocks. Multiple `where` statements in the same block are ANDed.
+- `where` expressions support `and`, `or`, and parentheses. `and` binds tighter than `or`.
+- Supported comparison predicates are `=`, `!=`, `<`, `<=`, `>`, and `>=`.
+- `exists` and `missing` are supported in predicate-entry and `where` form. `exists` means not null and not missing/undefined; `missing` means null, missing, or undefined.
 - `Data.Singular` queries must include equality on `id` or a declared `unique` field.
 - Relationship identity predicates filter only and compare linked rows by provider identity (`id`) or an emitted unique comparison field: `Host = CurrentUser` does not project `Host`.
 - Relationship entries project linked data. A bare relationship entry like `Todos` projects the linked entity's scalar fields only; `Todos { Task, Description, Tags }` also projects the explicitly named linked entities, again stopping at each linked entity's scalar fields unless another nested block opts in. Predicates inside relationship blocks filter the linked row(s).
 - The built-in `id` can be used without declaring it. Rows keep hidden provider identity for keys and later writes; `id` is visible only when explicitly selected.
-- Ordering, limiting, and pagination are deferred.
+- `order by Field [asc|desc]` is supported once per query block for direct indexed or unique scalar fields. It does not project the ordered field unless the field is also selected.
+- `date` is a schema/data scalar stored at the runtime boundary as Unix milliseconds. Date literals, `now()`, formatting, and date arithmetic are deferred.
+- Limiting and pagination are deferred.
 
 **Name resolution**
 
@@ -157,10 +164,10 @@ query Data.Tasks as UserTasks {
 Each query compiles to a **stable identity**:
 
 ```text
-queryKey = [ schema, collection, cardinality, parameters, select, where ]
+queryKey = [ schema, collection, cardinality, parameters, select, where, filter, orderBy ]
 ```
 
-**Requirements:** deterministic and parameter-sensitive. The selection tree and predicates are part of identity.
+**Requirements:** deterministic and parameter-sensitive. The selection tree, predicate entries, `where` filter tree, existence predicates, ordering descriptors, and schema/value shape inputs such as `date` fields are part of identity. Query identity changes from the V1 query/write sprint may invalidate pre-existing provider caches.
 
 **Purpose:** feeds the **provider’s runtime library** — e.g. TanStack Query `queryKey` / dedup, InstantDB client subscription and reconciliation — so the same logical query maps to one cached path in that SDK. **Caching itself** is implemented by those libraries (not a separate Tao cache). _Bridge TS patterns_ → [Runtime - TanStack Query and InstantDB.md](./Runtime%20-%20TanStack%20Query%20and%20InstantDB.md).
 
@@ -261,7 +268,9 @@ action AddTodo Owner Person, TodoText text {
 
 `create` and `update` are **statements**, not top-level declarations. They live wherever imperative logic is allowed (actions, event handlers, etc.).
 
-**MVP scope:** `create` and `update` only. No `delete` in MVP — can be added in a later phase. _Command-style / server-named mutations vs patch-only_ → [Alternatives](./Queries%20Design%20-%20Alternatives.md#write-model-command-vs-patch).
+`update` targets strict row handles only: singleton query aliases, root `for` row bindings, or inline/named action parameters that name data entities. Entity names, collection names, lookup/upsert forms, nested projected rows without their own binding form, and to-many relationship replacement are not V1 update targets.
+
+**MVP scope:** `create` and strict row-handle `update` only. No `delete` in MVP — can be added in a later phase. _Command-style / server-named mutations vs patch-only_ → [Alternatives](./Queries%20Design%20-%20Alternatives.md#write-model-command-vs-patch).
 
 ---
 
@@ -345,7 +354,7 @@ Single unified generation targets may include: InstantDB schema, REST/OpenAPI, G
 
 ## Provider capability validation {#provider-capability-validation}
 
-Deferred. The V1 runtime handles selection-block query plans for Memory and InstantDB, including built-in `id`, projected row shapes, root predicates, relationship identity predicates, and nested relationship selection where provider data is available. The plan shape is intentionally explicit enough for later provider manifests to reject unsupported operators, relationship depth, pagination modes, limiting, ordering, or aggregation. _Matrix / examples_ → [Alternatives](./Queries%20Design%20-%20Alternatives.md#provider-capability-matrix).
+Deferred. The V1 runtime handles selection-block query plans for Memory and InstantDB, including built-in `id`, projected row shapes, root predicates, filter-only `where` trees, existence predicates, direct scalar ordering, relationship identity predicates, strict row-handle updates, and nested relationship selection where provider data is available. The plan shape is intentionally explicit enough for later provider manifests to reject unsupported operators, relationship depth, pagination modes, limiting, provider-specific ordering modes, or aggregation. _Matrix / examples_ → [Alternatives](./Queries%20Design%20-%20Alternatives.md#provider-capability-matrix).
 
 ---
 
@@ -366,7 +375,7 @@ Deferred. The V1 runtime handles selection-block query plans for Memory and Inst
 - Typed query results: map schema entity types through selection blocks to output type at the interface boundary.
 - Provider capability manifests and compile-time provider query-shape checks.
 - REST provider; query → TanStack Query mapping (`queryKey` + `queryFn`); key derivation from [§3.4](#query-identity).
-- Ordering, pagination, and richer predicates after provider capabilities are explicit.
+- Pagination, limiting, richer predicates, and provider-specific ordering modes after provider capabilities are explicit.
 - `Loadable<T>` wrapper type (`loading | error | ready`) or richer `guard` variants — see [§3.6 future direction](#async-model).
 
 ### Phase 3 — Broader backends
@@ -400,7 +409,7 @@ Detailed forks for each bullet live in **[Queries Design - Alternatives.md](./Qu
 
 **Runtime abstraction (MVP-thin, broader surface deferred):** MVP compiles to a small `TaoDataClient` provider interface for Memory and InstantDB. Phase 2 may widen that into a typed `DataSource<Schema>` contract with query/mutate/subscribe methods for REST/TanStack and other providers. See [Phase 2](#implementation-phases).
 
-**Query and language:** limiting/pagination; aggregation/grouping; projections; query-on-query / alias-as-source desugaring; provider capability manifests and compile-time provider query-shape checks.
+**Query and language:** limiting/pagination; aggregation/grouping; advanced projection typing; query-on-query / alias-as-source desugaring; provider capability manifests and compile-time provider query-shape checks.
 
 **Writes and data flow:** `delete` statement; multi-step transactions; optimistic updates; dedicated `mutation` keyword / top-level declarations; write return values.
 

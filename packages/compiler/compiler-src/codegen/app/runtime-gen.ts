@@ -35,6 +35,7 @@ import {
 } from '../../navigation/navigation-ir'
 import {
   collectionSlugFromPlural,
+  dataRowHandleForReference,
   queryDeclarationAliasName,
 } from '../../query/query-model'
 import { decodeTaoTemplateTextChunk } from '../tao-template-text-chunk'
@@ -126,6 +127,7 @@ class RuntimeGen {
       GuardStatement: (n) => this.GuardStatement(n),
       ForStatement: (n) => this.ForStatement(n),
       CreateStatement: (n) => this.CreateStatement(n),
+      UpdateStatement: (n) => this.UpdateStatement(n),
     })
   }
 
@@ -819,6 +821,24 @@ ${screens}
     `
   }
 
+  /** UpdateStatement patches an existing provider row through the active TaoDataClient. */
+  UpdateStatement(node: AST.UpdateStatement): Compiled {
+    const entity = this.updateTargetEntity(node)
+    Assert(entity, 'UpdateStatement target must resolve to a data entity after validation.', {
+      target: node.target.$refText,
+    })
+    const dataDecl = entity.$container
+    Assert.is(dataDecl, AST.isDataDeclaration, 'DataEntityDeclaration container must be a DataDeclaration.')
+    const collection = collectionSlugFromPlural(entity.pluralName)
+    const target = this.updateTargetExpression(node)
+    const props = compileIndentedNodeList(node.fields, f => this.createFieldAssignment(f))
+    return compileNode(node)`
+      getTaoData(${JSON.stringify(dataDecl.name)}).update(${JSON.stringify(collection)}, ${target}, {
+        ${props}
+      })
+    `
+  }
+
   /** createFieldAssignment emits one object property for `create { … }`. */
   private createFieldAssignment(field: AST.CreateFieldAssignment): Compiled {
     const key = JSON.stringify(field.field)
@@ -826,6 +846,18 @@ ${screens}
       return compileNode(field)`${key}: ${this.Expression(field.value)},`
     }
     return compileNode(field)`${key}: _Scope.${field.field},`
+  }
+
+  private updateTargetExpression(node: AST.UpdateStatement): Compiled {
+    const target = node.target.ref
+    if (AST.isQueryDeclaration(target)) {
+      return compileNode(node)`TR.QueryData(_Scope.${queryDeclarationAliasName(target)})`
+    }
+    return compileNode(node)`_Scope.${node.target.$refText}`
+  }
+
+  private updateTargetEntity(node: AST.UpdateStatement): AST.DataEntityDeclaration | undefined {
+    return dataRowHandleForReference(node.target.ref)?.entity
   }
 
   /** viewGuardLoadingExpr emits query-result `isLoading` checks for in-view live queries used by `guard`. */

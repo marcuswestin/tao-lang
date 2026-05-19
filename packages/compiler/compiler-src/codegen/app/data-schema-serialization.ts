@@ -1,10 +1,13 @@
 import { AST } from '@parser/parser'
 import { switch_safe } from '@shared'
-import { collectionSlugFromPlural } from '../../query/query-model'
+import {
+  collectionSlugFromPlural,
+  dataFieldPrimitiveType as taoDataFieldPrimitiveType,
+} from '../../query/query-model'
 
 /** Codegen-time field shape narrowed to known Tao primitives; structurally assignable to `TaoDatasetFieldShape` in tao-data-client. */
 export type TaoSerializedDatasetFieldShape = string | {
-  type: 'string' | 'number' | 'boolean' | 'any'
+  type: 'string' | 'number' | 'boolean' | 'date' | 'any'
   optional?: boolean
   unique?: boolean
   indexed?: boolean
@@ -55,7 +58,7 @@ export function dataDeclarationToSerializedSchema(decl: AST.DataDeclaration): Ta
 /** dataFieldToRuntimeFieldShape maps Tao fields and metadata to the shared provider shape. */
 export function dataFieldToRuntimeFieldShape(field: AST.DataFieldDeclaration): TaoSerializedDatasetFieldShape {
   const shape: Extract<TaoSerializedDatasetFieldShape, { type: string }> = {
-    type: dataFieldPrimitiveType(field),
+    type: serializedDataFieldPrimitiveType(field),
   }
   for (const meta of field.metadata) {
     if (meta.kind === 'optional') {
@@ -70,16 +73,19 @@ export function dataFieldToRuntimeFieldShape(field: AST.DataFieldDeclaration): T
   return shape
 }
 
-/** dataFieldPrimitiveType maps a Tao data field to a provider-neutral primitive type name. */
-function dataFieldPrimitiveType(field: AST.DataFieldDeclaration): 'string' | 'number' | 'boolean' | 'any' {
-  const ft = field.type
-  if (!ft || ft.primitiveType === undefined) {
+/** serializedDataFieldPrimitiveType maps a Tao data field to a provider-neutral primitive type name. */
+function serializedDataFieldPrimitiveType(
+  field: AST.DataFieldDeclaration,
+): 'string' | 'number' | 'boolean' | 'date' | 'any' {
+  const primitive = taoDataFieldPrimitiveType(field)
+  if (!primitive) {
     return 'any'
   }
-  return switch_safe(ft.primitiveType, {
+  return switch_safe(primitive, {
     text: () => 'string',
     number: () => 'number',
     boolean: () => 'boolean',
+    date: () => 'date',
     action: () => 'any',
     view: () => 'any',
   })

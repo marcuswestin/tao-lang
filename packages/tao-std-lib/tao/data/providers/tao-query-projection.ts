@@ -1,5 +1,5 @@
 import { switch_Exhaustive } from '../../tao-runtime/runtime-utils'
-import type { TaoQueryPredicate, TaoQuerySelection } from './tao-query'
+import type { TaoQueryFilter, TaoQueryOrdering, TaoQueryPredicate, TaoQuerySelection } from './tao-query'
 
 /** taoQueryComparableValue normalizes nested row objects: uses `compareField` when set, otherwise a string `id` when present, so identity predicates match provider-shaped values. */
 export function taoQueryComparableValue(value: unknown, compareField?: string): unknown {
@@ -31,7 +31,39 @@ export function evaluateTaoQueryPredicate(row: Record<string, unknown>, predicat
     '<=': () => comparePrimitive(comparedActual, comparedExpected) <= 0,
     '>': () => comparePrimitive(comparedActual, comparedExpected) > 0,
     '>=': () => comparePrimitive(comparedActual, comparedExpected) >= 0,
+    exists: () => actual !== null && actual !== undefined,
+    missing: () => actual === null || actual === undefined,
   })
+}
+
+/** evaluateTaoQueryFilter evaluates a boolean query filter tree against one provider row. */
+export function evaluateTaoQueryFilter(
+  row: Record<string, unknown>,
+  filter: TaoQueryFilter | undefined,
+): boolean {
+  if (!filter) {
+    return true
+  }
+  if (filter.kind === 'predicate') {
+    return evaluateTaoQueryPredicate(row, filter.predicate)
+  }
+  if (filter.kind === 'and') {
+    return filter.filters.every(child => evaluateTaoQueryFilter(row, child))
+  }
+  return filter.filters.some(child => evaluateTaoQueryFilter(row, child))
+}
+
+/** sortTaoQueryRows returns rows ordered by a provider query descriptor without mutating the input rows. */
+export function sortTaoQueryRows(
+  rows: readonly Record<string, unknown>[],
+  orderBy: TaoQueryOrdering | undefined,
+): Record<string, unknown>[] {
+  const out = [...rows]
+  if (!orderBy) {
+    return out
+  }
+  out.sort((a, b) => compareRows(a, b, orderBy))
+  return out
 }
 
 /** projectTaoQueryRow applies a compiled selection tree to one provider row (nested values when already present). */
@@ -62,7 +94,18 @@ export function projectTaoQueryRow(
 
 /** taoQueryIsRecord narrows unknown values to plain object rows for filtering. */
 export function taoQueryIsRecord(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === 'object'
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+}
+
+function compareRows(
+  a: Record<string, unknown>,
+  b: Record<string, unknown>,
+  orderBy: TaoQueryOrdering,
+): number {
+  const aValue = taoQueryComparableValue(valueAtPath(a, orderBy.path))
+  const bValue = taoQueryComparableValue(valueAtPath(b, orderBy.path))
+  const result = comparePrimitive(aValue, bValue)
+  return orderBy.direction === 'desc' ? -result : result
 }
 
 function valueAtPath(row: Record<string, unknown>, path: readonly string[]): unknown {
@@ -104,11 +147,12 @@ function taoQueryValuesMatch(actual: unknown, expected: unknown, compareField: s
 
 function projectRelationshipValue(value: unknown, selection: TaoQuerySelection): unknown {
   const matchesWhere = (row: Record<string, unknown>): boolean =>
-    selection.where?.every(predicate => evaluateTaoQueryPredicate(row, predicate)) ?? true
+    (selection.where?.every(predicate => evaluateTaoQueryPredicate(row, predicate)) ?? true)
+    && evaluateTaoQueryFilter(row, selection.filter)
   if (Array.isArray(value)) {
-    return value
-      .filter(item => taoQueryIsRecord(item) && matchesWhere(item))
-      .map(item => projectTaoQueryRow(item as Record<string, unknown>, selection.select ?? []))
+    const rows = value.filter(taoQueryIsRecord).filter(matchesWhere)
+    return sortTaoQueryRows(rows, selection.orderBy)
+      .map(item => projectTaoQueryRow(item, selection.select ?? []))
   }
   if (!taoQueryIsRecord(value)) {
     return value

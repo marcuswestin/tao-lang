@@ -4,13 +4,13 @@ set -euo pipefail
 usage() {
   cat <<'USAGE'
 Usage:
-  ./agent project-review [--mode plan|implementation] [--passes 1..3] [--base REF] [--research PATH] [--reviewers all|codex|claude] [--dry-run] <project-plan-path>
+  ./agent project-review [--mode plan|implementation] [--passes 1] [--base REF] [--research PATH] [--reviewers all|codex|claude] [--dry-run] <project-plan-path>
 
 Runs selected reviewer prompts for a Tao project plan or implementation.
 
 Options:
   --mode MODE       Review mode: plan or implementation. Default: plan.
-  --passes N        Number of review passes, 1..3. Default: 1.
+  --passes N        Compatibility option. Only 1 is allowed; apply fixes and rerun for another pass.
   --base REF        Base ref for implementation diffs. Default: main.
   --research PATH   Optional project research doc. Defaults to sibling Project Research doc when present.
   --reviewers LIST  Reviewers to run: all, codex, or claude. Default: all.
@@ -21,7 +21,7 @@ Environment:
   CODEX_CMD                 Codex CLI command. Default: codex
   CLAUDE_CMD                Claude CLI command. Default: claude
   CODEX_MODEL               Optional Codex model.
-  CLAUDE_MODEL              Claude model. Default: sonnet
+  CLAUDE_MODEL              Claude model. Default: opus-4.6
   REVIEW_TIMEOUT_SECONDS    Timeout per reviewer. Default: 600
   PROJECT_REVIEW_DIR        Artifact root. Default: /private/tmp/tao-project-reviews
 USAGE
@@ -114,6 +114,67 @@ append_command_section() {
   } >> "$output"
 }
 
+relative_repo_path() {
+  local path="$1"
+  case "$path" in
+    "$REPO_ROOT"/*)
+      echo "${path#"$REPO_ROOT/"}"
+      ;;
+    *)
+      echo "$path"
+      ;;
+  esac
+}
+
+canonical_file_path() {
+  local path="$1"
+  local dir
+  local base
+  dir="$(dirname "$path")"
+  base="$(basename "$path")"
+  [ -d "$dir" ] || return 1
+  (cd "$dir" && printf '%s/%s\n' "$(pwd -P)" "$base")
+}
+
+add_referenced_context_files() {
+  local source_file="$1"
+  local output_file="$2"
+  local source_dir
+  source_dir="$(dirname "$source_file")"
+
+  {
+    grep -Eoh '\[[^]]+\]\([^)]+\.(md|tao)(#[^)]*)?\)' "$source_file" 2>/dev/null || true
+  } |
+    sed -E 's/^.*\(([^)]*)\).*$/\1/' |
+    while IFS= read -r link; do
+      local raw_path
+      local resolved_path
+      local canonical_path
+      raw_path="${link%%#*}"
+      raw_path="${raw_path%%\?*}"
+      raw_path="${raw_path//%20/ }"
+
+      case "$raw_path" in
+        ""|\#*|http://*|https://*|mailto:*)
+          continue
+          ;;
+        /*)
+          resolved_path="$raw_path"
+          ;;
+        *)
+          resolved_path="$source_dir/$raw_path"
+          ;;
+      esac
+
+      if [ -f "$resolved_path" ]; then
+        canonical_path="$(canonical_file_path "$resolved_path")" || continue
+        if [ "$canonical_path" != "$PLAN_PATH_CANONICAL" ] && [ "$canonical_path" != "${RESEARCH_PATH_CANONICAL:-}" ]; then
+          printf '%s\n' "$canonical_path" >> "$output_file"
+        fi
+      fi
+    done
+}
+
 run_codex() {
   local prompt_file="$1"
   local pass_dir="$2"
@@ -122,7 +183,7 @@ run_codex() {
     echo "$codex_cmd CLI not found in PATH." > "$pass_dir/codex.stderr"
     return 127
   fi
-  local args=(exec --cd "$REPO_ROOT" --sandbox read-only)
+  local args=(exec -C "$REPO_ROOT" --sandbox read-only --ephemeral)
   if [ -n "${CODEX_MODEL:-}" ]; then
     args+=(--model "$CODEX_MODEL")
   fi
@@ -134,7 +195,7 @@ run_claude() {
   local prompt_file="$1"
   local pass_dir="$2"
   local claude_cmd="${CLAUDE_CMD:-claude}"
-  local model="${CLAUDE_MODEL:-sonnet}"
+  local model="${CLAUDE_MODEL:-opus-4.6}"
   if ! command -v "$claude_cmd" >/dev/null 2>&1; then
     echo "$claude_cmd CLI not found in PATH." > "$pass_dir/claude.stderr"
     return 127
@@ -203,18 +264,24 @@ done
 [ "${REVIEWERS}" = "all" ] || [ "${REVIEWERS}" = "codex" ] || [ "${REVIEWERS}" = "claude" ] ||
   die "--reviewers must be all, codex, or claude"
 [[ "$PASSES" =~ ^[0-9]+$ ]] || die "--passes must be a number"
-[ "$PASSES" -ge 1 ] && [ "$PASSES" -le 3 ] || die "--passes must be between 1 and 3"
+[ "$PASSES" -eq 1 ] || die "--passes must be 1; apply fixes from each review round and rerun project-review for another pass"
 [ -n "${PLAN_PATH_ARG:-}" ] || die "missing project plan path"
 
 REPO_ROOT="$(repo_root)"
 PLAN_PATH="$(resolve_path "$PLAN_PATH_ARG")"
 [ -f "$PLAN_PATH" ] || die "project plan not found: $PLAN_PATH"
+PLAN_PATH_CANONICAL="$(canonical_file_path "$PLAN_PATH")"
 
 if [ -n "$RESEARCH_PATH_ARG" ]; then
   RESEARCH_PATH="$(resolve_path "$RESEARCH_PATH_ARG")"
   [ -f "$RESEARCH_PATH" ] || die "project research doc not found: $RESEARCH_PATH"
 else
   RESEARCH_PATH="$(infer_research_path "$PLAN_PATH")"
+fi
+if [ -n "$RESEARCH_PATH" ]; then
+  RESEARCH_PATH_CANONICAL="$(canonical_file_path "$RESEARCH_PATH")"
+else
+  RESEARCH_PATH_CANONICAL=""
 fi
 
 SLUG="$(safe_slug "$PLAN_PATH")"
@@ -235,9 +302,15 @@ for pass in $(seq 1 "$PASSES"); do
     echo "# Tao Project ${MODE} Review"
     echo
     echo "You are reviewing a Tao project ${MODE}. Be direct and actionable."
+    echo "Be brief: return only the most important points, not a thorough deep dive into every possible issue."
+    echo "Prefer a small number of findings that could materially change correctness, implementation safety, scope, or validation."
     echo "Prioritize correctness, missing decisions, unclear sequencing, missing validation, and scope drift."
+    echo "Read the included plan, research, roadmap, and directly referenced local context before judging whether docs are stale or inconsistent."
+    echo "Check links, historical docs, roadmap status, command names, acceptance paths, and implementation ownership against the included context."
+    echo "If important context is missing, report that as a finding instead of doing broad open-ended archaeology."
+    echo "Use external research only when the plan depends on a current third-party API, and keep that research narrow."
     echo "Return Markdown with sections: Findings, Questions, Suggested Changes, Deferred Ideas."
-    echo "Do not spend space praising the plan or implementation."
+    echo "Do not spend space praising the plan or implementation, and do not enumerate minor nits unless they block the work."
     if [ "$pass" -gt 1 ]; then
       echo
       echo "This is review pass $pass of $PASSES. Focus on new issues not already raised below."
@@ -254,6 +327,25 @@ for pass in $(seq 1 "$PASSES"); do
   append_file_section "Project Plan" "$PROMPT_FILE" "$PLAN_PATH"
   if [ -f "$REPO_ROOT/Docs/Tao Project Roadmap.md" ]; then
     append_file_section "Project Roadmap" "$PROMPT_FILE" "$REPO_ROOT/Docs/Tao Project Roadmap.md"
+  fi
+
+  REFERENCED_CONTEXT_FILE="$PASS_DIR/referenced-context-files.txt"
+  : > "$REFERENCED_CONTEXT_FILE"
+  add_referenced_context_files "$PLAN_PATH" "$REFERENCED_CONTEXT_FILE"
+  if [ -n "$RESEARCH_PATH" ]; then
+    add_referenced_context_files "$RESEARCH_PATH" "$REFERENCED_CONTEXT_FILE"
+  fi
+  sort -u -o "$REFERENCED_CONTEXT_FILE" "$REFERENCED_CONTEXT_FILE"
+  if [ -s "$REFERENCED_CONTEXT_FILE" ]; then
+    {
+      echo
+      echo "## Directly Referenced Local Context"
+      echo
+      echo "These local files are linked from the plan or research doc. Use them to catch stale links, scope drift, and historical docs being treated as active work."
+    } >> "$PROMPT_FILE"
+    while IFS= read -r referenced_path; do
+      append_file_section "Referenced: $(relative_repo_path "$referenced_path")" "$PROMPT_FILE" "$referenced_path"
+    done < "$REFERENCED_CONTEXT_FILE"
   fi
 
   if [ "$MODE" = "implementation" ]; then

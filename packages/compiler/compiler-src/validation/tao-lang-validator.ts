@@ -17,7 +17,10 @@ import {
   navigationDestinationPath,
   type TaoNavigationDestination,
 } from '../navigation/navigation-tree'
-import { queryDeclarationCardinality } from '../query/query-model'
+import {
+  actionParameterDataRowHandleEntity,
+  queryDeclarationCardinality,
+} from '../query/query-model'
 import { parameterResolvedType, resolveShorthandParameterType } from '../tao-type-shapes'
 import {
   dataSchemaValidationMessages,
@@ -1196,7 +1199,7 @@ function validateParameterShorthandType(
     return
   }
   const resolved = resolveShorthandParameterType(param)
-  if (resolved === undefined) {
+  if (resolved === undefined && actionParameterDataRowHandleEntity(param) === undefined) {
     report.error(
       validationMessages.parameterShorthandNotAType(param.name),
       { node: param, property: 'name' },
