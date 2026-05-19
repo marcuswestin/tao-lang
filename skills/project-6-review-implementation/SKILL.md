@@ -13,21 +13,23 @@ description: Review an implemented Tao project against its plan by running Codex
 
 ## Workflow
 
-1. Read the project plan, matching research doc, roadmap row, and current git state.
-2. Run one implementation review pass. The script auto-includes a sibling `Project Research` doc when present; pass `--research <path>` if the research doc is elsewhere.
+1. Read the project plan, matching research doc, roadmap row, directly linked local docs, and current git state.
+2. Run one implementation review pass. The script auto-includes a sibling `Project Research` doc when present and directly linked local `.md` / `.tao` context from the plan and research doc; pass `--research <path>` if the research doc is elsewhere.
 
    ```sh
    ./agent project-review --mode implementation --base main <plan-path>
    ```
 
-3. Read both review outputs from the reported artifact directory.
-4. Incorporate valid findings that fix bugs, missed requirements, missing tests, unclear generated behavior, or meaningful maintainability risks.
-5. Document valid deferred work in the plan or roadmap.
-6. Ignore weak, duplicate, out-of-scope, or speculative feedback.
-7. Validate changes using the relevant narrow checks or `./agent check`.
-8. Commit review fixes through `git-workflow`.
-9. Repeat up to 3 passes only when the previous pass produced meaningful new issues.
-10. Update roadmap status to `Reviewed implementation` when ready for merge prep, using the roadmap's project queue status values.
+3. Read both review outputs from the reported artifact directory. If one reviewer fails or hangs, use any completed output and rerun only the missing reviewer with the existing prompt instead of starting broader research.
+4. Treat stale-doc findings as first-class implementation issues when the code, plan, roadmap, historical docs, command names, or acceptance paths disagree.
+5. Incorporate valid findings that fix bugs, missed requirements, missing tests, unclear generated behavior, or meaningful maintainability risks.
+6. Document valid deferred work in the plan or roadmap.
+7. Ignore weak, duplicate, out-of-scope, or speculative feedback.
+8. Validate changes using the relevant narrow checks or `./agent check`.
+9. Commit review fixes through `git-workflow`.
+10. Do not run multiple review passes in one `project-review` invocation. If another round is useful, first apply the current round's accepted fixes, validate them, and commit the review-fix chunk when appropriate.
+11. Repeat up to 3 total review passes only when the previous pass produced meaningful new issues and its fixes have already been applied.
+12. Update roadmap status to `Reviewed implementation` when ready for merge prep, using the roadmap's project queue status values.
 
 ## Output
 
