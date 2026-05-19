@@ -72,7 +72,7 @@ function TextView(
     return React.createElement(RN.Text, {
       ...textProps,
       ...taoTextProps,
-      style: [_taoLayout, taoDesignStyleForState(_taoDesignStyle, 'default'), style],
+      style: [_taoLayout, taoDesignTextStyleForState(_taoDesignStyle, 'default'), style],
     })
   }
 
@@ -83,7 +83,7 @@ function TextView(
 function MultiLineTextView(viewDisplayName: string) {
   const Wrapped = (props: TaoMultiLineTextProps) => {
     const { _taoDesignStyle, _taoLayout, style, lines, ...textProps } = props
-    const designStyle = taoDesignStyleForState(_taoDesignStyle, 'default')
+    const designStyle = taoDesignTextStyleForState(_taoDesignStyle, 'default')
     const lineLimitProps = lines === undefined
       ? {}
       : { numberOfLines: lines, ellipsizeMode: 'tail' as const }
@@ -104,7 +104,7 @@ function TextInputView(viewDisplayName: string) {
     return React.createElement(RN.TextInput, {
       ...textInputProps,
       placeholderTextColor: textInputProps.placeholderTextColor ?? '#94a3b8',
-      style: [_taoLayout, taoDesignStyleForState(_taoDesignStyle, 'default'), style],
+      style: [_taoLayout, taoDesignTextStyleForState(_taoDesignStyle, 'default'), style],
     })
   }
 
@@ -134,6 +134,7 @@ function ButtonView(
     const [pressed, setPressed] = React.useState(false)
     const designState = buttonDesignState(disabled, pressed)
     const designStyle = taoDesignStyleForState(_taoDesignStyle, designState)
+    const designViewStyle = taoDesignViewStyleForState(_taoDesignStyle, designState)
     const designTextStyle = buttonTextStyle([designStyle, style])
     const labelTextStyle = color === undefined ? designTextStyle : { ...designTextStyle, color }
     return React.createElement(
@@ -155,7 +156,7 @@ function ButtonView(
         style: [
           baseStyles,
           _taoLayout,
-          designStyle,
+          designViewStyle,
           style,
           !hasStatefulDesignStyle && disabled ? { opacity: 0.45 } : undefined,
           !hasStatefulDesignStyle && pressed ? { opacity: 0.82 } : undefined,
@@ -195,6 +196,20 @@ function taoDesignStyleForState(
   state: TaoDesignStateName,
 ): TaoDesignStyle | undefined {
   return typeof style === 'function' ? style(state) : style
+}
+
+function taoDesignTextStyleForState(
+  style: TaoDesignStyleProp | undefined,
+  state: TaoDesignStateName,
+): RN.StyleProp<RN.TextStyle> | undefined {
+  return taoDesignStyleForState(style, state) as RN.StyleProp<RN.TextStyle> | undefined
+}
+
+function taoDesignViewStyleForState(
+  style: TaoDesignStyleProp | undefined,
+  state: TaoDesignStateName,
+): RN.StyleProp<RN.ViewStyle> | undefined {
+  return taoDesignStyleForState(style, state) as RN.StyleProp<RN.ViewStyle> | undefined
 }
 
 function buttonDesignState(disabled: boolean | null | undefined, pressed: boolean): TaoDesignStateName {
