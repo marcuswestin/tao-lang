@@ -149,10 +149,9 @@ Work:
   path-bearing screen appears in the path.
 - Validate `navigation push` targets stack destinations, `navigation tab` targets
   tab destinations, and param payloads match declared destination params.
-- Reject ambiguous action targets. `navigation push` or `navigation pop` from a
-  view that is only reachable through a tab navigator is a validation error.
-  When the compiler cannot prove a valid stack or tab context from the navigation
-  tree, emit a diagnostic instead of generating best-effort dispatch.
+- Reject ambiguous action targets. V1 rejects `navigation pop` only when the app
+  navigation tree has no stack destination; precise action-context reachability
+  for nested tab-only views is deferred.
 
 Validation:
 
@@ -419,6 +418,9 @@ Suggested commit: `feat(navigation): validate navigation v1`
   boundaries.
 - Multi-file navigator-local destination scoping beyond the module/app tree
   needed for v1.
+- Multi-file navigation action runtime access. In v1, navigation actions require
+  app-level navigation in the same source file because the generated navigation
+  runtime reference is file-scoped.
 
 ## References
 

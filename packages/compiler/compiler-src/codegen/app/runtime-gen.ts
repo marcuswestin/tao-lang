@@ -23,6 +23,7 @@ import {
   isViewLikeDeclaration,
   resolveVariantTargetView,
   type TaoViewLikeDeclaration,
+  viewLikeUsesStatefulDesignStyle,
 } from '../../design/variant-resolution'
 import { layoutEntryValues } from '../../layout/tao-layout'
 import {
@@ -39,6 +40,7 @@ import {
 import { decodeTaoTemplateTextChunk } from '../tao-template-text-chunk'
 import type { TaoAppConfig, TaoAppConfigObject } from './app-config'
 import { dataDeclarationToSerializedSchema } from './data-schema-serialization'
+import { taoFileHasNavigationAction } from './import-header-gen'
 import { compileQueryDeclaration, compileQueryMemberAccessExpression } from './query-plan-gen'
 
 type ViewRenderHost = AST.ViewRender | (AST.RenderStatement & { view: NonNullable<AST.RenderStatement['view']> })
@@ -366,17 +368,30 @@ class RuntimeGen {
     return compileNode(declaration)`
       ${this.navigationTabIconHelper(ir)}
       const _taoNavigationRootRef = createNavigationContainerRef()
-      const _taoNavigationRuntime = createTaoNavigationRuntime(_taoNavigationRootRef, {
-        stackPush: StackActions.push,
-        stackPop: StackActions.pop,
-        tabJumpTo: TabActions.jumpTo,
-      })
+      ${this.navigationActionRuntime(declaration)}
       ${this.navigationScreenComponents(ir.root)}
       ${this.navigationNavigatorDefinitions(ir.root)}
       const TaoAppNavigationRoot = createStaticNavigation(${navigationNavigatorConstName(ir.root)})
       export function AppNavigationRoot() {
         return <TaoAppNavigationRoot ref={_taoNavigationRootRef} />
       }
+    `
+  }
+
+  private navigationActionRuntime(declaration: AST.AppDeclaration): Compiled {
+    const root = AST.Utils.findRootNode(declaration)
+    if (!AST.isTaoFile(root) || !taoFileHasNavigationAction(root)) {
+      return compileNoop()
+    }
+    return compileNode(declaration)`
+      // v1: the navigation runtime is file-scoped. Navigation actions must live
+      // in the same Tao source file as app-level navigation until multi-file
+      // navigation action support exports or shares this runtime reference.
+      const _taoNavigationRuntime = createTaoNavigationRuntime(_taoNavigationRootRef, {
+        stackPush: StackActions.push,
+        stackPop: StackActions.pop,
+        tabJumpTo: TabActions.jumpTo,
+      })
     `
   }
 
@@ -972,7 +987,7 @@ ${screens}
   }
 
   private viewLikeUsesStatefulDesignStyle(viewLike: TaoViewLikeDeclaration): boolean {
-    return resolveVariantTargetView(viewLike)?.name === 'Button'
+    return viewLikeUsesStatefulDesignStyle(viewLike)
   }
 
   /** viewRenderLayoutSpec emits the serialized layout spec for the runtime layout resolver. */

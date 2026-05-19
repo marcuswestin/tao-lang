@@ -69,7 +69,7 @@ export const validationMessages = {
     `Navigation target '${target}' requires param '${name}'.`,
   navigationParamTypeMismatch: (name: string, expected: string, actual: string) =>
     `Navigation param '${name}' is '${actual}' but target parameter expects '${expected}'.`,
-  navigationActionNeedsAppNavigation: 'Navigation actions require app-level navigation.',
+  navigationActionNeedsAppNavigation: 'Navigation actions require app-level navigation in the same source file.',
   navigationActionUnknownTarget: (name: string) => `Navigation action targets unknown destination '${name}'.`,
   navigationActionAmbiguousTarget: (name: string) => `Navigation action target '${name}' is ambiguous.`,
   navigationPushTargetMustBeStack: (name: string) => `navigation push target '${name}' must be a stack destination.`,
@@ -81,6 +81,8 @@ export const validationMessages = {
     `Navigation action for '${target}' provides unknown param '${name}'.`,
   navigationActionParamTypeMismatch: (name: string, expected: string, actual: string) =>
     `Navigation action param '${name}' is '${actual}' but destination expects '${expected}'.`,
+  navigationActionShorthandParamUnknown: (name: string) =>
+    `Navigation action shorthand param '${name}' must match a parameter on the enclosing action.`,
   setTargetMustBeState: (kind: string) => `'set' can only target a state binding, not a '${kind}'.`,
   legacyIDBInjection:
     '`IDB` is no longer available in injected TypeScript; use compiled data/query/create statements or getTaoData instead.',
@@ -548,7 +550,7 @@ function validateNavigationActionPayload<NodeT extends AST.NavigationPushAction 
       report.error(validationMessages.navigationActionMissingParam(param.name, destination.name), node)
       continue
     }
-    const actualType = navigationPayloadValueType(assignment.value)
+    const actualType = navigationPayloadValueType(assignment)
     if (actualType !== undefined && actualType !== param.type) {
       report.error(
         validationMessages.navigationActionParamTypeMismatch(param.name, param.type, actualType),
@@ -559,6 +561,8 @@ function validateNavigationActionPayload<NodeT extends AST.NavigationPushAction 
   for (const assignment of assignments) {
     if (!paramsByName.has(assignment.name)) {
       report.error(validationMessages.navigationActionExtraParam(assignment.name, destination.name), assignment)
+    } else if (assignment.value === undefined && navigationActionPayloadShorthandParam(assignment) === undefined) {
+      report.error(validationMessages.navigationActionShorthandParamUnknown(assignment.name), assignment)
     }
   }
 }
@@ -587,10 +591,15 @@ function appNavigationForNode(node: AST.Node): AST.AppNavigationStatement | unde
     return undefined
   }
   for (const statement of root.statements) {
-    if (!AST.isAppDeclaration(statement)) {
+    const declaration = AST.isModuleDeclaration(statement)
+      ? statement.declaration
+      : AST.isDeclaration(statement)
+      ? statement
+      : undefined
+    if (!AST.isAppDeclaration(declaration)) {
       continue
     }
-    const appNavigation = statement.appStatements.find(AST.isAppNavigationStatement)
+    const appNavigation = declaration.appStatements.find(AST.isAppNavigationStatement)
     if (appNavigation !== undefined) {
       return appNavigation
     }
@@ -606,9 +615,13 @@ function navigationSafeParameterType(param: AST.ParameterDeclaration): AST.Navig
   return isNavigationParamType(resolved.primitive) ? resolved.primitive : undefined
 }
 
-function navigationPayloadValueType(value: AST.Expression | undefined): AST.NavigationParamType | undefined {
+function navigationPayloadValueType(
+  assignment: AST.NavigationActionParamAssignment,
+): AST.NavigationParamType | undefined {
+  const value = assignment.value
   if (value === undefined) {
-    return undefined
+    const param = navigationActionPayloadShorthandParam(assignment)
+    return param === undefined ? undefined : navigationSafeParameterType(param)
   }
   if (AST.isStringTemplateExpression(value)) {
     return 'text'
@@ -625,6 +638,30 @@ function navigationPayloadValueType(value: AST.Expression | undefined): AST.Navi
   if (AST.isMemberAccessExpression(value) && value.properties.length === 0) {
     const ref = value.root.ref
     return AST.isParameterDeclaration(ref) ? navigationSafeParameterType(ref) : undefined
+  }
+  return undefined
+}
+
+function navigationActionPayloadShorthandParam(
+  assignment: AST.NavigationActionParamAssignment,
+): AST.ParameterDeclaration | undefined {
+  if (assignment.value !== undefined) {
+    return undefined
+  }
+  const action = nearestActionDeclaration(assignment)
+  return action?.parameterList?.parameters.find(param => param.name === assignment.name)
+}
+
+function nearestActionDeclaration(node: AST.Node): AST.ActionDeclaration | undefined {
+  let current: AST.Node | undefined = node.$container
+  while (current !== undefined) {
+    if (AST.isActionDeclaration(current)) {
+      return current
+    }
+    if (AST.isTaoFile(current)) {
+      return undefined
+    }
+    current = current.$container
   }
   return undefined
 }

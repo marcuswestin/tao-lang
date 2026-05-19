@@ -1,7 +1,7 @@
 import { AST } from '@parser/parser'
 import { designStyleKeyForNode, type TaoDesignCodegenContext } from '../design/design-codegen'
 import { stringTemplateTextOnlyLiteral } from '../design/design-strings'
-import { isViewLikeDeclaration, resolveVariantTargetView } from '../design/variant-resolution'
+import { isViewLikeDeclaration, viewLikeUsesStatefulDesignStyle } from '../design/variant-resolution'
 import {
   buildTaoNavigationTree,
   navigationDestinationIcons,
@@ -108,7 +108,7 @@ function buildDestinationIR(
       ? {
         componentName: target.name,
         designStyleKey: designStyleKeyForNode(design, target),
-        designStyleStateful: resolveVariantTargetView(target)?.name === 'Button',
+        designStyleStateful: viewLikeUsesStatefulDesignStyle(target),
         kind: 'view',
       }
       : {

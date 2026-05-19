@@ -59,17 +59,14 @@ describe('codegen — navigation:', () => {
     const bootstrap = result.files.find(file => file.relativePath === 'app-bootstrap.tsx')?.content ?? ''
 
     expect(emitted).toContain(
-      "import { createNavigationContainerRef, createStaticNavigation, StackActions, TabActions } from '@react-navigation/native'",
+      "import { createNavigationContainerRef, createStaticNavigation } from '@react-navigation/native'",
     )
     expect(emitted).toContain("import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'")
     expect(emitted).toContain("import { createNativeStackNavigator } from '@react-navigation/native-stack'")
-    expect(emitted).toContain("import { createTaoNavigationRuntime } from '../use/@tao/tao-runtime/navigation-runtime'")
     expect(emitted).toContain("import Ionicons from '@expo/vector-icons/Ionicons'")
     expect(emitted).toContain('const _taoNavigationRootRef = createNavigationContainerRef()')
-    expect(emitted).toContain('const _taoNavigationRuntime = createTaoNavigationRuntime(_taoNavigationRootRef, {')
-    expect(emitted).toContain('stackPush: StackActions.push')
-    expect(emitted).toContain('stackPop: StackActions.pop')
-    expect(emitted).toContain('tabJumpTo: TabActions.jumpTo')
+    expect(emitted).not.toContain('StackActions')
+    expect(emitted).not.toContain('createTaoNavigationRuntime')
     expect(emitted).toContain('const _TaoNavigator_SearchTabs = createBottomTabNavigator({')
     expect(emitted).toContain('const _TaoNavigator_MainNavigation = createNativeStackNavigator({')
     expect(emitted).toContain('RoomId={TR.Literal(_routeParams.RoomId)}')
@@ -130,6 +127,14 @@ describe('codegen — navigation:', () => {
     `)
     const emitted = result.files.map(file => file.content).join('\n')
 
+    expect(emitted).toContain(
+      "import { createNavigationContainerRef, createStaticNavigation, StackActions, TabActions } from '@react-navigation/native'",
+    )
+    expect(emitted).toContain("import { createTaoNavigationRuntime } from '../use/@tao/tao-runtime/navigation-runtime'")
+    expect(emitted).toContain('const _taoNavigationRuntime = createTaoNavigationRuntime(_taoNavigationRootRef, {')
+    expect(emitted).toContain('stackPush: StackActions.push')
+    expect(emitted).toContain('stackPop: StackActions.pop')
+    expect(emitted).toContain('tabJumpTo: TabActions.jumpTo')
     expect(emitted).toContain('_taoNavigationRuntime.push("Room", {')
     expect(emitted).toContain('"RoomId": _Scope.RoomId.evaluate().jsValue,')
     expect(emitted).toContain('_taoNavigationRuntime.pop()')

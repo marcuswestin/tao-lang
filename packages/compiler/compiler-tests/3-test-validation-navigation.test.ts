@@ -66,6 +66,28 @@ describe('navigation validation:', () => {
     `)
   })
 
+  test('navigation action validates under a module-wrapped app declaration', async () => {
+    await parseTaoFully(`
+      share app Tabs {
+        navigation MainNavigation
+      }
+
+      navigator MainNavigation {
+        stack {
+          screen Home
+        }
+      }
+
+      ui Home {
+        render inject \`\`\`ts return null \`\`\`
+      }
+
+      action Back {
+        navigation pop
+      }
+    `)
+  })
+
   test('app requires exactly one ui or navigation root', async () => {
     const missing = await parseASTWithErrors(`
       app Empty { }
@@ -260,6 +282,45 @@ describe('navigation validation:', () => {
       validationMessages.navigationActionExtraParam('Extra', 'Search'),
       validationMessages.navigationActionParamTypeMismatch('Query', 'text', 'number'),
     )
+
+    const shorthand = await parseASTWithErrors(`
+      app Bad { navigation MainNavigation }
+      navigator MainNavigation {
+        stack {
+          screen Room RoomScreen {
+            param RoomId text
+          }
+        }
+      }
+      ui RoomScreen RoomId text {
+        render inject \`\`\`ts return null \`\`\`
+      }
+      action Go OtherId text {
+        navigation push Room {
+          RoomId
+        }
+      }
+    `)
+    expectHumanMessagesContain(
+      shorthand,
+      validationMessages.navigationActionShorthandParamUnknown('RoomId'),
+    )
+  })
+
+  test('navigation pop in tabs-only app emits diagnostic', async () => {
+    const report = await parseASTWithErrors(`
+      app Bad { navigation MainNavigation }
+      navigator MainNavigation {
+        tabs {
+          tab Home
+        }
+      }
+      ui Home { render inject \`\`\`ts return null \`\`\` }
+      action Go {
+        navigation pop
+      }
+    `)
+    expectHumanMessagesContain(report, validationMessages.navigationPopRequiresStack)
   })
 
   test('navigation actions require app navigation', async () => {
