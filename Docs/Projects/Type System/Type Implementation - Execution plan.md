@@ -21,7 +21,7 @@ Brief overview and high level checklist of the required changes for basic type c
 
 - **See also (internal & roadmap)**
   - Deeper end-to-end Typir+Langium architecture: [Typir and Langium - Implementation guide](./Typir%20and%20Langium%20-%20Implementation%20guide.md) (in-repo, cites Langium, Typir LOX, GitHub issues).
-  - [Tao Features](../../Tao%20Features.md) for product expectations around types, functions, and IDE.
+  - [Tao Project Roadmap](../../Tao%20Project%20Roadmap.md) for product expectations around types, functions, and IDE.
 
 ### Execution Plan
 

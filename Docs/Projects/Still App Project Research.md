@@ -1,0 +1,100 @@
+# Still App Project Research
+
+## Goal
+
+Define the first flagship Buildable App MVP example: a minimalist, native-feeling personal focus app that answers "what should I do now?" with exactly one active activity or one recommended next activity.
+
+The app should demonstrate Tao's ability to produce a polished, personal-data-only Expo/React Native app from small, readable Tao source. It should be intentionally restrictive rather than a general TODO app.
+
+## Current Context
+
+- The project selected for research is the first Buildable App MVP demo app, currently named **Still**.
+- The broader demo suite may later include a second realtime chat app, but this research document is scoped to Still only.
+- Still uses personal data only for MVP. Public feeds, authentication, authorization, and on-device LLM behavior are deferred.
+- Tao's roadmap already identifies the required underlying areas: data schemas and mutations, native UI defaults, design inference, interactions/events, forms/inputs, runtime targets, and scenario/example coverage.
+- The app is meant to set up later local LLM functionality by producing semantically rich private data, but LLM inference is not part of this MVP.
+
+## Decisions
+
+- Still is not a TODO app, backlog, project manager, or feed reader.
+- The product question is: **What should I do now?**
+- The main app surface must show only one active or recommended activity at a time.
+- If an activity is active, opening the app shows only that activity.
+- Seeing or choosing other activities while one is active requires deactivating or ending the current activity first.
+- A user can have at most three active intentions at any given time.
+- An intention represents something the user wants their life to be like, wants in their life, or wants to move toward.
+- Activities are common recurring behaviors that align the user with one or more intentions.
+- Activities and intentions have a many-to-many relationship.
+- Creating an activity requires associating it with at least one intention.
+- An activity has a short title and may have an optional description.
+- Activity titles should be encouraged, through visual design, to be only a few words.
+- Longer activity titles are allowed, but the UI should make them feel less ideal by scaling text down or otherwise losing the crisp short-title feel.
+- When no activity is active, the main view can show a list of activities tagged by their associated intentions.
+- When no activity is active, Still should subtly elevate one recommended activity while keeping the rest of the activity list available underneath.
+- Activating an activity records its start time.
+- Ending an activity records its end time.
+- The active-activity view should not show a timer.
+- The active-activity view should show the active activity and a `Conclude` action.
+- Over time, Still should surface underrepresented activities or intentions.
+- MVP recommendation logic should be deterministic and local, not AI-driven.
+- If there are no intentions, Still shows the create-intention screen until an intention is created.
+- Auth, authorization, public feeds, and on-device LLM inference are deferred.
+
+## User Interview Notes
+
+- The first app should be personal, native-feeling, minimalist, and restrictive.
+- The app should answer "what should I do now?" whenever opened.
+- There should be one choice or active activity at any given time.
+- The user wants at most three intentions at any given time.
+- Activities are recurring alignment behaviors associated with at least one intention.
+- Activities can belong to more than one intention.
+- Activity titles should ideally be only a couple of words, with an optional description available if needed.
+- The design should encourage short activity names by making long names fit but feel less visually strong.
+- The idle main view can show activities as a list with intention tags.
+- The idle main view should subtly recommend one activity rather than making every activity visually equal.
+- Activity sessions record start and end times.
+- Active sessions should be visually quiet: no timer, only the active activity and a conclude button.
+- First launch does not use starter examples. If no intentions exist, the app blocks on intention creation.
+- Later functionality may identify underrepresented activities and eventually use local LLM inference, but not for MVP.
+
+## Repo Findings
+
+- `CORE_TENETS.md` requires Tao apps to have sane, tasteful defaults and work out of the box.
+- `Docs/Tao Project Roadmap.md` defines the Buildable App MVP as the ability to build, run, test, and prepare a small real Expo/React Native app with data, navigation, UI, styling, interactions, error states, and core tooling.
+- The roadmap shows design inference and native visual defaults as planned but not implemented.
+- The data roadmap says Memory is the default provider when unspecified, which matches the local personal-data MVP direction.
+- The data roadmap says `create` exists and `update` remains active MVP work, which matters for starting/ending sessions and editing intentions or activities.
+- The interactions roadmap identifies press/change/submit/focus and action lifecycle behavior as unresolved pieces needed by real apps.
+- The forms area has no dedicated project doc yet, so Still may need to force a narrow input/form slice.
+- The testing/example-app area says canonical example apps are part of the Buildable App MVP, so Still should become an executable scenario once planned.
+
+## External Research
+
+No external research is required yet. The current MVP is local personal data only and does not depend on current third-party APIs, platform account policies, or public data-source limits.
+
+## Alternatives Considered
+
+- **Generic TODO app:** rejected because it encourages backlog/list behavior and does not answer "what should I do now?"
+- **HN or public-feed reader:** rejected for the first app because saved articles do not naturally become tasks or personal activities.
+- **Reading queue or knowledge shelf:** useful later, but not as direct as the personal focus app for proving native-feeling personal data.
+- **Local LLM focus assistant:** deferred because the MVP should prove the app loop without AI dependency.
+- **Habit tracker:** adjacent, but weaker than the intention/activity/session model because it can become a checklist instead of a present-tense guidance tool.
+
+## Unresolved Questions
+
+- How should activity-intention many-to-many links be represented in the MVP data model?
+- Should the activity list include all activities, only recommended activities, or only activities linked to active intentions?
+- What should happen if all activities are equally represented?
+- Should underrepresentation be based on session count, time spent, recency, or an explicit user weighting?
+- Is ending an active activity the same as completing it, or can a session end without implying success?
+- Should concluding an activity collect any immediate reflection, or should conclusion only end the session?
+- What should the MVP screens be beyond the main Now screen?
+
+## Planning Inputs
+
+- Project name: Still app MVP.
+- Primary acceptance test: opening the app always presents exactly one active or recommended activity.
+- MVP data model candidates: `Intention`, `Activity`, activity-intention link records, `Session`.
+- Likely core rules: max three active intentions, one active session globally, activity sessions record `StartedAt` and `EndedAt`.
+- Likely implementation dependencies: local data provider, `create`, `update`, basic input controls, button events, conditional rendering, native default UI, app scenario coverage.
+- Next step: continue user interview until the product loop and MVP scope are decision-complete, then run `project-3-write-project-plan`.

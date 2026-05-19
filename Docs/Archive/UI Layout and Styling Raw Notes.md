@@ -105,7 +105,7 @@ Naming hierarchy for token application (e.g. semantic slots like icon/brand/pres
 
 ## Related docs
 
-- [Tao Features](../Tao%20Features.md)
+- [Tao Project Roadmap](../Tao%20Project%20Roadmap.md)
 - [App Routing and Navigation](../Projects/Design%20WIP/App%20Routing%20and%20Navigation.md)
 - [Error Handling](../Projects/Design%20WIP/Error%20Handling.md)
 
@@ -180,4 +180,4 @@ Source: pre-cleanup roadmap lines 302-612 (`### Design UI Appearance` through th
 
 - [ ] Learn about MEASURE FUNCTIONS: https://reactnative.dev/docs/layout-props#aspectratio
 
-The rest of **Next and Advanced** and **Long-term Goals** from that roadmap lives under **RAW TRANSFER** in [Tao Features](../Tao%20Features.md).
+The rest of **Next and Advanced** and **Long-term Goals** from that roadmap lives under **RAW TRANSFER** in [Tao Project Roadmap](../Tao%20Project%20Roadmap.md).

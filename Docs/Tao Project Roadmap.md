@@ -1,10 +1,36 @@
-# Tao Project Master Plan
+# Tao Project Roadmap
 
-This is the master table of contents for Tao v1 work. V1 means the **Buildable App MVP**: Tao can build, run, test, and prepare a small real Expo/React Native app with data, navigation, UI, styling, interactions, error states, and core tooling.
+This is the shared source of truth for Tao project selection, current priority order, planning status, and the v1 feature inventory. V1 means the **Buildable App MVP**: Tao can build, run, test, and prepare a small real Expo/React Native app with data, navigation, UI, styling, interactions, error states, and core tooling.
 
 Each section names a major feature area, gives the current high-level status, separates the MVP remainder from later work, and links to the document that owns the detailed plan where one exists.
 
-Status fields:
+## Current Project Queue
+
+Use this table to decide the next project and keep planning state visible. Detailed project work belongs in sibling research and plan docs under `Docs/Projects/`.
+
+| Priority | Project                              | Status      | Research doc                                               | Plan doc                                                                         | Next step                             | Notes                                           |
+| -------- | ------------------------------------ | ----------- | ---------------------------------------------------------- | -------------------------------------------------------------------------------- | ------------------------------------- | ----------------------------------------------- |
+| 1        | Project workflow skills and roadmap  | Implemented | -                                                          | -                                                                                | Run `project-6-review-implementation` | Bootstraps smoother project execution flow      |
+| 2        | Agent skill opportunity workflow     | Implemented | -                                                          | -                                                                                | Run `project-6-review-implementation` | Tracks friction and recommends new agent skills |
+| 3        | Layout era architecture improvements | Planned     | -                                                          | [Plan](./Projects/UI%20-%20Layout%20Era%20Architecture%20Improvements%20Plan.md) | Run `project-2-research-project`      | Compiler architecture cleanup                   |
+| 4        | Still app MVP                        | Researching | [Research](./Projects/Still%20App%20Project%20Research.md) | -                                                                                | Continue `project-2-research-project` | Restrictive personal focus app demo             |
+
+Project queue status values:
+
+- `Unselected`: candidate exists but has not been selected for active work.
+- `Selected`: user selected the project, but research has not started.
+- `Researching`: `project-2-research-project` is in progress.
+- `Ready for plan`: research records the decisions needed to write the plan.
+- `Planned`: project plan exists and is ready for review.
+- `Reviewed`: project plan has passed plan review and is ready for implementation.
+- `In implementation`: implementation branch or worktree is active.
+- `Implemented`: planned implementation work is complete and ready for implementation review.
+- `Reviewed implementation`: implementation review is complete and ready for merge prep.
+- `Ready to merge`: branch is validated and ready for the merge workflow.
+- `Merged`: work has landed in `main`, with possible follow-up still visible.
+- `Complete`: work has landed and no immediate follow-up remains.
+
+Feature inventory fields:
 
 - `Design:` high-level design state from active docs and the current branch.
 - `Implementation:` high-level repo state from the current branch.
@@ -154,7 +180,7 @@ Status fields:
 
 ## Documentation, Tutorials, Examples, Project Docs, And Agent/Repo Operating Workflows
 
-- Status: Design: documentation index, active project docs, archive boundaries, agent guide, and skill workflows exist; Implementation: docs are organized enough to navigate, but several master-plan areas still need owning documents.
-- MVP remaining: keep this master plan current, create missing project docs for known gaps, maintain canonical examples, and ensure docs describe the branch reality before features are treated as done.
+- Status: Design: documentation index, active project docs, archive boundaries, agent guide, skill workflows, and the agent-opportunity lifecycle exist; Implementation: docs are organized enough to navigate, and local skills can now capture friction, recommend skill work, and create Tao-local skills.
+- MVP remaining: keep this master plan current, create missing project docs for known gaps, maintain canonical examples, review opportunity-derived recommendations, and ensure docs describe the branch reality before features are treated as done.
 - Deferred: full public tutorial set, cookbook, generated API docs, product site, interactive lessons, and external contributor program.
-- Project docs: [Tao Documentation Index](./Tao%20Documentation%20Index.md), [Core Tenets](../CORE_TENETS.md), [Agent Guide](../AGENTS.md), Needs project docs for missing feature owners.
+- Project docs: [Tao Documentation Index](./Tao%20Documentation%20Index.md), [Core Tenets](../CORE_TENETS.md), [Agent Guide](../AGENTS.md), [Agent Opportunities](../agent-opportunities.md), Needs project docs for missing feature owners.

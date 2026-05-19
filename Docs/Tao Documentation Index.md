@@ -5,7 +5,8 @@ This index points to the active Tao design and implementation documents.
 ## Core
 
 - [Core Tenets](../CORE_TENETS.md) defines the product principles that guide Tao design and implementation.
-- [Tao Features](./Tao%20Features.md) tracks the feature inventory, current priorities, and long-range product areas.
+- [Tao Project Roadmap](./Tao%20Project%20Roadmap.md) tracks the feature inventory, current priorities, planning status, and long-range product areas.
+- [Agent Opportunities](../agent-opportunities.md) tracks repo friction, unmet workflow needs, and candidate agent skills.
 
 ## Language Design
 
