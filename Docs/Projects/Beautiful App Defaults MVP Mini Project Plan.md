@@ -344,3 +344,44 @@ Do not start with the broader three-template system. That belongs to `Docs/Proje
 ## Next Step
 
 Implement Step 1 and Step 2 first. Those two steps are the smallest path to visible improvement: core controls stop looking raw, and first web apps stop stretching across the viewport.
+
+## Completion Note
+
+Mini slice implemented on `feat/amazing-mclaren-e0db54` on 2026-05-19.
+
+Files changed or added:
+
+- `packages/tao-std-lib/tao/tao-runtime/Views.tsx`: baseline neutral palette (light/dark), spacing tokens, accent palette wiring, polished default styles for `Text`, `TextLabel`, `MultiLineText`, `Number`, `Button` (pressed/disabled), `TextInput` (focused/disabled), plus new `Card`, `EmptyState`, `ErrorState`, and `LoadingState` view factories.
+- `packages/tao-std-lib/tao/tao-runtime/tao-design-runtime.tsx`: module-level `useTaoDesignContext` export, `TaoBaselineAccentName` type/list, `accentName` added to `TaoDesignContextValue`.
+- `packages/tao-std-lib/tao/ui/Views.tao`: `Card`, `EmptyState`, `ErrorState`, `LoadingState` source-facing declarations.
+- `packages/tao-std-lib/tests/Views.test.ts`: runtime fallback style + accent contrast tests.
+- `packages/compiler/compiler-src/design/baseline-accent.ts`: deterministic FNV-1a accent selector.
+- `packages/compiler/compiler-src/codegen/app/app-gen-main.ts`: app-shell content frame (`maxWidth` 720, screen-size aware padding) and seeded accent emitted into `TaoDesignProvider`.
+- `packages/compiler/compiler-tests/7-test-baseline-accent.test.ts`: deterministic accent selection tests.
+- `packages/compiler/compiler-tests/7-test-design-locks-codegen.test.ts`: content frame, seeded accent, and std-lib state-component compile tests.
+- `Apps/Test Apps/Beautiful Defaults Mini/`: visual fixture using the new defaults end to end.
+- `packages/expo-runtime/tests-expo-runtime/shared-scenarios.jest-test.tsx`: Beautiful Defaults Mini added to the Expo allow list.
+
+Validation run:
+
+- `./agent compiler test "UI design inference locks and codegen"` (12 pass)
+- `./agent compiler test "selectTaoBaselineAccent"` (4 pass)
+- `./agent test "Views baseline styles"` (16 pass via bun-roots)
+- `./agent headless-test-runtime test` (full headless suite green, including Beautiful Defaults Mini)
+- `./agent expo-runtime test "Beautiful"` (1 pass)
+- `./agent check` (clean)
+- `./agent prep-commit` (clean before each commit)
+
+Fixture:
+
+- `Apps/Test Apps/Beautiful Defaults Mini/Beautiful Defaults Mini.tao` plus `scenario.json` exercises title, body, Card grouped surface, TextInput, Buttons, and the loading/empty/error state components.
+
+Deferrals carried into the broader Beautiful App Defaults MVP:
+
+- Three-template system (`Quiet Craft`, `Crisp Operations`, `Expressive Product`).
+- Template-guided LLM suggestions.
+- `tao design` candidate UI and design-lock schema changes.
+- Source-authored styling syntax and tokens.
+- Full component gallery beyond Card and the three feedback states.
+- Still and Rooms representative screens.
+- Broad visual regression infrastructure.
