@@ -2,7 +2,7 @@
 
 ## Summary
 
-Finish a small, implementation-ready data-query/write sprint for Tao's Buildable App MVP. This plan is scoped to the data-layer slice described in [Data Schema and Queries MVP Project Research](./Data%20Schema%20and%20Queries%20MVP%20Project%20Research.md): selection-block query expansion, strict row-handle updates, `date` fields, Memory support where practical, and provider-level InstantDB support with live service acceptance as a manual pre-merge gate when credentials and network are available.
+Finish a small, implementation-ready data-query/write sprint for Tao's Buildable App MVP. This plan is scoped to the data-layer slice described in [Data Schema and Queries MVP Project Research](./Data%20Schema%20and%20Queries%20MVP%20Project%20Research.md): selection-block query expansion, strict row-handle updates, `date` fields, Memory support where practical, and provider-level InstantDB support with live dev-app acceptance confirmed before merge.
 
 The existing [Queries MVP Plan](./Data%20Schema%20and%20Queries/Queries%20MVP%20Plan.md) remains useful history for the broader data-layer target app, but it is too broad for this sprint. The event RSVP [Queries MVP Target App](./Data%20Schema%20and%20Queries/Queries%20MVP%20Target%20App.tao) remains the long-range data-layer target, not this sprint's definition of done.
 
@@ -231,7 +231,7 @@ update Rsvp { OtherRsvps NewRsvps }
 
 **Validation:** focused provider unit tests through `./agent test "InstantDBTaoClient"`; compiler codegen tests for emitted provider calls; schema-push tests where existing coverage owns provider schema shape.
 
-**Exit criteria:** InstantDB provider tests cover the documented V1 query/write semantics; live InstantDB service acceptance is recorded before merge when credentials and network are available, or explicitly carried as a manual merge-prep gate.
+**Exit criteria:** InstantDB provider tests cover the documented V1 query/write semantics, and live InstantDB dev-app acceptance is recorded before merge.
 
 **Suggested commit subject:** `Implement InstantDB data query and update additions`
 
@@ -257,7 +257,7 @@ update Rsvp { OtherRsvps NewRsvps }
 
 **Exit criteria:** the staged app compiles and the selected runtime scenario proves the new data-query/write slice.
 
-**Implementation review note:** the committed branch exercises the staged app through the Memory-backed Data Schema scenario and covers InstantDB through provider-level query lowering, JS fallback, schema serialization, date field validation, and strict update-option tests. No live external InstantDB service run is recorded in this branch; project-7 merge prep must run a manual acceptance pass that creates, updates, and observes refreshed data through InstantDB when credentials and network are available, or explicitly carry that gate forward.
+**Implementation review note:** the committed branch exercises the staged app through the Memory-backed Data Schema scenario and covers InstantDB through provider-level query lowering, JS fallback, schema serialization, date field validation, and strict update-option tests. Live InstantDB dev-app acceptance was confirmed on 2026-05-19 before merge prep.
 
 **Suggested commit subject:** `Exercise data query write MVP scenario`
 
