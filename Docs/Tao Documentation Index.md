@@ -19,6 +19,8 @@ This index points to the active Tao design and implementation documents.
 ## Project Plans
 
 - [Data Schema and Queries](./Projects/Data%20Schema%20and%20Queries/Queries%20MVP%20Plan.md)
+- [Still App MVP](./Projects/Still%20App%20Project%20Plan.md)
+- [Rooms Chat App MVP](./Projects/Rooms%20Chat%20App%20Project%20Plan.md)
 - [Layout and Styling](./Projects/UI%20-%20Layout%20and%20Styling/Layout%20and%20Styling%20Project%20Plan.md)
 - [UI Design Inference](./Projects/UI%20-%20Layout%20and%20Styling/UI%20Design/UI%20Design%20Inference%20Project%20Plan.md)
 - [Animations, Transformations, and Motion](./Projects/Animations%20Transformations%20and%20Motion/Animations%20Project%20Plan.md)

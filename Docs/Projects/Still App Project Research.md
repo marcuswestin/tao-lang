@@ -27,11 +27,13 @@ The app should demonstrate Tao's ability to produce a polished, personal-data-on
 - Activities are common recurring behaviors that align the user with one or more intentions.
 - Activities can be marked inactive instead of deleted.
 - Activities and intentions have a many-to-many relationship.
+- The MVP data model should represent activity-intention many-to-many links with explicit link records.
 - Creating an activity requires associating it with at least one intention.
 - An activity has a short title and may have an optional description.
 - Activity titles should be encouraged, through visual design, to be only a few words.
 - Longer activity titles are allowed, but the UI should make them feel less ideal by scaling text down or otherwise losing the crisp short-title feel.
 - When no activity is active, the main view can show a list of activities tagged by their associated intentions.
+- The idle activity list should show active activities linked to at least one active intention.
 - When no activity is active, Still should subtly elevate one recommended activity while keeping the rest of the activity list available underneath.
 - Activating an activity records its start time.
 - Ending an activity records its end time.
@@ -47,6 +49,7 @@ The app should demonstrate Tao's ability to produce a polished, personal-data-on
 - MVP should not include a history or insights screen.
 - Past session data should only surface indirectly through the recommendation logic in MVP.
 - If there are no intentions, Still shows the create-intention screen until an intention is created.
+- MVP screens are Create Intention, Now, Add Activity, and Manage.
 - Auth, authorization, public feeds, and on-device LLM inference are deferred.
 
 ## User Interview Notes
@@ -62,6 +65,7 @@ The app should demonstrate Tao's ability to produce a polished, personal-data-on
 - The design should encourage short activity names by making long names fit but feel less visually strong.
 - The idle main view can show activities as a list with intention tags.
 - The idle main view should subtly recommend one activity rather than making every activity visually equal.
+- Show active activities linked to active intentions; inactive intentions or activities stay out of the main list.
 - Activity sessions record start and end times.
 - Active sessions should be visually quiet: no timer, only the active activity and a conclude button.
 - Concluding a session should only set its stop time; no note, reflection, or success/failure state is collected in MVP.
@@ -70,6 +74,7 @@ The app should demonstrate Tao's ability to produce a polished, personal-data-on
 - A simple starting formula is `0.5 * recencyDeficit + 0.3 * countDeficit + 0.2 * timeDeficit`.
 - Tie-breakers should not become product semantics; use stable creation order and move on.
 - First launch does not use starter examples. If no intentions exist, the app blocks on intention creation.
+- Keep the visible surface minimal: Create Intention, Now, Add Activity, and Manage.
 - Later functionality may identify underrepresented activities and eventually use local LLM inference, but not for MVP.
 
 ## Repo Findings
@@ -97,9 +102,7 @@ No external research is required yet. The current MVP is local personal data onl
 
 ## Unresolved Questions
 
-- How should activity-intention many-to-many links be represented in the MVP data model?
-- Should the activity list include all activities, only recommended activities, or only activities linked to active intentions?
-- What should the MVP screens be beyond the main Now screen?
+- None for the first implementation plan.
 
 ## Planning Inputs
 
@@ -108,6 +111,8 @@ No external research is required yet. The current MVP is local personal data onl
 - MVP data model candidates: `Intention`, `Activity`, activity-intention link records, `Session`.
 - Likely core rules: max three active intentions, one active session globally, activity sessions record only `StartedAt` and `EndedAt`.
 - Recommendation rule: rank active activities with a deterministic weighted score from recency, session count, and total time.
+- Idle list rule: show active activities linked to active intentions.
+- Screen set: Create Intention, Now, Add Activity, Manage.
 - Do not plan a visible insights/history screen for MVP.
 - Likely implementation dependencies: local data provider, `create`, `update`, basic input controls, button events, conditional rendering, native default UI, app scenario coverage.
-- Next step: continue user interview until the product loop and MVP scope are decision-complete, then run `project-3-write-project-plan`.
+- Next step: run `project-3-write-project-plan`.
