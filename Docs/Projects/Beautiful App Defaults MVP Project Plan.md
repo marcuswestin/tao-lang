@@ -6,6 +6,34 @@ Implement the first practical Tao visual-defaults system: curated deterministic 
 
 This project is a narrower MVP slice of the broader design-inference direction. It does not require production `tao.design.lock`, source-authored token dictionaries, or a general styling language. The baseline must work from deterministic templates; optional LLM-assisted suggestions can improve concrete values later without becoming part of the compile path.
 
+## Start Here
+
+This plan assumes no conversation context. The project goal is to make first Tao apps look solid by default, especially when a person creates a quick app in a few minutes and uses only the standard UI primitives.
+
+Recommended implementation order:
+
+1. Implement the fast first slice in `Docs/Projects/Beautiful App Defaults MVP Mini Project Plan.md`.
+2. Return to this full MVP plan after the mini fixture proves that default spacing, palette, core controls, and app-shell framing are visibly better.
+3. Keep the broader full design-inference plan separate unless a step below explicitly touches it.
+
+Relevant current implementation seams:
+
+- `packages/tao-std-lib/tao/ui/Views.tao` exposes the current Tao UI primitives.
+- `packages/tao-std-lib/tao/tao-runtime/Views.tsx` wraps React Native components and already accepts `_taoDesignStyle`.
+- `packages/tao-std-lib/tao/tao-runtime/tao-design-runtime.tsx` owns `createTaoDesign`, `resolveStyle`, `useTaoDesignContext`, `useTaoStyle`, and `TaoDesignProvider`.
+- `packages/compiler/compiler-src/design/design-analysis.ts` currently reconciles design requirements with optional/accepted locks.
+- `packages/compiler/compiler-src/design/design-codegen.ts` emits `_gen/tao-app/tao-design.ts`.
+- `packages/compiler/compiler-src/codegen/app/app-gen-main.ts` emits the generated app bootstrap and currently renders `AppUIView` directly inside a `ScrollView`.
+- `Apps/Test Apps/` owns the compile/runtime fixtures that should prove these defaults.
+
+Do not begin this project by building a styling language, app-local generated component API, broad `tao.design.lock` schema migration, visual editor, or LLM-in-the-compile-path workflow. The first visible success is deterministic code and runtime behavior.
+
+## Relationship To UI Design Inference
+
+Beautiful App Defaults is the practical first visual-quality slice. It may reuse the design runtime and generated `tao-design.ts` module, but it deliberately avoids requiring the full design-inference lifecycle.
+
+The full design-inference track still owns app `design` blocks, declaration/variant design specs, composite role inference, accepted/suggested lock workflow, broad diagnostics, and future source-level appearance syntax. This project owns curated templates, deterministic fallback design payloads, standard component recipes, app-shell defaults, and visual fixtures that work before the full inference track is implemented.
+
 ## Goals
 
 - Ship curated deterministic design templates: `Quiet Craft`, `Crisp Operations`, and `Expressive Product`.
@@ -275,7 +303,7 @@ Required template tokens and recipe slots should fail in template completeness t
 
 ### 6. Add App Shell Defaults For Native And Web
 
-**Context:** The user's concern about max width and web layout is central. A good button is not enough if the app shell stretches a form across a desktop viewport.
+**Context:** Max width and web layout are central to the product goal. A good button is not enough if the app shell stretches a form across a desktop viewport.
 
 **Work:**
 
@@ -312,7 +340,7 @@ Required template tokens and recipe slots should fail in template completeness t
 
 ### 7. Define Template-Guided LLM Suggestion Contract
 
-**Context:** The user wants the LLM stage to receive design instructions and template feeling, not just invent raw values. This should be optional and bounded.
+**Context:** The LLM stage should receive design instructions and template feeling, not just invent raw values. This must be optional and bounded.
 
 **Work:**
 
@@ -492,4 +520,10 @@ Required template tokens and recipe slots should fail in template completeness t
 
 ## Next Step
 
-Run `project-4-review-project-plan` on this plan before implementation.
+Implement and review the mini first-slice plan first:
+
+```text
+Docs/Projects/Beautiful App Defaults MVP Mini Project Plan.md
+```
+
+Then run `project-4-review-project-plan` on this full MVP plan before beginning the broader template/component/gallery implementation.

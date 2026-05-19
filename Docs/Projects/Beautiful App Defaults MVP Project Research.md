@@ -6,6 +6,36 @@ Define a new MVP project whose job is to make Tao apps look materially better by
 
 Working project name: **Beautiful App Defaults MVP**.
 
+Product goal: a person should be able to create a first Tao app in a few minutes and get a screen that looks intentionally designed, readable, platform-appropriate, and coherent without writing a theme, choosing tokens, accepting a design lock, or invoking an LLM.
+
+The project exists because Tao's product promise depends on first-run visual quality. Correct rendering is not enough if the first app has raw-looking buttons, cramped inputs, edge-to-edge web forms, weak hierarchy, or unstyled loading and empty states.
+
+## Handoff Summary
+
+Start with the mini first slice before the broader MVP:
+
+```text
+Docs/Projects/Beautiful App Defaults MVP Mini Project Plan.md
+```
+
+Then continue with the full MVP plan:
+
+```text
+Docs/Projects/Beautiful App Defaults MVP Project Plan.md
+```
+
+Implementation should use existing Tao seams first:
+
+- `packages/tao-std-lib/tao/tao-runtime/Views.tsx` already wraps React Native primitives and accepts `_taoDesignStyle`.
+- `packages/tao-std-lib/tao/tao-runtime/tao-design-runtime.tsx` already owns `createTaoDesign`, `resolveStyle`, `useTaoDesignContext`, `useTaoStyle`, and `TaoDesignProvider`.
+- `packages/tao-std-lib/tao/ui/Views.tao` exposes the current source-facing UI primitives.
+- `packages/compiler/compiler-src/design/` owns design analysis, lock reading/writing, and generated design entries.
+- `packages/compiler/compiler-src/design/design-codegen.ts` emits `_gen/tao-app/tao-design.ts`.
+- `packages/compiler/compiler-src/codegen/app/app-gen-main.ts` emits the generated app bootstrap and is the lowest-risk place to add app-shell content framing.
+- `Apps/Test Apps/` is the place to prove the visual defaults with a small fixture.
+
+The first implementation should not begin with LLM prompts, template review UI, lock schema migration, source styling syntax, broad design inference, or app-local generated components. The fastest useful path is deterministic runtime defaults plus app-shell spacing/max-width plus a visual fixture.
+
 ## Current Tao Context
 
 - `CORE_TENETS.md` already requires sane tasteful defaults, out-of-the-box behavior, and different defaults for different apps.
@@ -13,6 +43,10 @@ Working project name: **Beautiful App Defaults MVP**.
 - `Docs/Projects/UI - Layout and Styling/Layout and Styling Project Plan.md` says default design should provide tasteful app-specific output without required configuration, while raw style literals and source-authored token dictionaries stay deferred.
 - Current std-lib/runtime surface is small but usable: `Row`, `Col`, `Box`, `Stack`, `WrappingRow`, `Text`, `TextLabel`, `MultiLineText`, `TextInput`, `Number`, and `Button`.
 - `packages/tao-std-lib/tao/tao-runtime/Views.tsx` already has a `_taoDesignStyle` hook point and state-aware `Button` styling for `default`, `pressed`, and `disabled`.
+- `packages/tao-std-lib/tao/tao-runtime/Views.tsx` currently gives `TextInput` a fallback placeholder color, but does not yet track focus state.
+- `packages/tao-std-lib/tao/tao-runtime/tao-design-runtime.tsx` already measures runtime design context for platform, color scheme, compact/regular screen size, text scale, and reduced motion.
+- `packages/compiler/compiler-src/design/design-analysis.ts` currently requires an accepted design lock in production design mode. This MVP intentionally changes that product boundary: production must be able to compile with curated deterministic defaults when no lock exists.
+- `packages/compiler/compiler-src/codegen/app/app-gen-main.ts` currently wraps `AppUIView` directly in a `ScrollView`. It already imports `TaoDesignProvider`, `resolveStyle`, and `useTaoDesignContext`, so app-shell defaults can be added without introducing a separate styling path.
 - The layout MVP intentionally excludes design tokens, border/radius, shadows, scroll containers, safe-area, keyboard-aware layout, and responsive/adaptive container queries. This project should add those only through default app shell, runtime design values, or std-lib components, not by muddying layout syntax.
 
 ## External Research Notes
@@ -322,7 +356,7 @@ These components should not be arbitrary app-specific hacks. They should be reus
 - they can be previewed in the component gallery;
 - they are stable enough for generated app code and examples.
 
-Open design question: template-owned components could live in generated app code, a generated app-local library, or a Tao-owned standard template library. The MVP should prefer the simplest inspectable option.
+Settled implementation decision: template-owned components should start as Tao-owned standard/template components, not generated app-local code. They belong in the std-lib/runtime path first so they are inspectable, stable across apps, testable in fixtures, and compatible with deterministic templates. App-local generated components are deferred until the full design-inference track can justify the added ownership and migration complexity.
 
 ## LLM Stage Shape
 
@@ -656,16 +690,29 @@ Why not enough:
 
 - It does not solve app-level palette, typography, layout max width, surfaces, lists, empty states, or app-specific variability.
 
-## Open Questions For The Next Research Pass
+## Settled Answers For Implementation
 
-1. Should curated profiles be enough for MVP, or should the app `design.description` already influence generation?
-2. Is `tao.design.lock` required for this project, or should MVP defaults work without any lock file?
-3. Which components must exist before Still and Rooms: Button, TextInput, SearchInput, List, Card, Badge, Loading, Empty, Error, Tabs/Header?
-4. Should web max-width and safe-area behavior live in generated app shell, standard layout views, or design runtime recipes?
-5. What exact visual bar should the component gallery meet before the project is considered successful?
-6. Should template-owned components be generated app-local code or shipped as template libraries?
-7. What is the minimum reference pack per template: one component gallery, one mobile screen, one web/tablet screen, or more?
-8. Should the LLM generate only values and recipes, or can it propose new semantic components that the template then owns?
+1. Curated deterministic profiles are enough for the MVP baseline. App `design.description` should influence selection or tuning when that language surface is available, but its absence must not block the project.
+2. `tao.design.lock` is not required for this project. Defaults must work in production without a lock file. Future accepted locks may override or specialize deterministic defaults, but missing locks are not an MVP failure.
+3. The first useful component set is `Text`, `TextLabel`, `MultiLineText`, `Number`, `TextInput`, `Button`, app shell, and a visual fixture. The broader MVP then adds `Page`, `Card`, `ListRow`, `Badge`, `FieldGroup`, `SectionHeader`, `Divider`, `LoadingState`, `EmptyState`, and `ErrorState`.
+4. Web max-width, page gutters, scroll padding, and native safe-area behavior should live in generated app shell and runtime design helpers. They should not become new raw layout syntax.
+5. The component gallery must prove that default components, common states, compact width, regular/web width, light mode, dark mode, long text, loading, empty, and error states look intentional rather than raw.
+6. Template-owned components are Tao-owned standard/template components for the MVP. Generated app-local components are deferred.
+7. The minimum reference pack is textual reference rules plus generated screenshots from one component gallery and one representative screen. Binary golden/reference PNGs can be added after the first gallery stabilizes.
+8. The LLM suggestion contract may propose concrete token values, component recipe adjustments, and state overlays inside a selected template. It must not invent new source-facing component APIs for the MVP.
+
+## Implementation Priority
+
+Implement in this order:
+
+1. Mini first slice: deterministic runtime styles, app-shell content frame, seeded accent variation, and one first-app fixture.
+2. Full deterministic template system: `Quiet Craft`, `Crisp Operations`, and `Expressive Product`.
+3. Runtime recipe resolver and recipe application for all existing std-lib primitives.
+4. Tao-owned standard/template components for pages, cards, lists, badges, fields, loading, empty, and error states.
+5. Template-guided LLM suggestion contract with fake-provider tests only unless the existing provider path makes real execution trivial.
+6. Gallery and representative Still/Rooms-style screens for visual acceptance.
+
+Do not start with the full accepted-lock design-inference workflow. That remains related future work, not the shortest path to better first apps.
 
 ## Source Links
 
