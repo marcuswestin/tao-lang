@@ -1,6 +1,6 @@
 ---
 name: project-4-review-project-plan
-description: Review a Tao project plan with Codex and Claude through the project-review script, then incorporate, defer, or ignore findings before implementation starts.
+description: Review a Tao project plan with selected reviewers through the project-review script, then incorporate, defer, or ignore findings before implementation starts.
 ---
 
 # Project 4: Review Project Plan
@@ -8,13 +8,13 @@ description: Review a Tao project plan with Codex and Claude through the project
 ## When to use
 
 - After `project-3-write-project-plan` creates a plan doc.
-- When the user asks to have Codex and Claude critique a project plan.
+- When the user asks to critique a project plan.
 - Before implementation starts on a non-trivial plan.
 
 ## Workflow
 
 1. Read the project plan and matching research doc if present.
-2. Run one plan-review pass. The script auto-includes a sibling `Project Research` doc when present; pass `--research <path>` if the research doc is elsewhere.
+2. Run one plan-review pass. The script auto-includes a sibling `Project Research` doc when present; pass `--research <path>` if the research doc is elsewhere. By default this runs all configured reviewers; if the user excludes a reviewer, pass `--reviewers codex` or `--reviewers claude` instead of running the excluded tool.
 
    ```sh
    ./agent project-review --mode plan <plan-path>
