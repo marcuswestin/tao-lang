@@ -30,9 +30,33 @@ description: Implement a reviewed Tao project plan one committable step at a tim
    - run the validation named in the plan;
    - update the plan or roadmap with completed/deferred discoveries;
    - run `./agent prep-commit`;
-   - commit the coherent chunk with the plan's suggested subject or a tighter equivalent.
+   - commit the coherent chunk with the plan's suggested subject or a tighter equivalent;
+   - after the commit, post a concise progress overview in the conversation.
 7. Stop if validation fails and fix that step before continuing.
 8. Update the roadmap status to `Implemented` when all planned implementation steps are complete, using the roadmap's project queue status values.
+
+## Step Progress Overview
+
+After each completed plan-step commit, report progress with a short, polished
+conversation update. Use a Markdown title and include:
+
+- Step completed: number and name.
+- Next step: number and name, or final review/merge preparation when no steps remain.
+- Completed count: `X of Y steps`.
+- Elapsed time: exact if tracked, otherwise a clear estimate.
+- Estimated time remaining: best current estimate, with uncertainty when needed.
+
+Example:
+
+```md
+**Project Progress**
+
+**Step Completed:** 6. Add Runtime Navigation Actions
+**Next Step:** 7. Remove Expo Router Shell
+**Completed:** 6 of 9 steps
+**Elapsed:** about 2h 10m
+**Estimate Remaining:** about 45-75m, mostly example migration and final validation
+```
 
 ## Output
 
