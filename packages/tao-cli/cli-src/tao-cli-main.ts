@@ -352,10 +352,44 @@ function normalizeAppOverrideArgv(argv: string[]): string[] {
   return out
 }
 
-/** replaceTargetEmitRoot swaps the staged generated tree into the runtime output location. */
+/** replaceTargetEmitRoot syncs staged files into the runtime output location without deleting the live tree.
+ * Metro may resolve generated modules while `tao compile --watch` is writing; keeping the target tree present
+ * prevents reloads from observing a temporarily missing `_gen/tao-app` directory. */
 function replaceTargetEmitRoot(stagedEmitRoot: string, targetEmitRoot: string): void {
-  FS.rmDirectory(targetEmitRoot)
-  FS.move(stagedEmitRoot, targetEmitRoot)
+  if (!FS.isDirectory(targetEmitRoot)) {
+    FS.move(stagedEmitRoot, targetEmitRoot)
+    return
+  }
+
+  const stagedFiles = listFilesRecursively(stagedEmitRoot)
+  const stagedRelativePaths = new Set(stagedFiles.map(sourcePath => FS.relativePath(stagedEmitRoot, sourcePath)))
+  for (const sourcePath of stagedFiles) {
+    const relativePath = FS.relativePath(stagedEmitRoot, sourcePath)
+    const destPath = FS.resolvePath(targetEmitRoot, relativePath)
+    const tempDestPath = `${destPath}.tmp-${process.pid}-${Date.now()}`
+    FS.mkdir(FS.dirname(destPath))
+    FS.copyFile(sourcePath, tempDestPath)
+    FS.move(tempDestPath, destPath)
+  }
+  for (const targetPath of listFilesRecursively(targetEmitRoot)) {
+    const relativePath = FS.relativePath(targetEmitRoot, targetPath)
+    if (!stagedRelativePaths.has(relativePath)) {
+      FS.rm(targetPath, { force: true })
+    }
+  }
+}
+
+function listFilesRecursively(root: string): string[] {
+  const files: string[] = []
+  for (const entry of FS.readDirWithFileTypes(root)) {
+    const fullPath = FS.joinPath(root, entry.name)
+    if (entry.isDirectory()) {
+      files.push(...listFilesRecursively(fullPath))
+    } else if (entry.isFile()) {
+      files.push(fullPath)
+    }
+  }
+  return files
 }
 
 /** writePlannedEmitFile writes a planned emit file and optional sibling source map + pragma. */
