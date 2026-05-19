@@ -45,14 +45,14 @@ Feature inventory fields:
 ## Core Language Surface
 
 - Status: Design: syntax/semantics are documented as a working language spec with several open edges; Implementation: declarations, aliases, expressions, render statements, view/function/action blocks, and validation exist in the parser/compiler.
-- MVP remaining: finish control-flow shape, invocation ergonomics, member/property access, return behavior, async/action syntax, and diagnostic priorities needed by real app code.
+- MVP remaining: finish control-flow shape including `if`/`else`, invocation ergonomics, member/property access, return behavior, async/action syntax, and diagnostic priorities needed by real app code.
 - Deferred: richer pipelines, destructuring, advanced transformations, broad server-side language features, and non-UI-app language expansion.
 - Project docs: [Language Spec - Syntax Semantics](./Tao%20Language%20Design/Language%20Spec%20-%20Syntax%20Semantics.md).
 
 ## Type System And Semantic Types
 
 - Status: Design: nominal types, interfaces, structural matching, semantic scalar types, narrowing, and Typir integration are planned; Implementation: meaningful type matching and follow-up phases are underway, with several typed-argument and local-parameter cases already represented.
-- MVP remaining: complete the v1 type contract for view/action/function parameters, data fields, member access, contextual literals, diagnostics, and generated TypeScript precision.
+- MVP remaining: complete the v1 type contract for view/action/function parameters, data fields, member access, collection/list/tuple shapes, contextual literals, `when ... is ... -> ...` type/value matching with narrowing and exhaustiveness, diagnostics, and generated TypeScript precision.
 - Deferred: generics, union-heavy modeling, type functions, computed fields, extensive runtime value guards, and broad polymorphism.
 - Project docs: [Type Design - Preferred](./Projects/Type%20System/Type%20Design%20-%20Preferred.md), [Type System - Followups](./Projects/Type%20System/Type%20System%20-%20Followups.md), [Semantic Types](./Projects/Design%20WIP/Semantic%20Types.md).
 
@@ -66,7 +66,7 @@ Feature inventory fields:
 ## UI Declarations, Frames, Layouts, Render Roots, Children, And Slots
 
 - Status: Design: `ui`, `frame`, `layout`, material roots, fragments, `@@children`, named slots, and renderer slots have active specs; Implementation: the current branch has parser/compiler/runtime work for declaration kinds, render roots, slots, and trusted std-lib views.
-- MVP remaining: settle any remaining slot grammar, validate root/fragment boundaries, ensure formatter coverage, and exercise the model in real test apps.
+- MVP remaining: settle any remaining slot grammar, ship a proper reusable `List` view with renderer row slots, empty state, and stable keys, validate root/fragment boundaries, ensure formatter coverage, and exercise the model in real test apps.
 - Deferred: advanced renderer-slot composition, value-returning slots, broad app-entry syntax alternatives, and reusable composition patterns not needed by the first app.
 - Project docs: [UI Declaration and Render Slots Specification](./Tao%20Language%20Design/UI%20Declaration%20and%20Render%20Slots%20Specification.md), [UI Layout Concepts](./Tao%20Language%20Design/UI%20Layout%20Concepts.md).
 
@@ -97,6 +97,13 @@ Feature inventory fields:
 - MVP remaining: implement the minimum event wiring for buttons/forms/navigation/data writes, define async and concurrent action behavior, and expose app lifecycle events needed by real apps.
 - Deferred: advanced gesture-event composition, scheduled/background events, rich event buses, custom event protocols, and complex concurrency policy.
 - Project docs: [Interactions Project Plan](./Projects/Interactions%20and%20Events/Interactions%20Project%20Plan.md).
+
+## Local State, Bindings, Reactivity, And Render Performance
+
+- Status: Design: state appears throughout the language sketches, test apps, and TODOs, with known research around fine-grained React state access; Implementation: file-level and view-level `state`, state updates, nested object state updates, and action-driven state changes exist.
+- MVP remaining: define state scope and lifecycle clearly, settle input/state binding ergonomics, add stable view keys where stateful repetition needs them, and prove render performance for normal app state updates.
+- Deferred: external state-library abstraction, advanced fine-grained reactivity, time-travel/debug tooling, global store policy, and broad state synchronization beyond data providers.
+- Project docs: Needs project doc; related: [Language Spec - Syntax Semantics](./Tao%20Language%20Design/Language%20Spec%20-%20Syntax%20Semantics.md), [Interactions Project Plan](./Projects/Interactions%20and%20Events/Interactions%20Project%20Plan.md).
 
 ## Forms, Inputs, Validation, Submit/Change/Focus Behavior, And Keyboard Ergonomics
 
@@ -150,7 +157,7 @@ Feature inventory fields:
 ## Runtime Targets: Expo Native, Web, Headless Tests, App Shell, And Runtime Manifest
 
 - Status: Design: Expo native/web and headless runtime boundaries are documented; Implementation: Expo runtime, headless runtime, app shell, generated app compile flow, and runtime package tests exist.
-- MVP remaining: harden the generated app shell, shared runtime manifest parsing, compiled-app test helpers, web behavior, source maps, and runtime parity expectations.
+- MVP remaining: harden the generated app shell, Android bring-up, shared runtime manifest parsing, compiled-app test helpers, web behavior, source maps, and runtime parity expectations.
 - Deferred: additional runtime targets, advanced platform adaptation, runtime plugin hosting, production observability hooks, and deep performance tuning.
 - Project docs: [Expo Runtime README](../packages/expo-runtime/README.md), [Headless Test Runtime README](../packages/headless-test-runtime/README.md), [SourceMapping Plan](./Projects/Misc/SourceMapping-Plan.md), Needs project doc for runtime manifest.
 
@@ -164,7 +171,7 @@ Feature inventory fields:
 ## Testing, Scenario Harnesses, Previews, Visual Checks, And Example Apps
 
 - Status: Design: compiler/runtime tests, test apps, and TODOs point toward richer scenario modules and real expects; Implementation: parser/compiler/runtime tests, headless runtime tests, Expo runtime tests, Kitchen Sink/Data/Layout apps, and check/test commands exist.
-- MVP remaining: make scenario coverage representative of the Buildable App MVP, add typed scenario modules where needed, cover bad network/loading/error paths, and keep example apps canonical.
+- MVP remaining: make scenario coverage representative of the Buildable App MVP, add typed scenario modules where needed, add stable view keys/debug handles for repeated or inspectable UI, cover bad network/loading/error paths, and keep example apps canonical.
 - Deferred: full visual regression infrastructure, automated device matrices, load testing, snapshot-heavy preview workflows, and productized design review tools.
 - Project docs: [Compiler Tests README](../packages/compiler/compiler-tests/README.md), [Headless Test Runtime README](../packages/headless-test-runtime/README.md), Needs project doc for scenario harness and visual previews.
 
