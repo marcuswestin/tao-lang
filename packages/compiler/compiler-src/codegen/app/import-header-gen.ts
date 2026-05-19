@@ -57,11 +57,32 @@ export function taoFileHasTopLevelDataDeclaration(taoFile: AST.TaoFile): boolean
   return false
 }
 
-/** buildRuntimePreambleImports returns React / `providers/all` preamble lines for an emitted Tao RN module. */
+/** taoFileHasAppNavigation returns true when this module emits a navigation-rooted app. */
+export function taoFileHasAppNavigation(taoFile: AST.TaoFile): boolean {
+  for (const stmt of taoFile.statements) {
+    const decl = AST.isModuleDeclaration(stmt) ? stmt.declaration : stmt
+    if (AST.isAppDeclaration(decl) && decl.appStatements.some(AST.isAppNavigationStatement)) {
+      return true
+    }
+  }
+  return false
+}
+
+/** taoFileHasNavigationIcon returns true when generated navigation options need the Expo icon helper. */
+export function taoFileHasNavigationIcon(taoFile: AST.TaoFile): boolean {
+  for (const node of AST.Utils.streamAllContents(taoFile)) {
+    if (AST.isNavigationIconOption(node)) {
+      return true
+    }
+  }
+  return false
+}
+
+/** buildRuntimePreambleImports returns React / `providers/all` / navigation preamble lines for an emitted Tao RN module. */
 export function buildRuntimePreambleImports(
   taoFile: AST.TaoFile,
   importBase: string,
-): { reactImport: string; taoDataImport: string } {
+): { iconImport: string; navigationImport: string; reactImport: string; taoDataImport: string } {
   const taoDataImport = taoFileNeedsTaoDataImport(taoFile)
     ? (() => {
       const names = ['getTaoData']
@@ -72,7 +93,17 @@ export function buildRuntimePreambleImports(
     })()
     : ''
   const reactImport = taoFileUsesForLoop(taoFile) ? `import * as React from 'react'\n` : ''
-  return { reactImport, taoDataImport }
+  const navigationImport = taoFileHasAppNavigation(taoFile)
+    ? [
+      `import { createStaticNavigation } from '@react-navigation/native'`,
+      `import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'`,
+      `import { createNativeStackNavigator } from '@react-navigation/native-stack'`,
+    ].join('\n') + '\n'
+    : ''
+  const iconImport = taoFileHasNavigationIcon(taoFile)
+    ? `import Ionicons from '@expo/vector-icons/Ionicons'\n`
+    : ''
+  return { iconImport, navigationImport, reactImport, taoDataImport }
 }
 
 /** buildUriToTaoMap maps document URI string to TaoFile AST. */

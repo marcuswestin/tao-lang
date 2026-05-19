@@ -26,6 +26,13 @@ import {
 } from '../../design/variant-resolution'
 import { layoutEntryValues } from '../../layout/tao-layout'
 import {
+  buildTaoNavigationIR,
+  type TaoNavigationDestinationIR,
+  type TaoNavigationIR,
+  type TaoNavigationNavigatorIR,
+  type TaoNavigationTargetIR,
+} from '../../navigation/navigation-ir'
+import {
   collectionSlugFromPlural,
   queryDeclarationAliasName,
 } from '../../query/query-model'
@@ -139,7 +146,7 @@ class RuntimeGen {
   }
 
   NavigatorDeclaration(node: AST.NavigatorDeclaration): Compiled {
-    return compileTODO(node, 'navigation runtime generation is implemented in the navigation codegen step')
+    return compileNode(node)``
   }
 
   NavigationPushAction(node: AST.NavigationPushAction): Compiled {
@@ -298,6 +305,10 @@ class RuntimeGen {
   }
 
   AppDeclaration(declaration: AST.AppDeclaration): Compiled {
+    const navigation = declaration.appStatements.find(AST.isAppNavigationStatement)
+    if (navigation !== undefined) {
+      return this.AppNavigationDeclaration(declaration, navigation)
+    }
     const ui = declaration.appStatements.find(AST.isAppUiStatement)
     if (!ui) {
       return compileNoop()
@@ -316,6 +327,136 @@ class RuntimeGen {
           return <${uiTarget.name}${designStyle} />
         }; export const AppUIView = _AppUIView // TODO: Remove this
       `
+  }
+
+  private AppNavigationDeclaration(
+    declaration: AST.AppDeclaration,
+    appNavigation: AST.AppNavigationStatement,
+  ): Compiled {
+    const ir = buildTaoNavigationIR(appNavigation, this.codegenOpts.design)
+    if (ir === undefined) {
+      throwUnexpectedBehaviorError({
+        humanMessage: 'App navigation must produce a navigation IR after validation.',
+        logInfo: { navigation: appNavigation.navigation.$refText },
+      })
+    }
+    return compileNode(declaration)`
+      ${this.navigationTabIconHelper(ir)}
+      ${this.navigationScreenComponents(ir.root)}
+      ${this.navigationNavigatorDefinitions(ir.root)}
+      const _AppNavigationRoot = createStaticNavigation(${navigationNavigatorConstName(ir.root)})
+      export const AppNavigationRoot = _AppNavigationRoot
+    `
+  }
+
+  private navigationScreenComponents(root: TaoNavigationNavigatorIR): string {
+    return collectNavigationDestinations(root)
+      .filter(destination => destination.target.kind === 'view')
+      .map(destination => this.navigationScreenComponent(destination))
+      .join('\n\n')
+  }
+
+  private navigationScreenComponent(destination: TaoNavigationDestinationIR): string {
+    if (destination.target.kind !== 'view') {
+      throwUnexpectedBehaviorError({
+        humanMessage: 'Navigation screen components are only emitted for view targets.',
+        logInfo: { destination: destination.name },
+      })
+    }
+    const target = destination.target
+    const designStyle = this.navigationScreenDesignStyleProp(target)
+    const designContext = target.designStyleKey === undefined
+      ? ''
+      : `  const _taoDesignContext = useTaoDesignContext()
+`
+    if (destination.params.length === 0) {
+      return `function ${navigationScreenComponentName(destination)}(_ScreenProps: any) {
+  void _ScreenProps
+${designContext}
+  return <${target.componentName}${designStyle} />
+}`
+    }
+    const props = destination.params
+      .map(param => `${param.name}={TR.Literal(_routeParams.${param.name})}`)
+      .join(' ')
+    return `function ${navigationScreenComponentName(destination)}(_ScreenProps: any) {
+  const _routeParams = _ScreenProps.route?.params ?? {}
+${designContext}
+  return <${target.componentName} ${props}${designStyle} />
+}`
+  }
+
+  private navigationScreenDesignStyleProp(target: Extract<TaoNavigationTargetIR, { kind: 'view' }>): string {
+    if (target.designStyleKey === undefined) {
+      return ''
+    }
+    const key = JSON.stringify(target.designStyleKey)
+    return target.designStyleStateful
+      ? ` _taoDesignStyle={(state) => resolveStyle(${key}, _taoDesignContext, state)}`
+      : ` _taoDesignStyle={resolveStyle(${key}, _taoDesignContext)}`
+  }
+
+  private navigationNavigatorDefinitions(root: TaoNavigationNavigatorIR): string {
+    const emitted = new Set<string>()
+    return navigationNavigatorsPostOrder(root)
+      .map(navigator => this.navigationNavigatorDefinition(navigator, emitted))
+      .filter(Boolean)
+      .join('\n\n')
+  }
+
+  private navigationNavigatorDefinition(
+    navigator: TaoNavigationNavigatorIR,
+    emitted: Set<string>,
+  ): string {
+    const constName = navigationNavigatorConstName(navigator)
+    if (emitted.has(constName)) {
+      return ''
+    }
+    emitted.add(constName)
+    const factory = navigator.kind === 'stack' ? 'createNativeStackNavigator' : 'createBottomTabNavigator'
+    const screens = navigator.destinations.map(destination => this.navigationDestinationConfig(destination)).join('\n')
+    return `const ${constName} = ${factory}({
+  screens: {
+${screens}
+  },
+})`
+  }
+
+  private navigationDestinationConfig(destination: TaoNavigationDestinationIR): string {
+    const screen = destination.target.kind === 'navigator'
+      ? navigationNavigatorConstName(destination.target.navigator)
+      : navigationScreenComponentName(destination)
+    const properties = [`screen: ${screen}`]
+    const options = this.navigationDestinationOptions(destination)
+    if (options !== undefined) {
+      properties.push(`options: ${options}`)
+    }
+    if (destination.path !== undefined) {
+      properties.push(`linking: { path: ${JSON.stringify(destination.path)} }`)
+    }
+    return `    ${destination.name}: { ${properties.join(', ')} },`
+  }
+
+  private navigationDestinationOptions(destination: TaoNavigationDestinationIR): string | undefined {
+    const entries: string[] = []
+    if (destination.title !== undefined) {
+      entries.push(`title: ${JSON.stringify(destination.title)}`)
+    }
+    if (destination.icon !== undefined) {
+      entries.push(`tabBarIcon: _taoNavigationTabIcon(${JSON.stringify(destination.icon.name)})`)
+    }
+    return entries.length === 0 ? undefined : `{ ${entries.join(', ')} }`
+  }
+
+  private navigationTabIconHelper(ir: TaoNavigationIR): string {
+    if (!collectNavigationDestinations(ir.root).some(destination => destination.icon !== undefined)) {
+      return ''
+    }
+    return `function _taoNavigationTabIcon(name: string) {
+  return function TaoNavigationTabIcon(props: { color: string; size: number }) {
+    return <Ionicons name={name as any} color={props.color} size={props.size} />
+  }
+}`
   }
 
   VariantDeclaration(declaration: AST.VariantDeclaration): Compiled {
@@ -1120,6 +1261,44 @@ class RuntimeGen {
     const iterator = AST.Utils.streamAllContents(node).iterator()
     return Stream.fromIterator(iterator)
   }
+}
+
+function collectNavigationDestinations(root: TaoNavigationNavigatorIR): TaoNavigationDestinationIR[] {
+  const out: TaoNavigationDestinationIR[] = []
+  collect(root)
+  return out
+
+  function collect(navigator: TaoNavigationNavigatorIR): void {
+    for (const destination of navigator.destinations) {
+      out.push(destination)
+      if (destination.target.kind === 'navigator') {
+        collect(destination.target.navigator)
+      }
+    }
+  }
+}
+
+function navigationNavigatorsPostOrder(root: TaoNavigationNavigatorIR): TaoNavigationNavigatorIR[] {
+  const out: TaoNavigationNavigatorIR[] = []
+  collect(root)
+  return out
+
+  function collect(navigator: TaoNavigationNavigatorIR): void {
+    for (const destination of navigator.destinations) {
+      if (destination.target.kind === 'navigator') {
+        collect(destination.target.navigator)
+      }
+    }
+    out.push(navigator)
+  }
+}
+
+function navigationNavigatorConstName(navigator: TaoNavigationNavigatorIR): string {
+  return `_TaoNavigator_${navigator.name}`
+}
+
+function navigationScreenComponentName(destination: TaoNavigationDestinationIR): string {
+  return `_TaoNavScreen_${destination.parentNavigatorName}_${destination.name}`
 }
 
 /** BlockWithStatements is a block with at least one statement. */

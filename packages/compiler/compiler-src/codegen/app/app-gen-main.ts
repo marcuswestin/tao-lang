@@ -80,8 +80,7 @@ export function generateTypescriptReactNativeApp(
   const entryImportPath = emitRelativeImport(BOOTSTRAP_RELATIVE_PATH, entryEmit)
   const bootstrapNode = compileBootstrapNode(
     bootstrapImports,
-    entryImportPath,
-    appRootDesignStyleKey(mainTaoFile, resolvedCodegen.design),
+    appRootBootstrap(mainTaoFile, entryImportPath, resolvedCodegen.design),
   )
 
   return {
@@ -135,12 +134,14 @@ function compileOneTaoFileModule(
   const result = new CompositeGeneratorNode()
   const dirCount = FS.splitPath(relativePath).length
   const importBase = '../'.repeat(dirCount - 1)
-  const { reactImport, taoDataImport } = buildRuntimePreambleImports(taoFile, importBase)
+  const { iconImport, navigationImport, reactImport, taoDataImport } = buildRuntimePreambleImports(taoFile, importBase)
   const designImportPath = emitRelativeImport(relativePath, TAO_DESIGN_MODULE_RELATIVE_PATH).replace(/\.ts$/, '')
   const taoDesignImport = `import { resolveStyle, useTaoDesignContext } from '${designImportPath}'\n`
   result.append(compileNode(taoFile)`
     import { _TaoRuntime, TR } from '${importBase}use/@tao/tao-runtime/tao-runtime'
-    ${reactImport}${taoDataImport}${taoDesignImport}${importHeader} // ${taoFile.$document!.uri}
+    ${reactImport}${navigationImport}${iconImport}${taoDataImport}${taoDesignImport}${importHeader} // ${
+    taoFile.$document!.uri
+  }
   `)
   const body = compileTaoFile(taoFile, codegenOpts)
   if (body) {
@@ -192,6 +193,8 @@ function appDeclarationToAppConfig(app: AST.AppDeclaration | undefined): TaoAppC
   for (const stmt of app?.appStatements ?? []) {
     if (AST.isAppUiStatement(stmt)) {
       config['ui'] = stmt.ui.$refText
+    } else if (AST.isAppNavigationStatement(stmt)) {
+      config['navigation'] = stmt.navigation.$refText
     } else if (AST.isAppProviderStatement(stmt)) {
       const provider: TaoAppConfigObject = { name: stmt.provider }
       for (const prop of stmt.properties) {
@@ -214,6 +217,34 @@ function appRootDesignStyleKey(
     return undefined
   }
   return designStyleKeyForNode(design, root)
+}
+
+type TaoBootstrapAppRoot =
+  | {
+    readonly kind: 'ui'
+    readonly modulePath: string
+    readonly appRootStyleKey: string | undefined
+  }
+  | {
+    readonly kind: 'navigation'
+    readonly modulePath: string
+  }
+
+/** appRootBootstrap returns the bootstrap import/render contract for the entry app root. */
+function appRootBootstrap(
+  mainTaoFile: AST.TaoFile,
+  entryImportPath: string,
+  design: TaoDesignCodegenContext | undefined,
+): TaoBootstrapAppRoot {
+  const app = findEntryAppDeclaration(mainTaoFile)
+  if (app?.appStatements.some(AST.isAppNavigationStatement)) {
+    return { kind: 'navigation', modulePath: entryImportPath }
+  }
+  return {
+    appRootStyleKey: appRootDesignStyleKey(mainTaoFile, design),
+    kind: 'ui',
+    modulePath: entryImportPath,
+  }
 }
 
 /** stringConfigValue returns a string property from an app config object. */
@@ -246,14 +277,15 @@ function stringTemplateTextOnlyLiteral(node: AST.StringTemplateExpression | unde
   return decodeTaoTemplateTextChunk(s.text)
 }
 
-/** compileBootstrapNode emits the default-export app shell, a separate `AppUIView` import from the entry emit path, and runs every emitted Tao module init. */
+/** compileBootstrapNode emits the default-export app shell, imports the entry root, and runs every emitted Tao module init. */
 function compileBootstrapNode(
   initImportPaths: string[],
-  appUIViewModulePath: string,
-  appRootStyleKey: string | undefined,
+  appRoot: TaoBootstrapAppRoot,
 ): GeneratorNode {
   const n = new CompositeGeneratorNode()
-  const appUiImport = `import { AppUIView } from '${appUIViewModulePath}'`
+  const appRootImport = appRoot.kind === 'navigation'
+    ? `import { AppNavigationRoot } from '${appRoot.modulePath}'`
+    : `import { AppUIView } from '${appRoot.modulePath}'`
   const designImport = `import { TaoDesignProvider, resolveStyle, useTaoDesignContext } from './tao-design'`
   const initImports = initImportPaths
     .map((path, idx) =>
@@ -262,16 +294,11 @@ function compileBootstrapNode(
     .join('\n')
   const dataProviderInitCalls = initImportPaths.map((_, idx) => `_taoOpenDataProviders${idx}()`).join('\n')
   const initCalls = initImportPaths.map((_, idx) => `_taoRunAppInits${idx}()`).join('\n')
-  n.append(`// @ts-nocheck
-import * as RN from 'react-native'
-${appUiImport}
-${designImport}
-${initImports}
-
-${dataProviderInitCalls}
-${initCalls}
-
-const _compiledTaoAppRootDesignStyleKey = ${JSON.stringify(appRootStyleKey ?? null)}
+  const appContent = appRoot.kind === 'navigation'
+    ? `function CompiledTaoAppContent() {
+  return <AppNavigationRoot />
+}`
+    : `const _compiledTaoAppRootDesignStyleKey = ${JSON.stringify(appRoot.appRootStyleKey ?? null)}
 const _compiledTaoAppRootViewStyle = { flex: 1 }
 
 function _compiledTaoAppRootBackground(_taoDesignContext) {
@@ -292,7 +319,17 @@ function CompiledTaoAppContent() {
       <AppUIView />
     </RN.ScrollView>
   )
-}
+}`
+  n.append(`// @ts-nocheck
+import * as RN from 'react-native'
+${appRootImport}
+${designImport}
+${initImports}
+
+${dataProviderInitCalls}
+${initCalls}
+
+${appContent}
 
 export default function CompiledTaoApp() {
   return (

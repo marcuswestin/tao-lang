@@ -244,6 +244,32 @@ describe('UI design inference locks and codegen:', () => {
     }
   })
 
+  test('navigation-rooted apps collect screen design requirements', async () => {
+    const result = await compileDesignSource(`
+      app DesignApp {
+        design { description "Focused navigation app" }
+        navigation MainNavigation
+      }
+
+      navigator MainNavigation {
+        stack {
+          screen Home
+        }
+      }
+
+      ui Home <"primary dashboard home"> {
+        render inject \`\`\`ts return null \`\`\`
+      }
+    `)
+    const designModule = result.files.find(f => f.relativePath === 'tao-design.ts')?.content ?? ''
+    const bootstrap = result.files.find(f => f.relativePath === 'app-bootstrap.tsx')?.content ?? ''
+    const emitted = result.files.map(f => f.content).join('\n')
+
+    expect(designModule).toContain('style.app.app.home')
+    expect(emitted).toContain('_taoDesignStyle={resolveStyle("style.')
+    expect(bootstrap).toContain('<AppNavigationRoot />')
+  })
+
   test('variant wrappers pass target design style before variant style', async () => {
     const result = await compileDesignSource(variantButtonAppSource())
     const emitted = result.files.map(f => f.content).join('\n')
