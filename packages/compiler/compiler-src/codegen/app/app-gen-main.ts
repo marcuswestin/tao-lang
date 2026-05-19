@@ -120,7 +120,7 @@ function dedupeTaoFilesByUri(files: AST.TaoFile[]): AST.TaoFile[] {
   return [...filesByUri.values()]
 }
 
-/** compileOneTaoFileModule emits one RN TSX module (preamble, imports, top-level statements, Expo Router stub default export). */
+/** compileOneTaoFileModule emits one RN TSX module with the preamble, imports, and top-level statements. */
 function compileOneTaoFileModule(
   taoFile: AST.TaoFile,
   relativePath: string,
@@ -149,13 +149,6 @@ function compileOneTaoFileModule(
     // Langium does not newline between separately appended generator nodes (URI comment was glued to `export`).
     result.append('\n').append(body)
   }
-  // Expo Router treats every TSX under `app/` as a route; emitted Tao modules are library files, not screens.
-  result.append(`
-
-export default function TaoCompilerExpoRouterStub() {
-  return null
-}
-`)
   return result
 }
 

@@ -48,8 +48,7 @@ _fix: _fmt
         "headless-runtime" "just _ts_autofix_package headless-test-runtime" \
         "ide-extension" "just _ts_autofix_package ide-extension" \
         "expo-runtime" "just _ts_autofix_package expo-runtime"
-    cd packages/expo-runtime && bunx expo lint --fix
-    cd packages/expo-runtime && bunx eslint --fix
+    cd packages/expo-runtime && bunx eslint --fix .
     just _fmt # Run formatter again, for any changes made
 
 [no-quiet]

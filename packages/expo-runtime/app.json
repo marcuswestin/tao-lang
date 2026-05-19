@@ -29,7 +29,6 @@
     },
     "plugins": [
       "expo-dev-client",
-      "expo-router",
       [
         "expo-splash-screen",
         {
@@ -44,7 +43,6 @@
       ]
     ],
     "experiments": {
-      "typedRoutes": true,
       "reactCompiler": true
     }
   }

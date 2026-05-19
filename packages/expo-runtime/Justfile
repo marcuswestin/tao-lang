@@ -62,5 +62,4 @@ watch *FILTER:
 _deps: _bun_deps
 
 lint:
-    bunx expo lint
-    bunx eslint
+    bunx eslint .

@@ -24,7 +24,6 @@ When building runtime-dependent behavior:
 ## Layout
 
 - **`index.ts`** — direct Expo root entry that registers the generated Tao bootstrap with `registerRootComponent`
-- **`app/`** — temporary Expo Router compatibility shell; navigation v1 cleanup should remove this once the direct entry fully owns runtime startup
 - **`tests-expo-runtime/`** — Jest integration tests (named to avoid Expo auto-discovery conflicts)
   - `test-runtime.jest-test.tsx` — renders compiled Tao output in JSDOM
   - `shared-scenarios.jest-test.tsx` — runs shared `Apps/Test Apps/` scenarios via the compiled scenario adapter
@@ -34,7 +33,7 @@ When building runtime-dependent behavior:
 
 ## Entry point
 
-`index.ts` registers `runtime-entrypoint.ts` through Expo's `registerRootComponent`. `runtime-entrypoint.ts` imports the generated `_gen/tao-app/app-bootstrap` component so legacy `app { ui RootView }` apps continue to boot through the direct entry while navigation codegen is added.
+`index.ts` registers `runtime-entrypoint.ts` through Expo's `registerRootComponent`. `runtime-entrypoint.ts` imports the generated `_gen/tao-app/app-bootstrap` component, so both legacy `app { ui RootView }` apps and navigation-rooted apps boot through the direct entry.
 
 ## How to test
 
