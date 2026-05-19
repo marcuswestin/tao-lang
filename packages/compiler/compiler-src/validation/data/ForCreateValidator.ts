@@ -34,11 +34,11 @@ export const forCreateMessages = {
     `Date field '${field}' does not accept direct literals yet; use a row value or helper once date values are supported.`,
 } as const
 
-/** isUnderActionBody returns true when `node` is nested under an `action` declaration body. */
+/** isUnderActionBody returns true when `node` is nested under a named or inline action body. */
 export function isUnderActionBody(node: AST.Node): boolean {
   let c: AST.Node | undefined = node.$container
   while (c) {
-    if (AST.isActionDeclaration(c)) {
+    if (AST.isActionDeclaration(c) || AST.isActionExpression(c)) {
       return true
     }
     if (AST.isViewDeclaration(c) || AST.isTaoFile(c) || AST.isAppDeclaration(c)) {

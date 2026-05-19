@@ -287,6 +287,29 @@ describe('validation — for / create:', () => {
     `)
   })
 
+  test('strict row-handle update passes inside inline action bodies', async () => {
+    await parseTaoFully(`
+      data D {
+        Rsvps Rsvp { Status text }
+      }
+      query D.Rsvps as Rsvps { Status }
+      app A { ui V }
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
+        for Rsvp in Rsvps {
+          Button "Mark", action {
+            update Rsvp {
+              Status "going"
+            }
+          }
+        }
+      }
+      ui Button Title text, Action action {
+        render inject \`\`\`ts return null \`\`\`
+      }
+    `)
+  })
+
   test('update target must be a row handle', async () => {
     const report = await parseASTWithErrors(`
       data D {
