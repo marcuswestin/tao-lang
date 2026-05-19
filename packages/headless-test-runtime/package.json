@@ -2,6 +2,7 @@
   "name": "tao-headless-test-runtime",
   "version": "0.1.0-dev",
   "private": true,
+  "license": "AGPL-3.0-only",
   "dependencies": {
     "@legendapp/state": "^3.0.0-beta.46",
     "react": "19.1.0",

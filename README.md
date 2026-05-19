@@ -4,6 +4,8 @@ Tao Lang is a programming language for building native and web apps.
 
 - **[Docs/README.md](Docs/README.md)** — index of design docs, roadmap, features, and dev log.
 - **Agents:** see [AGENTS.md](AGENTS.md) for agent startup rules, [skills/](skills/) for workflows, and [humans.md](humans.md) for maintaining the agent system.
+- **License:** Tao is licensed under the GNU Affero General Public License version 3. See [LICENSE](LICENSE).
+- **Contributions:** pull requests require a signed Contributor License Agreement. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ### Get started
 

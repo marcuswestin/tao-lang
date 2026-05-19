@@ -1,6 +1,7 @@
 {
   "name": "@tao/formatter",
   "private": true,
+  "license": "AGPL-3.0-only",
   "type": "module",
   "devDependencies": {
     "@types/bun": "latest",

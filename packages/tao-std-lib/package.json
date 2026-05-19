@@ -1,6 +1,7 @@
 {
   "name": "@tao/std-lib",
   "private": true,
+  "license": "AGPL-3.0-only",
   "devDependencies": {
     "@instantdb/platform": "^0.21.30",
     "@instantdb/react-native": "1.0.22",

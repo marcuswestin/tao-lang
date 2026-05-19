@@ -1,6 +1,7 @@
 {
   "name": "@tao/parser",
   "private": true,
+  "license": "AGPL-3.0-only",
   "type": "module",
   "dependencies": {
     "langium": "~4.2.2",
