@@ -1,5 +1,6 @@
 import type { LGM as langium } from '@parser'
 import { AST } from '@parser/parser'
+import { queryRowPathKind } from '../query/query-model'
 import { isKnownNonObjectExpr, staticObjectShapeOf } from '../static-object-shape'
 import {
   declaredStructShapeOfExpr,
@@ -37,6 +38,7 @@ export const typeSystemValidationMessages = {
   structFieldWrongValueShape: (qualifiedField: string, expected: string) =>
     `Field '${qualifiedField}' expects a ${expected} value.`,
   unknownNestedTypeSegment: (name: string, segment: string) => `Type '${name}' has no nested type '${segment}'.`,
+  queryRowFieldNotSelected: (field: string, query: string) => `Field '${field}' is not selected by query '${query}'.`,
   duplicateStructField: (name: string) => `Duplicate struct field '${name}'.`,
   typeIsNotAValue: (name: string) =>
     `'${name}' is a type, not a value. Use '${name} <value>' to construct a value of type ${name}.`,
@@ -400,6 +402,10 @@ function validateMemberAccessPath(
     validateParameterMemberAccessPath(node, root, report)
     return
   }
+  if (AST.isForStatement(root)) {
+    validateForRowMemberAccessPath(node, root, report)
+    return
+  }
   if (!AST.isAssignmentDeclaration(root)) {
     return
   }
@@ -442,6 +448,38 @@ function validateMemberAccessPath(
       return
     }
     shape = nextShape
+  }
+}
+
+/** validateForRowMemberAccessPath checks `for Row in Query { Row.field }` against the query row shape. */
+function validateForRowMemberAccessPath(
+  node: AST.MemberAccessExpression,
+  row: AST.ForStatement,
+  report: Reporter<AST.MemberAccessExpression>,
+): void {
+  const resolved = queryRowPathKind(row, node.properties)
+  if (resolved.kind === 'unknown') {
+    report.error(typeSystemValidationMessages.unknownObjectProperty(resolved.field), {
+      node,
+      property: 'properties',
+      index: resolved.index,
+    })
+    return
+  }
+  if (resolved.kind === 'unselected') {
+    report.error(typeSystemValidationMessages.queryRowFieldNotSelected(resolved.field, resolved.queryName), {
+      node,
+      property: 'properties',
+      index: resolved.index,
+    })
+    return
+  }
+  if (resolved.kind === 'cannotTraverse') {
+    report.error(typeSystemValidationMessages.memberAccessNotOnObject(resolved.field), {
+      node,
+      property: 'properties',
+      index: resolved.index,
+    })
   }
 }
 

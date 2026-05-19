@@ -1,6 +1,15 @@
 import { AST } from '@parser/parser'
+import { primitiveBaseOfDeclaredType, resolveTypeExpression } from '../tao-type-shapes'
 
 export type TaoQueryCardinality = 'many' | 'one'
+
+export type QueryRowPathKind =
+  | { readonly kind: 'primitive'; readonly primitive: AST.PrimitiveType }
+  | { readonly kind: 'object' }
+  | { readonly kind: 'unknown'; readonly field: string; readonly index: number }
+  | { readonly kind: 'unselected'; readonly field: string; readonly index: number; readonly queryName: string }
+  | { readonly kind: 'cannotTraverse'; readonly field: string; readonly index: number }
+  | { readonly kind: 'unresolved' }
 
 /** queryDeclarationAliasName returns the binding name exposed by a query, including V1 default aliases. */
 export function queryDeclarationAliasName(node: AST.QueryDeclaration): string {
@@ -56,21 +65,149 @@ export function normalizedQueryFieldPathSegments(
 
 /** dataFieldTargetEntity returns the data entity referenced by a relationship-like field. */
 export function dataFieldTargetEntity(field: AST.DataFieldDeclaration): AST.DataEntityDeclaration | undefined {
+  return dataFieldTarget(field)?.entity
+}
+
+/** dataFieldTarget returns the entity targeted by a relationship-like field plus whether the field is to-many. */
+export function dataFieldTarget(
+  field: AST.DataFieldDeclaration,
+): { readonly entity: AST.DataEntityDeclaration; readonly many: boolean } | undefined {
   const dataDecl = field.$container.$container
   if (!AST.isDataDeclaration(dataDecl)) {
     return undefined
   }
   const fieldType = field.type
-  const target = fieldType?.namedRef?.ref ?? fieldType?.arrayRef?.ref
-  if (AST.isDataEntityDeclaration(target)) {
-    return target
+  const arrayTarget = fieldType?.arrayRef?.ref
+  if (AST.isDataEntityDeclaration(arrayTarget)) {
+    return { entity: arrayTarget, many: true }
+  }
+  const namedTarget = fieldType?.namedRef?.ref
+  if (AST.isDataEntityDeclaration(namedTarget)) {
+    return { entity: namedTarget, many: false }
   }
   if (!fieldType) {
-    return dataDecl.dataStatements
+    const target = dataDecl.dataStatements
       .filter(AST.isDataEntityDeclaration)
       .find(entity => entity.name === field.name)
+    return target ? { entity: target, many: false } : undefined
   }
   return undefined
+}
+
+/** dataFieldPrimitiveType returns the Tao primitive carried by a scalar data field, including data-scoped
+ * type aliases and shorthand fields that name a data-scoped type. Relationship fields return undefined. */
+export function dataFieldPrimitiveType(field: AST.DataFieldDeclaration): AST.PrimitiveType | undefined {
+  const fieldType = field.type
+  if (fieldType?.primitiveType !== undefined) {
+    return fieldType.primitiveType
+  }
+
+  const namedTarget = fieldType?.namedRef?.ref
+  if (AST.isDataTypeDeclaration(namedTarget)) {
+    return dataTypePrimitiveType(namedTarget)
+  }
+  if (AST.isTypeDeclaration(namedTarget)) {
+    return primitiveBaseOfDeclaredType(namedTarget)
+  }
+
+  if (!fieldType) {
+    const dataDecl = field.$container.$container
+    if (!AST.isDataDeclaration(dataDecl)) {
+      return undefined
+    }
+    const dataType = dataDecl.dataStatements
+      .filter(AST.isDataTypeDeclaration)
+      .find(typeDecl => typeDecl.name === field.name)
+    return dataType ? dataTypePrimitiveType(dataType) : undefined
+  }
+
+  return undefined
+}
+
+/** queryRowPathKind classifies a member path rooted at a `for` row binding. */
+export function queryRowPathKind(forStatement: AST.ForStatement, path: readonly string[]): QueryRowPathKind {
+  const query = forStatement.collection.ref
+  if (!AST.isQueryDeclaration(query)) {
+    return { kind: 'unresolved' }
+  }
+  const entity = queryDeclarationEntity(query)
+  if (!entity) {
+    return { kind: 'unresolved' }
+  }
+  return querySelectionPathKind(query.selection, entity, path, queryDeclarationAliasName(query), 0)
+}
+
+function dataTypePrimitiveType(decl: AST.DataTypeDeclaration): AST.PrimitiveType | undefined {
+  const resolved = resolveTypeExpression(decl.base)
+  return resolved.kind === 'primitive' ? resolved.primitive : undefined
+}
+
+function querySelectionPathKind(
+  block: AST.QuerySelectionBlock | undefined,
+  entity: AST.DataEntityDeclaration,
+  path: readonly string[],
+  queryName: string,
+  offset: number,
+): QueryRowPathKind {
+  if (path.length === 0) {
+    return { kind: 'object' }
+  }
+
+  const fieldName = path[0]!
+  const rest = path.slice(1)
+  if (fieldName === 'id') {
+    return rest.length === 0
+      ? { kind: 'primitive', primitive: 'text' }
+      : { kind: 'cannotTraverse', field: rest[0]!, index: offset + 1 }
+  }
+
+  const field = entity.fields.find(f => f.name === fieldName)
+  if (!field) {
+    return { kind: 'unknown', field: fieldName, index: offset }
+  }
+
+  const selection = selectedQueryEntryForField(block, entity, fieldName)
+  if (selection === undefined && !queryDefaultsSelectField(block, field)) {
+    return { kind: 'unselected', field: fieldName, index: offset, queryName }
+  }
+
+  const target = dataFieldTarget(field)
+  if (target !== undefined) {
+    if (rest.length === 0) {
+      return { kind: 'object' }
+    }
+    if (target.many) {
+      return { kind: 'cannotTraverse', field: rest[0]!, index: offset + 1 }
+    }
+    return querySelectionPathKind(selection?.selection, target.entity, rest, queryName, offset + 1)
+  }
+
+  const primitive = dataFieldPrimitiveType(field)
+  if (rest.length > 0) {
+    return { kind: 'cannotTraverse', field: rest[0]!, index: offset + 1 }
+  }
+  return primitive ? { kind: 'primitive', primitive } : { kind: 'object' }
+}
+
+function selectedQueryEntryForField(
+  block: AST.QuerySelectionBlock | undefined,
+  entity: AST.DataEntityDeclaration,
+  fieldName: string,
+): AST.QuerySelectionEntry | undefined {
+  if (!block || block.entries.length === 0) {
+    return undefined
+  }
+  return block.entries.find(entry => normalizedQueryFieldPathSegments(entry.path, entity)[0] === fieldName)
+}
+
+function queryDefaultsSelectField(
+  block: AST.QuerySelectionBlock | undefined,
+  field: AST.DataFieldDeclaration,
+): boolean {
+  if (block && block.entries.length > 0) {
+    return false
+  }
+  return dataFieldTarget(field) === undefined
 }
 
 /** collectionSlugFromPlural maps entity plural names (e.g. `People`) to provider collection keys (e.g. `people`). */

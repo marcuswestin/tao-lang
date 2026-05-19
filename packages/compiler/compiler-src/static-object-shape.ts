@@ -53,13 +53,17 @@ export function staticValueExprAtMemberPath(
     return undefined
   }
   let shape = staticObjectShapeOf(decl.value, seen)
-  for (const key of path) {
+  for (let i = 0; i < path.length; i++) {
     if (shape === undefined) {
       return undefined
     }
+    const key = path[i]!
     const prop = shape.properties.find(p => p.name === key)
     if (prop === undefined) {
       return undefined
+    }
+    if (i === path.length - 1) {
+      return AST.isObjectLiteral(prop.value) ? undefined : prop.value
     }
     shape = staticObjectShapeOf(prop.value, seen)
   }

@@ -254,6 +254,80 @@ describe('type checking — operators and string templates:', () => {
     expectHumanMessagesContain(report, 'interpolation')
   })
 
+  test('string template interpolation rejects object-shaped alias', async () => {
+    const report = await parseASTWithErrors(
+      ['alias O = { Name "Ro" }', 'alias S = "x ${O}"', 'ui V { render inject ```ts return null ``` }'].join('\n'),
+    )
+    expectHumanMessagesContain(report, 'interpolation')
+  })
+
+  test('string template interpolation accepts selected query row scalar field', async () => {
+    await parseTaoFully(`
+      data D {
+        Todos Todo { Done text }
+      }
+      app A { ui V }
+      ui V {
+        query D.Todos as Todos { Done }
+        render inject \`\`\`ts return null \`\`\`
+        for Todo in Todos {
+          alias S = "state ${'$'}{Todo.Done}"
+        }
+      }
+    `)
+  })
+
+  test('selected query row scalar field binds to text parameter', async () => {
+    await parseTaoFully(`
+      data D {
+        Todos Todo { Done text }
+      }
+      app A { ui V }
+      ui Text Value text { render inject \`\`\`ts return null \`\`\` }
+      ui V {
+        query D.Todos as Todos { Done }
+        render inject \`\`\`ts return null \`\`\`
+        for Todo in Todos {
+          Text Todo.Done
+        }
+      }
+    `)
+  })
+
+  test('string template interpolation rejects query row object', async () => {
+    const report = await parseASTWithErrors(`
+      data D {
+        Todos Todo { Done text }
+      }
+      app A { ui V }
+      ui V {
+        query D.Todos as Todos { Done }
+        render inject \`\`\`ts return null \`\`\`
+        for Todo in Todos {
+          alias S = "state ${'$'}{Todo}"
+        }
+      }
+    `)
+    expectHumanMessagesContain(report, 'interpolation')
+  })
+
+  test('query row member access rejects fields not selected by the query', async () => {
+    const report = await parseASTWithErrors(`
+      data D {
+        Todos Todo { Title text, Done text }
+      }
+      app A { ui V }
+      ui V {
+        query D.Todos as Todos { Title }
+        render inject \`\`\`ts return null \`\`\`
+        for Todo in Todos {
+          alias S = "state ${'$'}{Todo.Done}"
+        }
+      }
+    `)
+    expectHumanMessagesContain(report, 'not selected')
+  })
+
   test('unary minus requires number operand', async () => {
     const report = await parseASTWithErrors(`
       alias Bad = -"x"

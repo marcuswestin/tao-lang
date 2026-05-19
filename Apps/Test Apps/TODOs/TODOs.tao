@@ -115,10 +115,10 @@ ui Today <"root todo dashboard for creating and reviewing today's tasks"> {
          for Todo in TodoItems {
             TaskCard [items center spread, gap 12, pad 14, width fill] {
                Stack [gap 4] {
-                  TaskTitle "${ Todo.Title}"
+                  TaskTitle Todo.Title
                   TaskMeta "Captured for today"
                }
-               StatusPill "${ Todo.Done}"
+               StatusPill Todo.Done
             }
          }
       }

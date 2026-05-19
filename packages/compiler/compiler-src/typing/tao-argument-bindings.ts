@@ -1,5 +1,6 @@
 import { AST } from '@parser/parser'
 import { isViewLikeDeclaration, resolveVariantTargetView } from '../design/variant-resolution'
+import { queryRowPathKind } from '../query/query-model'
 import { staticObjectShapeOf } from '../static-object-shape'
 import {
   declaredStructShapeOfExpr,
@@ -312,6 +313,9 @@ function memberAccessFingerprint(
   if (AST.isTypeDeclaration(ref)) {
     return { kind: 'unresolved' }
   }
+  if (AST.isForStatement(ref)) {
+    return { kind: 'anonymous-struct' }
+  }
   if (AST.isAssignmentDeclaration(ref)) {
     if (seen.has(ref)) {
       return { kind: 'unresolved' }
@@ -373,6 +377,23 @@ function memberAccessPathFingerprint(
     if (leafExpr) {
       return argumentValueFingerprint(leafExpr)
     }
+  }
+  if (AST.isForStatement(ref)) {
+    return queryRowPathFingerprint(ref, expr.properties)
+  }
+  return { kind: 'unresolved' }
+}
+
+function queryRowPathFingerprint(
+  node: AST.ForStatement,
+  path: readonly string[],
+): TypeFingerprint {
+  const rowPath = queryRowPathKind(node, path)
+  if (rowPath.kind === 'primitive') {
+    return { kind: 'primitive', primitive: rowPath.primitive }
+  }
+  if (rowPath.kind === 'object') {
+    return { kind: 'anonymous-struct' }
   }
   return { kind: 'unresolved' }
 }

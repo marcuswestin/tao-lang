@@ -2,7 +2,8 @@ import { AST } from '@parser/parser'
 import type { Type } from 'typir'
 import { InferenceRuleNotApplicable, isType } from 'typir'
 import type { LangiumTypeSystemDefinition, TypirLangiumServices, TypirLangiumSpecifics } from 'typir-langium'
-import { staticValueExprAtMemberPath } from '../static-object-shape'
+import { queryRowPathKind } from '../query/query-model'
+import { staticObjectShapeOf, staticValueExprAtMemberPath } from '../static-object-shape'
 import {
   declaredStructShapeOfExpr,
   owningCallableOf,
@@ -309,6 +310,15 @@ export class TaoTypeSystem implements LangiumTypeSystemDefinition<TaoSpecifics> 
           return
         }
         for (const seg of n.segments) {
+          if (seg.expression !== undefined && isObjectShapedTemplateInterpolation(seg.expression)) {
+            accept({
+              severity: 'error',
+              message: `String template interpolation must be text, number, or boolean (got 'object').`,
+              languageNode: seg,
+              languageProperty: 'expression',
+            })
+            continue
+          }
           const inferred = safeInferType(typir, seg.expression)
           if (!inferred) {
             continue
@@ -458,6 +468,9 @@ function inferMemberPathType(
   ref: AST.Referenceable,
   typir: TaoTypirServices,
 ): Type | undefined {
+  if (AST.isForStatement(ref)) {
+    return inferForRowPathType(ref, node.properties, typir)
+  }
   if (AST.isParameterDeclaration(ref)) {
     return inferMemberPathThroughParameter(ref, node.properties, typir)
   }
@@ -474,6 +487,35 @@ function inferMemberPathType(
   const seen = new Set<AST.AssignmentDeclaration>([ref])
   const valExpr = staticValueExprAtMemberPath(ref, node.properties, seen)
   return safeInferType(typir, valExpr)
+}
+
+/** inferForRowPathType resolves `for Row in Query { Row.Field }` paths through the query row shape. */
+function inferForRowPathType(
+  node: AST.ForStatement,
+  path: readonly string[],
+  typir: TaoTypirServices,
+): Type | undefined {
+  const rowPath = queryRowPathKind(node, path)
+  return rowPath.kind === 'primitive'
+    ? typir.factory.Primitives.get({ primitiveName: rowPath.primitive })
+    : undefined
+}
+
+function isObjectShapedTemplateInterpolation(expr: AST.Expression | AST.ObjectLiteral): boolean {
+  if (AST.isObjectLiteral(expr)) {
+    return true
+  }
+  if (AST.isTypedLiteralExpression(expr) && AST.isObjectLiteral(expr.value)) {
+    return true
+  }
+  if (!AST.isMemberAccessExpression(expr)) {
+    return false
+  }
+  const root = expr.root.ref
+  if (AST.isForStatement(root)) {
+    return queryRowPathKind(root, expr.properties).kind === 'object'
+  }
+  return staticObjectShapeOf(expr) !== undefined
 }
 
 /** inferMemberPathThroughParameter walks a struct-typed parameter (`view V P Person { … P.Name }`,
