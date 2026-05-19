@@ -16,6 +16,12 @@ Format new entries like this and put them at the top of `Open`:
 
 ## Open
 
+### 2026-05-19 - Expo generated app imports can still break on spaced source filenames.
+
+- Source/context: during Android emulator validation, compiling `Apps/Test Apps/Simple test render/Simple test render.tao` produced `_gen/tao-app/app-bootstrap.tsx` imports such as `./app/Simple test render`, and Metro failed with `Unable to resolve "./app/Simple test render"`.
+- Why it matters: Android and Expo dev-loop validation is blocked by generated filenames that Metro cannot resolve, so agents may misdiagnose a runtime setup problem when the real issue is compile output path safety.
+- Possible follow-up: repo fix in compiler generated app-module path handling plus an Expo runtime smoke test that compiles a spaced filename and starts Metro.
+
 ### 2026-05-19 - `project-review` Codex invocation uses a stale approval flag.
 
 - Source/context: while reviewing the navigation plan, `./agent project-review --mode plan "Docs/Projects/Navigation and Routing Project Plan.md"` produced Claude output but Codex failed with `error: unexpected argument '--ask-for-approval' found`.
