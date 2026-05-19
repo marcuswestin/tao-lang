@@ -14,7 +14,9 @@ import { type ComponentType as CompiledAppComponent, createElement } from 'react
 const runtimeDir = FS.resolvePath(__dirname)
 const repoRoot = FS.resolvePath(runtimeDir, '../..')
 const stdLibRoot = FS.resolvePath(repoRoot, 'packages/tao-std-lib')
-const taoSdkModuleUrl = FS.pathToFileURL(FS.resolvePath(runtimeDir, '_gen-tao-lib/tao-cli-main.js')).href
+const taoSdkModuleUrl = FS.pathToFileURL(
+  FS.resolvePath(repoRoot, '.builds/expo-runtime/_gen-tao-lib/tao-cli-main.js'),
+).href
 
 const runtimeTestingDeps = {
   cleanup: () => RNTesting.cleanup(),

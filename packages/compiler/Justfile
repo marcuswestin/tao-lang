@@ -1,7 +1,32 @@
 import "../shared/just/all-imports.just"
 
+COMPILER_TESTS_VALIDATION := "compiler-tests/3-test-validation.test.ts compiler-tests/3-test-validation-data-schema.test.ts"
+COMPILER_TESTS_MODULES := "compiler-tests/4-test-module-imports-exports.test.ts compiler-tests/2-test-parser-data-schema.test.ts compiler-tests/TaoDefinitionProvider.test.ts"
+COMPILER_TESTS_TYPES := "compiler-tests/5-test-type-checking.test.ts compiler-tests/5-test-layout-validation.test.ts"
+COMPILER_TESTS_CODEGEN := "compiler-tests/6-test-codegen-bindings.test.ts"
+COMPILER_TESTS_DESIGN_SYNTAX := "compiler-tests/7-test-design-inference.test.ts"
+COMPILER_TESTS_DESIGN_LOCKS := "compiler-tests/7-test-design-locks-codegen.test.ts"
+COMPILER_TESTS_DESIGN_LLM := "compiler-tests/8-test-design-llm-provider.test.ts"
+COMPILER_TESTS_PARSER := "compiler-tests/1-test-lexer.test.ts compiler-tests/2-test-parser-*.test.ts compiler-tests/trace-to-source-map.test.ts compiler-tests/test-utils/test-harness.test.ts"
+COMPILER_TESTS_CONCURRENTLY := "../shared/node_modules/.bin/concurrently --success all --kill-others-on-fail --group --no-color"
+
 test *PATTERNS: _deps
-    bun test --reporter=dot --test-name-pattern "{{ PATTERNS }}"
+    #!{{ ZSH_INIT }}
+    pattern='{{ PATTERNS }}'
+    if [[ -z "$pattern" ]]; then
+        {{ COMPILER_TESTS_CONCURRENTLY }} \
+            --names "validation,modules,types,codegen,design-syntax,design-locks,design-llm,parser" \
+            "bun test {{ COMPILER_TESTS_VALIDATION }} --reporter=dot --test-name-pattern \"$pattern\"" \
+            "bun test {{ COMPILER_TESTS_MODULES }} --reporter=dot --test-name-pattern \"$pattern\"" \
+            "bun test {{ COMPILER_TESTS_TYPES }} --reporter=dot --test-name-pattern \"$pattern\"" \
+            "bun test {{ COMPILER_TESTS_CODEGEN }} --reporter=dot --test-name-pattern \"$pattern\"" \
+            "bun test {{ COMPILER_TESTS_DESIGN_SYNTAX }} --reporter=dot --test-name-pattern \"$pattern\"" \
+            "bun test {{ COMPILER_TESTS_DESIGN_LOCKS }} --reporter=dot --test-name-pattern \"$pattern\"" \
+            "bun test {{ COMPILER_TESTS_DESIGN_LLM }} --reporter=dot --test-name-pattern \"$pattern\"" \
+            "bun test {{ COMPILER_TESTS_PARSER }} --reporter=dot --test-name-pattern \"$pattern\""
+    else
+        bun test --reporter=dot --test-name-pattern "$pattern"
+    fi
 
 watch-test *PATTERNS: _deps
     bun test . --watch --no-clear-screen --reporter=dot --test-name-pattern "{{ PATTERNS }}"
