@@ -14,7 +14,7 @@ export function taoFileNeedsTaoDataRuntime(taoFile: AST.TaoFile): boolean {
     if (AST.isDataDeclaration(n)) {
       return true
     }
-    if (AST.isQueryDeclaration(n) || AST.isGuardStatement(n) || AST.isCreateStatement(n)) {
+    if (AST.isQueryDeclaration(n) || AST.isGuardStatement(n) || AST.isCreateStatement(n) || AST.isUpdateStatement(n)) {
       return true
     }
   }

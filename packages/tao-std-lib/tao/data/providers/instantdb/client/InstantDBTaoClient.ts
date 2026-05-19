@@ -5,10 +5,12 @@ import {
   registerTaoDataProvider,
   type TaoDataClient,
   type TaoDataProviderParams,
+  taoDataRowId,
   taoDatasetFieldIsIndexed,
   type TaoDatasetFieldShape,
   taoDatasetFieldType,
   type TaoDatasetShape,
+  type TaoDataUpdatePatch,
 } from '../../tao-data-client'
 import {
   buildQueryResult,
@@ -250,6 +252,17 @@ export class InstantDBTaoClient implements TaoDataClient {
     const fieldTypes = this.instantMergedEntityFieldTypes(collection)
     const payload = assertNormalizedMatchesInstantEntityDecl(collection, fieldTypes, normalized)
     const rowId = IDB.id()
+    void this.db.transact((this.db.tx as any)[collection][rowId].update(omitId(payload)))
+  }
+
+  update(collection: string, row: unknown, patch: TaoDataUpdatePatch): void {
+    if (!this.db) {
+      return
+    }
+    const rowId = taoDataRowId(row)
+    const normalized = evaluateRecordFields(patch)
+    const fieldTypes = this.instantMergedEntityFieldTypes(collection)
+    const payload = assertNormalizedMatchesInstantEntityDecl(collection, fieldTypes, normalized)
     void this.db.transact((this.db.tx as any)[collection][rowId].update(omitId(payload)))
   }
 

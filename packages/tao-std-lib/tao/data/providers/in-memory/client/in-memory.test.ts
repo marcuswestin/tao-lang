@@ -132,8 +132,52 @@ describe.skipIf(isInIdeExtensionBundle)('MemoryTaoData query projection:', () =>
     expect(Reflect.get(todo, 'id')).toBe('todo-1')
     expect(Object.keys(todo)).not.toContain('id')
   })
+
+  test('update requires hidden row identity and patches the stored row', async () => {
+    const { MemoryTaoData } = await import('./in-memory')
+    const data = new MemoryTaoData()
+    data.declareDataset({
+      entities: {
+        rsvps: { Status: { type: 'string' } },
+      },
+      links: {},
+    })
+    data.open({})
+    data.insert('rsvps', {
+      id: 'rsvp-1',
+      Status: 'maybe',
+    })
+
+    const result = data.peekQuery({
+      schema: 'Data',
+      collection: 'rsvps',
+      cardinality: 'many',
+      where: [],
+      select: [{ path: ['Status'] }],
+    })
+    const row = (result.data as Record<string, unknown>[])[0]!
+
+    expect(Object.keys(row)).toEqual(['Status'])
+    expect(Reflect.get(row, 'id')).toBe('rsvp-1')
+    data.update('rsvps', row, { Status: 'going' })
+
+    const updated = data.peekQuery({
+      schema: 'Data',
+      collection: 'rsvps',
+      cardinality: 'many',
+      where: [],
+      select: [{ path: ['Status'] }],
+    })
+    expect(rowStatuses(updated.data)).toEqual(['going'])
+    expect(() => data.update('rsvps', { Status: 'missing-id' }, { Status: 'no' }))
+      .toThrow('no provider identity')
+  })
 })
 
 function rowTitles(data: unknown): string[] {
   return (data as Record<string, unknown>[]).map(row => row['Title'] as string)
+}
+
+function rowStatuses(data: unknown): string[] {
+  return (data as Record<string, unknown>[]).map(row => row['Status'] as string)
 }

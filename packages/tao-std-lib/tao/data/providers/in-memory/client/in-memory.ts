@@ -4,7 +4,9 @@ import {
   registerTaoDataProvider,
   type TaoDataClient,
   type TaoDataProviderParams,
+  taoDataRowId,
   type TaoDatasetShape,
+  type TaoDataUpdatePatch,
 } from '../../tao-data-client'
 import {
   buildQueryResult,
@@ -96,6 +98,21 @@ export class MemoryTaoData implements TaoDataClient {
     const idProp = normalized['id']
     const id = typeof idProp === 'string' && idProp.length > 0 ? idProp : randomRowId()
     this.rows.set(collection, [...prev, { ...normalized, id }])
+    this.notifyBucket(collection)
+  }
+
+  update(collection: string, row: unknown, patch: TaoDataUpdatePatch): void {
+    const id = taoDataRowId(row)
+    const prev = this.rows.get(collection) ?? []
+    const index = prev.findIndex(item => Reflect.get(item, 'id') === id)
+    if (index === -1) {
+      throw new Error(`Tao update target row '${id}' does not exist in '${collection}'.`)
+    }
+    const normalized = evaluateRecordFields(patch)
+    const { id: _ignoredId, ...patchWithoutId } = normalized
+    const next = [...prev]
+    next[index] = { ...prev[index]!, ...patchWithoutId, id }
+    this.rows.set(collection, next)
     this.notifyBucket(collection)
   }
 

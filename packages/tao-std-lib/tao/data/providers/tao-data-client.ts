@@ -35,6 +35,7 @@ export type TaoDataProviderParams = Record<string, unknown>
 
 /** TaoDataProviderFactory constructs one registered provider implementation. */
 export type TaoDataProviderFactory = () => TaoDataClient
+export type TaoDataUpdatePatch = Record<string, unknown>
 
 /** TaoDataClient is the provider interface that Memory and InstantDB implementations conform to. */
 export interface TaoDataClient {
@@ -50,6 +51,8 @@ export interface TaoDataClient {
   isBusy(): boolean
   /** insert appends a row to the collection (local-first, then syncs for cloud providers). */
   insert(collection: string, record: Record<string, unknown>): void
+  /** update patches an existing provider row addressed by a row handle carrying hidden provider identity. */
+  update(collection: string, row: unknown, patch: TaoDataUpdatePatch): void
 }
 
 const clients = new Map<string, TaoDataClient>()
@@ -57,20 +60,36 @@ const providerFactories = new Map<string, TaoDataProviderFactory>()
 
 type RuntimeExprLike = { evaluate?: () => { jsValue: unknown } }
 
+/** evaluateTaoRuntimeValue converts a Tao runtime expression object to its plain JS value. */
+export function evaluateTaoRuntimeValue(value: unknown): unknown {
+  if (value && typeof value === 'object') {
+    const expr = value as RuntimeExprLike
+    if (typeof expr.evaluate === 'function') {
+      return expr.evaluate().jsValue
+    }
+  }
+  return value
+}
+
 /** evaluateRecordFields converts runtime expression objects to plain JS values before persistence. */
 export function evaluateRecordFields(record: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = {}
   for (const [key, value] of Object.entries(record)) {
-    if (value && typeof value === 'object') {
-      const expr = value as RuntimeExprLike
-      if (typeof expr.evaluate === 'function') {
-        out[key] = expr.evaluate().jsValue
-        continue
-      }
-    }
-    out[key] = value
+    out[key] = evaluateTaoRuntimeValue(value)
   }
   return out
+}
+
+/** taoDataRowId extracts the provider row id carried by query result row handles. */
+export function taoDataRowId(row: unknown): string {
+  const value = evaluateTaoRuntimeValue(row)
+  if (value && typeof value === 'object') {
+    const id = Reflect.get(value, 'id')
+    if (typeof id === 'string' && id.length > 0) {
+      return id
+    }
+  }
+  throw new Error('Tao update target row has no provider identity.')
 }
 
 /** taoDatasetFieldType returns the primitive provider type from either legacy or structured field shape. */

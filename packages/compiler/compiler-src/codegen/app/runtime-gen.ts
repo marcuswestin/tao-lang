@@ -28,6 +28,7 @@ import { layoutEntryValues } from '../../layout/tao-layout'
 import {
   collectionSlugFromPlural,
   queryDeclarationAliasName,
+  queryDeclarationEntity,
 } from '../../query/query-model'
 import { decodeTaoTemplateTextChunk } from '../tao-template-text-chunk'
 import type { TaoAppConfig, TaoAppConfigObject } from './app-config'
@@ -559,9 +560,22 @@ class RuntimeGen {
     `
   }
 
-  /** UpdateStatement is parsed before the strict row-handle update lowering is implemented. */
+  /** UpdateStatement patches an existing provider row through the active TaoDataClient. */
   UpdateStatement(node: AST.UpdateStatement): Compiled {
-    return compileNode(node)`throw new Error('Tao update statements are not lowered yet')`
+    const entity = this.updateTargetEntity(node)
+    Assert(entity, 'UpdateStatement target must resolve to a data entity after validation.', {
+      target: node.target.$refText,
+    })
+    const dataDecl = entity.$container
+    Assert.is(dataDecl, AST.isDataDeclaration, 'DataEntityDeclaration container must be a DataDeclaration.')
+    const collection = collectionSlugFromPlural(entity.pluralName)
+    const target = this.updateTargetExpression(node)
+    const props = compileIndentedNodeList(node.fields, f => this.createFieldAssignment(f))
+    return compileNode(node)`
+      getTaoData(${JSON.stringify(dataDecl.name)}).update(${JSON.stringify(collection)}, ${target}, {
+        ${props}
+      })
+    `
   }
 
   /** createFieldAssignment emits one object property for `create { … }`. */
@@ -571,6 +585,45 @@ class RuntimeGen {
       return compileNode(field)`${key}: ${this.Expression(field.value)},`
     }
     return compileNode(field)`${key}: _Scope.${field.field},`
+  }
+
+  private updateTargetExpression(node: AST.UpdateStatement): Compiled {
+    const target = node.target.ref
+    if (AST.isQueryDeclaration(target)) {
+      return compileNode(node)`TR.QueryData(_Scope.${queryDeclarationAliasName(target)})`
+    }
+    return compileNode(node)`_Scope.${node.target.$refText}`
+  }
+
+  private updateTargetEntity(node: AST.UpdateStatement): AST.DataEntityDeclaration | undefined {
+    const target = node.target.ref
+    if (AST.isQueryDeclaration(target)) {
+      return queryDeclarationEntity(target)
+    }
+    if (AST.isForStatement(target)) {
+      const query = target.collection.ref
+      return AST.isQueryDeclaration(query) ? queryDeclarationEntity(query) : undefined
+    }
+    if (AST.isParameterDeclaration(target)) {
+      return this.dataEntityNamedInFile(node, target.name)
+    }
+    return undefined
+  }
+
+  private dataEntityNamedInFile(anchor: AST.Node, name: string): AST.DataEntityDeclaration | undefined {
+    const root = AST.Utils.findRootNode(anchor)
+    if (!AST.isTaoFile(root)) {
+      return undefined
+    }
+    for (const dataDecl of root.statements.filter(AST.isDataDeclaration)) {
+      const entity = dataDecl.dataStatements
+        .filter(AST.isDataEntityDeclaration)
+        .find(e => e.name === name)
+      if (entity) {
+        return entity
+      }
+    }
+    return undefined
   }
 
   /** viewGuardLoadingExpr emits query-result `isLoading` checks for in-view live queries used by `guard`. */

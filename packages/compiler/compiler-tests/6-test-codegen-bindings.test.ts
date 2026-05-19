@@ -436,6 +436,38 @@ describe('codegen — app provider selection and overrides:', () => {
     expect(selectBlock).not.toContain('path: ["Attendees"]')
   })
 
+  test('row-handle update emits provider-neutral data client call sites', async () => {
+    const out = await writeAndCompile(`
+      data D {
+        Rsvps Rsvp {
+          Status text,
+        }
+      }
+      query D.Rsvp as CurrentRsvp {
+        id = "rsvp-1",
+        Status,
+      }
+      action MarkGoing Rsvp {
+        update Rsvp {
+          Status "going"
+        }
+      }
+      action MarkCurrent {
+        update CurrentRsvp {
+          Status "going"
+        }
+      }
+      app A { ui V }
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
+      }
+    `)
+
+    expect(out).toContain('getTaoData("D").update("rsvps", _Scope.Rsvp, {')
+    expect(out).toContain('"Status": TR.Literal("going"),')
+    expect(out).toContain('getTaoData("D").update("rsvps", TR.QueryData(_Scope.CurrentRsvp), {')
+  })
+
   test('bare relationship selection emits scalar-only nested projection', async () => {
     const out = await writeAndCompile(`
       data D {
