@@ -389,6 +389,17 @@ Exit criteria:
 
 Suggested commit: `feat(navigation): validate navigation v1`
 
+## Implementation Closure
+
+- 2026-05-19: Navigation v1 implementation is complete on the feature branch
+  and is ready for `project-6-review-implementation`.
+- Completed scope includes grammar, semantic validation, formatter support,
+  React Navigation 7 static config codegen, runtime navigation actions, direct
+  Expo app entry without Expo Router, migrated canonical test apps, headless
+  scenario support, and Expo shared-scenario smoke coverage.
+- Follow-up work remains deferred below: drawer navigation, guards/auth,
+  React Navigation 8, native tab backends, and broader URL/link policy.
+
 ## Deferrals
 
 - Drawer navigation.
