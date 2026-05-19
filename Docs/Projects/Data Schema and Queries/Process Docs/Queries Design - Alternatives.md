@@ -3,7 +3,7 @@
 > **How to read this document**
 >
 > - This file tracks **forks, rejected options, and open questions** for the Tao data layer. It does **not** restate external language surveys — see **[Prior Art - Query Languages.md](./Prior%20Art%20-%20Query%20Languages.md)**.
-> - The **current preferred** choices live in **[Queries Design - Preferred.md](./Queries%20Design%20-%20Preferred.md)**. Each section below links back to the matching anchor in Preferred where applicable.
+> - The **current preferred** choices live in **[Data and Queries - Design.md](./Data%20and%20Queries%20-%20Design.md)**. Each section below links back to the matching anchor in that design where applicable.
 
 **Status legend:** `preferred` (matches Preferred doc today) · `deferred` · `rejected` · `open` · `superseded`
 
@@ -31,7 +31,7 @@
 
 ## Query flow: pipeline vs selection block {#query-flow-pipeline-vs-block}
 
-**Preferred:** selection block (`query Data.Plurals { Field, Relation { Field }, Field > value }`) — [Preferred §3.1](./Queries%20Design%20-%20Preferred.md#query-shape).
+**Preferred:** selection block (`query Data.Plurals { Field, Relation { Field }, Field > value }`) — [Design §3.1](./Data%20and%20Queries%20-%20Design.md#query-shape).
 
 | Option                                       | Status       | Notes                                                                  |
 | -------------------------------------------- | ------------ | ---------------------------------------------------------------------- |
@@ -46,7 +46,7 @@
 
 ## Query clauses and interpolation {#query-clauses-and-interpolation}
 
-**Preferred:** field predicates inside selection blocks, for example `Owner = CurrentUser` or `Rating >= 4.5`; RHS is Tao expression space; no `${}` — [Preferred §3.2](./Queries%20Design%20-%20Preferred.md#query-semantics).
+**Preferred:** field predicates inside selection blocks, for example `Owner = CurrentUser` or `Rating >= 4.5`; RHS is Tao expression space; no `${}` — [Design §3.2](./Data%20and%20Queries%20-%20Design.md#query-semantics).
 
 | Option                                               | Status      | Notes                                                           |
 | ---------------------------------------------------- | ----------- | --------------------------------------------------------------- |
@@ -59,7 +59,7 @@ Open: expression-space identity operators for later non-query conditionals; read
 
 ## Provider config placement {#provider-config-placement}
 
-**Preferred:** `provider Provider { … }` inside `app`; omitted provider defaults to Memory. Provider params pass through untyped and are validated only by the provider implementation — [Preferred §1 Schema](./Queries%20Design%20-%20Preferred.md#schema).
+**Preferred:** `provider Provider { … }` inside `app`; omitted provider defaults to Memory. Provider params pass through untyped and are validated only by the provider implementation — [Design §1](./Data%20and%20Queries%20-%20Design.md#schema).
 
 | Option                                                 | Status       | Notes                                                |
 | ------------------------------------------------------ | ------------ | ---------------------------------------------------- |
@@ -96,7 +96,7 @@ Alias-as-source / query-on-query is `deferred`: later restricted desugar only wh
 
 ## `Loadable` vs `guard` and `check` {#loadable-vs-guard-and-check}
 
-**Preferred:** MVP queries use runtime loading state with `guard`; richer `Loadable<T>` / explicit async states are deferred — [Preferred §3.6](./Queries%20Design%20-%20Preferred.md#async-model).
+**Preferred:** MVP queries use runtime loading state with `guard`; richer `Loadable<T>` / explicit async states are deferred — [Design §3.6](./Data%20and%20Queries%20-%20Design.md#async-model).
 
 | Option                                                           | Status      | Notes                                                                                                                                                                                                                                                                                                                                  |
 | ---------------------------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -108,7 +108,7 @@ Alias-as-source / query-on-query is `deferred`: later restricted desugar only wh
 
 ## Write model: command vs patch {#write-model-command-vs-patch}
 
-**Preferred Phase 1:** patch-style `update` — [Preferred §4](./Queries%20Design%20-%20Preferred.md#mutation-model).
+**Preferred Phase 1:** patch-style `update` — [Design §4.1](./Data%20and%20Queries%20-%20Design.md#write-statements).
 
 | Option                                                       | Status      | Notes                                             |
 | ------------------------------------------------------------ | ----------- | ------------------------------------------------- |
@@ -122,17 +122,17 @@ Related **strategic bundles** below (especially **Bundle A** vs **Bundle C**).
 
 ## Cache invalidation strategies {#cache-invalidation-strategies}
 
-| Option                             | Status      | Notes                                                                       |
-| ---------------------------------- | ----------- | --------------------------------------------------------------------------- |
-| Provider/runtime default (Phase 1) | `preferred` | [Preferred §4.4](./Queries%20Design%20-%20Preferred.md#cache-invalidation). |
-| Automatic by touched collections   | `deferred`  | Needs dependency graph.                                                     |
-| Explicit Tao invalidation DSL      | `deferred`  | Power + spec cost.                                                          |
+| Option                             | Status      | Notes                                                                     |
+| ---------------------------------- | ----------- | ------------------------------------------------------------------------- |
+| Provider/runtime default (Phase 1) | `preferred` | [Design §4.2](./Data%20and%20Queries%20-%20Design.md#cache-invalidation). |
+| Automatic by touched collections   | `deferred`  | Needs dependency graph.                                                   |
+| Explicit Tao invalidation DSL      | `deferred`  | Power + spec cost.                                                        |
 
 ---
 
 ## Relationship loading and cardinality {#relationship-loading-and-cardinality}
 
-**Preferred:** inference rules in [Preferred §Relationships](./Queries%20Design%20-%20Preferred.md#relationships); Tao does not encode join vs batch strategy.
+**Preferred:** inference rules in [Design §Relationships](./Data%20and%20Queries%20-%20Design.md#relationships); Tao does not encode join vs batch strategy.
 
 | Option                              | Status      | Notes                                   |
 | ----------------------------------- | ----------- | --------------------------------------- |
@@ -167,7 +167,7 @@ Illustrative rows (extend as providers land):
 | Cursor pagination         | endpoint-specific | in `queryFn`       | deferred in Tao V1            | common pattern    |
 | Nested relationship order | endpoint-specific | in `queryFn`       | reject or denormalize for now | resolver-defined  |
 
-V1 defers compiler enforcement and lets provider implementations accept the structured plan. Later provider manifests should **fail early** when a Preferred query shape exceeds provider support — [Preferred §Provider capability](./Queries%20Design%20-%20Preferred.md#provider-capability-validation).
+V1 defers compiler enforcement and lets provider implementations accept the structured plan. Later provider manifests should **fail early** when a preferred query shape exceeds provider support — [Design §Provider capability](./Data%20and%20Queries%20-%20Design.md#provider-capability-validation).
 
 ---
 
@@ -193,7 +193,7 @@ High-level packages (from former _Query Language Design_). Tao may mix aspects o
 
 - **Pros:** matches stable `queryKey` + `queryFn`; phased growth.
 - **Cons:** power users may lean on TS escape hatches.
-- **Status:** `preferred` (closest to [Preferred](./Queries%20Design%20-%20Preferred.md)).
+- **Status:** `preferred` (closest to [Data and Queries - Design](./Data%20and%20Queries%20-%20Design.md)).
 
 ### Bundle D — Tao intent; TS is the real query language
 
@@ -242,5 +242,5 @@ Open: what is auto-generated vs hand-written; exact `queryKey` derivation; mutat
 
 ## Scratch / superseded sketches
 
-- Legacy `entity User { id: ID … }` / `schema TODOs { model … }` blocks from early working papers — **superseded** by `Tasks Task` + `X is Y` in [Preferred](./Queries%20Design%20-%20Preferred.md#schema).
+- Legacy `entity User { id: ID … }` / `schema TODOs { model … }` blocks from early working papers — **superseded** by `Tasks Task` + `X is Y` in [Data and Queries - Design](./Data%20and%20Queries%20-%20Design.md#schema).
 - `query currentUser = User.get(session.userId)` strawman and pipeline query sketches — **superseded** by named selection-block queries; keep as historical comparison only.
