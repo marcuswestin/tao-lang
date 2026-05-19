@@ -1,0 +1,12 @@
+{
+  "steps": [
+    { "assertVisibleText": "Quick notes" },
+    { "assertVisibleText": "Capture a thought before it slips away." },
+    { "assertVisibleText": "What's on your mind?" },
+    { "assertVisibleText": "Save" },
+    { "assertVisibleText": "Clear" },
+    { "assertVisibleText": "Loading recent notes..." },
+    { "assertVisibleText": "No notes yet" },
+    { "assertVisibleText": "Could not load notes" }
+  ]
+}

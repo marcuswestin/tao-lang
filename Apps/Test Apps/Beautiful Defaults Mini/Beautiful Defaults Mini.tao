@@ -1,0 +1,35 @@
+use Button, Card, Col, EmptyState, ErrorState, LoadingState, MultiLineText, Row, Stack, Text, TextInput, TextLabel from @tao/ui
+
+app BeautifulDefaultsMini {
+   ui MainScreen
+}
+
+state DraftNote = ""
+
+action UpdateDraftNote Value text {
+   set DraftNote = Value
+}
+
+action ClearDraft {
+   set DraftNote = ""
+}
+
+ui MainScreen {
+   render Col [items top stretch, gap 16, width fill] {
+      Text "Quick notes"
+      MultiLineText "Capture a thought before it slips away."
+      Card {
+         Stack [gap 12] {
+            TextLabel "What's on your mind?"
+            TextInput DraftNote, .Label "Thought", UpdateDraftNote
+            Row [gap 8] {
+               Button "Save", ClearDraft
+               Button "Clear", ClearDraft
+            }
+         }
+      }
+      LoadingState .Message "Loading recent notes..."
+      EmptyState .Title "No notes yet", .Message "Your saved thoughts will appear here."
+      ErrorState .Title "Could not load notes", .Message "Check the network and try again."
+   }
+}
