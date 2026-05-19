@@ -12,7 +12,7 @@ data MeetupData {
       Title text,
       Status text optional indexed,
       Cancelled boolean indexed,
-      CreatedAt date indexed,
+      CreatedAt date optional indexed,
       Host Person,
       Ordering number indexed,
       Rsvps [Rsvp],
@@ -21,7 +21,7 @@ data MeetupData {
       Event,
       Person,
       Status default "going",
-      CreatedAt date indexed,
+      CreatedAt date optional indexed,
    }
 }
 

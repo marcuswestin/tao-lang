@@ -325,6 +325,26 @@ describe('validation — for / create:', () => {
     expectHumanMessagesContain(report, forCreateMessages.updateTargetMustBeRowHandle)
   })
 
+  test('update rejects plural query aliases and explicitly typed scalar parameters', async () => {
+    const report = await parseASTWithErrors(`
+      data D {
+        Rsvps Rsvp { Status text }
+      }
+      query D.Rsvps as AllRsvps { Status }
+      action X Rsvp text {
+        update AllRsvps { Status "going" }
+        update Rsvp { Status "going" }
+      }
+      app A { ui V }
+      ui V { render inject \`\`\`ts return null \`\`\` }
+    `)
+    expectHumanMessagesContain(
+      report,
+      forCreateMessages.updateTargetMustBeRowHandle,
+      forCreateMessages.updateTargetMustBeRowHandle,
+    )
+  })
+
   test('update validates fields and deferred relationship replacements', async () => {
     const report = await parseASTWithErrors(`
       data D {
@@ -628,6 +648,23 @@ describe('validation — selection-block data queries:', () => {
     `)
   })
 
+  test('singular query rejects unique equality hidden behind or', async () => {
+    const report = await parseASTWithErrors(`
+      data D {
+        People Person {
+          Email text unique,
+          Name text,
+        }
+      }
+      query D.Person {
+        where Email = "a@example.test" or Email = "b@example.test"
+      }
+      app A { ui V }
+      ui V { render inject \`\`\`ts return null \`\`\` }
+    `)
+    expectHumanMessagesContain(report, queryValidationMessages.queryOneNeedsUniqueWhere)
+  })
+
   test('where rejects bare boolean and relationship path traversal', async () => {
     const report = await parseASTWithErrors(`
       data D {
@@ -648,6 +685,41 @@ describe('validation — selection-block data queries:', () => {
       report,
       queryValidationMessages.queryBareWherePredicate('Active'),
       queryValidationMessages.queryNestedRelationshipPath('Host.Name'),
+    )
+  })
+
+  test('relationship predicate entries require matching row handles', async () => {
+    const report = await parseASTWithErrors(`
+      data D {
+        People Person {
+          Email text unique,
+        }
+        Events Event {
+          Host Person,
+          Title text,
+        }
+        Rsvps Rsvp {
+          Status text,
+        }
+      }
+      query D.Person as CurrentUser { Email = "ro@example.test" }
+      query D.Rsvp as CurrentRsvp { id = "rsvp-1" }
+      state HostId = "person-1"
+      query D.Events as BadScalar {
+        Host = HostId,
+        Title,
+      }
+      query D.Events as BadEntity {
+        Host = CurrentRsvp,
+        Title,
+      }
+      app A { ui V }
+      ui V { render inject \`\`\`ts return null \`\`\` }
+    `)
+    expectHumanMessagesContain(
+      report,
+      queryValidationMessages.queryRelationshipPredicateValue('Host'),
+      queryValidationMessages.queryRelationshipPredicateValueEntity('Host', 'Person', 'Rsvp'),
     )
   })
 

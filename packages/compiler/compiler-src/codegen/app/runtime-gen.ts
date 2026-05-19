@@ -27,8 +27,8 @@ import {
 import { layoutEntryValues } from '../../layout/tao-layout'
 import {
   collectionSlugFromPlural,
+  dataRowHandleForReference,
   queryDeclarationAliasName,
-  queryDeclarationEntity,
 } from '../../query/query-model'
 import { decodeTaoTemplateTextChunk } from '../tao-template-text-chunk'
 import type { TaoAppConfig, TaoAppConfigObject } from './app-config'
@@ -596,34 +596,7 @@ class RuntimeGen {
   }
 
   private updateTargetEntity(node: AST.UpdateStatement): AST.DataEntityDeclaration | undefined {
-    const target = node.target.ref
-    if (AST.isQueryDeclaration(target)) {
-      return queryDeclarationEntity(target)
-    }
-    if (AST.isForStatement(target)) {
-      const query = target.collection.ref
-      return AST.isQueryDeclaration(query) ? queryDeclarationEntity(query) : undefined
-    }
-    if (AST.isParameterDeclaration(target)) {
-      return this.dataEntityNamedInFile(node, target.name)
-    }
-    return undefined
-  }
-
-  private dataEntityNamedInFile(anchor: AST.Node, name: string): AST.DataEntityDeclaration | undefined {
-    const root = AST.Utils.findRootNode(anchor)
-    if (!AST.isTaoFile(root)) {
-      return undefined
-    }
-    for (const dataDecl of root.statements.filter(AST.isDataDeclaration)) {
-      const entity = dataDecl.dataStatements
-        .filter(AST.isDataEntityDeclaration)
-        .find(e => e.name === name)
-      if (entity) {
-        return entity
-      }
-    }
-    return undefined
+    return dataRowHandleForReference(node.target.ref)?.entity
   }
 
   /** viewGuardLoadingExpr emits query-result `isLoading` checks for in-view live queries used by `guard`. */

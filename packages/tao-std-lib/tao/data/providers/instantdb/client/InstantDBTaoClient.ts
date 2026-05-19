@@ -20,6 +20,7 @@ import {
   useReactiveQueryPlan,
 } from '../../tao-query'
 import { instantQueryShape, instantResultRows } from './instant-query'
+import { instantStrictUpdateOptions } from './instant-write'
 import { createTaoIDBClient } from './TaoIDBClient'
 
 type InstantDb = ReturnType<typeof IDB.init>
@@ -238,7 +239,7 @@ export class InstantDBTaoClient implements TaoDataClient {
     const fieldTypes = this.instantMergedEntityFieldTypes(collection)
     const payload = assertNormalizedMatchesInstantEntityDecl(collection, fieldTypes, normalized)
     const rowId = IDB.id()
-    void this.db.transact((this.db.tx as any)[collection][rowId].update(omitId(payload)))
+    void this.db.transact((this.db.tx as any)[collection][rowId].update(omitId(payload), instantStrictUpdateOptions))
   }
 
   update(collection: string, row: unknown, patch: TaoDataUpdatePatch): void {

@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import type { TaoQueryPlan } from '../../tao-query'
 import { instantQueryShape, instantResultRows } from './instant-query'
+import { instantStrictUpdateOptions } from './instant-write'
 
 describe('InstantDBTaoClient query planning:', () => {
   test('lowers server-safe where and order while preserving JS fallback semantics', () => {
@@ -59,6 +60,36 @@ describe('InstantDBTaoClient query planning:', () => {
     })
     expect(JSON.stringify(instantQueryShape(plan))).not.toContain('Host')
     expect(rowTitles(instantResultRows(data, plan))).toEqual(['Later', 'Sooner'])
+  })
+
+  test('does not lower mixed or filters when one branch is client-only', () => {
+    const currentUser = { id: 'person-1' }
+    const plan = makePlan(currentUser)
+    plan.where = []
+    plan.filter = {
+      kind: 'or',
+      filters: [
+        { kind: 'predicate', predicate: { path: ['Status'], op: '=', value: 'open' } },
+        {
+          kind: 'predicate',
+          predicate: { path: ['Host'], op: '=', value: currentUser, compareField: 'id', clientOnly: true },
+        },
+      ],
+    }
+    plan.orderBy = undefined
+
+    expect(instantQueryShape(plan)).toEqual({ events: {} })
+    expect(rowTitles(instantResultRows({
+      events: [
+        { id: 'event-1', Title: 'Open', Status: 'open', Host: { id: 'person-2' } },
+        { id: 'event-2', Title: 'Mine', Status: 'closed', Host: { id: 'person-1' } },
+        { id: 'event-3', Title: 'Other', Status: 'closed', Host: { id: 'person-2' } },
+      ],
+    }, plan))).toEqual(['Open', 'Mine'])
+  })
+
+  test('uses strict update options for InstantDB row-handle updates', () => {
+    expect(instantStrictUpdateOptions).toEqual({ upsert: false })
   })
 })
 

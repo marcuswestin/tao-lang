@@ -3,7 +3,7 @@ import { AST } from '@parser/parser'
 import {
   dataFieldPrimitiveType,
   dataFieldTarget,
-  queryDeclarationEntity,
+  dataRowHandleForReference,
 } from '../../query/query-model'
 import { makeValidater, type Reporter } from '../ValidationReporter'
 import { isUnderViewDeclaration } from './validation-utils'
@@ -144,12 +144,7 @@ function validateFieldAssignmentValue(
     return
   }
   if (primitive === 'date') {
-    report.error(
-      mode === 'create'
-        ? forCreateMessages.updateDateLiteralUnsupported(assignment.field)
-        : forCreateMessages.updateDateLiteralUnsupported(assignment.field),
-      assignment.value,
-    )
+    report.error(forCreateMessages.updateDateLiteralUnsupported(assignment.field), assignment.value)
     return
   }
   if (actual !== 'null' && actual !== primitive) {
@@ -177,7 +172,7 @@ function validateRelationshipAssignmentValue(
     report.error(forCreateMessages.updateRelationshipNeedsRowHandle(assignment.field), assignment.value)
     return
   }
-  const actual = rowHandleEntityForReference(assignment.value.root.ref, assignment.value)
+  const actual = dataRowHandleForReference(assignment.value.root.ref)?.entity
   if (!actual) {
     report.error(forCreateMessages.updateRelationshipNeedsRowHandle(assignment.field), assignment.value)
     return
@@ -191,40 +186,7 @@ function validateRelationshipAssignmentValue(
 }
 
 function updateTargetEntity(node: AST.UpdateStatement): AST.DataEntityDeclaration | undefined {
-  return rowHandleEntityForReference(node.target.ref, node)
-}
-
-function rowHandleEntityForReference(
-  ref: AST.Referenceable | undefined,
-  anchor: AST.Node,
-): AST.DataEntityDeclaration | undefined {
-  if (AST.isQueryDeclaration(ref)) {
-    return queryDeclarationEntity(ref)
-  }
-  if (AST.isForStatement(ref)) {
-    const query = ref.collection.ref
-    return AST.isQueryDeclaration(query) ? queryDeclarationEntity(query) : undefined
-  }
-  if (AST.isParameterDeclaration(ref)) {
-    return dataEntityNamedInFile(anchor, ref.name)
-  }
-  return undefined
-}
-
-function dataEntityNamedInFile(anchor: AST.Node, name: string): AST.DataEntityDeclaration | undefined {
-  const root = AST.Utils.findRootNode(anchor)
-  if (!AST.isTaoFile(root)) {
-    return undefined
-  }
-  for (const dataDecl of root.statements.filter(AST.isDataDeclaration)) {
-    const entity = dataDecl.dataStatements
-      .filter(AST.isDataEntityDeclaration)
-      .find(e => e.name === name)
-    if (entity) {
-      return entity
-    }
-  }
-  return undefined
+  return dataRowHandleForReference(node.target.ref)?.entity
 }
 
 function directLiteralPrimitive(expr: AST.Expression): AST.PrimitiveType | 'null' | undefined {

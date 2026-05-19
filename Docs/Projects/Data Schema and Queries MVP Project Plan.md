@@ -257,6 +257,8 @@ update Rsvp { OtherRsvps NewRsvps }
 
 **Exit criteria:** the staged app compiles and the selected runtime scenario proves the new data-query/write slice.
 
+**Implementation review note:** the committed branch exercises the staged app through the Memory-backed Data Schema scenario and covers InstantDB through provider-level query lowering, JS fallback, schema serialization, and strict update-option tests. No live external InstantDB service run is recorded in this branch; if service credentials and network are available, run a manual pre-merge acceptance pass that creates, updates, and observes refreshed data through InstantDB.
+
 **Suggested commit subject:** `Exercise data query write MVP scenario`
 
 ### 9. Documentation and Roadmap Cleanup
@@ -313,4 +315,4 @@ update Rsvp { OtherRsvps NewRsvps }
 
 ## Next Step
 
-Run `project-5-implement-project` and implement the reviewed plan one committable step at a time.
+Run `project-6-review-implementation` and review the implemented branch against this plan.

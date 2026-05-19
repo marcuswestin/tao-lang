@@ -665,6 +665,30 @@ describe('type checking — argument binding (actions):', () => {
     `)
   })
 
+  test('do <Action> binds data row-handle arguments by entity', async () => {
+    await parseTaoFully(`
+      data D {
+        Rsvps Rsvp { Status text }
+      }
+      query D.Rsvps as Rsvps { Status }
+      action SetRsvpStatus Rsvp, Status text {
+        update Rsvp { Status }
+      }
+      app A { ui V }
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
+        for Rsvp in Rsvps {
+          Button "Go", action {
+            do SetRsvpStatus Rsvp, "going"
+          }
+        }
+      }
+      ui Button Title text, Action action {
+        render inject \`\`\`ts return null \`\`\`
+      }
+    `)
+  })
+
   test('do <Action> accepts permuted argument order when types are distinct', async () => {
     await parseTaoFully(`
       action LogEvent M text, L number { }

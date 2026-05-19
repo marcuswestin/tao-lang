@@ -3,6 +3,7 @@ import { AST } from '@parser/parser'
 import {
   dataFieldPrimitiveType,
   dataFieldTargetEntity,
+  dataRowHandleForReference,
   normalizedQueryFieldPathSegments,
   queryDeclarationCardinality,
   queryDeclarationEntity,
@@ -166,6 +167,8 @@ function validateQuerySelectionBlock(
         addProjection(projected, pathLabel, entry.path, report)
       } else if (entry.op !== '=' && entry.op !== '!=') {
         report.error(queryValidationMessages.queryRelationshipPredicateOperator(pathLabel), entry.path)
+      } else {
+        validateRelationshipPredicateValue(pathLabel, resolved.finalTarget, entry.value, report)
       }
       continue
     }
@@ -275,7 +278,7 @@ function validateRelationshipPredicateValue(
     report.error(queryValidationMessages.queryRelationshipPredicateValue(pathLabel), value ?? targetEntity)
     return
   }
-  const actualEntity = rowHandleEntityForReference(value.root.ref, value)
+  const actualEntity = dataRowHandleForReference(value.root.ref)?.entity
   if (!actualEntity) {
     report.error(queryValidationMessages.queryRelationshipPredicateValue(pathLabel), value)
     return
@@ -369,8 +372,11 @@ function filterExpressionHasUniqueEqualityPredicate(
   entity: AST.DataEntityDeclaration,
 ): boolean {
   if (AST.isQueryLogicalExpression(expr)) {
-    return filterExpressionHasUniqueEqualityPredicate(expr.left, entity)
-      || filterExpressionHasUniqueEqualityPredicate(expr.right, entity)
+    if (expr.op === 'and') {
+      return filterExpressionHasUniqueEqualityPredicate(expr.left, entity)
+        || filterExpressionHasUniqueEqualityPredicate(expr.right, entity)
+    }
+    return false
   }
   if (AST.isQueryGroupedFilterExpression(expr)) {
     return filterExpressionHasUniqueEqualityPredicate(expr.expression, entity)
@@ -386,39 +392,6 @@ function isUniqueEqualityPredicate(resolved: QueryPathResolution): boolean {
   return resolved.normalizedPath.length === 1
     && !resolved.finalTarget
     && (fieldName === 'id' || resolved.finalField?.metadata.some(m => m.kind === 'unique') === true)
-}
-
-function rowHandleEntityForReference(
-  ref: AST.Referenceable | undefined,
-  anchor: AST.Node,
-): AST.DataEntityDeclaration | undefined {
-  if (AST.isQueryDeclaration(ref)) {
-    return queryDeclarationEntity(ref)
-  }
-  if (AST.isForStatement(ref)) {
-    const query = ref.collection.ref
-    return AST.isQueryDeclaration(query) ? queryDeclarationEntity(query) : undefined
-  }
-  if (AST.isParameterDeclaration(ref)) {
-    return dataEntityNamedInFile(anchor, ref.name)
-  }
-  return undefined
-}
-
-function dataEntityNamedInFile(anchor: AST.Node, name: string): AST.DataEntityDeclaration | undefined {
-  const root = AST.Utils.findRootNode(anchor)
-  if (!AST.isTaoFile(root)) {
-    return undefined
-  }
-  for (const dataDecl of root.statements.filter(AST.isDataDeclaration)) {
-    const entity = dataDecl.dataStatements
-      .filter(AST.isDataEntityDeclaration)
-      .find(e => e.name === name)
-    if (entity) {
-      return entity
-    }
-  }
-  return undefined
 }
 
 function directLiteralPrimitive(expr: AST.Expression): AST.PrimitiveType | 'null' | undefined {
