@@ -23,7 +23,9 @@ The app should demonstrate Tao's ability to produce a polished, personal-data-on
 - Seeing or choosing other activities while one is active requires deactivating or ending the current activity first.
 - A user can have at most three active intentions at any given time.
 - An intention represents something the user wants their life to be like, wants in their life, or wants to move toward.
+- Intentions can be marked inactive instead of deleted.
 - Activities are common recurring behaviors that align the user with one or more intentions.
+- Activities can be marked inactive instead of deleted.
 - Activities and intentions have a many-to-many relationship.
 - Creating an activity requires associating it with at least one intention.
 - An activity has a short title and may have an optional description.
@@ -35,8 +37,15 @@ The app should demonstrate Tao's ability to produce a polished, personal-data-on
 - Ending an activity records its end time.
 - The active-activity view should not show a timer.
 - The active-activity view should show the active activity and a `Conclude` action.
+- Concluding an activity only records the stop time and returns the app to the idle activity list.
+- MVP sessions do not collect reflection, notes, or completion status.
 - Over time, Still should surface underrepresented activities or intentions.
 - MVP recommendation logic should be deterministic and local, not AI-driven.
+- MVP recommendation logic should use a simple weighted combination of recency, session count, and total time.
+- Recommended MVP score: `50% recency deficit + 30% session-count deficit + 20% total-time deficit`, computed across active activities.
+- The recommendation should prefer the highest-scoring active activity and use stable creation order as the deterministic tie-breaker.
+- MVP should not include a history or insights screen.
+- Past session data should only surface indirectly through the recommendation logic in MVP.
 - If there are no intentions, Still shows the create-intention screen until an intention is created.
 - Auth, authorization, public feeds, and on-device LLM inference are deferred.
 
@@ -46,6 +55,7 @@ The app should demonstrate Tao's ability to produce a polished, personal-data-on
 - The app should answer "what should I do now?" whenever opened.
 - There should be one choice or active activity at any given time.
 - The user wants at most three intentions at any given time.
+- Intentions and activities should support only a simple active/inactive state in MVP.
 - Activities are recurring alignment behaviors associated with at least one intention.
 - Activities can belong to more than one intention.
 - Activity titles should ideally be only a couple of words, with an optional description available if needed.
@@ -54,6 +64,11 @@ The app should demonstrate Tao's ability to produce a polished, personal-data-on
 - The idle main view should subtly recommend one activity rather than making every activity visually equal.
 - Activity sessions record start and end times.
 - Active sessions should be visually quiet: no timer, only the active activity and a conclude button.
+- Concluding a session should only set its stop time; no note, reflection, or success/failure state is collected in MVP.
+- No insights or history surface is needed for MVP; start/stop history can remain behind the scenes.
+- The recommendation should combine least recently done, least session count, and least total time rather than choosing one metric.
+- A simple starting formula is `0.5 * recencyDeficit + 0.3 * countDeficit + 0.2 * timeDeficit`.
+- Tie-breakers should not become product semantics; use stable creation order and move on.
 - First launch does not use starter examples. If no intentions exist, the app blocks on intention creation.
 - Later functionality may identify underrepresented activities and eventually use local LLM inference, but not for MVP.
 
@@ -84,10 +99,6 @@ No external research is required yet. The current MVP is local personal data onl
 
 - How should activity-intention many-to-many links be represented in the MVP data model?
 - Should the activity list include all activities, only recommended activities, or only activities linked to active intentions?
-- What should happen if all activities are equally represented?
-- Should underrepresentation be based on session count, time spent, recency, or an explicit user weighting?
-- Is ending an active activity the same as completing it, or can a session end without implying success?
-- Should concluding an activity collect any immediate reflection, or should conclusion only end the session?
 - What should the MVP screens be beyond the main Now screen?
 
 ## Planning Inputs
@@ -95,6 +106,8 @@ No external research is required yet. The current MVP is local personal data onl
 - Project name: Still app MVP.
 - Primary acceptance test: opening the app always presents exactly one active or recommended activity.
 - MVP data model candidates: `Intention`, `Activity`, activity-intention link records, `Session`.
-- Likely core rules: max three active intentions, one active session globally, activity sessions record `StartedAt` and `EndedAt`.
+- Likely core rules: max three active intentions, one active session globally, activity sessions record only `StartedAt` and `EndedAt`.
+- Recommendation rule: rank active activities with a deterministic weighted score from recency, session count, and total time.
+- Do not plan a visible insights/history screen for MVP.
 - Likely implementation dependencies: local data provider, `create`, `update`, basic input controls, button events, conditional rendering, native default UI, app scenario coverage.
 - Next step: continue user interview until the product loop and MVP scope are decision-complete, then run `project-3-write-project-plan`.
