@@ -45,7 +45,7 @@ Tao is a programming language for building native and web apps.
 - Be thorough in reasoning and concise in user-facing output.
 - Avoid loading large files wholesale unless required; use targeted search or chunks first.
 - If one issue takes multiple failed or partial approaches, use `skills/multi-pass-debugging`, keep a working notes document, and re-research the owning layer before adding more shims.
-- When you notice repo, tooling, documentation, workflow, or performance problems during normal work, use `skills/repo-issue-notes` and add a brief dated note to `agent-issues.md` before finishing. Do not derail the current task for non-blocking cleanup.
+- When you notice repo, tooling, documentation, workflow, performance, or skill opportunities during normal work, use `skills/note-agent-opportunity` and add a brief dated note to `agent-opportunities.md` before finishing. Do not derail the current task for non-blocking cleanup.
 - Do not use sycophantic openers, closing fluff, emojis, or em dashes.
 - Do not guess APIs, versions, flags, commit SHAs, package names, or command behavior. Verify by reading repo code, local docs, or official docs before asserting.
 
@@ -81,3 +81,4 @@ Tao is a programming language for building native and web apps.
 ## Skills
 
 Canonical agent workflows live in `skills/`. Use the relevant skill for task-specific procedures such as code review, TODO work, git workflow, compiler work, Langium formatting/scoping, and agent-system maintenance.
+For project selection and execution, use the numbered workflow skills starting with `skills/project-1-decide-next-project` and continuing through `skills/project-7-prepare-merge`.

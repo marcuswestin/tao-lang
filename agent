@@ -13,7 +13,7 @@ if ! command -v just >/dev/null 2>&1; then
 fi
 
 case "${1:-help}" in
-  help|setup|fmt|fix|prep-commit|test|lint|check|gen|build|clean|expo-runtime|compiler|headless-test-runtime|ide-extension|shared|cli|tao|git|git-create-branch)
+  help|setup|fmt|fix|prep-commit|test|lint|check|gen|build|clean|expo-runtime|compiler|headless-test-runtime|ide-extension|shared|cli|tao|git|git-create-branch|project-review)
     exec just --justfile agent.Justfile "$@"
     ;;
   *)

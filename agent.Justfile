@@ -102,6 +102,12 @@ git-create-branch BRANCH_NAME:
     #!{{ ZSH_INIT }}
     exec git checkout -b "$1"
 
+# Review project plans or implementations with Codex and Claude.
+[positional-arguments]
+project-review *ARGS:
+    #!{{ ZSH_INIT }}
+    exec bash skills/project-4-review-project-plan/scripts/project-review.sh "$@"
+
 # Run git with the given arguments (forwarding pass-through).
 [positional-arguments]
 git SUB_CMD *ARGS:
