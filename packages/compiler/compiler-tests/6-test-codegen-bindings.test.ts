@@ -3,7 +3,7 @@
 // JSX prop / runtime-call key. These tests pin the **emission** (not just typing) so by-type matching
 // stays runtime-correct.
 
-import { compileTao } from '@compiler/compiler-main'
+import { compileTao, compileTaoSource } from '@compiler/compiler-main'
 import { FS } from '@shared'
 import {
   SNIPPET_MINIMAL_BUMP_APP_BARE_STEP,
@@ -13,15 +13,18 @@ import {
 import { describe, expect, test } from 'bun:test'
 import { formatParseErrorHumanMessages } from './test-utils/diagnostics'
 
-/** writeAndCompile materializes `code` to a tmp file, runs the compiler, and returns the concatenated text of every emitted module so substring assertions can target the resolved-prop / resolved-key emission. */
-async function writeAndCompile(code: string): Promise<string> {
-  const tmpDir = FS.mkTmpDir(FS.joinPath(FS.tmpdir(), 'tao-codegen-bindings-'))
-  const filePath = FS.joinPath(tmpDir, 'app.tao')
-  FS.writeFile(filePath, code)
-  const result = await compileTao({ file: filePath })
+/** compileSource runs the full compiler pipeline for in-memory source, preserving validation and codegen without entry-file I/O. */
+async function compileSource(code: string, opts: Omit<Parameters<typeof compileTaoSource>[0], 'source'> = {}) {
+  const result = await compileTaoSource({ source: code, ...opts })
   if (!result.ok) {
     throw new Error(`Compile failed:\n${formatParseErrorHumanMessages(result.errorReport)}`)
   }
+  return result
+}
+
+/** writeAndCompile runs the compiler and returns the concatenated text of every emitted module so substring assertions can target the resolved-prop / resolved-key emission. */
+async function writeAndCompile(code: string): Promise<string> {
+  const result = await compileSource(code)
   return result.files.map(f => f.content).join('\n')
 }
 
@@ -144,13 +147,7 @@ const STD_LIB_ROOT = FS.resolvePath(FS.joinPath(__dirname, '../../tao-std-lib'))
 
 /** writeAndCompileWithStdLib compiles a snippet with the checked-in Tao standard library available. */
 async function writeAndCompileWithStdLib(code: string): Promise<string> {
-  const tmpDir = FS.mkTmpDir(FS.joinPath(FS.tmpdir(), 'tao-codegen-bindings-stdlib-'))
-  const filePath = FS.joinPath(tmpDir, 'app.tao')
-  FS.writeFile(filePath, code)
-  const result = await compileTao({ file: filePath, stdLibRoot: STD_LIB_ROOT })
-  if (!result.ok) {
-    throw new Error(`Compile failed:\n${formatParseErrorHumanMessages(result.errorReport)}`)
-  }
+  const result = await compileSource(code, { stdLibRoot: STD_LIB_ROOT })
   return result.files.map(f => f.content).join('\n')
 }
 
@@ -242,13 +239,10 @@ describe('codegen — layout emission:', () => {
 
 describe('codegen — app provider selection and overrides:', () => {
   test('app provider override emits Memory provider registration, memory open params, and no instantdb import', async () => {
-    const tmpDir = FS.mkTmpDir(FS.joinPath(FS.tmpdir(), 'tao-codegen-data-provider-'))
-    const filePath = FS.joinPath(tmpDir, 'app.tao')
-    FS.writeFile(filePath, SNIPPET_INSTANT_DATA_APP)
-    const result = await compileTao({ file: filePath, stdLibRoot: STD_LIB_ROOT, app: { provider: 'Memory' } })
-    if (!result.ok) {
-      throw new Error(`Compile failed:\n${formatParseErrorHumanMessages(result.errorReport)}`)
-    }
+    const result = await compileSource(SNIPPET_INSTANT_DATA_APP, {
+      app: { provider: 'Memory' },
+      stdLibRoot: STD_LIB_ROOT,
+    })
     const out = result.files.map(f => f.content).join('\n')
     expect(out).toContain('createTaoDataClient("Memory")')
     expect(out).not.toContain('createTaoDataClient("InstantDB")')
@@ -257,13 +251,7 @@ describe('codegen — app provider selection and overrides:', () => {
   })
 
   test('default compile uses the app provider statement', async () => {
-    const tmpDir = FS.mkTmpDir(FS.joinPath(FS.tmpdir(), 'tao-codegen-data-provider-'))
-    const filePath = FS.joinPath(tmpDir, 'app.tao')
-    FS.writeFile(filePath, SNIPPET_INSTANT_DATA_APP)
-    const result = await compileTao({ file: filePath, stdLibRoot: STD_LIB_ROOT })
-    if (!result.ok) {
-      throw new Error(`Compile failed:\n${formatParseErrorHumanMessages(result.errorReport)}`)
-    }
+    const result = await compileSource(SNIPPET_INSTANT_DATA_APP, { stdLibRoot: STD_LIB_ROOT })
     const out = result.files.map(f => f.content).join('\n')
     expect(out).toContain('createTaoDataClient("InstantDB")')
     expect(out).toContain('getTaoData("HarnessData").open({"appId":"00000000-0000-0000-0000-000000000001"})')
@@ -291,44 +279,27 @@ describe('codegen — app provider selection and overrides:', () => {
   })
 
   test('app provider param override replaces provider init params without compiler validation', async () => {
-    const tmpDir = FS.mkTmpDir(FS.joinPath(FS.tmpdir(), 'tao-codegen-data-provider-'))
-    const filePath = FS.joinPath(tmpDir, 'app.tao')
-    FS.writeFile(filePath, SNIPPET_INSTANT_DATA_APP)
-    const result = await compileTao({
-      file: filePath,
+    const result = await compileSource(SNIPPET_INSTANT_DATA_APP, {
       stdLibRoot: STD_LIB_ROOT,
       app: { provider: { appId: 'override-app' } },
     })
-    if (!result.ok) {
-      throw new Error(`Compile failed:\n${formatParseErrorHumanMessages(result.errorReport)}`)
-    }
     const out = result.files.map(f => f.content).join('\n')
     expect(out).toContain('createTaoDataClient("InstantDB")')
     expect(out).toContain('getTaoData("HarnessData").open({"appId":"override-app"})')
   })
 
   test('flat dotted app provider param override replaces provider init params', async () => {
-    const tmpDir = FS.mkTmpDir(FS.joinPath(FS.tmpdir(), 'tao-codegen-data-provider-'))
-    const filePath = FS.joinPath(tmpDir, 'app.tao')
-    FS.writeFile(filePath, SNIPPET_INSTANT_DATA_APP)
-    const result = await compileTao({
-      file: filePath,
+    const result = await compileSource(SNIPPET_INSTANT_DATA_APP, {
       stdLibRoot: STD_LIB_ROOT,
       app: { 'provider.appId': 'flat-override-app' },
     })
-    if (!result.ok) {
-      throw new Error(`Compile failed:\n${formatParseErrorHumanMessages(result.errorReport)}`)
-    }
     const out = result.files.map(f => f.content).join('\n')
     expect(out).toContain('createTaoDataClient("InstantDB")')
     expect(out).toContain('getTaoData("HarnessData").open({"appId":"flat-override-app"})')
   })
 
   test('multiple data declarations keep distinct provider clients', async () => {
-    const tmpDir = FS.mkTmpDir(FS.joinPath(FS.tmpdir(), 'tao-codegen-data-provider-'))
-    const filePath = FS.joinPath(tmpDir, 'app.tao')
-    FS.writeFile(
-      filePath,
+    const result = await compileSource(
       `
       data FirstData {
         FirstItems FirstItem { T text }
@@ -343,11 +314,8 @@ describe('codegen — app provider selection and overrides:', () => {
         render inject \`\`\`ts return null \`\`\`
       }
     `,
+      { stdLibRoot: STD_LIB_ROOT },
     )
-    const result = await compileTao({ file: filePath, stdLibRoot: STD_LIB_ROOT })
-    if (!result.ok) {
-      throw new Error(`Compile failed:\n${formatParseErrorHumanMessages(result.errorReport)}`)
-    }
     const out = result.files.map(f => f.content).join('\n')
     expect(out).toContain('setTaoData("FirstData", createTaoDataClient("Memory"))')
     expect(out).toContain('setTaoData("SecondData", createTaoDataClient("Memory"))')

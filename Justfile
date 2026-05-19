@@ -48,9 +48,9 @@ ensure-repo-clean: _ensure_repo_clean
 # Run tests for whatever directory we're in, with an optional filter
 [no-cd]
 test *FILTER: gen
-    bun test {{ BUN_TEST_ROOTS }} --reporter=dot --test-name-pattern '{{ FILTER }}'
-    just headless-test-runtime test '{{ FILTER }}'
-    just expo-runtime test '{{ FILTER }}'
+    TAO_SKIP_GEN=1 bun test {{ BUN_TEST_ROOTS }} --reporter=dot --test-name-pattern '{{ FILTER }}'
+    TAO_SKIP_GEN=1 just headless-test-runtime test '{{ FILTER }}'
+    TAO_SKIP_GEN=1 just expo-runtime test '{{ FILTER }}'
 
 theadless *FILTER: gen
     just headless-test-runtime test '{{ FILTER }}'

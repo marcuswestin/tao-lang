@@ -1,6 +1,7 @@
 import {
   acceptTaoDesignSuggestions,
   compileTao,
+  compileTaoSource,
   generateTaoDesignSuggestions,
 } from '@compiler/compiler-main'
 import { stableStringify, type TaoDesignLock } from '@compiler/design/design-lock'
@@ -221,70 +222,46 @@ describe('UI design inference locks and codegen:', () => {
   })
 
   test('generated modules import design runtime and every referenced style key exists', async () => {
-    const { appPath, tmpDir } = writeDesignApp()
-    try {
-      const result = await compileTao({ file: appPath, stdLibRoot: STD_LIB_ROOT })
-      if (!result.ok) {
-        throw new Error(result.errorReport.getHumanErrorMessage())
-      }
-      const designModule = result.files.find(f => f.relativePath === 'tao-design.ts')?.content ?? ''
-      const bootstrap = result.files.find(f => f.relativePath === 'app-bootstrap.tsx')?.content ?? ''
-      const emitted = result.files.map(f => f.content).join('\n')
-      const referencedStyleKeys = [...emitted.matchAll(/resolveStyle\("([^"]+)"/g)].map(match => match[1]!)
+    const result = await compileDesignSource(designAppSource())
+    const designModule = result.files.find(f => f.relativePath === 'tao-design.ts')?.content ?? ''
+    const bootstrap = result.files.find(f => f.relativePath === 'app-bootstrap.tsx')?.content ?? ''
+    const emitted = result.files.map(f => f.content).join('\n')
+    const referencedStyleKeys = [...emitted.matchAll(/resolveStyle\("([^"]+)"/g)].map(match => match[1]!)
 
-      expect(designModule).toContain(
-        "import { createTaoDesign, type TaoDesignInput } from './use/@tao/tao-runtime/tao-design-runtime'",
-      )
-      expect(designModule).not.toContain('@ts-nocheck')
-      expect(designModule).not.toContain('tokens:')
-      expect(designModule).not.toContain('adaptations: {}')
-      expect(designModule).not.toContain('states: {}')
-      expect(emitted).toContain('TaoDesignProvider')
-      expect(bootstrap).toContain('_compiledTaoAppRootBackground')
-      expect(bootstrap).not.toContain("backgroundColor: 'black'")
-      expect(referencedStyleKeys.length).toBeGreaterThan(0)
-      for (const styleKey of referencedStyleKeys) {
-        expect(designModule).toContain(JSON.stringify(styleKey))
-      }
-    } finally {
-      FS.rmDirectory(tmpDir)
+    expect(designModule).toContain(
+      "import { createTaoDesign, type TaoDesignInput } from './use/@tao/tao-runtime/tao-design-runtime'",
+    )
+    expect(designModule).not.toContain('@ts-nocheck')
+    expect(designModule).not.toContain('tokens:')
+    expect(designModule).not.toContain('adaptations: {}')
+    expect(designModule).not.toContain('states: {}')
+    expect(emitted).toContain('TaoDesignProvider')
+    expect(bootstrap).toContain('_compiledTaoAppRootBackground')
+    expect(bootstrap).not.toContain("backgroundColor: 'black'")
+    expect(referencedStyleKeys.length).toBeGreaterThan(0)
+    for (const styleKey of referencedStyleKeys) {
+      expect(designModule).toContain(JSON.stringify(styleKey))
     }
   })
 
   test('variant wrappers pass target design style before variant style', async () => {
-    const { appPath, tmpDir } = writeVariantButtonApp()
-    try {
-      const result = await compileTao({ file: appPath, stdLibRoot: STD_LIB_ROOT })
-      if (!result.ok) {
-        throw new Error(result.errorReport.getHumanErrorMessage())
-      }
-      const emitted = result.files.map(f => f.content).join('\n')
-      const variantWrapper = emitted.match(/const PrimaryAction = function PrimaryAction_View[\s\S]*?\n      }/)?.[0]
-        ?? ''
+    const result = await compileDesignSource(variantButtonAppSource())
+    const emitted = result.files.map(f => f.content).join('\n')
+    const variantWrapper = emitted.match(/const PrimaryAction = function PrimaryAction_View[\s\S]*?\n      }/)?.[0]
+      ?? ''
 
-      expect(variantWrapper).toContain('<Button {..._ViewProps} _taoDesignStyle={(state) => [resolveStyle("style.')
-      expect(variantWrapper).toContain("_ViewProps._taoDesignStyle === 'function'")
-    } finally {
-      FS.rmDirectory(tmpDir)
-    }
+    expect(variantWrapper).toContain('<Button {..._ViewProps} _taoDesignStyle={(state) => [resolveStyle("style.')
+    expect(variantWrapper).toContain("_ViewProps._taoDesignStyle === 'function'")
   })
 
   test('variant wrappers preserve styled target view declarations', async () => {
-    const { appPath, tmpDir } = writeVariantViewApp()
-    try {
-      const result = await compileTao({ file: appPath, stdLibRoot: STD_LIB_ROOT })
-      if (!result.ok) {
-        throw new Error(result.errorReport.getHumanErrorMessage())
-      }
-      const emitted = result.files.map(f => f.content).join('\n')
-      const variantWrapper = emitted.match(/const FeaturedHome = function FeaturedHome_View[\s\S]*?\n      }/)?.[0]
-        ?? ''
+    const result = await compileDesignSource(variantViewAppSource())
+    const emitted = result.files.map(f => f.content).join('\n')
+    const variantWrapper = emitted.match(/const FeaturedHome = function FeaturedHome_View[\s\S]*?\n      }/)?.[0]
+      ?? ''
 
-      expect(variantWrapper).toContain('<Home {..._ViewProps} _taoDesignStyle={[resolveStyle("style.')
-      expect(variantWrapper).toContain('_ViewProps._taoDesignStyle]}')
-    } finally {
-      FS.rmDirectory(tmpDir)
-    }
+    expect(variantWrapper).toContain('<Home {..._ViewProps} _taoDesignStyle={[resolveStyle("style.')
+    expect(variantWrapper).toContain('_ViewProps._taoDesignStyle]}')
   })
 
   test('warning panel specs infer warning surface instead of warning action', async () => {
@@ -306,6 +283,14 @@ function writeDesignApp(opts: DesignAppSourceOpts = {}) {
   const appPath = FS.joinPath(tmpDir, 'app.tao')
   FS.writeFile(appPath, designAppSource(opts))
   return { appPath, tmpDir }
+}
+
+async function compileDesignSource(source: string) {
+  const result = await compileTaoSource({ source, stdLibRoot: STD_LIB_ROOT })
+  if (!result.ok) {
+    throw new Error(result.errorReport.getHumanErrorMessage())
+  }
+  return result
 }
 
 function writePaletteApp() {
@@ -335,12 +320,8 @@ function writePaletteApp() {
   return { appPath, tmpDir }
 }
 
-function writeVariantButtonApp() {
-  const tmpDir = FS.mkTmpDir(FS.joinPath(FS.tmpdir(), 'tao-design-variant-button-'))
-  const appPath = FS.joinPath(tmpDir, 'app.tao')
-  FS.writeFile(
-    appPath,
-    `
+function variantButtonAppSource() {
+  return `
     use Button from @tao/ui
 
     app DesignApp {
@@ -353,17 +334,11 @@ function writeVariantButtonApp() {
     ui Root {
       render PrimaryAction "Add", action { }
     }
-  `,
-  )
-  return { appPath, tmpDir }
+  `
 }
 
-function writeVariantViewApp() {
-  const tmpDir = FS.mkTmpDir(FS.joinPath(FS.tmpdir(), 'tao-design-variant-view-'))
-  const appPath = FS.joinPath(tmpDir, 'app.tao')
-  FS.writeFile(
-    appPath,
-    `
+function variantViewAppSource() {
+  return `
     use Button, Col from @tao/ui
 
     app DesignApp {
@@ -382,9 +357,7 @@ function writeVariantViewApp() {
     ui Root {
       render FeaturedHome
     }
-  `,
-  )
-  return { appPath, tmpDir }
+  `
 }
 
 function writeWarningPanelApp() {

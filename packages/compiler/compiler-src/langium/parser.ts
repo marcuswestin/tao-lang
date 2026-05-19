@@ -41,6 +41,11 @@ export const TaoParser = {
     const uri = LGM.URI.parse(evalCodeUri, STRICT_URIs)
     return await internalParseTaoCode(uri, opts, code)
   },
+  /** parseSourceFile parses in-memory Tao code as if it lived at `filePath`; used by compiler tests that need real file-URI codegen paths without entry-file I/O. */
+  async parseSourceFile(code: string, filePath: string, opts: ParseOptions): Promise<ParseResult> {
+    const uri = toLangiumFileURI(FS.resolvePath(filePath))
+    return await internalParseTaoCode(uri, opts, code)
+  },
 }
 
 // Internal functions

@@ -1,4 +1,4 @@
-import { compileTao, generateTaoDesignSuggestions } from '@compiler'
+import { compileTaoSource, generateTaoDesignSuggestions } from '@compiler'
 import type { TaoDesignLock } from '@compiler/design/design-lock'
 import {
   buildTaoDesignLLMPrompt,
@@ -232,13 +232,8 @@ describe('UI design LLM provider:', () => {
   })
 
   test('compile remains deterministic and does not require any LLM provider', async () => {
-    const { appPath, tmpDir } = writeDesignApp()
-    try {
-      const development = await compileTao({ file: appPath, stdLibRoot: STD_LIB_ROOT })
-      expect(development.ok).toBe(true)
-    } finally {
-      FS.rmDirectory(tmpDir)
-    }
+    const development = await compileTaoSource({ source: designAppSource(), stdLibRoot: STD_LIB_ROOT })
+    expect(development.ok).toBe(true)
   })
 })
 
@@ -377,9 +372,12 @@ function validProviderOutput(input: TaoDesignSuggestionProviderInput) {
 function writeDesignApp() {
   const tmpDir = FS.mkTmpDir(FS.joinPath(FS.tmpdir(), 'tao-design-llm-'))
   const appPath = FS.joinPath(tmpDir, 'app.tao')
-  FS.writeFile(
-    appPath,
-    `
+  FS.writeFile(appPath, designAppSource())
+  return { appPath, tmpDir }
+}
+
+function designAppSource() {
+  return `
     use Button, Col, Text from @tao/ui
 
     app DesignApp {
@@ -396,9 +394,7 @@ function writeDesignApp() {
         PrimaryAction "Continue", action { }
       }
     }
-  `,
-  )
-  return { appPath, tmpDir }
+  `
 }
 
 function stableJson(value: unknown): string {

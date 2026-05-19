@@ -58,6 +58,12 @@ export class TaoWorkspace {
     this.documents.addDocument(document)
   }
 
+  /** removeDocument unregisters a document from this workspace. */
+  removeDocument(document: langium.LangiumDocument): void {
+    this.seenFilePaths.delete(document.uri.path)
+    this.documents.deleteDocument(document.uri)
+  }
+
   /** supportsExtension returns true when ext is a supported Tao file extension. */
   supportsExtension(ext: string): boolean {
     return this.fileExtensions.includes(ext)

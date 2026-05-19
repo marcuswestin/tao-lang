@@ -2,6 +2,7 @@ import { Formatter } from '@formatter/FormatterSDK'
 import { expect, test } from 'bun:test'
 
 export const dedent = Formatter.dedent
+const formatterSession = Formatter.createSession()
 
 /** reindentExpectedFromFourSpaceTab maps each line’s leading spaces from 4-space steps to 3-space steps (relative to the block’s minimum indent) so legacy expectations match tabSize 3. */
 function reindentExpectedFromFourSpaceTab(dedented: string): string {
@@ -45,9 +46,9 @@ export function testFormatter(feature: string) {
 }
 
 export async function testFormatCode(code: string, expectedFormattedCode: string, numberOfTimes: number = 1) {
-  let rawFormattedCode = await Formatter.formatCode(code, { tabSize: 3 })
+  let rawFormattedCode = await formatCodeForTest(code, { tabSize: 3 })
   for (let i = 0; i < numberOfTimes; i++) {
-    rawFormattedCode = await Formatter.formatCode(rawFormattedCode, { tabSize: 3 })
+    rawFormattedCode = await formatCodeForTest(rawFormattedCode, { tabSize: 3 })
   }
 
   /** normalizeTrailingNewline collapses trailing newlines then appends a single EOF newline when non-empty so comparisons match LSP insertFinalNewline output without masking inner whitespace. */
@@ -66,6 +67,11 @@ export async function testFormatCode(code: string, expectedFormattedCode: string
   } else {
     expect(visualize(formattedCode)).toBe(visualize(expectedFormattedCode))
   }
+}
+
+/** formatCodeForTest reuses one formatter workspace for the high-volume formatter test matrix. */
+export async function formatCodeForTest(code: string, opts: { tabSize: number }) {
+  return formatterSession.formatCode(code, opts)
 }
 
 // Helper: Replaces invisible characters with visible symbols

@@ -1,4 +1,3 @@
-import { Formatter } from '@formatter/FormatterSDK'
 import { FS } from '@shared'
 import {
   SNIPPET_ACTION_BUMP_AND_USE_DOT_STEP_FORMATTED,
@@ -6,7 +5,7 @@ import {
   SNIPPET_ACTION_BUMP_STEP_NUMBER,
 } from '@shared/testing/tao-snippets'
 import { describe, expect, test } from 'bun:test'
-import { dedent, testFormatter, visualize } from './formatter-test-utils'
+import { dedent, formatCodeForTest, testFormatter, visualize } from './formatter-test-utils'
 
 type FormatterCase = { title: string; raw: string; expected: string }
 
@@ -791,7 +790,7 @@ describe('Formatter: real-app fixtures', () => {
   test('Objects and State.tao is a fixed point of the formatter', async () => {
     const fixture = FS.resolvePath(import.meta.dir, '../../../Apps/Test Apps/Objects and State/Objects and State.tao')
     const source = FS.readTextFile(fixture)
-    const formatted = await Formatter.formatCode(source, { tabSize: 3 })
+    const formatted = await formatCodeForTest(source, { tabSize: 3 })
     if (formatted !== source) {
       expect(visualize(formatted)).toBe(visualize(source))
     } else {

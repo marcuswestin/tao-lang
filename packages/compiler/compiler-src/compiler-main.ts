@@ -16,7 +16,7 @@ import {
   writeDesignLock,
 } from './design/design-lock'
 import type { TaoDesignSuggestionProvider } from './design/design-suggestion-provider'
-import { TaoParser } from './langium/parser'
+import { type ParseResult, TaoParser } from './langium/parser'
 import { type ParseError, parseErrorFromMessages } from './validation/parse-errors'
 
 export type { TaoDesignDiagnostic } from './design/design-analysis'
@@ -58,6 +58,12 @@ export type CompileOpts = {
   designLockDir?: string
 }
 
+export type CompileSourceOpts = Omit<CompileOpts, 'file'> & {
+  source: string
+  /** File path used for source identities and generated module paths; the file does not need to exist. */
+  sourcePath?: string
+}
+
 export type TaoDesignCommandResult = {
   acceptedPath: string
   suggestionPath: string
@@ -68,7 +74,26 @@ export type TaoDesignCommandResult = {
 /** compileTao parses `opts.file` (optional `stdLibRoot` for imports) and emits RN TypeScript when clean; on error returns
  * `ok: false` with `code` set to the error-app source from `getErrorAppString`. */
 export async function compileTao(opts: CompileOpts): Promise<CompileResult> {
+  const entryAbsolutePath = FS.resolvePath(opts.file)
   const parsed = await TaoParser.parseFile(opts.file, { stdLibRoot: opts.stdLibRoot })
+  return compileParsedTao({ ...opts, entryAbsolutePath, parsed })
+}
+
+/** compileTaoSource compiles in-memory Tao source through the same parser, validation, design analysis, and codegen path
+ * as `compileTao`, while using `sourcePath` only for source identity and generated module path decisions. */
+export async function compileTaoSource(opts: CompileSourceOpts): Promise<CompileResult> {
+  const entryAbsolutePath = FS.resolvePath(opts.sourcePath ?? FS.joinPath(FS.tmpdir(), 'tao-source', 'app.tao'))
+  const parsed = await TaoParser.parseSourceFile(opts.source, entryAbsolutePath, { stdLibRoot: opts.stdLibRoot })
+  return compileParsedTao({ ...opts, entryAbsolutePath, parsed })
+}
+
+async function compileParsedTao(
+  opts: Omit<CompileOpts, 'file'> & {
+    entryAbsolutePath: string
+    parsed: ParseResult
+  },
+): Promise<CompileResult> {
+  const { parsed } = opts
   if (parsed.errorReport.hasError()) {
     return {
       ok: false,
@@ -77,9 +102,8 @@ export async function compileTao(opts: CompileOpts): Promise<CompileResult> {
     }
   }
   Assert(parsed.taoFileAST, 'taoFileAST is defined', parsed as Record<string, unknown>)
-  const entryAbsolutePath = FS.resolvePath(opts.file)
   const design = analyzeTaoDesign({
-    entryAbsolutePath,
+    entryAbsolutePath: opts.entryAbsolutePath,
     importedTaoFiles: parsed.usedFilesASTs,
     lockDir: opts.designLockDir,
     mainTaoFile: parsed.taoFileAST,
@@ -98,7 +122,7 @@ export async function compileTao(opts: CompileOpts): Promise<CompileResult> {
   const generated = generateTypescriptReactNativeApp(
     parsed.taoFileAST,
     parsed.usedFilesASTs,
-    entryAbsolutePath,
+    opts.entryAbsolutePath,
     opts.stdLibRoot,
     opts.app ? { app: opts.app } : undefined,
     {
