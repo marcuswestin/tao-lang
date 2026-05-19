@@ -1,6 +1,11 @@
 import type { LGM as langium } from '@parser'
 import { AST } from '@parser/parser'
-import { makeValidater } from '../ValidationReporter'
+import {
+  dataFieldPrimitiveType,
+  dataFieldTarget,
+  queryDeclarationEntity,
+} from '../../query/query-model'
+import { makeValidater, type Reporter } from '../ValidationReporter'
 import { isUnderViewDeclaration } from './validation-utils'
 
 /** forCreateMessages are diagnostics for `for` and `create` data statements. */
@@ -13,6 +18,20 @@ export const forCreateMessages = {
   createOnlyInAction: '`create` may only appear inside an action body.',
   createUnknownField: (field: string) => `Unknown field '${field}' for this entity.`,
   createDuplicateField: (field: string) => `Duplicate field '${field}' in create block.`,
+  updateOnlyInAction: '`update` may only appear inside an action body.',
+  updateTargetMustBeRowHandle: '`update` target must be an in-scope data row handle.',
+  updateUnknownField: (field: string) => `Unknown field '${field}' for update target entity.`,
+  updateDuplicateField: (field: string) => `Duplicate field '${field}' in update block.`,
+  updateRelationshipNeedsRowHandle: (field: string) =>
+    `Relationship field '${field}' must be assigned a data row handle.`,
+  updateRelationshipWrongEntity: (field: string, expected: string, actual: string) =>
+    `Relationship field '${field}' expects a '${expected}' row handle, not '${actual}'.`,
+  updateToManyRelationshipDeferred: (field: string) =>
+    `To-many relationship replacement for '${field}' is deferred; use a single-link relationship field.`,
+  updateScalarLiteralType: (field: string, expected: string, actual: string) =>
+    `Field '${field}' expects ${expected}, not ${actual}.`,
+  updateDateLiteralUnsupported: (field: string) =>
+    `Date field '${field}' does not accept direct literals yet; use a row value or helper once date values are supported.`,
 } as const
 
 /** isUnderActionBody returns true when `node` is nested under an `action` declaration body. */
@@ -54,7 +73,10 @@ export function findForBodyHookViolations(node: AST.ForStatement): ForBodyHookVi
   return out
 }
 
-export const forCreateValidator: Pick<langium.ValidationChecks<AST.TaoLangAstType>, 'CreateStatement'> = {
+export const forCreateValidator: Pick<
+  langium.ValidationChecks<AST.TaoLangAstType>,
+  'CreateStatement' | 'UpdateStatement'
+> = {
   CreateStatement: makeValidater((node, report) => {
     if (AST.isTaoFile(node.$container) || !isUnderActionBody(node)) {
       report.error(forCreateMessages.createOnlyInAction, node)
@@ -73,6 +95,150 @@ export const forCreateValidator: Pick<langium.ValidationChecks<AST.TaoLangAstTyp
       if (!ok) {
         report.error(forCreateMessages.createUnknownField(f.field), { node: f, property: 'field' })
       }
+      const field = entity.fields.find(df => df.name === f.field)
+      if (field) {
+        validateFieldAssignmentValue(f, field, report, 'create')
+      }
     }
   }),
+
+  UpdateStatement: makeValidater((node, report) => {
+    if (AST.isTaoFile(node.$container) || !isUnderActionBody(node)) {
+      report.error(forCreateMessages.updateOnlyInAction, node)
+    }
+    const entity = updateTargetEntity(node)
+    if (!entity) {
+      report.error(forCreateMessages.updateTargetMustBeRowHandle, { node, property: 'target' })
+      return
+    }
+    const seen = new Set<string>()
+    for (const f of node.fields) {
+      if (seen.has(f.field)) {
+        report.error(forCreateMessages.updateDuplicateField(f.field), { node: f, property: 'field' })
+      }
+      seen.add(f.field)
+      const field = entity.fields.find(df => df.name === f.field)
+      if (!field) {
+        report.error(forCreateMessages.updateUnknownField(f.field), { node: f, property: 'field' })
+        continue
+      }
+      validateFieldAssignmentValue(f, field, report, 'update')
+    }
+  }),
+}
+
+function validateFieldAssignmentValue(
+  assignment: AST.CreateFieldAssignment,
+  field: AST.DataFieldDeclaration,
+  report: Reporter<AST.CreateStatement> | Reporter<AST.UpdateStatement>,
+  mode: 'create' | 'update',
+): void {
+  const relationship = dataFieldTarget(field)
+  if (relationship) {
+    validateRelationshipAssignmentValue(assignment, relationship, report, mode)
+    return
+  }
+  const primitive = dataFieldPrimitiveType(field)
+  const actual = assignment.value ? directLiteralPrimitive(assignment.value) : undefined
+  if (!primitive || !actual) {
+    return
+  }
+  if (primitive === 'date') {
+    report.error(
+      mode === 'create'
+        ? forCreateMessages.updateDateLiteralUnsupported(assignment.field)
+        : forCreateMessages.updateDateLiteralUnsupported(assignment.field),
+      assignment.value,
+    )
+    return
+  }
+  if (actual !== 'null' && actual !== primitive) {
+    report.error(forCreateMessages.updateScalarLiteralType(assignment.field, primitive, actual), assignment.value)
+  }
+}
+
+function validateRelationshipAssignmentValue(
+  assignment: AST.CreateFieldAssignment,
+  relationship: { readonly entity: AST.DataEntityDeclaration; readonly many: boolean },
+  report: Reporter<AST.CreateStatement> | Reporter<AST.UpdateStatement>,
+  mode: 'create' | 'update',
+): void {
+  if (relationship.many && mode === 'update') {
+    report.error(forCreateMessages.updateToManyRelationshipDeferred(assignment.field), {
+      node: assignment,
+      property: 'field',
+    })
+    return
+  }
+  if (!assignment.value) {
+    return
+  }
+  if (!AST.isMemberAccessExpression(assignment.value) || assignment.value.properties.length > 0) {
+    report.error(forCreateMessages.updateRelationshipNeedsRowHandle(assignment.field), assignment.value)
+    return
+  }
+  const actual = rowHandleEntityForReference(assignment.value.root.ref, assignment.value)
+  if (!actual) {
+    report.error(forCreateMessages.updateRelationshipNeedsRowHandle(assignment.field), assignment.value)
+    return
+  }
+  if (actual !== relationship.entity) {
+    report.error(
+      forCreateMessages.updateRelationshipWrongEntity(assignment.field, relationship.entity.name, actual.name),
+      assignment.value,
+    )
+  }
+}
+
+function updateTargetEntity(node: AST.UpdateStatement): AST.DataEntityDeclaration | undefined {
+  return rowHandleEntityForReference(node.target.ref, node)
+}
+
+function rowHandleEntityForReference(
+  ref: AST.Referenceable | undefined,
+  anchor: AST.Node,
+): AST.DataEntityDeclaration | undefined {
+  if (AST.isQueryDeclaration(ref)) {
+    return queryDeclarationEntity(ref)
+  }
+  if (AST.isForStatement(ref)) {
+    const query = ref.collection.ref
+    return AST.isQueryDeclaration(query) ? queryDeclarationEntity(query) : undefined
+  }
+  if (AST.isParameterDeclaration(ref)) {
+    return dataEntityNamedInFile(anchor, ref.name)
+  }
+  return undefined
+}
+
+function dataEntityNamedInFile(anchor: AST.Node, name: string): AST.DataEntityDeclaration | undefined {
+  const root = AST.Utils.findRootNode(anchor)
+  if (!AST.isTaoFile(root)) {
+    return undefined
+  }
+  for (const dataDecl of root.statements.filter(AST.isDataDeclaration)) {
+    const entity = dataDecl.dataStatements
+      .filter(AST.isDataEntityDeclaration)
+      .find(e => e.name === name)
+    if (entity) {
+      return entity
+    }
+  }
+  return undefined
+}
+
+function directLiteralPrimitive(expr: AST.Expression): AST.PrimitiveType | 'null' | undefined {
+  if (AST.isStringTemplateExpression(expr)) {
+    return 'text'
+  }
+  if (AST.isNumberLiteral(expr)) {
+    return 'number'
+  }
+  if (AST.isBooleanLiteral(expr)) {
+    return 'boolean'
+  }
+  if (AST.isNullLiteral(expr)) {
+    return 'null'
+  }
+  return undefined
 }

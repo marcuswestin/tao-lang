@@ -61,6 +61,13 @@ describe('type checking — type declarations:', () => {
     `)
   })
 
+  test('type X is date parses and validates cleanly', async () => {
+    await parseTaoFully(`
+      type DueDate is date
+      ui V { render inject \`\`\`ts return null \`\`\` }
+    `)
+  })
+
   test('duplicate type name fails validation', async () => {
     const report = await parseASTWithErrors(`
       type FirstName is text

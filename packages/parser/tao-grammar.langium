@@ -160,7 +160,7 @@ QueryGroupedFilterExpression:
     '(' expression=QueryFilterExpression ')';
 
 QueryFieldPredicateExpression:
-    path=QueryFieldPath ((op=QueryComparisonOperator value=Expression) | existence=QueryExistenceOperator);
+    path=QueryFieldPath ((op=QueryComparisonOperator value=Expression) | existence=QueryExistenceOperator)?;
 
 QueryComparisonOperator returns string:
     '=' | '!=' | '<=' | '>=' | '<' | '>';

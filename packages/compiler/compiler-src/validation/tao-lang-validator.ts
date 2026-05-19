@@ -664,12 +664,42 @@ function validateParameterShorthandType(
     return
   }
   const resolved = resolveShorthandParameterType(param)
-  if (resolved === undefined) {
+  if (resolved === undefined && !isActionDataRowHandleParameter(param)) {
     report.error(
       validationMessages.parameterShorthandNotAType(param.name),
       { node: param, property: 'name' },
     )
   }
+}
+
+function isActionDataRowHandleParameter(param: AST.ParameterDeclaration): boolean {
+  let current: AST.Node | undefined = param.$container
+  while (current) {
+    if (AST.isActionDeclaration(current)) {
+      return dataEntityNamedInFile(param, param.name) !== undefined
+    }
+    if (AST.isViewDeclaration(current) || AST.isTaoFile(current)) {
+      return false
+    }
+    current = current.$container
+  }
+  return false
+}
+
+function dataEntityNamedInFile(anchor: AST.Node, name: string): AST.DataEntityDeclaration | undefined {
+  const root = AST.Utils.findRootNode(anchor)
+  if (!AST.isTaoFile(root)) {
+    return undefined
+  }
+  for (const dataDecl of root.statements.filter(AST.isDataDeclaration)) {
+    const entity = dataDecl.dataStatements
+      .filter(AST.isDataEntityDeclaration)
+      .find(e => e.name === name)
+    if (entity) {
+      return entity
+    }
+  }
+  return undefined
 }
 
 /** removeItemFrom returns a copy of the array without the first matching item reference. */
