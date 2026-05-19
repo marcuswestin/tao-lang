@@ -133,6 +133,100 @@ describe.skipIf(isInIdeExtensionBundle)('MemoryTaoData query projection:', () =>
     expect(Object.keys(todo)).not.toContain('id')
   })
 
+  test('filters orders and nested relationship filters run before projection', async () => {
+    const { MemoryTaoData } = await import('./in-memory')
+    const data = new MemoryTaoData()
+    data.declareDataset({
+      entities: {
+        events: {
+          Title: { type: 'string' },
+          Ordering: { type: 'number' },
+          Cancelled: { type: 'boolean' },
+          Summary: { type: 'string' },
+          Rsvps: { type: 'any' },
+        },
+      },
+      links: {},
+    })
+    data.open({})
+    data.insert('events', {
+      id: 'event-1',
+      Title: 'Later',
+      Ordering: 2,
+      Cancelled: false,
+      Rsvps: [
+        { id: 'rsvp-1', Status: 'going', CreatedAt: 20 },
+        { id: 'rsvp-2', Status: 'no', CreatedAt: 10 },
+        { id: 'rsvp-3', CreatedAt: 15 },
+      ],
+    })
+    data.insert('events', {
+      id: 'event-2',
+      Title: 'Sooner',
+      Ordering: 1,
+      Cancelled: false,
+      Summary: 'public',
+      Rsvps: [
+        { id: 'rsvp-4', Status: 'maybe', CreatedAt: 30 },
+        { id: 'rsvp-5', Status: 'no', CreatedAt: 5 },
+      ],
+    })
+    data.insert('events', {
+      id: 'event-3',
+      Title: 'Cancelled',
+      Ordering: 3,
+      Cancelled: true,
+      Rsvps: [{ id: 'rsvp-6', Status: 'going', CreatedAt: 1 }],
+    })
+    data.insert('events', {
+      id: 'event-4',
+      Title: 'Private',
+      Ordering: 4,
+      Cancelled: false,
+      Summary: 'private',
+      Rsvps: [{ id: 'rsvp-7', Status: 'going', CreatedAt: 1 }],
+    })
+
+    const result = data.peekQuery({
+      schema: 'Data',
+      collection: 'events',
+      cardinality: 'many',
+      where: [{ path: ['Title'], op: 'exists' }],
+      filter: {
+        kind: 'and',
+        filters: [
+          { kind: 'predicate', predicate: { path: ['Cancelled'], op: '=', value: false } },
+          { kind: 'predicate', predicate: { path: ['Summary'], op: '!=', value: 'private' } },
+        ],
+      },
+      orderBy: { path: ['Ordering'], direction: 'desc' },
+      select: [
+        { path: ['Title'] },
+        {
+          path: ['Rsvps'],
+          filter: {
+            kind: 'or',
+            filters: [
+              { kind: 'predicate', predicate: { path: ['Status'], op: '!=', value: 'no' } },
+              { kind: 'predicate', predicate: { path: ['Status'], op: 'missing' } },
+            ],
+          },
+          orderBy: { path: ['CreatedAt'], direction: 'asc' },
+          select: [{ path: ['Status'] }, { path: ['CreatedAt'] }],
+        },
+      ],
+    })
+
+    const rows = result.data as Record<string, unknown>[]
+    const laterRsvps = rows[0]!['Rsvps'] as Record<string, unknown>[]
+    const soonerRsvps = rows[1]!['Rsvps'] as Record<string, unknown>[]
+
+    expect(rowTitles(result.data)).toEqual(['Later', 'Sooner'])
+    expect(laterRsvps.map(row => row['Status'] ?? null)).toEqual([null, 'going'])
+    expect(laterRsvps.map(row => row['CreatedAt'])).toEqual([15, 20])
+    expect(soonerRsvps.map(row => row['Status'])).toEqual(['maybe'])
+  })
+
   test('update requires hidden row identity and patches the stored row', async () => {
     const { MemoryTaoData } = await import('./in-memory')
     const data = new MemoryTaoData()
