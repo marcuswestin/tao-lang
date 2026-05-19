@@ -25,6 +25,9 @@ type ExpoRuntimeAppJson = {
   readonly expo?: {
     readonly experiments?: Record<string, unknown>
     readonly plugins?: unknown[]
+    readonly web?: {
+      readonly output?: string
+    }
   }
 }
 
@@ -46,6 +49,7 @@ describe('runtime:', () => {
     expect(packageJson.dependencies?.['expo-router']).toBeUndefined()
     expect(appJson.expo?.plugins).not.toContain('expo-router')
     expect(appJson.expo?.experiments?.['typedRoutes']).toBeUndefined()
+    expect(appJson.expo?.web?.output).toBe('single')
     expect(entrySource).toContain('registerRootComponent(ExpoRuntimeEntrypoint)')
     expect(entrySource).not.toContain('expo-router')
     expect(FS.existsSync(FS.resolvePath(__dirname, '../app/_layout.tsx'))).toBe(false)
