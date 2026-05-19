@@ -2,6 +2,7 @@ import React from 'react'
 import * as RN from 'react-native'
 
 import type { TaoResolvedLayoutStyle } from './Layout'
+import { type TaoDesignColorScheme, useTaoDesignContext } from './tao-design-runtime'
 
 type TaoLayoutProp = {
   _taoLayout?: TaoResolvedLayoutStyle
@@ -23,6 +24,81 @@ type TaoButtonProps = Omit<RN.PressableProps, 'children' | 'style'> & TaoLayoutP
   title: string
 }
 
+type TaoBaselinePalette = {
+  appBackground: string
+  surfaceBackground: string
+  primaryText: string
+  secondaryText: string
+  mutedText: string
+  border: string
+  borderStrong: string
+  inputBackground: string
+  inputBorder: string
+  accent: string
+  accentPressed: string
+  accentSubtle: string
+  onAccentText: string
+  placeholder: string
+  disabledForeground: string
+  disabledBackground: string
+  focusRing: string
+}
+
+const TAO_BASELINE_PALETTE: Record<TaoDesignColorScheme, TaoBaselinePalette> = {
+  light: {
+    accent: '#2563eb',
+    accentPressed: '#1d4ed8',
+    accentSubtle: '#dbeafe',
+    appBackground: '#f7f8fa',
+    border: '#e2e8f0',
+    borderStrong: '#cbd5e1',
+    disabledBackground: '#e2e8f0',
+    disabledForeground: '#94a3b8',
+    focusRing: '#2563eb',
+    inputBackground: '#ffffff',
+    inputBorder: '#cbd5e1',
+    mutedText: '#64748b',
+    onAccentText: '#ffffff',
+    placeholder: '#94a3b8',
+    primaryText: '#0f172a',
+    secondaryText: '#334155',
+    surfaceBackground: '#ffffff',
+  },
+  dark: {
+    accent: '#60a5fa',
+    accentPressed: '#3b82f6',
+    accentSubtle: '#1e3a8a',
+    appBackground: '#0f1115',
+    border: '#1f2937',
+    borderStrong: '#334155',
+    disabledBackground: '#1f2937',
+    disabledForeground: '#64748b',
+    focusRing: '#60a5fa',
+    inputBackground: '#111827',
+    inputBorder: '#334155',
+    mutedText: '#94a3b8',
+    onAccentText: '#0b1220',
+    placeholder: '#64748b',
+    primaryText: '#f8fafc',
+    secondaryText: '#cbd5e1',
+    surfaceBackground: '#1c1f26',
+  },
+}
+
+const TAO_BASELINE_SPACING = {
+  bodyFontSize: 16,
+  bodyLineHeight: 24,
+  borderWidth: 1,
+  controlHeight: 48,
+  controlPaddingHorizontal: 16,
+  controlPaddingVertical: 12,
+  controlRadius: 12,
+  labelFontSize: 14,
+  labelLineHeight: 20,
+  smallFontSize: 13,
+  surfaceRadius: 14,
+}
+
 const buttonBaseStyles = RN.StyleSheet.create({
   text: {
     fontWeight: '600',
@@ -31,11 +107,11 @@ const buttonBaseStyles = RN.StyleSheet.create({
 })
 
 export const Views = {
-  Text: TextView('Text', { numberOfLines: 1, ellipsizeMode: 'tail' }),
-  TextLabel: TextView('TextLabel', { numberOfLines: 1, ellipsizeMode: 'clip' }),
+  Text: TextView('Text', { numberOfLines: 1, ellipsizeMode: 'tail' }, 'body'),
+  TextLabel: TextView('TextLabel', { numberOfLines: 1, ellipsizeMode: 'clip' }, 'label'),
   MultiLineText: MultiLineTextView('MultiLineText'),
   TextInput: TextInputView('TextInput'),
-  Number: TextView('Number', { numberOfLines: 1, ellipsizeMode: 'tail' }),
+  Number: TextView('Number', { numberOfLines: 1, ellipsizeMode: 'tail' }, 'number'),
 
   Box: FlexView('Box', RN.View, { flexDirection: 'row' }),
   Stack: FlexView('Stack', RN.View, { flexDirection: 'column' }),
@@ -44,6 +120,19 @@ export const Views = {
   WrappingRow: FlexView('WrappingRow', RN.View, { flexDirection: 'row', flexWrap: 'wrap' }),
 
   Button: ButtonView('Button', {}),
+}
+
+/** taoBaselinePaletteFor returns the baseline palette for a color scheme. */
+export function taoBaselinePaletteFor(scheme: TaoDesignColorScheme): TaoBaselinePalette {
+  return TAO_BASELINE_PALETTE[scheme]
+}
+
+/** taoBaselineSpacing exposes the baseline spacing/sizing constants used by std-lib runtime views. */
+export const taoBaselineSpacing = TAO_BASELINE_SPACING
+
+function useTaoBaselinePalette(): TaoBaselinePalette {
+  const context = useTaoDesignContext()
+  return TAO_BASELINE_PALETTE[context.colorScheme]
 }
 
 function View<P extends { style?: RN.StyleProp<any> }>(
@@ -63,16 +152,21 @@ function View<P extends { style?: RN.StyleProp<any> }>(
   return Wrapped
 }
 
+type BaselineTextRole = 'body' | 'label' | 'number'
+
 function TextView(
   viewDisplayName: string,
   taoTextProps: Pick<RN.TextProps, 'ellipsizeMode' | 'numberOfLines'>,
+  role: BaselineTextRole,
 ) {
   const Wrapped = (props: TaoTextProps) => {
     const { _taoDesignStyle, _taoLayout, style, ...textProps } = props
+    const palette = useTaoBaselinePalette()
+    const baseline = baselineTextStyleFor(role, palette)
     return React.createElement(RN.Text, {
       ...textProps,
       ...taoTextProps,
-      style: [_taoLayout, taoDesignTextStyleForState(_taoDesignStyle, 'default'), style],
+      style: [baseline, _taoLayout, taoDesignTextStyleForState(_taoDesignStyle, 'default'), style],
     })
   }
 
@@ -83,6 +177,8 @@ function TextView(
 function MultiLineTextView(viewDisplayName: string) {
   const Wrapped = (props: TaoMultiLineTextProps) => {
     const { _taoDesignStyle, _taoLayout, style, lines, ...textProps } = props
+    const palette = useTaoBaselinePalette()
+    const baseline = baselineTextStyleFor('body', palette)
     const designStyle = taoDesignTextStyleForState(_taoDesignStyle, 'default')
     const lineLimitProps = lines === undefined
       ? {}
@@ -90,7 +186,7 @@ function MultiLineTextView(viewDisplayName: string) {
     return React.createElement(RN.Text, {
       ...textProps,
       ...lineLimitProps,
-      style: [_taoLayout, designStyle, style],
+      style: [baseline, _taoLayout, designStyle, style],
     })
   }
 
@@ -100,11 +196,25 @@ function MultiLineTextView(viewDisplayName: string) {
 
 function TextInputView(viewDisplayName: string) {
   const Wrapped = (props: TaoTextInputProps) => {
-    const { _taoDesignStyle, _taoLayout, style, ...textInputProps } = props
+    const { _taoDesignStyle, _taoLayout, editable, onBlur, onFocus, style, ...textInputProps } = props
+    const palette = useTaoBaselinePalette()
+    const [focused, setFocused] = React.useState(false)
+    const disabled = editable === false
+    const designState = textInputDesignState(disabled, focused)
+    const baseline = baselineTextInputStyleFor(palette, designState)
     return React.createElement(RN.TextInput, {
       ...textInputProps,
-      placeholderTextColor: textInputProps.placeholderTextColor ?? '#94a3b8',
-      style: [_taoLayout, taoDesignTextStyleForState(_taoDesignStyle, 'default'), style],
+      editable,
+      onBlur: event => {
+        setFocused(false)
+        onBlur?.(event)
+      },
+      onFocus: event => {
+        setFocused(true)
+        onFocus?.(event)
+      },
+      placeholderTextColor: textInputProps.placeholderTextColor ?? palette.placeholder,
+      style: [baseline, _taoLayout, taoDesignTextStyleForState(_taoDesignStyle, designState), style],
     })
   }
 
@@ -130,12 +240,15 @@ function ButtonView(
       title,
       ...buttonProps
     } = props
+    const palette = useTaoBaselinePalette()
     const hasStatefulDesignStyle = typeof _taoDesignStyle === 'function'
     const [pressed, setPressed] = React.useState(false)
     const designState = buttonDesignState(disabled, pressed)
+    const baselineView = baselineButtonViewStyleFor(palette, designState)
+    const baselineText = baselineButtonTextStyleFor(palette, designState)
     const designStyle = taoDesignStyleForState(_taoDesignStyle, designState)
     const designViewStyle = taoDesignViewStyleForState(_taoDesignStyle, designState)
-    const designTextStyle = buttonTextStyle([designStyle, style])
+    const designTextStyle = buttonTextStyle([baselineText, designStyle, style])
     const labelTextStyle = color === undefined ? designTextStyle : { ...designTextStyle, color }
     return React.createElement(
       RN.Pressable,
@@ -143,6 +256,7 @@ function ButtonView(
         ...buttonProps,
         accessibilityLabel: accessibilityLabel ?? title,
         accessibilityRole: 'button',
+        accessibilityState: { disabled: disabled === true },
         disabled,
         onPress,
         onPressIn: event => {
@@ -154,12 +268,14 @@ function ButtonView(
           onPressOut?.(event)
         },
         style: [
+          baselineView,
           baseStyles,
           _taoLayout,
           designViewStyle,
           style,
-          !hasStatefulDesignStyle && disabled ? { opacity: 0.45 } : undefined,
-          !hasStatefulDesignStyle && pressed ? { opacity: 0.82 } : undefined,
+          !hasStatefulDesignStyle && disabled !== true && pressed
+            ? { backgroundColor: palette.accentPressed }
+            : undefined,
         ],
       },
       React.createElement(
@@ -172,6 +288,79 @@ function ButtonView(
 
   Wrapped.displayName = viewDisplayName
   return Wrapped
+}
+
+function baselineTextStyleFor(role: BaselineTextRole, palette: TaoBaselinePalette): RN.TextStyle {
+  if (role === 'label') {
+    return {
+      color: palette.secondaryText,
+      fontSize: TAO_BASELINE_SPACING.labelFontSize,
+      fontWeight: '600',
+      letterSpacing: 0.1,
+      lineHeight: TAO_BASELINE_SPACING.labelLineHeight,
+    }
+  }
+  if (role === 'number') {
+    return {
+      color: palette.primaryText,
+      fontSize: TAO_BASELINE_SPACING.bodyFontSize,
+      fontVariant: ['tabular-nums'],
+      lineHeight: TAO_BASELINE_SPACING.bodyLineHeight,
+    }
+  }
+  return {
+    color: palette.primaryText,
+    fontSize: TAO_BASELINE_SPACING.bodyFontSize,
+    lineHeight: TAO_BASELINE_SPACING.bodyLineHeight,
+  }
+}
+
+function baselineTextInputStyleFor(
+  palette: TaoBaselinePalette,
+  state: TaoDesignStateName,
+): RN.TextStyle {
+  const focused = state === 'focused'
+  const disabled = state === 'disabled'
+  return {
+    backgroundColor: disabled ? palette.disabledBackground : palette.inputBackground,
+    borderColor: focused ? palette.focusRing : palette.inputBorder,
+    borderRadius: TAO_BASELINE_SPACING.controlRadius,
+    borderWidth: focused ? TAO_BASELINE_SPACING.borderWidth + 1 : TAO_BASELINE_SPACING.borderWidth,
+    color: disabled ? palette.disabledForeground : palette.primaryText,
+    fontSize: TAO_BASELINE_SPACING.bodyFontSize,
+    lineHeight: TAO_BASELINE_SPACING.bodyLineHeight,
+    minHeight: TAO_BASELINE_SPACING.controlHeight,
+    paddingHorizontal: TAO_BASELINE_SPACING.controlPaddingHorizontal,
+    paddingVertical: TAO_BASELINE_SPACING.controlPaddingVertical,
+  }
+}
+
+function baselineButtonViewStyleFor(
+  palette: TaoBaselinePalette,
+  state: TaoDesignStateName,
+): RN.ViewStyle {
+  const disabled = state === 'disabled'
+  return {
+    alignItems: 'center',
+    backgroundColor: disabled ? palette.disabledBackground : palette.accent,
+    borderRadius: TAO_BASELINE_SPACING.controlRadius,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    minHeight: TAO_BASELINE_SPACING.controlHeight,
+    paddingHorizontal: TAO_BASELINE_SPACING.controlPaddingHorizontal,
+    paddingVertical: TAO_BASELINE_SPACING.controlPaddingVertical,
+  }
+}
+
+function baselineButtonTextStyleFor(
+  palette: TaoBaselinePalette,
+  state: TaoDesignStateName,
+): RN.TextStyle {
+  return {
+    color: state === 'disabled' ? palette.disabledForeground : palette.onAccentText,
+    fontSize: TAO_BASELINE_SPACING.bodyFontSize,
+    lineHeight: TAO_BASELINE_SPACING.bodyLineHeight,
+  }
 }
 
 function buttonTextStyle(style: RN.StyleProp<any>): RN.TextStyle {
@@ -217,6 +406,13 @@ function buttonDesignState(disabled: boolean | null | undefined, pressed: boolea
     return 'disabled'
   }
   return pressed ? 'pressed' : 'default'
+}
+
+function textInputDesignState(disabled: boolean, focused: boolean): TaoDesignStateName {
+  if (disabled) {
+    return 'disabled'
+  }
+  return focused ? 'focused' : 'default'
 }
 
 function FlexView<P extends RN.ViewProps>(

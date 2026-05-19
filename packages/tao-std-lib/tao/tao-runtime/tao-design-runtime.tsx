@@ -44,6 +44,11 @@ const defaultDesignContext: TaoDesignContextValue = {
 
 const TaoDesignContext = React.createContext<TaoDesignContextValue>(defaultDesignContext)
 
+/** useTaoDesignContext reads the current runtime Tao design context value. */
+export function useTaoDesignContext(): TaoDesignContextValue {
+  return React.useContext(TaoDesignContext)
+}
+
 /** createTaoDesign creates React Native style resolver helpers from accepted Tao design data. */
 export function createTaoDesign(input: TaoDesignInput) {
   const baseStyles = RN.StyleSheet.create(
@@ -71,8 +76,6 @@ export function createTaoDesign(input: TaoDesignInput) {
     ].filter((style): style is TaoDesignStyle => style !== undefined)
     return [baseStyles[name], ...overlays]
   }
-
-  const useTaoDesignContext = () => React.useContext(TaoDesignContext)
 
   const useTaoStyle = (name: string, state?: TaoDesignState) => {
     const context = useTaoDesignContext()
