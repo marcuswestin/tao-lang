@@ -16,6 +16,12 @@ Format new entries like this and put them at the top of `Open`:
 
 ## Open
 
+### 2026-05-19 - `project-review` Codex invocation uses a stale approval flag.
+
+- Source/context: while reviewing the navigation plan, `./agent project-review --mode plan "Docs/Projects/Navigation and Routing Project Plan.md"` produced Claude output but Codex failed with `error: unexpected argument '--ask-for-approval' found`.
+- Why it matters: plan and implementation reviews are supposed to run both Codex and Claude; the stale flag makes every review command exit nonzero and leaves half the artifact empty.
+- Possible follow-up: update `skills/project-4-review-project-plan/scripts/project-review.sh` and the matching compiler design-suggestion Codex invocation to the current Codex CLI approval flag.
+
 ### 2026-05-12 - `./agent` sometimes reports stale `.devenv` files during read commands.
 
 - Source/context: while running simple `./agent cat` and `./agent git diff` commands, devenv intermittently failed or warned about missing `.devenv/load-exports` and stale `.devenv/gc/shell`; rerunning the command succeeded.

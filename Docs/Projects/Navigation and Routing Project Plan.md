@@ -8,6 +8,10 @@ Navigation 7 static config. The project replaces `app { ui RootView }` with
 supports stacks and tabs, adds optional primitive paths/params, and exposes
 simple navigation actions.
 
+Canonical apps should migrate to `app { navigation MainNavigation }` during this
+project. Legacy `app { ui RootView }` remains accepted as a transition entry
+until a later cleanup removes it from the language.
+
 ## Goals
 
 - Add first-class Tao syntax for navigators, stacks, tabs, screens, and tab
@@ -28,6 +32,7 @@ simple navigation actions.
 - No arbitrary object params.
 - No native-only mobile backend or separate web router backend in v1.
 - No generated public route documentation.
+- No complete removal of legacy app-level `ui` syntax in this project.
 
 ## Assumptions
 
@@ -38,9 +43,29 @@ simple navigation actions.
 - The implementation can update existing test apps from app-level `ui` to
   app-level `navigation`.
 - Existing view declarations remain the visual screen bodies.
-- Navigation params are either passed into the target view as generated props or
-  exposed through a small runtime helper; the implementation should choose the
-  simpler path that keeps view type checking reliable.
+- Canonical v1 apps use app-level `navigation`; legacy app-level `ui` remains
+  valid during the transition. Validation accepts exactly one app root entry:
+  either `ui` or `navigation`, not both.
+- Navigation action targets are parsed as destination-name identifiers rather
+  than Langium cross-references. Validation resolves those names against the
+  collected navigation tree.
+- `navigation push` is stack-only and `navigation tab` is tab-only. Push should
+  not silently fall back to tab selection or cross-boundary `navigate` behavior.
+- Navigation params are passed into target views as generated props from the
+  React Navigation route params. V1 does not add a `useParams`-style Tao runtime
+  helper.
+- `title "Text"` is valid on stack screens and tabs. `icon system Name` is
+  tab-only and lowers to a Tao runtime tab-icon helper backed by the Expo runtime
+  icon packages. V1 validates icon placement and syntax only; compile-time icon
+  registry validation is deferred.
+- Destination `role` metadata is deferred and should not be added to the v1
+  grammar.
+- When a screen declares `path`, every declared param for that screen must appear
+  as a path placeholder. Pathless screens may still declare params for in-app
+  navigation. Query-string encoding for non-path params is deferred.
+- V1 validates action targets and params only for uniquely named reachable
+  destinations that the compiler can lower directly. Rich nested navigator
+  reachability is deferred.
 
 ## Implementation Steps
 
@@ -51,17 +76,23 @@ be implemented.
 
 Work:
 
+- Keep legacy app-level `ui` grammar valid while adding app-level `navigation`.
+  Parser tests should cover both entries; validation tests should reject app
+  blocks that contain both.
 - Add `packages/parser/tao-navigation.langium`.
 - Import the navigation grammar from `packages/parser/tao-grammar.langium`.
+- Verify the grammar import split with `./agent gen` before expanding the file.
+  If the current Langium generator setup rejects sibling grammar imports, inline
+  the navigation rules into `packages/parser/tao-grammar.langium` for v1 and
+  record the split as follow-up cleanup.
 - Add `NavigatorDeclaration` to top-level declarations.
 - Add `AppNavigationStatement` to app statements.
-- Add grammar for `stack`, `tabs`, `screen`, `tab`, `title`, `icon`, `role`,
-  `path`, and `param`.
+- Add grammar for `stack`, `tabs`, `screen`, `tab`, `title`, tab-only
+  `icon system Name`, `path`, and `param`.
 - Add action-body grammar for `navigation push`, `navigation pop`, and
   `navigation tab`.
-- Preserve existing `ui` app syntax only as needed for a transition, or replace
-  parser coverage if the implementation can migrate all current apps in the same
-  branch.
+- Represent action targets as unresolved destination names in the AST; do not
+  introduce Langium cross-references for action targets in v1.
 
 Validation:
 
@@ -84,16 +115,37 @@ them.
 Work:
 
 - Add scoping support so app navigation references resolve to navigators.
-- Validate exactly one app navigation statement.
+- Register the `navigation` property on `AppNavigationStatement` in
+  `packages/compiler/compiler-src/langium/TaoScopeProvider.ts`.
+- Update the existing `AppUiStatement` validation in
+  `packages/compiler/compiler-src/validation/tao-lang-validator.ts` so an app
+  requires exactly one root entry: `ui` or `navigation`.
+- Validate at most one app navigation statement.
 - Validate each navigator has exactly one `stack` or `tabs` body.
 - Validate destination names are unique within a navigator.
+- Add a shared compiler navigation-tree helper, for example under
+  `packages/compiler/compiler-src/navigation/`, that validation and codegen can
+  both use. It should start from the app navigation statement, traverse
+  referenced navigator declarations, record each destination's name, kind,
+  target, params, path, parent navigator, and detect cycles.
 - Validate omitted targets resolve by destination name.
 - Validate explicit targets reference a view-like declaration or another
   navigator.
-- Validate destination options and reject unsupported placement.
+- Validate destination options and reject unsupported placement, including
+  `icon` on stack screens and any `role` statement in v1. Do not validate
+  concrete icon names in v1.
 - Validate params are `text`, `number`, or `boolean`.
-- Validate path placeholders have matching params.
-- Validate action targets and param payloads against declared destinations.
+- Validate each destination's declared params against its target view's
+  navigation-injected parameters by name and primitive type; missing, extra, or
+  mismatched required target params are errors.
+- Validate every path placeholder has a matching param and every param on a
+  path-bearing screen appears in the path.
+- Validate `navigation push` targets stack destinations, `navigation tab` targets
+  tab destinations, and param payloads match declared destination params.
+- Reject ambiguous action targets. `navigation push` or `navigation pop` from a
+  view that is only reachable through a tab navigator is a validation error.
+  When the compiler cannot prove a valid stack or tab context from the navigation
+  tree, emit a diagnostic instead of generating best-effort dispatch.
 
 Validation:
 
@@ -119,6 +171,8 @@ Work:
 - Format destination option bodies as one option statement per line.
 - Format navigation action payload blocks consistently with create/update-style
   blocks.
+- Format navigator bodies with a blank line between destinations so stack and tab
+  entries stay scannable in larger apps.
 
 Validation:
 
@@ -131,45 +185,102 @@ Exit criteria:
 
 Suggested commit: `feat(navigation): format navigator syntax`
 
-### 4. Build Navigation IR And Codegen
+### 4. Establish Direct Expo Entry Shell
+
+Context: Generated navigation cannot be smoke-tested while the runtime still
+boots through Expo Router. Add the direct Expo entry before navigation codegen so
+later steps can test real app startup incrementally.
+
+Work:
+
+- Replace `main: "expo-router/entry"` with a direct Expo entry file.
+- Register the compiled Tao app through Expo's `registerRootComponent`.
+- Keep the existing legacy `AppUIView` path working through the new entry so
+  current `app { ui RootView }` apps still boot before navigation codegen lands.
+- Leave Expo Router files and dependency in place until the cleanup step unless
+  they can be removed without blocking the current UI smoke path.
+
+Validation:
+
+- Expo runtime tests pass with the direct entry path.
+- Manual smoke command can launch the current UI-rooted runtime when a target
+  platform is available.
+
+Exit criteria:
+
+- The Expo runtime can boot without using `expo-router/entry`.
+
+Suggested commit: `feat(expo-runtime): add direct app entry`
+
+### 5. Build Navigation IR And Codegen
 
 Context: Tao should lower to an internal navigation model before targeting React
 Navigation.
 
 Work:
 
-- Collect the app root navigator from the entry Tao file.
+- Reuse the shared navigation-tree helper from validation as the source for a
+  serializable Tao navigation IR. Codegen should not depend on validator state,
+  but it should not duplicate traversal rules.
+- Collect the app root navigator from the entry Tao file when the app uses
+  `navigation`.
+- Branch codegen on app root entry type so the legacy `ui` path in
+  `app-gen-main.ts` and `runtime-gen.ts` remains functional and covered while
+  navigation support is added.
 - Build a serializable Tao navigation IR for stacks, tabs, destinations, options,
   paths, params, and target component names.
+- Add `@react-navigation/native-stack` as a direct Expo runtime dependency and
+  update the lockfile before generated code imports it.
+- Update `packages/compiler/compiler-src/codegen/app/app-gen-main.ts` to carry
+  app-level `navigation` through entry codegen configuration.
+- Update `packages/compiler/compiler-src/codegen/app/runtime-gen.ts` so the app
+  component generation emits either the legacy UI root or the navigation root.
+- Update `packages/compiler/compiler-src/design/design-analysis.ts` so design
+  requirement collection starts from screen target views in the navigator tree.
 - Generate React Navigation 7 static config from the IR.
 - Lower `stack` to `createNativeStackNavigator`.
 - Lower `tabs` to `createBottomTabNavigator`.
 - Lower the root navigator through `createStaticNavigation`.
 - Lower optional paths and params to screen-level linking metadata.
+- Lower tab icons to a Tao runtime helper instead of embedding icon-rendering
+  logic directly into generated config.
+- Emit imports only from direct Expo runtime dependencies. `@react-navigation/native`
+  and `@react-navigation/bottom-tabs` are already direct dependencies;
+  `@react-navigation/native-stack` is added in this step.
 - Keep generated screen components wrapping the target Tao view or nested
   navigator.
+- Generate screen wrappers that read React Navigation route params and pass them
+  to the target Tao view as props according to the validation contract from step
+  2.
 
 Validation:
 
 - Codegen tests assert generated static config shape for stack and tabs.
 - Codegen tests assert linking metadata for `path` and `param`.
 - Codegen tests cover nested navigator targets.
+- Codegen tests keep the legacy `ui` entry path green during the transition.
+- Design inference tests cover a navigation-rooted app so screen views still
+  receive design requirements.
+- Expo smoke covers a minimal navigation-rooted app through the direct entry when
+  a target platform is available.
 
 Exit criteria:
 
-- A compiled Tao app can generate a React Navigation root from a Tao navigator.
+- A compiled Tao app can generate and smoke-test a React Navigation root from a
+  Tao navigator.
 
 Suggested commit: `feat(navigation): generate react navigation config`
 
-### 5. Add Runtime Navigation Actions
+### 6. Add Runtime Navigation Actions
 
 Context: Tao actions need a backend-neutral way to drive navigation.
 
 Work:
 
 - Add Tao runtime navigation helpers for push, pop, and tab selection.
-- Wire helpers to a React Navigation root navigation ref or equivalent runtime
-  context.
+- Use a Tao-owned module-level root navigation ref created with React Navigation
+  and attached to the generated static navigation component. Runtime helpers
+  dispatch through that ref and fail if it is not ready.
 - Lower `navigation push`, `navigation pop`, and `navigation tab` statements to
   helper calls.
 - Convert declared param payloads into React Navigation params.
@@ -177,9 +288,12 @@ Work:
 
 Validation:
 
-- Runtime/headless tests cover push, pop, tab selection, and primitive param
-  delivery.
 - Codegen tests assert action statements lower to navigation helper calls.
+- Runtime helper unit tests use a fake module-level navigation ref to cover
+  ready-state failure and dispatched helper payloads. Do not claim headless
+  runtime behavior without a React Navigation stack.
+- Expo smoke covers push, pop, tab selection, and primitive param delivery when
+  a target platform is available.
 
 Exit criteria:
 
@@ -187,15 +301,17 @@ Exit criteria:
 
 Suggested commit: `feat(navigation): add navigation actions`
 
-### 6. Replace Expo Router Shell
+### 7. Remove Expo Router Shell
 
-Context: Tao navigation no longer uses Expo Router as its semantic runtime.
+Context: Tao navigation no longer uses Expo Router as its semantic runtime. Once
+the direct entry and navigation root are working, remove the remaining Expo
+Router shell pieces.
 
 Work:
 
-- Replace `main: "expo-router/entry"` with a direct Expo entry file.
-- Register the compiled Tao app through Expo's `registerRootComponent`.
 - Remove `packages/expo-runtime/app/_layout.tsx`.
+- Remove `packages/expo-runtime/app/index.tsx` if the direct entry fully
+  replaces it.
 - Remove the `expo-router` app config plugin.
 - Remove the `expo-router` dependency if no other runtime path uses it.
 - Update runtime comments that mention Expo Router stubs or file-based routes.
@@ -203,7 +319,8 @@ Work:
 Validation:
 
 - Expo runtime tests pass with the direct entry path.
-- Manual smoke command can launch the runtime without Expo Router.
+- Manual smoke command can launch the runtime without Expo Router when a target
+  platform is available.
 - `./agent expo-runtime test` passes or any native-only limitation is documented.
 
 Exit criteria:
@@ -212,7 +329,7 @@ Exit criteria:
 
 Suggested commit: `feat(expo-runtime): remove expo router shell`
 
-### 7. Migrate Example Apps And Docs
+### 8. Migrate Example Apps And Docs
 
 Context: Canonical apps should exercise the new navigation entry shape.
 
@@ -223,13 +340,16 @@ Work:
 - Add minimal navigators around existing root views.
 - Add a stack example with primitive params.
 - Add a tabs example with semantic `tab Home` shorthand.
-- Update the Rooms project plan if its navigation references need the new syntax.
+- Audit the Rooms project plan and update any navigation references to the new
+  `navigator` syntax.
 - Keep app examples small and focused.
 
 Validation:
 
 - `./agent test "parser"` or narrower equivalent parser/compiler tests.
 - Shared app scenario coverage compiles with navigation entry.
+- Rooms plan either uses the new navigation syntax or records why it does not
+  need an update yet.
 
 Exit criteria:
 
@@ -237,7 +357,7 @@ Exit criteria:
 
 Suggested commit: `feat(navigation): migrate example apps`
 
-### 8. Final Validation And Plan Closure
+### 9. Final Validation And Plan Closure
 
 Context: Navigation touches parser, compiler, formatter, runtime, and examples.
 
@@ -272,6 +392,15 @@ Suggested commit: `feat(navigation): validate navigation v1`
 - Separate web routing backend.
 - Universal links and public URL policy.
 - Generated route documentation.
+- Complete removal of legacy app-level `ui` syntax.
+- Destination `role` metadata and screen presentation roles.
+- Compile-time icon name validation against a platform-aware registry.
+- Broad nested navigator reachability validation for action targets.
+- Query-string encoding for params not represented by path placeholders.
+- Push/navigate fallback semantics across stack, tab, and nested navigator
+  boundaries.
+- Multi-file navigator-local destination scoping beyond the module/app tree
+  needed for v1.
 
 ## References
 

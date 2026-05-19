@@ -52,8 +52,12 @@ app Rooms {
 }
 ```
 
-An app must have exactly one `navigation` statement. The referenced declaration
-must be a top-level `navigator`.
+Canonical v1 apps must have exactly one `navigation` statement. The referenced
+declaration must be a top-level `navigator`.
+
+During the v1 implementation transition, legacy `app { ui RootView }` remains
+valid so existing examples and tests can migrate in coherent steps. Canonical
+new app examples should use `navigation`.
 
 ### Stack Navigator
 
@@ -90,7 +94,6 @@ navigator MainTabs {
       tab Search {
          title "Search"
          icon system search
-         role search
       }
    }
 }
@@ -122,15 +125,14 @@ screen Room RoomScreen {
 tab Search {
    title "Search"
    icon system search
-   role search
 }
 ```
 
 Supported v1 option statements:
 
 - `title "Text"` sets the screen title or tab label.
-- `icon system name` declares a semantic system icon.
-- `role search` marks a tab as a search destination.
+- `icon system name` declares a tab-only semantic system icon that lowers
+  through a Tao runtime icon helper.
 - `path "/path/:Param"` declares optional URL/deep-link metadata.
 - `param Name text|number|boolean` declares a primitive navigation param.
 
@@ -237,14 +239,16 @@ the Tao navigation IR.
   and bad action payloads.
 - Formatter tests for navigator declarations and navigation actions.
 - Codegen tests for emitted React Navigation static config and linking metadata.
-- Runtime/headless tests for initial screen render, stack push, stack pop, tab
-  selection, and primitive param delivery.
+- Runtime helper unit tests for ready-state failure and dispatch payloads with a
+  fake navigation ref.
 - Expo runtime smoke coverage for the direct non-Expo-Router app entry.
 
 ## Deferrals
 
 - Drawer navigation.
 - Route guards, auth flows, and route-level loading/error semantics.
+- Destination roles such as `role search`.
+- Compile-time icon name validation against a platform-aware registry.
 - React Navigation 8 and native tabs.
 - Liquid Glass or other platform material syntax.
 - Universal-link policy and app-link/domain ownership.
