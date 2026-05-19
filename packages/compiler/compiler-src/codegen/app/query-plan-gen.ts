@@ -17,6 +17,7 @@ import {
 } from '../../query/query-model'
 
 type TaoExpressionCompiler = (expression: AST.Expression) => Compiled
+type QuerySelectionBlockPlan = { select: Compiled; where: Compiled; filter: Compiled; orderBy: Compiled }
 
 /** compileQueryDeclaration emits the provider-facing query binding for a Tao `query` declaration. */
 export function compileQueryDeclaration(
@@ -73,6 +74,8 @@ function queryPlan(
     where: [
       ${selection.where}
     ],
+    ${selection.filter}
+    ${selection.orderBy}
   }`
 }
 
@@ -80,18 +83,30 @@ function querySelectionBlock(
   block: AST.QuerySelectionBlock | undefined,
   entity: AST.DataEntityDeclaration,
   compileExpression: TaoExpressionCompiler,
-): { select: Compiled; where: Compiled } {
-  if (!block || block.entries.length === 0) {
+): QuerySelectionBlockPlan {
+  if (!block) {
     return {
       select: queryDefaultEntitySelections(entity),
       where: compileNoop(),
+      filter: compileNoop(),
+      orderBy: compileNoop(),
+    }
+  }
+  if (block.entries.length === 0) {
+    return {
+      select: queryDefaultEntitySelections(entity),
+      where: compileNoop(),
+      filter: queryFilter(block, entity, compileExpression),
+      orderBy: queryOrderBy(block),
     }
   }
   const projected = block.entries.filter(entry => queryEntryProjects(entry, entity))
-  const predicates = block.entries.filter(entry => entry.op !== undefined)
+  const predicates = block.entries.filter(entry => entry.op !== undefined || entry.existence !== undefined)
   return {
     select: compileIndentedNodeList(projected, entry => querySelectionEntry(entry, entity, compileExpression)),
     where: compileIndentedNodeList(predicates, entry => queryPredicate(entry, entity, compileExpression)),
+    filter: queryFilter(block, entity, compileExpression),
+    orderBy: queryOrderBy(block),
   }
 }
 
@@ -112,6 +127,8 @@ function querySelectionEntry(
       where: [
         ${nested.where}
       ],
+      ${nested.filter}
+      ${nested.orderBy}
     },`
   }
   if (!entry.op && target) {
@@ -131,18 +148,115 @@ function queryPredicate(
   entity: AST.DataEntityDeclaration,
   compileExpression: TaoExpressionCompiler,
 ): Compiled {
-  const { op, value } = entry
+  const op = entry.op ?? entry.existence
   Assert(op, 'Query predicate entry must have an operator.', { path: entry.path.segments.join('.') })
-  Assert(value, 'Query predicate entry must have a value.', { path: entry.path.segments.join('.') })
-  const relationshipIdentity = queryEntryTargetEntity(entry, entity) !== undefined
+  if (entry.op !== undefined) {
+    Assert(entry.value, 'Query predicate entry must have a value.', { path: entry.path.segments.join('.') })
+  }
+  const relationshipIdentity = entry.op !== undefined && queryEntryTargetEntity(entry, entity) !== undefined
   // Relationship identity uses provider `id` today. If the language compares to RHS values keyed by a
   // declared `unique` field (not `id`), emit schema-driven `compareField` here instead of hardcoding `id`.
   return compileNode(entry)`{
     path: ${queryPathArray(entry.path, entity)},
     op: ${JSON.stringify(op)},
-    value: ${compileExpression(value)},
+    ${queryPredicateValue(entry, entry.value, compileExpression)}
     ${relationshipIdentity ? 'compareField: "id",' : ''}
     ${relationshipIdentity ? 'clientOnly: true,' : ''}
+  },`
+}
+
+function queryFilter(
+  block: AST.QuerySelectionBlock,
+  entity: AST.DataEntityDeclaration,
+  compileExpression: TaoExpressionCompiler,
+): Compiled {
+  if (block.whereClauses.length === 0) {
+    return compileNoop()
+  }
+  return compileNode(block)`filter: ${queryBlockFilterExpression(block, entity, compileExpression)},`
+}
+
+function queryBlockFilterExpression(
+  block: AST.QuerySelectionBlock,
+  entity: AST.DataEntityDeclaration,
+  compileExpression: TaoExpressionCompiler,
+): Compiled {
+  if (block.whereClauses.length === 1) {
+    return queryFilterExpression(block.whereClauses[0]!.expression, entity, compileExpression)
+  }
+  const filters = compileIndentedNodeList(block.whereClauses, clause => {
+    return compileNode(clause)`${queryFilterExpression(clause.expression, entity, compileExpression)},`
+  })
+  return compileNode(block)`{
+    kind: "and",
+    filters: [
+      ${filters}
+    ],
+  }`
+}
+
+function queryFilterExpression(
+  expr: AST.QueryFilterExpression,
+  entity: AST.DataEntityDeclaration,
+  compileExpression: TaoExpressionCompiler,
+): Compiled {
+  if (AST.isQueryLogicalExpression(expr)) {
+    return compileNode(expr)`{
+      kind: ${JSON.stringify(expr.op)},
+      filters: [
+        ${queryFilterExpression(expr.left, entity, compileExpression)},
+        ${queryFilterExpression(expr.right, entity, compileExpression)},
+      ],
+    }`
+  }
+  if (AST.isQueryGroupedFilterExpression(expr)) {
+    return queryFilterExpression(expr.expression, entity, compileExpression)
+  }
+  if (AST.isQueryFieldPredicateExpression(expr)) {
+    return queryFilterPredicate(expr, entity, compileExpression)
+  }
+  return compileNoop()
+}
+
+function queryFilterPredicate(
+  expr: AST.QueryFieldPredicateExpression,
+  entity: AST.DataEntityDeclaration,
+  compileExpression: TaoExpressionCompiler,
+): Compiled {
+  const op = expr.op ?? expr.existence
+  Assert(op, 'Query where predicate must have an operator.', { path: expr.path.segments.join('.') })
+  if (expr.op !== undefined) {
+    Assert(expr.value, 'Query where predicate must have a value.', { path: expr.path.segments.join('.') })
+  }
+  const relationshipIdentity = expr.op !== undefined && queryPathTargetEntity(expr.path, entity) !== undefined
+  return compileNode(expr)`{
+    kind: "predicate",
+    predicate: {
+      path: ${queryPathArray(expr.path, entity)},
+      op: ${JSON.stringify(op)},
+      ${queryPredicateValue(expr, expr.value, compileExpression)}
+      ${relationshipIdentity ? 'compareField: "id",' : ''}
+      ${relationshipIdentity ? 'clientOnly: true,' : ''}
+    },
+  }`
+}
+
+function queryPredicateValue(
+  node: AST.QuerySelectionEntry | AST.QueryFieldPredicateExpression,
+  value: AST.Expression | undefined,
+  compileExpression: TaoExpressionCompiler,
+): Compiled {
+  return value ? compileNode(node)`value: ${compileExpression(value)},` : compileNoop()
+}
+
+function queryOrderBy(block: AST.QuerySelectionBlock): Compiled {
+  const orderBy = block.orderByClauses[0]
+  if (!orderBy) {
+    return compileNoop()
+  }
+  return compileNode(orderBy)`orderBy: {
+    path: [${JSON.stringify(orderBy.field)}],
+    direction: ${JSON.stringify(orderBy.direction ?? 'asc')},
   },`
 }
 
@@ -157,7 +271,14 @@ function queryEntryTargetEntity(
   entry: AST.QuerySelectionEntry,
   entity: AST.DataEntityDeclaration,
 ): AST.DataEntityDeclaration | undefined {
-  const path = normalizedQueryFieldPathSegments(entry.path, entity)
+  return queryPathTargetEntity(entry.path, entity)
+}
+
+function queryPathTargetEntity(
+  pathNode: AST.QueryFieldPath,
+  entity: AST.DataEntityDeclaration,
+): AST.DataEntityDeclaration | undefined {
+  const path = normalizedQueryFieldPathSegments(pathNode, entity)
   if (path.length !== 1) {
     return undefined
   }

@@ -31,6 +31,8 @@ export function evaluateTaoQueryPredicate(row: Record<string, unknown>, predicat
     '<=': () => comparePrimitive(comparedActual, comparedExpected) <= 0,
     '>': () => comparePrimitive(comparedActual, comparedExpected) > 0,
     '>=': () => comparePrimitive(comparedActual, comparedExpected) >= 0,
+    exists: () => actual !== null && actual !== undefined,
+    missing: () => actual === null || actual === undefined,
   })
 }
 

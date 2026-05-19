@@ -398,6 +398,65 @@ describe('codegen — app provider selection and overrides:', () => {
     expect(out).toContain('cardinality: "one"')
   })
 
+  test('selection-block query emits filter trees existence predicates and ordering descriptors', async () => {
+    const out = await writeAndCompile(`
+      data D {
+        People Person {
+          Email text unique,
+          Name text,
+        }
+        Rsvps Rsvp {
+          Status text indexed,
+          CreatedAt date indexed,
+          Guest Person,
+        }
+        Events Event {
+          Title text,
+          Ordering number indexed,
+          Cancelled boolean indexed,
+          Host Person,
+          Rsvps [Rsvp],
+        }
+      }
+      state MinimumOrdering = 10
+      query D.Person as CurrentUser {
+        Email = "ro@example.test",
+      }
+      query D.Events as Upcoming {
+        Title,
+        where Ordering >= MinimumOrdering,
+        where Cancelled = false or Host = CurrentUser,
+        order by Ordering desc
+        Rsvps {
+          Status exists,
+          where Status != "no" or Status missing,
+          order by CreatedAt asc
+        }
+      }
+      app A { ui V }
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
+      }
+    `)
+    const queryPlan = slicePeekQueryPlanObject(out, '_Scope.Upcoming = getTaoData("D").peekQuery(')
+
+    expect(queryPlan).toContain('filter: {')
+    expect(queryPlan).toContain('kind: "and"')
+    expect(queryPlan).toContain('kind: "or"')
+    expect(queryPlan).toContain('path: ["Ordering"]')
+    expect(queryPlan).toContain('value: _Scope.MinimumOrdering')
+    expect(queryPlan).toContain('path: ["Cancelled"]')
+    expect(queryPlan).toContain('path: ["Host"]')
+    expect(queryPlan).toContain('compareField: "id"')
+    expect(queryPlan).toContain('clientOnly: true')
+    expect(queryPlan).toContain('orderBy: {')
+    expect(queryPlan).toContain('direction: "desc"')
+    expect(queryPlan).toContain('op: "exists"')
+    expect(queryPlan).toContain('op: "missing"')
+    expect(queryPlan).toContain('path: ["CreatedAt"]')
+    expect(queryPlan).toContain('direction: "asc"')
+  })
+
   test('relationship identity predicates emit hidden-id comparison metadata', async () => {
     const out = await writeAndCompile(`
       data D {

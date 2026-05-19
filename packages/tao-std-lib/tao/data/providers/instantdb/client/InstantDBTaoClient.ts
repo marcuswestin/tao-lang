@@ -15,6 +15,7 @@ import {
 import {
   buildQueryResult,
   evaluateQueryPlan,
+  type TaoQueryComparisonOperator,
   type TaoQueryPlan,
   type TaoQueryPredicate,
   type TaoQueryResult,
@@ -295,7 +296,7 @@ function instantQueryShape(plan: TaoQueryPlan): Record<string, unknown> {
 }
 
 function instantWhere(predicates: readonly TaoQueryPredicate[]): unknown {
-  const serverPredicates = predicates.filter(predicate => predicate.clientOnly !== true)
+  const serverPredicates = predicates.filter(isInstantServerPredicate)
   if (serverPredicates.length === 0) {
     return undefined
   }
@@ -306,11 +307,17 @@ function instantWhere(predicates: readonly TaoQueryPredicate[]): unknown {
   return { and: compiled }
 }
 
-function instantPredicate(predicate: TaoQueryPredicate): Record<string, unknown> {
+function isInstantServerPredicate(
+  predicate: TaoQueryPredicate,
+): predicate is TaoQueryPredicate & { op: TaoQueryComparisonOperator } {
+  return predicate.clientOnly !== true && predicate.op !== 'exists' && predicate.op !== 'missing'
+}
+
+function instantPredicate(predicate: TaoQueryPredicate & { op: TaoQueryComparisonOperator }): Record<string, unknown> {
   return { [`${predicate.path.join('.')}`]: instantPredicateValue(predicate) }
 }
 
-function instantPredicateValue(predicate: TaoQueryPredicate): unknown {
+function instantPredicateValue(predicate: TaoQueryPredicate & { op: TaoQueryComparisonOperator }): unknown {
   const compared = taoQueryComparableValue(predicate.value, predicate.compareField)
   return switch_Exhaustive(predicate.op, {
     '=': () => compared,

@@ -1,11 +1,24 @@
 export type TaoQueryCardinality = 'many' | 'one'
 export type TaoQueryComparisonOperator = '=' | '!=' | '<' | '<=' | '>' | '>='
+export type TaoQueryExistenceOperator = 'exists' | 'missing'
+export type TaoQueryPredicateOperator = TaoQueryComparisonOperator | TaoQueryExistenceOperator
+export type TaoQueryOrderDirection = 'asc' | 'desc'
 
 export type TaoQueryPredicate = {
   path: string[]
-  op: TaoQueryComparisonOperator
-  value: unknown
+  op: TaoQueryPredicateOperator
+  value?: unknown
   compareField?: string
+  clientOnly?: boolean
+}
+
+export type TaoQueryFilter =
+  | { kind: 'predicate'; predicate: TaoQueryPredicate }
+  | { kind: 'and' | 'or'; filters: TaoQueryFilter[] }
+
+export type TaoQueryOrdering = {
+  path: string[]
+  direction: TaoQueryOrderDirection
   clientOnly?: boolean
 }
 
@@ -13,6 +26,8 @@ export type TaoQuerySelection = {
   path: string[]
   select?: TaoQuerySelection[]
   where?: TaoQueryPredicate[]
+  filter?: TaoQueryFilter
+  orderBy?: TaoQueryOrdering
 }
 
 /** TaoQueryPlan is the provider-facing structured read IR emitted by compiled Tao `query` declarations. */
@@ -22,6 +37,8 @@ export type TaoQueryPlan = {
   cardinality: TaoQueryCardinality
   select: TaoQuerySelection[]
   where: TaoQueryPredicate[]
+  filter?: TaoQueryFilter
+  orderBy?: TaoQueryOrdering
 }
 
 /** TaoQueryResult mirrors the { data, isLoading, error } contract consumed by guards and for-loops. */
@@ -80,7 +97,9 @@ export function buildQueryResult(
 function evaluatePlanWith(plan: TaoQueryPlan, evaluateValue: QueryValueEvaluator): TaoQueryPlan {
   return {
     ...plan,
-    where: plan.where.map(predicate => ({ ...predicate, value: evaluateValue(predicate.value) })),
+    where: plan.where.map(predicate => evaluateQueryPredicate(predicate, evaluateValue)),
+    filter: evaluateQueryFilter(plan.filter, evaluateValue),
+    orderBy: plan.orderBy,
     select: plan.select.map(selection => evaluateQuerySelection(selection, evaluateValue)),
   }
 }
@@ -91,9 +110,40 @@ function evaluateQuerySelection(
 ): TaoQuerySelection {
   return {
     ...selection,
-    where: selection.where?.map(predicate => ({ ...predicate, value: evaluateValue(predicate.value) })),
+    where: selection.where?.map(predicate => evaluateQueryPredicate(predicate, evaluateValue)),
+    filter: evaluateQueryFilter(selection.filter, evaluateValue),
+    orderBy: selection.orderBy,
     select: selection.select?.map(child => evaluateQuerySelection(child, evaluateValue)),
   }
+}
+
+function evaluateQueryFilter(
+  filter: TaoQueryFilter | undefined,
+  evaluateValue: QueryValueEvaluator,
+): TaoQueryFilter | undefined {
+  if (!filter) {
+    return undefined
+  }
+  if (filter.kind === 'predicate') {
+    return {
+      kind: 'predicate',
+      predicate: evaluateQueryPredicate(filter.predicate, evaluateValue),
+    }
+  }
+  return {
+    kind: filter.kind,
+    filters: filter.filters.map(child => evaluateQueryFilter(child, evaluateValue)!),
+  }
+}
+
+function evaluateQueryPredicate(
+  predicate: TaoQueryPredicate,
+  evaluateValue: QueryValueEvaluator,
+): TaoQueryPredicate {
+  if (!('value' in predicate)) {
+    return { ...predicate }
+  }
+  return { ...predicate, value: evaluateValue(predicate.value) }
 }
 
 function useReactiveQueryValue(value: unknown): unknown {
