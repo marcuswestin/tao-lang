@@ -31,6 +31,10 @@ DEV_APP := "./Apps/Test Apps/Navigation Dev/Navigation Dev.tao"
 # Run the Tao Expo runtime on a physical iOS device only (no full `just dev` stack).
 iphone DEVICE="roPhone":
     just expo-runtime device "{{ DEVICE }}"
+ios-run-simulator:
+    cd packages/expo-runtime && npx expo run:ios
+android-run-simulator AVD="":
+    bash packages/shared/scripts/android-emulator-start.sh "{{ AVD }}"
 
 # Run full battery of checks and builds to prepare for commit.
 prep-commit: _prep_commit
