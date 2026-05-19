@@ -45,7 +45,6 @@ describe('navigation validation:', () => {
           tab Settings SettingsView {
             title "Settings"
             icon system settings
-            param Section text
           }
         }
       }
@@ -54,14 +53,12 @@ describe('navigation validation:', () => {
         render inject \`\`\`ts return null \`\`\`
       }
 
-      ui SettingsView Section text {
+      ui SettingsView {
         render inject \`\`\`ts return null \`\`\`
       }
 
-      action SelectSettings Section text {
-        navigation tab Settings {
-          Section Section
-        }
+      action SelectSettings {
+        navigation tab Settings
       }
     `)
   })
@@ -227,6 +224,35 @@ describe('navigation validation:', () => {
       validationMessages.duplicateNavigationIcon,
       validationMessages.duplicateNavigationPath,
       validationMessages.duplicateNavigationDestinationParam('RoomId'),
+    )
+  })
+
+  test('v1 rejects params on tabs and initial navigator destinations', async () => {
+    const report = await parseASTWithErrors(`
+      app Bad { navigation MainNavigation }
+      navigator MainNavigation {
+        stack {
+          screen Room RoomScreen {
+            param RoomId text
+          }
+          screen Home
+        }
+      }
+      navigator TabNavigation {
+        tabs {
+          tab Search SearchView {
+            param Query text
+          }
+        }
+      }
+      ui RoomScreen RoomId text { render inject \`\`\`ts return null \`\`\` }
+      ui SearchView Query text { render inject \`\`\`ts return null \`\`\` }
+      ui Home { render inject \`\`\`ts return null \`\`\` }
+    `)
+    expectHumanMessagesContain(
+      report,
+      validationMessages.navigationInitialDestinationParamsUnsupported,
+      validationMessages.navigationTabDestinationParamsUnsupported,
     )
   })
 

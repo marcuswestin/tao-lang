@@ -136,26 +136,21 @@ describe('codegen — navigation:', () => {
 
       navigator MainNavigation {
         tabs {
-          tab Search SearchView {
-            param Query text
-          }
+          tab Search SearchView
         }
       }
 
-      ui SearchView Query text {
+      ui SearchView {
         render inject \`\`\`ts return null \`\`\`
       }
 
       action OpenSearch {
-        navigation tab Search {
-          Query "recent"
-        }
+        navigation tab Search
       }
     `)
     const emitted = result.files.map(file => file.content).join('\n')
 
-    expect(emitted).toContain('_taoNavigationRuntime.tab("Search", {')
-    expect(emitted).toContain('"Query": TR.Literal("recent").evaluate().jsValue,')
+    expect(emitted).toContain('_taoNavigationRuntime.tab("Search", {})')
   })
 
   test('coerces number and boolean route params before passing them to Tao views', async () => {
@@ -166,12 +161,17 @@ describe('codegen — navigation:', () => {
 
       navigator MainNavigation {
         stack {
+          screen Home
           screen Room RoomScreen {
             path "/rooms/:Count/:Pinned"
             param Count number
             param Pinned boolean
           }
         }
+      }
+
+      ui Home {
+        render inject \`\`\`ts return null \`\`\`
       }
 
       ui RoomScreen Count number, Pinned boolean {

@@ -403,7 +403,9 @@ Suggested commit: `feat(navigation): validate navigation v1`
   navigator targets, imported app navigators, and root-navigator-only v1 action
   targets; generated route params are now strictly decoded before Tao view
   invocation, destination paths activate React Navigation static linking, and
-  navigation bootstraps are wrapped in `SafeAreaProvider`.
+  navigation bootstraps are wrapped in `SafeAreaProvider`. V1 rejects required
+  params on tab destinations and initial navigator destinations until Tao has
+  defaults or explicit initial params.
 
 ## Deferrals
 
@@ -415,6 +417,8 @@ Suggested commit: `feat(navigation): validate navigation v1`
 - Separate web routing backend.
 - Universal links and public URL policy.
 - Generated route documentation.
+- Optional/default navigation params.
+- Explicit `initial` route syntax.
 - Complete removal of legacy app-level `ui` syntax.
 - Destination `role` metadata and screen presentation roles.
 - Compile-time icon name validation against a platform-aware registry.

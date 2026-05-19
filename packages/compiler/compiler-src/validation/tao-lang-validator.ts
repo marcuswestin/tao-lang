@@ -10,7 +10,11 @@ import {
 } from '../design/variant-resolution'
 import {
   buildTaoNavigationTree,
+  findNavigationTarget,
+  isNavigationTarget,
   navigationDestinationIcons,
+  navigationDestinationParams,
+  navigationDestinationPath,
   type TaoNavigationDestination,
 } from '../navigation/navigation-tree'
 import { queryDeclarationCardinality } from '../query/query-model'
@@ -67,6 +71,8 @@ export const validationMessages = {
   duplicateNavigationOptionRelated: 'First declaration is here.',
   duplicateNavigationPath: '`path` can only be declared once per navigation destination.',
   duplicateNavigationTitle: '`title` can only be declared once per navigation destination.',
+  navigationInitialDestinationParamsUnsupported:
+    'The first destination in a navigator cannot require params in navigation v1.',
   navigationIconStackOnly: '`icon` is only supported on tab destinations.',
   navigationPathMustBePlain: 'Navigation paths must be plain strings without interpolation.',
   navigationPathMissingParam: (name: string) => `Navigation path placeholder ':${name}' has no matching param.`,
@@ -79,6 +85,7 @@ export const validationMessages = {
     `Navigation target '${target}' requires param '${name}'.`,
   navigationParamTypeMismatch: (name: string, expected: string, actual: string) =>
     `Navigation param '${name}' is '${actual}' but target parameter expects '${expected}'.`,
+  navigationTabDestinationParamsUnsupported: 'Tab destinations cannot require params in navigation v1.',
   navigationActionNeedsAppNavigation: 'Navigation actions require app-level navigation in the same source file.',
   navigationActionUnknownTarget: (name: string) => `Navigation action targets unknown destination '${name}'.`,
   navigationActionAmbiguousTarget: (name: string) => `Navigation action target '${name}' is ambiguous.`,
@@ -408,6 +415,48 @@ function validateNavigatorDeclaration(
       seen.set(destination.name, destination)
     }
   }
+  const firstDestination = destinations[0]
+  if (firstDestination !== undefined && navigationDestinationParams(firstDestination).length > 0) {
+    report.error(validationMessages.navigationInitialDestinationParamsUnsupported, firstDestination)
+  }
+  for (const destination of destinations) {
+    const kind = AST.isStackDestination(destination) ? 'stack' : 'tab'
+    if (kind === 'tab' && navigationDestinationParams(destination).length > 0) {
+      report.error(validationMessages.navigationTabDestinationParamsUnsupported, destination)
+    }
+    validateLocalNavigationDestination(declaration, destination, kind, report)
+  }
+}
+
+function validateLocalNavigationDestination(
+  parentNavigator: AST.NavigatorDeclaration,
+  node: AST.StackDestination | AST.TabDestination,
+  kind: 'stack' | 'tab',
+  report: Reporter<AST.NavigatorDeclaration>,
+): void {
+  const targetName = node.target ?? node.name
+  const target = findNavigationTarget(node, targetName)
+  if (target === undefined) {
+    report.error(`Navigation destination '${node.name}' targets missing declaration '${targetName}'.`, node)
+  } else if (!isNavigationTarget(target)) {
+    report.error(
+      `Navigation destination '${node.name}' must target a ui, frame, layout, variant, or navigator declaration.`,
+      node,
+    )
+  }
+  validateNavigationDestination(
+    {
+      kind,
+      name: node.name,
+      node,
+      params: navigationDestinationParams(node),
+      parentNavigator,
+      path: navigationDestinationPath(node),
+      target: isNavigationTarget(target) ? target : undefined,
+      targetName,
+    },
+    report,
+  )
 }
 
 function validateAppNavigationTree(
@@ -425,7 +474,7 @@ function validateAppNavigationTree(
 
 function validateNavigationDestination(
   destination: TaoNavigationDestination,
-  report: Reporter<AST.AppDeclaration>,
+  report: Reporter<AST.AppDeclaration | AST.NavigatorDeclaration>,
 ): void {
   validateNavigationDestinationOptionCardinality(destination, report)
   if (destination.kind === 'stack') {
@@ -439,7 +488,7 @@ function validateNavigationDestination(
 
 function validateNavigationDestinationOptionCardinality(
   destination: TaoNavigationDestination,
-  report: Reporter<AST.AppDeclaration>,
+  report: Reporter<AST.AppDeclaration | AST.NavigatorDeclaration>,
 ): void {
   validateSingleNavigationOption(
     destination.node.options?.options.filter(AST.isNavigationTitleOption) ?? [],
@@ -472,7 +521,7 @@ function validateNavigationDestinationOptionCardinality(
 function validateSingleNavigationOption<T extends AST.Node>(
   options: readonly T[],
   message: string,
-  report: Reporter<AST.AppDeclaration>,
+  report: Reporter<AST.AppDeclaration | AST.NavigatorDeclaration>,
 ): void {
   const [first, ...duplicates] = options
   if (first === undefined) {
@@ -487,7 +536,7 @@ function validateSingleNavigationOption<T extends AST.Node>(
 
 function validateNavigationPathParams(
   destination: TaoNavigationDestination,
-  report: Reporter<AST.AppDeclaration>,
+  report: Reporter<AST.AppDeclaration | AST.NavigatorDeclaration>,
 ): void {
   if (destination.path === undefined) {
     return
@@ -513,7 +562,7 @@ function validateNavigationPathParams(
 
 function validateNavigationTargetParams(
   destination: TaoNavigationDestination,
-  report: Reporter<AST.AppDeclaration>,
+  report: Reporter<AST.AppDeclaration | AST.NavigatorDeclaration>,
 ): void {
   if (!destination.target || AST.isNavigatorDeclaration(destination.target)) {
     return

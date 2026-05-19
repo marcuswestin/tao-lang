@@ -142,7 +142,7 @@ function collectNavigator(
   }
 }
 
-function findNavigationTarget(anchor: AST.Node, name: string): AST.Declaration | undefined {
+export function findNavigationTarget(anchor: AST.Node, name: string): AST.Declaration | undefined {
   const root = AST.Utils.findRootNode(anchor)
   if (!AST.isTaoFile(root)) {
     return undefined
@@ -160,6 +160,6 @@ function findNavigationTarget(anchor: AST.Node, name: string): AST.Declaration |
   return undefined
 }
 
-function isNavigationTarget(node: AST.Node | undefined): node is TaoNavigationTarget {
+export function isNavigationTarget(node: AST.Node | undefined): node is TaoNavigationTarget {
   return isViewLikeDeclaration(node) || AST.isNavigatorDeclaration(node)
 }
