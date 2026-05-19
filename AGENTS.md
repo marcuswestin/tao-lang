@@ -6,7 +6,11 @@ When starting in a new worktree (or fresh repo clone), the very first thing you 
 
 1. Run bootstrap: `bash .config/bootstrap-dev-env.sh`.
 2. Run setup if bootstrap was skipped because tools already exist: `./agent setup`.
-3. Create a new appropriately named branch: `./agent git-create-branch <branch-name>`.
+
+Branch creation depends on where the sprint is running:
+
+- If the agent is starting a new worktree for a sprint, create a new appropriately named branch in that worktree: `./agent git-create-branch <branch-name>`.
+- If the agent is working in the local checkout rather than a new sprint worktree, do not create a branch and do not switch branches. Continue on the current branch unless the user explicitly asks for a branch change.
 
 ## Dev environment (Nix / devenv)
 

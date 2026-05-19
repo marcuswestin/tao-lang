@@ -14,14 +14,15 @@ description: Implement a reviewed Tao project plan one committable step at a tim
 
 - A reviewed `Docs/Projects/<Project Name> Project Plan.md`.
 - Clean or understood git state.
-- A feature branch or worktree named from the project slug.
+- If starting a new sprint worktree, a feature branch named from the project slug.
+- If working in the local checkout, the current branch; do not create or switch branches unless the user explicitly asks.
 
 ## Workflow
 
 1. Use `./agent help` as the command reference for repo commands.
 2. Read `AGENTS.md`, `CORE_TENETS.md`, `Docs/Tao Project Roadmap.md`, the research doc, and the plan doc.
 3. Check git state with `./agent git status --short --branch`.
-4. Create or switch to a `feat/<project-slug>` branch/worktree when needed and update the roadmap status to `In implementation`.
+4. If this sprint starts in a new worktree, create a `feat/<project-slug>` branch there; if working in the local checkout, keep the current branch. Update the roadmap status to `In implementation`.
 5. Implement one numbered plan step at a time.
 6. For each step:
    - re-read files before editing;
