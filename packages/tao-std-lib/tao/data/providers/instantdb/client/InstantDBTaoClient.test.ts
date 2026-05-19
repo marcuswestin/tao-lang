@@ -1,0 +1,94 @@
+import { describe, expect, test } from 'bun:test'
+import type { TaoQueryPlan } from '../../tao-query'
+import { instantQueryShape, instantResultRows } from './instant-query'
+
+describe('InstantDBTaoClient query planning:', () => {
+  test('lowers server-safe where and order while preserving JS fallback semantics', () => {
+    const currentUser = { id: 'person-1' }
+    const data = {
+      events: [
+        {
+          id: 'event-1',
+          Title: 'Sooner',
+          Ordering: 1,
+          Cancelled: false,
+          Status: 'open',
+          Host: { id: 'person-1' },
+        },
+        {
+          id: 'event-2',
+          Title: 'Later',
+          Ordering: 2,
+          Cancelled: false,
+          Summary: undefined,
+          Status: 'closed',
+          Host: { id: 'person-1' },
+        },
+        {
+          id: 'event-3',
+          Ordering: 3,
+          Cancelled: false,
+          Status: 'open',
+          Host: { id: 'person-1' },
+        },
+        {
+          id: 'event-4',
+          Title: 'Other Host',
+          Ordering: 4,
+          Cancelled: false,
+          Status: 'open',
+          Host: { id: 'person-2' },
+        },
+      ],
+    }
+    const plan = makePlan(currentUser)
+
+    expect(instantQueryShape(plan)).toEqual({
+      events: {
+        $: {
+          where: {
+            and: [
+              { Title: { $isNull: false } },
+              { Cancelled: false },
+              { or: [{ Status: 'open' }, { Summary: { $isNull: true } }] },
+            ],
+          },
+          order: { Ordering: 'desc' },
+        },
+      },
+    })
+    expect(JSON.stringify(instantQueryShape(plan))).not.toContain('Host')
+    expect(rowTitles(instantResultRows(data, plan))).toEqual(['Later', 'Sooner'])
+  })
+})
+
+function makePlan(currentUser: Record<string, unknown>): TaoQueryPlan {
+  return {
+    schema: 'Data',
+    collection: 'events',
+    cardinality: 'many',
+    where: [
+      { path: ['Title'], op: 'exists' },
+      { path: ['Host'], op: '=', value: currentUser, compareField: 'id', clientOnly: true },
+    ],
+    filter: {
+      kind: 'and',
+      filters: [
+        { kind: 'predicate', predicate: { path: ['Cancelled'], op: '=', value: false } },
+        {
+          kind: 'or',
+          filters: [
+            { kind: 'predicate', predicate: { path: ['Status'], op: '=', value: 'open' } },
+            { kind: 'predicate', predicate: { path: ['Summary'], op: 'missing' } },
+          ],
+        },
+      ],
+    },
+    orderBy: { path: ['Ordering'], direction: 'desc' },
+    select: [{ path: ['Title'] }],
+  }
+}
+
+function rowTitles(data: unknown): string[] {
+  return (data as Record<string, unknown>[]).map(row => row['Title'] as string)
+}

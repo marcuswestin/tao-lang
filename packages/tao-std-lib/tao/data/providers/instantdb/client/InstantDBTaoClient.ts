@@ -1,5 +1,5 @@
 import * as IDB from '@instantdb/react-native'
-import { Assert, switch_Exhaustive } from '../../../../tao-runtime/runtime-utils'
+import { Assert } from '../../../../tao-runtime/runtime-utils'
 import {
   evaluateRecordFields,
   registerTaoDataProvider,
@@ -15,18 +15,11 @@ import {
 import {
   buildQueryResult,
   evaluateQueryPlan,
-  type TaoQueryComparisonOperator,
   type TaoQueryPlan,
-  type TaoQueryPredicate,
   type TaoQueryResult,
   useReactiveQueryPlan,
 } from '../../tao-query'
-import {
-  evaluateTaoQueryPredicate,
-  projectTaoQueryRow,
-  taoQueryComparableValue,
-  taoQueryIsRecord,
-} from '../../tao-query-projection'
+import { instantQueryShape, instantResultRows } from './instant-query'
 import { createTaoIDBClient } from './TaoIDBClient'
 
 type InstantDb = ReturnType<typeof IDB.init>
@@ -83,14 +76,6 @@ function omitId(record: Record<string, unknown>): Record<string, unknown> {
 /** coerceQueryShape normalizes a query object the same way Instant does so reactor cache keys match useQuery. */
 function coerceQueryShape<Q extends Record<string, unknown>>(q: Q): Q {
   return JSON.parse(JSON.stringify(q)) as Q
-}
-
-function getCollectionRows(data: unknown, collection: string): unknown[] {
-  if (!data || typeof data !== 'object') {
-    return []
-  }
-  const rows = (data as Record<string, unknown>)[collection]
-  return Array.isArray(rows) ? [...rows] : []
 }
 
 /** Shape of Instant’s internal reactor used only for cache peek (non-public API). */
@@ -278,67 +263,6 @@ registerTaoDataProvider('InstantDB', () => new InstantDBTaoClient())
 
 function fallbackResult(plan: TaoQueryPlan): TaoQueryResult {
   return buildQueryResult(plan.cardinality === 'one' ? null : [], true, null)
-}
-
-function instantQueryShape(plan: TaoQueryPlan): Record<string, unknown> {
-  // V1 serializes Tao relationships as Instant attributes (`any`), not links.
-  // Projection and relationship identity predicates run client-side over those returned attributes.
-  const body: Record<string, unknown> = {}
-  const queryOptions: Record<string, unknown> = {}
-  const where = instantWhere(plan.where)
-  if (where) {
-    queryOptions['where'] = where
-  }
-  if (Object.keys(queryOptions).length > 0) {
-    body['$'] = queryOptions
-  }
-  return { [plan.collection]: body }
-}
-
-function instantWhere(predicates: readonly TaoQueryPredicate[]): unknown {
-  const serverPredicates = predicates.filter(isInstantServerPredicate)
-  if (serverPredicates.length === 0) {
-    return undefined
-  }
-  const compiled = serverPredicates.map(instantPredicate)
-  if (compiled.length === 1) {
-    return compiled[0]
-  }
-  return { and: compiled }
-}
-
-function isInstantServerPredicate(
-  predicate: TaoQueryPredicate,
-): predicate is TaoQueryPredicate & { op: TaoQueryComparisonOperator } {
-  return predicate.clientOnly !== true && predicate.op !== 'exists' && predicate.op !== 'missing'
-}
-
-function instantPredicate(predicate: TaoQueryPredicate & { op: TaoQueryComparisonOperator }): Record<string, unknown> {
-  return { [`${predicate.path.join('.')}`]: instantPredicateValue(predicate) }
-}
-
-function instantPredicateValue(predicate: TaoQueryPredicate & { op: TaoQueryComparisonOperator }): unknown {
-  const compared = taoQueryComparableValue(predicate.value, predicate.compareField)
-  return switch_Exhaustive(predicate.op, {
-    '=': () => compared,
-    '!=': () => ({ $ne: compared }),
-    '<': () => ({ $lt: predicate.value }),
-    '<=': () => ({ $lte: predicate.value }),
-    '>': () => ({ $gt: predicate.value }),
-    '>=': () => ({ $gte: predicate.value }),
-  })
-}
-
-/**
- * instantResultRows loads the collection from Instant, applies **every** `plan.where` predicate in JS
- * (including `clientOnly`), then projects. InstaQL `$where` only receives non-`clientOnly` predicates; if
- * those are empty, the SDK may return the full collection for that namespace before this filter runs.
- */
-function instantResultRows(data: unknown, plan: TaoQueryPlan): Record<string, unknown>[] {
-  return getCollectionRows(data, plan.collection)
-    .filter(taoQueryIsRecord)
-    .filter(row => plan.where.every(predicate => evaluateTaoQueryPredicate(row, predicate)))
-    .map(row => projectTaoQueryRow(row, plan.select))
 }
 
 /** instantStoreConfig returns optional Instant storage overrides requested by provider params. */
