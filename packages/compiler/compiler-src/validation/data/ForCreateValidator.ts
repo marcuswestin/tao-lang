@@ -4,7 +4,9 @@ import {
   dataFieldPrimitiveType,
   dataFieldTarget,
   dataRowHandleForReference,
+  queryDeclarationAliasName,
 } from '../../query/query-model'
+import { parameterResolvedType } from '../../tao-type-shapes'
 import { makeValidater, type Reporter } from '../ValidationReporter'
 import { directLiteralPrimitive, isUnderViewDeclaration } from './validation-utils'
 
@@ -32,6 +34,11 @@ export const forCreateMessages = {
     `Field '${field}' expects ${expected}, not ${actual}.`,
   dateFieldLiteralUnsupported: (field: string) =>
     `Date field '${field}' does not accept direct literals yet; use a row value or helper once date values are supported.`,
+  createShorthandNeedsValue: (field: string) =>
+    `Create shorthand '${field}' requires an in-scope value named '${field}'.`,
+  updateShorthandNeedsValue: (field: string) =>
+    `Update shorthand '${field}' requires an in-scope value named '${field}'.`,
+  updateRequiresField: '`update` requires at least one field assignment.',
 } as const
 
 /** isUnderActionBody returns true when `node` is nested under a named or inline action body. */
@@ -111,6 +118,9 @@ export const forCreateValidator: Pick<
       report.error(forCreateMessages.updateTargetMustBeRowHandle, { node, property: 'target' })
       return
     }
+    if (node.fields.length === 0) {
+      report.error(forCreateMessages.updateRequiresField, node)
+    }
     const seen = new Set<string>()
     for (const f of node.fields) {
       if (seen.has(f.field)) {
@@ -139,6 +149,10 @@ function validateFieldAssignmentValue(
     return
   }
   const primitive = dataFieldPrimitiveType(field)
+  if (!assignment.value) {
+    validateScalarShorthandAssignment(assignment, primitive, report, mode)
+    return
+  }
   const actual = assignment.value ? directLiteralPrimitive(assignment.value) : undefined
   if (!primitive || !actual) {
     return
@@ -166,6 +180,7 @@ function validateRelationshipAssignmentValue(
     return
   }
   if (!assignment.value) {
+    validateRelationshipShorthandAssignment(assignment, relationship, report, mode)
     return
   }
   if (!AST.isMemberAccessExpression(assignment.value) || assignment.value.properties.length > 0) {
@@ -187,4 +202,116 @@ function validateRelationshipAssignmentValue(
 
 function updateTargetEntity(node: AST.UpdateStatement): AST.DataEntityDeclaration | undefined {
   return dataRowHandleForReference(node.target.ref)?.entity
+}
+
+function validateScalarShorthandAssignment(
+  assignment: AST.CreateFieldAssignment,
+  primitive: AST.PrimitiveType | undefined,
+  report: Reporter<AST.CreateStatement> | Reporter<AST.UpdateStatement>,
+  mode: 'create' | 'update',
+): void {
+  const ref = findShorthandValueReference(assignment, assignment.field)
+  const actual = ref ? referencePrimitiveType(ref) : undefined
+  if (!ref || !primitive || !actual) {
+    report.error(shorthandNeedsValueMessage(mode, assignment.field), { node: assignment, property: 'field' })
+    return
+  }
+  if (primitive === 'date') {
+    return
+  }
+  if (actual !== primitive) {
+    report.error(forCreateMessages.updateScalarLiteralType(assignment.field, primitive, actual), {
+      node: assignment,
+      property: 'field',
+    })
+  }
+}
+
+function validateRelationshipShorthandAssignment(
+  assignment: AST.CreateFieldAssignment,
+  relationship: { readonly entity: AST.DataEntityDeclaration; readonly many: boolean },
+  report: Reporter<AST.CreateStatement> | Reporter<AST.UpdateStatement>,
+  mode: 'create' | 'update',
+): void {
+  const ref = findShorthandValueReference(assignment, assignment.field)
+  const actual = dataRowHandleForReference(ref)?.entity
+  if (!actual) {
+    report.error(forCreateMessages.updateRelationshipNeedsRowHandle(assignment.field), {
+      node: assignment,
+      property: 'field',
+    })
+    return
+  }
+  if (actual !== relationship.entity) {
+    report.error(
+      forCreateMessages.updateRelationshipWrongEntity(assignment.field, relationship.entity.name, actual.name),
+      { node: assignment, property: 'field' },
+    )
+  }
+}
+
+function shorthandNeedsValueMessage(mode: 'create' | 'update', field: string): string {
+  return mode === 'create'
+    ? forCreateMessages.createShorthandNeedsValue(field)
+    : forCreateMessages.updateShorthandNeedsValue(field)
+}
+
+function findShorthandValueReference(
+  anchor: AST.CreateFieldAssignment,
+  name: string,
+): AST.Referenceable | undefined {
+  let current: AST.Node | undefined = anchor.$container
+  while (current) {
+    if (AST.isForStatement(current) && current.name === name) {
+      return current
+    }
+    if (AST.isActionDeclaration(current) || AST.isViewDeclaration(current)) {
+      const param = current.parameterList?.parameters.find(p => p.name === name)
+      if (param) {
+        return param
+      }
+    }
+    if (AST.isBlock(current)) {
+      const local = current.statements.find(stmt => referenceableValueName(stmt) === name)
+      if (AST.isReferenceable(local)) {
+        return local
+      }
+    }
+    if (AST.isTaoFile(current)) {
+      const topLevel = current.statements.find(stmt => referenceableValueName(stmt) === name)
+      if (AST.isReferenceable(topLevel)) {
+        return topLevel
+      }
+    }
+    current = current.$container
+  }
+  return undefined
+}
+
+function referenceableValueName(ref: AST.Node | undefined): string | undefined {
+  if (!ref) {
+    return undefined
+  }
+  if (AST.isAssignmentDeclaration(ref)) {
+    return ref.name
+  }
+  if (AST.isQueryDeclaration(ref)) {
+    return queryDeclarationAliasName(ref)
+  }
+  if (AST.isForStatement(ref) || AST.isParameterDeclaration(ref)) {
+    return ref.name
+  }
+  return undefined
+}
+
+function referencePrimitiveType(ref: AST.Referenceable): AST.PrimitiveType | undefined {
+  if (AST.isParameterDeclaration(ref)) {
+    const resolved = parameterResolvedType(ref)
+    return resolved.kind === 'primitive' ? resolved.primitive : undefined
+  }
+  if (AST.isAssignmentDeclaration(ref) && ref.value && !AST.isObjectLiteral(ref.value)) {
+    const primitive = directLiteralPrimitive(ref.value)
+    return primitive === 'null' ? undefined : primitive
+  }
+  return undefined
 }

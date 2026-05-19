@@ -94,7 +94,7 @@ export function projectTaoQueryRow(
 
 /** taoQueryIsRecord narrows unknown values to plain object rows for filtering. */
 export function taoQueryIsRecord(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === 'object'
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
 }
 
 function compareRows(

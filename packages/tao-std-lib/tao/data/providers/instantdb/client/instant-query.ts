@@ -134,7 +134,7 @@ function instantLogicalParts(kind: 'and' | 'or', part: unknown): unknown[] | und
 }
 
 function instantOrder(orderBy: TaoQueryOrdering | undefined): Record<string, string> | undefined {
-  if (!orderBy || orderBy.clientOnly === true || orderBy.path.length !== 1) {
+  if (!orderBy || orderBy.path.length !== 1) {
     return undefined
   }
   return { [orderBy.path[0]!]: orderBy.direction }

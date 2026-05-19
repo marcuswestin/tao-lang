@@ -263,7 +263,20 @@ function selectedQueryEntryForField(
   if (!block || block.entries.length === 0) {
     return undefined
   }
-  return block.entries.find(entry => normalizedQueryFieldPathSegments(entry.path, entity)[0] === fieldName)
+  return block.entries.find(entry =>
+    normalizedQueryFieldPathSegments(entry.path, entity)[0] === fieldName
+    && queryEntryProjects(entry, entity)
+  )
+}
+
+function queryEntryProjects(entry: AST.QuerySelectionEntry, entity: AST.DataEntityDeclaration): boolean {
+  if (entry.selection) {
+    return true
+  }
+  const fieldName = normalizedQueryFieldPathSegments(entry.path, entity)[0]
+  const field = entity.fields.find(f => f.name === fieldName)
+  const target = field ? dataFieldTarget(field) : undefined
+  return entry.op === undefined || target === undefined
 }
 
 function queryDefaultsSelectField(

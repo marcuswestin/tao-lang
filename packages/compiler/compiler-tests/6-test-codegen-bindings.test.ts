@@ -630,6 +630,7 @@ describe('codegen — app provider selection and overrides:', () => {
       optional: true,
       indexed: true,
     })
+    expect(schema?.shape.entities['rsvps']?.['Status']).toEqual({ type: 'string' })
     expect(schema?.shape.entities['people']?.['Email']).toEqual({
       type: 'string',
       optional: true,

@@ -385,6 +385,82 @@ describe('validation — for / create:', () => {
     `)
     expectHumanMessagesContain(report, forCreateMessages.dateFieldLiteralUnsupported('StartsAt'))
   })
+
+  test('create validates date field literals', async () => {
+    const report = await parseASTWithErrors(`
+      data D {
+        Events Event { StartsAt date }
+      }
+      action X {
+        create D.Event {
+          StartsAt 123
+        }
+      }
+      app A { ui V }
+      ui V { render inject \`\`\`ts return null \`\`\` }
+    `)
+    expectHumanMessagesContain(report, forCreateMessages.dateFieldLiteralUnsupported('StartsAt'))
+  })
+
+  test('create shorthand assignments require matching in-scope values', async () => {
+    const report = await parseASTWithErrors(`
+      data D {
+        People Person { Name text }
+        Events Event {
+          Title text,
+          Host Person,
+        }
+      }
+      query D.Person as Host { id = "person-1" }
+      action X {
+        create D.Event { Title, Host }
+      }
+      app A { ui V }
+      ui V { render inject \`\`\`ts return null \`\`\` }
+    `)
+    expectHumanMessagesContain(report, forCreateMessages.createShorthandNeedsValue('Title'))
+  })
+
+  test('update requires at least one field assignment', async () => {
+    const report = await parseASTWithErrors(`
+      data D {
+        Rsvps Rsvp { Status text }
+      }
+      action X Rsvp {
+        update Rsvp { }
+      }
+      app A { ui V }
+      ui V { render inject \`\`\`ts return null \`\`\` }
+    `)
+    expectHumanMessagesContain(report, forCreateMessages.updateRequiresField)
+  })
+
+  test('update shorthand assignments require matching in-scope values', async () => {
+    const report = await parseASTWithErrors(`
+      data D {
+        People Person { Name text }
+        Events Event { Title text }
+        Rsvps Rsvp {
+          Status text,
+          Event,
+        }
+      }
+      query D.Person as Event { id = "person-1" }
+      action MissingStatus Rsvp {
+        update Rsvp { Status }
+      }
+      action WrongRelationship Rsvp {
+        update Rsvp { Event }
+      }
+      app A { ui V }
+      ui V { render inject \`\`\`ts return null \`\`\` }
+    `)
+    expectHumanMessagesContain(
+      report,
+      forCreateMessages.updateShorthandNeedsValue('Status'),
+      forCreateMessages.updateRelationshipWrongEntity('Event', 'Event', 'Person'),
+    )
+  })
 })
 
 describe('validation — selection-block data queries:', () => {
@@ -711,6 +787,28 @@ describe('validation — selection-block data queries:', () => {
       queryValidationMessages.queryBareWherePredicate('Active'),
       queryValidationMessages.queryNestedRelationshipPath('Host.Name'),
     )
+  })
+
+  test('nested relationship where validates against the nested entity', async () => {
+    const report = await parseASTWithErrors(`
+      data D {
+        Events Event {
+          Title text,
+          Rsvps [Rsvp],
+        }
+        Rsvps Rsvp {
+          Status text,
+        }
+      }
+      query D.Events {
+        Rsvps {
+          where Title = "Not an Rsvp field"
+        }
+      }
+      app A { ui V }
+      ui V { render inject \`\`\`ts return null \`\`\` }
+    `)
+    expectHumanMessagesContain(report, queryValidationMessages.queryPathUnknownField('Title', 'Rsvp'))
   })
 
   test('relationship predicate entries require matching row handles', async () => {

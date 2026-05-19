@@ -4,9 +4,9 @@
 >
 > - This file is the **current preferred** Tao data layer design (what we intend to build toward).
 > - **Forks, competing options, and debates** live in **[Queries Design - Alternatives.md](./Queries%20Design%20-%20Alternatives.md)** — follow links like _→ [Alternatives](…#anchor)_ instead of duplicating them here.
-> - **External language prior art** (GraphQL, Prisma, KQL, …): **[Prior Art - Query Languages.md](./Prior%20Art%20-%20Query%20Languages.md)**.
+> - **External language prior art** (GraphQL, Prisma, KQL, …): **[Data and Queries - Prio Art.md](./Data%20and%20Queries%20-%20Prio%20Art.md)**.
 > - **TanStack Query vs InstantDB** execution and bridge details: **[Runtime - TanStack Query and InstantDB.md](./Runtime%20-%20TanStack%20Query%20and%20InstantDB.md)**.
-> - **Target-only example fictions** (not valid Tao today): **[Example App - Target](./Example%20App%20-%20Target/README.md)**.
+> - **Target-only example fictions** (not valid Tao today): **[Example App - Target variants](./Example%20App%20-%20Target/variants/)**.
 
 ---
 
@@ -268,7 +268,7 @@ action AddTodo Owner Person, TodoText text {
 
 `create` and `update` are **statements**, not top-level declarations. They live wherever imperative logic is allowed (actions, event handlers, etc.).
 
-`update` targets strict row handles only: singleton query aliases, `for` row bindings, inline/named action parameters that name data entities, or nested projected rows that still carry hidden provider identity. Entity names, collection names, lookup/upsert forms, and to-many relationship replacement are not V1 update targets.
+`update` targets strict row handles only: singleton query aliases, root `for` row bindings, or inline/named action parameters that name data entities. Entity names, collection names, lookup/upsert forms, nested projected rows without their own binding form, and to-many relationship replacement are not V1 update targets.
 
 **MVP scope:** `create` and strict row-handle `update` only. No `delete` in MVP — can be added in a later phase. _Command-style / server-named mutations vs patch-only_ → [Alternatives](./Queries%20Design%20-%20Alternatives.md#write-model-command-vs-patch).
 

@@ -266,6 +266,45 @@ describe.skipIf(isInIdeExtensionBundle)('MemoryTaoData query projection:', () =>
     expect(() => data.update('rsvps', { Status: 'missing-id' }, { Status: 'no' }))
       .toThrow('no provider identity')
   })
+
+  test('update accepts singleton query data expression row identity', async () => {
+    const { TR } = await import('../../../../tao-runtime/tao-runtime')
+    const { MemoryTaoData } = await import('./in-memory')
+    const data = new MemoryTaoData()
+    data.declareDataset({
+      entities: {
+        rsvps: { Status: { type: 'string' } },
+      },
+      links: {},
+    })
+    data.open({})
+    data.insert('rsvps', {
+      id: 'rsvp-1',
+      Status: 'maybe',
+    })
+
+    const singleton = data.peekQuery({
+      schema: 'Data',
+      collection: 'rsvps',
+      cardinality: 'one',
+      where: [{ path: ['Status'], op: '=', value: 'maybe' }],
+      select: [{ path: ['Status'] }],
+    })
+    const row = TR.QueryData(singleton).evaluate().jsValue
+
+    expect(Object.keys(row as Record<string, unknown>)).toEqual(['Status'])
+    expect(Reflect.get(row as Record<string, unknown>, 'id')).toBe('rsvp-1')
+    data.update('rsvps', row, { Status: 'going' })
+
+    const updated = data.peekQuery({
+      schema: 'Data',
+      collection: 'rsvps',
+      cardinality: 'many',
+      where: [],
+      select: [{ path: ['Status'] }],
+    })
+    expect(rowStatuses(updated.data)).toEqual(['going'])
+  })
 })
 
 function rowTitles(data: unknown): string[] {

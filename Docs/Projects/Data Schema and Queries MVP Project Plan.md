@@ -2,7 +2,7 @@
 
 ## Summary
 
-Finish a small, implementation-ready data-query/write sprint for Tao's Buildable App MVP. This plan is scoped to the data-layer slice described in [Data Schema and Queries MVP Project Research](./Data%20Schema%20and%20Queries%20MVP%20Project%20Research.md): selection-block query expansion, strict row-handle updates, `date` fields, Memory support where practical, and InstantDB as the required acceptance path.
+Finish a small, implementation-ready data-query/write sprint for Tao's Buildable App MVP. This plan is scoped to the data-layer slice described in [Data Schema and Queries MVP Project Research](./Data%20Schema%20and%20Queries%20MVP%20Project%20Research.md): selection-block query expansion, strict row-handle updates, `date` fields, Memory support where practical, and provider-level InstantDB support with live service acceptance as a manual pre-merge gate when credentials and network are available.
 
 The existing [Queries MVP Plan](./Data%20Schema%20and%20Queries/Queries%20MVP%20Plan.md) remains useful history for the broader data-layer target app, but it is too broad for this sprint. The event RSVP [Queries MVP Target App](./Data%20Schema%20and%20Queries/Queries%20MVP%20Target%20App.tao) remains the long-range data-layer target, not this sprint's definition of done.
 
@@ -39,7 +39,7 @@ The existing [Queries MVP Plan](./Data%20Schema%20and%20Queries/Queries%20MVP%20
 - `date` is a data-field scalar in this sprint, not a general expression or literal surface. Tao stores date values as Unix millisecond numbers at the runtime boundary; provider adapters convert to the provider schema/value shape. Direct string or number literals are not accepted as `date` assignments until the language owns date literals or conversion helpers.
 - Query identity includes the new filter, existence, ordering, and date-shape inputs. Cache invalidation from query-shape changes is acceptable for this pre-1.0 internal app surface.
 - Query rows carry hidden provider identity outside the projected field set. Projection does not need to expose an id field, but update lowering must be able to extract the hidden id or fail clearly.
-- `update RowHandle { Field Value }` updates an existing provider row represented by an in-scope row handle. Valid targets include singleton query aliases, `for` row bindings, and nested relationship rows that carry row identity. Entity names, collection names, and lookup/upsert forms are invalid. Shorthand `Field` uses the in-scope value named `Field`, matching the existing `create` assignment style.
+- `update RowHandle { Field Value }` updates an existing provider row represented by an in-scope row handle. V1 valid targets are singleton query aliases, root `for` row bindings, and action row-handle parameters. Nested relationship row update targets are deferred until Tao has a binding form for nested projected rows. Entity names, collection names, and lookup/upsert forms are invalid. Shorthand `Field` uses the in-scope value named `Field`, matching the existing `create` assignment style.
 - Relationship assignment in `update` supports direct single-link relationship fields assigned from row handles. To-many relationship replacement stays deferred until list literals or explicit link/unlink syntax exist.
 - Multiple writes in one action lower as sequential action statements. They do not imply a Tao-level transaction block.
 
@@ -144,7 +144,7 @@ update Rsvp { OtherRsvps NewRsvps }
 **Work:**
 
 - Carry hidden row identity through query result row handles without requiring the id to be projected or visible in Tao code.
-- Teach action lowering to resolve update targets from singleton query aliases, `for` row bindings, and nested relationship rows when they carry identity.
+- Teach action lowering to resolve update targets from singleton query aliases, root `for` row bindings, and action row-handle parameters.
 - Generate update snippets from the action/runtime codegen path, not from `query-plan-gen.ts`.
 - Add a provider-facing update patch shape and `TaoDataClient.update(...)` helper.
 - Make strict update failure explicit when the target row has no hidden id.
@@ -231,7 +231,7 @@ update Rsvp { OtherRsvps NewRsvps }
 
 **Validation:** focused provider unit tests through `./agent test "InstantDBTaoClient"`; compiler codegen tests for emitted provider calls; schema-push tests where existing coverage owns provider schema shape.
 
-**Exit criteria:** InstantDB is the required acceptance path for the sprint and supports the documented V1 query/write semantics.
+**Exit criteria:** InstantDB provider tests cover the documented V1 query/write semantics; live InstantDB service acceptance is recorded before merge when credentials and network are available, or explicitly carried as a manual merge-prep gate.
 
 **Suggested commit subject:** `Implement InstantDB data query and update additions`
 
@@ -257,7 +257,7 @@ update Rsvp { OtherRsvps NewRsvps }
 
 **Exit criteria:** the staged app compiles and the selected runtime scenario proves the new data-query/write slice.
 
-**Implementation review note:** the committed branch exercises the staged app through the Memory-backed Data Schema scenario and covers InstantDB through provider-level query lowering, JS fallback, schema serialization, and strict update-option tests. No live external InstantDB service run is recorded in this branch; if service credentials and network are available, run a manual pre-merge acceptance pass that creates, updates, and observes refreshed data through InstantDB.
+**Implementation review note:** the committed branch exercises the staged app through the Memory-backed Data Schema scenario and covers InstantDB through provider-level query lowering, JS fallback, schema serialization, date field validation, and strict update-option tests. No live external InstantDB service run is recorded in this branch; project-7 merge prep must run a manual acceptance pass that creates, updates, and observes refreshed data through InstantDB when credentials and network are available, or explicitly carry that gate forward.
 
 **Suggested commit subject:** `Exercise data query write MVP scenario`
 

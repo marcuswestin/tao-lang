@@ -2,7 +2,7 @@
 
 > **How to read this document**
 >
-> - This file tracks **forks, rejected options, and open questions** for the Tao data layer. It does **not** restate external language surveys — see **[Prior Art - Query Languages.md](./Prior%20Art%20-%20Query%20Languages.md)**.
+> - This file tracks **forks, rejected options, and open questions** for the Tao data layer. It does **not** restate external language surveys — see **[Data and Queries - Prio Art.md](./Data%20and%20Queries%20-%20Prio%20Art.md)**.
 > - The **current preferred** choices live in **[Data and Queries - Design.md](./Data%20and%20Queries%20-%20Design.md)**. Each section below links back to the matching anchor in that design where applicable.
 
 **Status legend:** `preferred` (matches Preferred doc today) · `deferred` · `rejected` · `open` · `superseded`
@@ -40,7 +40,7 @@
 | Clause block with `where` entries            | `rejected`   | Same old clause model inside braces; less direct than projection.      |
 | Hybrid (allow both)                          | `rejected`   | Parser, formatter, and docs cost without a current compatibility goal. |
 
-**Example app:** swap via `variants/` in [Example App - Target](./Example%20App%20-%20Target/README.md) when added.
+**Example app:** swap via [Example App - Target variants](./Example%20App%20-%20Target/variants/) when added.
 
 ---
 

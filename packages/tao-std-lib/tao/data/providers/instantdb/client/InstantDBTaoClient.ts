@@ -121,7 +121,7 @@ function assertValueMatchesDeclaredTaoField(
     return
   }
   if (declared === 'date') {
-    Assert(typeof value === 'number' || value instanceof Date, `Instant insert ${collection}.${field}: expected date`)
+    Assert(typeof value === 'number', `Instant insert ${collection}.${field}: expected Unix millisecond date`)
     return
   }
   if (declared === 'boolean') {

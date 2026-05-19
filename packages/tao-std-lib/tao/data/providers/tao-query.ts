@@ -19,7 +19,6 @@ export type TaoQueryFilter =
 export type TaoQueryOrdering = {
   path: string[]
   direction: TaoQueryOrderDirection
-  clientOnly?: boolean
 }
 
 export type TaoQuerySelection = {
@@ -99,6 +98,7 @@ function evaluatePlanWith(plan: TaoQueryPlan, evaluateValue: QueryValueEvaluator
     ...plan,
     where: plan.where.map(predicate => evaluateQueryPredicate(predicate, evaluateValue)),
     filter: evaluateQueryFilter(plan.filter, evaluateValue),
+    // V1 orderBy contains only static grammar values: direct field path and literal direction.
     orderBy: plan.orderBy,
     select: plan.select.map(selection => evaluateQuerySelection(selection, evaluateValue)),
   }
@@ -112,6 +112,7 @@ function evaluateQuerySelection(
     ...selection,
     where: selection.where?.map(predicate => evaluateQueryPredicate(predicate, evaluateValue)),
     filter: evaluateQueryFilter(selection.filter, evaluateValue),
+    // V1 orderBy contains only static grammar values: direct field path and literal direction.
     orderBy: selection.orderBy,
     select: selection.select?.map(child => evaluateQuerySelection(child, evaluateValue)),
   }

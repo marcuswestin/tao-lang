@@ -36,6 +36,7 @@ action CreateEvent {
    set EventCount += 1
    create MeetupData.Event {
       Title "New Event ${ EventCount }",
+      Cancelled false,
       Ordering EventCount,
       Host CurrentUser
    }

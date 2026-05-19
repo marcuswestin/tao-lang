@@ -335,6 +335,29 @@ describe('type checking — operators and string templates:', () => {
     expectHumanMessagesContain(report, 'not selected')
   })
 
+  test('relationship predicates do not select relationship rows for member access', async () => {
+    const report = await parseASTWithErrors(`
+      data D {
+        People Person { Name text }
+        Events Event { Title text, Host Person }
+      }
+      app A { ui V }
+      ui Text Value text { render inject \`\`\`ts return null \`\`\` }
+      ui V {
+        query D.Person as CurrentUser { id = "person-1" }
+        query D.Events as HostedEvents {
+          Title,
+          Host = CurrentUser,
+        }
+        render inject \`\`\`ts return null \`\`\`
+        for Event in HostedEvents {
+          Text Event.Host.Name
+        }
+      }
+    `)
+    expectHumanMessagesContain(report, "Field 'Host' is not selected by query 'HostedEvents'.")
+  })
+
   test('unary minus requires number operand', async () => {
     const report = await parseASTWithErrors(`
       alias Bad = -"x"
