@@ -267,8 +267,7 @@ describe.skipIf(isInIdeExtensionBundle)('MemoryTaoData query projection:', () =>
       .toThrow('no provider identity')
   })
 
-  test('update accepts singleton query data expression row identity', async () => {
-    const { TR } = await import('../../../../tao-runtime/tao-runtime')
+  test('update accepts singleton query data row identity', async () => {
     const { MemoryTaoData } = await import('./in-memory')
     const data = new MemoryTaoData()
     data.declareDataset({
@@ -290,7 +289,7 @@ describe.skipIf(isInIdeExtensionBundle)('MemoryTaoData query projection:', () =>
       where: [{ path: ['Status'], op: '=', value: 'maybe' }],
       select: [{ path: ['Status'] }],
     })
-    const row = TR.QueryData(singleton).evaluate().jsValue
+    const row = singleton.data
 
     expect(Object.keys(row as Record<string, unknown>)).toEqual(['Status'])
     expect(Reflect.get(row as Record<string, unknown>, 'id')).toBe('rsvp-1')

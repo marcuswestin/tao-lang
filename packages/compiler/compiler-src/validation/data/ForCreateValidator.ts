@@ -180,7 +180,7 @@ function validateRelationshipAssignmentValue(
     return
   }
   if (!assignment.value) {
-    validateRelationshipShorthandAssignment(assignment, relationship, report, mode)
+    validateRelationshipShorthandAssignment(assignment, relationship, report)
     return
   }
   if (!AST.isMemberAccessExpression(assignment.value) || assignment.value.properties.length > 0) {
@@ -231,7 +231,6 @@ function validateRelationshipShorthandAssignment(
   assignment: AST.CreateFieldAssignment,
   relationship: { readonly entity: AST.DataEntityDeclaration; readonly many: boolean },
   report: Reporter<AST.CreateStatement> | Reporter<AST.UpdateStatement>,
-  mode: 'create' | 'update',
 ): void {
   const ref = findShorthandValueReference(assignment, assignment.field)
   const actual = dataRowHandleForReference(ref)?.entity

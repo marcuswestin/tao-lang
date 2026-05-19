@@ -20,6 +20,7 @@ import {
   useReactiveQueryPlan,
 } from '../../tao-query'
 import { instantQueryShape, instantResultRows } from './instant-query'
+import { assertInstantRecordMatchesEntityDecl } from './instant-record'
 import { instantInsertChunk, instantStrictUpdateChunk } from './instant-write'
 import { createTaoIDBClient } from './TaoIDBClient'
 
@@ -100,57 +101,6 @@ function getInstantPreviousQueryResult(db: InstantDb, query: unknown): unknown {
   } catch {
     return undefined
   }
-}
-
-/** assertValueMatchesDeclaredTaoField throws when `value` is non-nullish but its JS type disagrees with Tao’s primitive name `declared`. */
-function assertValueMatchesDeclaredTaoField(
-  collection: string,
-  field: string,
-  declared: string,
-  value: unknown,
-): void {
-  if (value === null || value === undefined) {
-    return
-  }
-  if (declared === 'string') {
-    Assert(typeof value === 'string', `Instant insert ${collection}.${field}: expected string`)
-    return
-  }
-  if (declared === 'number') {
-    Assert(typeof value === 'number', `Instant insert ${collection}.${field}: expected number`)
-    return
-  }
-  if (declared === 'date') {
-    Assert(typeof value === 'number', `Instant insert ${collection}.${field}: expected Unix millisecond date`)
-    return
-  }
-  if (declared === 'boolean') {
-    Assert(typeof value === 'boolean', `Instant insert ${collection}.${field}: expected boolean`)
-    return
-  }
-}
-
-/** assertNormalizedMatchesInstantEntityDecl throws on unknown keys or bad primitives; returns `record` for a linear call site (Tao-validated inserts should always pass). */
-function assertNormalizedMatchesInstantEntityDecl(
-  collection: string,
-  fieldTypes: Readonly<Record<string, string>>,
-  record: Record<string, unknown>,
-): Record<string, unknown> {
-  for (const key of Object.keys(record)) {
-    Assert(
-      key === 'id' || key in fieldTypes,
-      `Instant insert ${collection}: unknown field ${
-        JSON.stringify(key)
-      } (not declared on this collection for Instant)`,
-    )
-    if (key === 'id') {
-      continue
-    }
-    const declared = fieldTypes[key]
-    Assert(declared !== undefined, `Instant insert ${collection}: missing field type for ${JSON.stringify(key)}`)
-    assertValueMatchesDeclaredTaoField(collection, key, declared, record[key])
-  }
-  return record
 }
 
 /** optionalStringProviderParam returns an optional string provider parameter, rejecting non-string values. */
@@ -242,7 +192,7 @@ export class InstantDBTaoClient implements TaoDataClient {
     }
     const normalized = evaluateRecordFields(record)
     const fieldTypes = this.instantMergedEntityFieldTypes(collection)
-    const payload = assertNormalizedMatchesInstantEntityDecl(collection, fieldTypes, normalized)
+    const payload = assertInstantRecordMatchesEntityDecl(collection, fieldTypes, normalized)
     const rowId = IDB.id()
     void this.db.transact(instantInsertChunk(this.db as any, collection, rowId, omitId(payload)))
   }
@@ -254,7 +204,7 @@ export class InstantDBTaoClient implements TaoDataClient {
     const rowId = taoDataRowId(row)
     const normalized = evaluateRecordFields(patch)
     const fieldTypes = this.instantMergedEntityFieldTypes(collection)
-    const payload = assertNormalizedMatchesInstantEntityDecl(collection, fieldTypes, normalized)
+    const payload = assertInstantRecordMatchesEntityDecl(collection, fieldTypes, normalized)
     void this.db.transact(instantStrictUpdateChunk(this.db as any, collection, rowId, omitId(payload)))
   }
 

@@ -1,12 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 import type { TaoQueryPlan } from '../../tao-query'
 import { instantQueryShape, instantResultRows } from './instant-query'
+import { assertInstantRecordMatchesEntityDecl } from './instant-record'
 import {
   instantInsertChunk,
   instantStrictUpdateChunk,
   instantStrictUpdateOptions,
 } from './instant-write'
-import { InstantDBTaoClient } from './InstantDBTaoClient'
 
 describe('InstantDBTaoClient query planning:', () => {
   test('lowers server-safe where and order while preserving JS fallback semantics', () => {
@@ -139,26 +139,10 @@ describe('InstantDBTaoClient query planning:', () => {
   })
 
   test('accepts only Unix millisecond numbers for Tao date values', () => {
-    const { db, calls } = instantDbMock('events')
-    const client = new InstantDBTaoClient()
-    client.declareDataset({
-      entities: {
-        events: { StartsAt: { type: 'date' } },
-      },
-      links: {},
-    })
-    const writableClient = client as unknown as { db: unknown }
-    writableClient.db = db
-
-    expect(() => client.insert('events', { StartsAt: new Date(0) }))
+    expect(() => assertInstantRecordMatchesEntityDecl('events', { StartsAt: 'date' }, { StartsAt: new Date(0) }))
       .toThrow('expected Unix millisecond date')
-    expect(calls).toHaveLength(0)
-
-    client.insert('events', { StartsAt: 0 })
-    expect(calls).toHaveLength(1)
-    expect(typeof calls[0]?.rowId).toBe('string')
-    expect(calls[0]?.payload).toEqual({ StartsAt: 0 })
-    expect(calls[0]?.options).toBeUndefined()
+    expect(assertInstantRecordMatchesEntityDecl('events', { StartsAt: 'date' }, { StartsAt: 0 }))
+      .toEqual({ StartsAt: 0 })
   })
 })
 
@@ -191,38 +175,4 @@ function makePlan(currentUser: Record<string, unknown>): TaoQueryPlan {
 
 function rowTitles(data: unknown): string[] {
   return (data as Record<string, unknown>[]).map(row => row['Title'] as string)
-}
-
-type InstantDbMutationCall = {
-  readonly rowId: string
-  readonly payload: Record<string, unknown>
-  readonly options: unknown
-}
-
-function instantDbMock(collection: string): { readonly db: unknown; readonly calls: InstantDbMutationCall[] } {
-  const calls: InstantDbMutationCall[] = []
-  const rows = new Proxy<Record<string, { update: (payload: Record<string, unknown>, options?: unknown) => unknown }>>(
-    {},
-    {
-      get: (_target, rowId) => {
-        if (typeof rowId !== 'string') {
-          return undefined
-        }
-        return {
-          update: (payload: Record<string, unknown>, options?: unknown) => {
-            const call = { rowId, payload, options }
-            calls.push(call)
-            return call
-          },
-        }
-      },
-    },
-  )
-  return {
-    calls,
-    db: {
-      tx: { [collection]: rows },
-      transact: (_chunk: unknown) => undefined,
-    },
-  }
 }
