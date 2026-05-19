@@ -44,7 +44,9 @@ conversation update. Use a Markdown title and include:
 - Next step: number and name, or final review/merge preparation when no steps remain.
 - Completed count: `X of Y steps`.
 - Elapsed time: exact if tracked, otherwise a clear estimate.
-- Estimated time remaining: best current estimate, with uncertainty when needed.
+- Estimated time remaining: include a rough expected range for when the project
+  will likely be complete in about 80% of cases. This is an operational ETA, not
+  a promise; use practical ranges such as `about 45-75m` or `about 1-2h`.
 
 Example:
 
@@ -55,7 +57,7 @@ Example:
 **Next Step:** 7. Remove Expo Router Shell
 **Completed:** 6 of 9 steps
 **Elapsed:** about 2h 10m
-**Estimate Remaining:** about 45-75m, mostly example migration and final validation
+**Estimate Remaining:** likely about 45-75m in the 80% case, mostly example migration and final validation
 ```
 
 ## Output
