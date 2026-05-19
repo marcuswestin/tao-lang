@@ -273,6 +273,18 @@ ${initCalls}
 
 const _compiledTaoAppRootDesignStyleKey = ${JSON.stringify(appRootStyleKey ?? null)}
 const _compiledTaoAppRootViewStyle = { flex: 1 }
+const _compiledTaoAppContentMaxWidth = 720
+const _compiledTaoAppContentCompactPadding = {
+  paddingBottom: 48,
+  paddingHorizontal: 16,
+  paddingTop: 24,
+}
+const _compiledTaoAppContentRegularPadding = {
+  paddingBottom: 64,
+  paddingHorizontal: 24,
+  paddingTop: 32,
+}
+const _compiledTaoAppScrollContentContainerStyle = { flexGrow: 1 }
 
 function _compiledTaoAppRootBackground(_taoDesignContext) {
   const designStyle = _compiledTaoAppRootDesignStyleKey === null
@@ -285,11 +297,28 @@ function _compiledTaoAppRootBackground(_taoDesignContext) {
   return [_compiledTaoAppRootViewStyle, { backgroundColor }]
 }
 
+function _compiledTaoAppContentFrameStyle(_taoDesignContext) {
+  const padding = _taoDesignContext.screenSize === 'compact'
+    ? _compiledTaoAppContentCompactPadding
+    : _compiledTaoAppContentRegularPadding
+  return {
+    alignSelf: 'center',
+    maxWidth: _compiledTaoAppContentMaxWidth,
+    width: '100%',
+    ...padding,
+  }
+}
+
 function CompiledTaoAppContent() {
   const _taoDesignContext = useTaoDesignContext()
   return (
-    <RN.ScrollView style={_compiledTaoAppRootBackground(_taoDesignContext)}>
-      <AppUIView />
+    <RN.ScrollView
+      style={_compiledTaoAppRootBackground(_taoDesignContext)}
+      contentContainerStyle={_compiledTaoAppScrollContentContainerStyle}
+    >
+      <RN.View style={_compiledTaoAppContentFrameStyle(_taoDesignContext)}>
+        <AppUIView />
+      </RN.View>
     </RN.ScrollView>
   )
 }

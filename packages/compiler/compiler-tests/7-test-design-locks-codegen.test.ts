@@ -110,6 +110,19 @@ describe('UI design inference locks and codegen:', () => {
     }
   })
 
+  test('bootstrap emits centered content frame with screen-size aware padding', async () => {
+    const result = await compileDesignSource(designAppSource())
+    const bootstrap = result.files.find(f => f.relativePath === 'app-bootstrap.tsx')?.content ?? ''
+
+    expect(bootstrap).toContain('_compiledTaoAppContentFrameStyle')
+    expect(bootstrap).toContain('_compiledTaoAppContentMaxWidth = 720')
+    expect(bootstrap).toContain('alignSelf:')
+    expect(bootstrap).toContain('_compiledTaoAppContentCompactPadding')
+    expect(bootstrap).toContain('_compiledTaoAppContentRegularPadding')
+    expect(bootstrap).toContain("_taoDesignContext.screenSize === 'compact'")
+    expect(bootstrap).toContain('<RN.View style={_compiledTaoAppContentFrameStyle(_taoDesignContext)}')
+  })
+
   test('generated modules import design runtime and every referenced style key exists', async () => {
     const result = await compileDesignSource(designAppSource())
     const designModule = result.files.find(f => f.relativePath === 'tao-design.ts')?.content ?? ''
