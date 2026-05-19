@@ -1,0 +1,73 @@
+use Button, Col, Text from @tao/ui
+
+app NavigationDev {
+   navigation MainNavigation
+}
+
+navigator MainNavigation {
+   stack {
+      screen HomeTabs
+
+      screen Detail DetailScreen {
+         title "Detail"
+         path "/detail/:ItemId"
+         param ItemId text
+      }
+   }
+}
+
+navigator HomeTabs {
+   tabs {
+      tab Home HomeScreen {
+         title "Home"
+         icon system home
+      }
+
+      tab Search SearchScreen {
+         title "Search"
+         icon system search
+      }
+   }
+}
+
+variant Screen = Col <"full screen navigation test surface with readable spacing">
+
+variant SectionTitle = Text <"clear screen title">
+
+variant HelperText = Text <"secondary navigation state text">
+
+variant NavButton = Button <"navigation action button">
+
+ui HomeScreen {
+   render Screen [items top stretch, gap 14, pad 20, width fill] {
+      SectionTitle "Navigation Dev Home"
+      HelperText "Home tab in root stack"
+      NavButton "Open detail alpha", action {
+         navigation push Detail {
+            ItemId "alpha"
+         }
+      }
+   }
+}
+
+ui SearchScreen {
+   render Screen [items top stretch, gap 14, pad 20, width fill] {
+      SectionTitle "Navigation Dev Search"
+      HelperText "Search tab in root stack"
+      NavButton "Open detail beta", action {
+         navigation push Detail {
+            ItemId "beta"
+         }
+      }
+   }
+}
+
+ui DetailScreen ItemId text {
+   render Screen [items top stretch, gap 14, pad 20, width fill] {
+      SectionTitle "Navigation Dev Detail"
+      HelperText ItemId
+      NavButton "Pop detail", action {
+         navigation pop
+      }
+   }
+}
