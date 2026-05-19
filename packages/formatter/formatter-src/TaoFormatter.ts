@@ -1,11 +1,15 @@
 import { AST } from '@parser'
-import { AbstractFormatter, Formatting, FormattingRegion } from '@parser/lsp'
+import { AbstractFormatter, Formatting, type FormattingAction, FormattingRegion } from '@parser/lsp'
 import { NodePropName } from '@parser/parserASTExport'
 import { DocumentFormattingParams, TextEdit } from '@parser/vscode-languageserver'
 import { switch_safe } from '@shared'
 import extensivelyFormatInjectionBlocks from './injectionFormatter'
 
 const FORMAT_INJECTION_BLOCKS = true
+const INDENT_WITH_BLANK_LINE: FormattingAction = {
+  options: {},
+  moves: [{ tabs: 1, lines: 2 }],
+}
 
 /** TaoFormatter formats Tao sources with Langium’s node-centric model and optional injection re-indent. */
 export default class TaoFormatter extends AbstractFormatter {
@@ -300,8 +304,11 @@ export default class TaoFormatter extends AbstractFormatter {
     const f = this.getNodeFormatter(node)
     f.keyword('stack').append(Formatting.oneSpace())
     this._indentBlock(node, 'destinations')
-    for (const destination of node.destinations) {
-      f.node(destination).prepend(Formatting.indent())
+    for (let i = 0; i < node.destinations.length; i++) {
+      const destination = node.destinations[i]
+      if (destination !== undefined) {
+        f.node(destination).prepend(i === 0 ? Formatting.indent() : INDENT_WITH_BLANK_LINE)
+      }
     }
   }
 
@@ -309,8 +316,11 @@ export default class TaoFormatter extends AbstractFormatter {
     const f = this.getNodeFormatter(node)
     f.keyword('tabs').append(Formatting.oneSpace())
     this._indentBlock(node, 'destinations')
-    for (const destination of node.destinations) {
-      f.node(destination).prepend(Formatting.indent())
+    for (let i = 0; i < node.destinations.length; i++) {
+      const destination = node.destinations[i]
+      if (destination !== undefined) {
+        f.node(destination).prepend(i === 0 ? Formatting.indent() : INDENT_WITH_BLANK_LINE)
+      }
     }
   }
 

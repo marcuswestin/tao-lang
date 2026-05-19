@@ -833,6 +833,109 @@ describe('Formatter — action local parameter types (Phase 3):', () => {
     .equals(SNIPPET_ACTION_BUMP_AND_USE_DOT_STEP_FORMATTED)
 })
 
+describe('Formatter — navigation:', () => {
+  testFormatter('formats app navigation and stack destinations')
+    .format(`
+      app   Rooms { navigation   MainNavigation }
+      navigator   MainNavigation {
+      stack  {
+      screen   Home
+      screen   Room    RoomScreen { title  "Room" path "/rooms/:RoomId" param   RoomId   text }
+      }
+      }
+    `)
+    .equals(`
+      app Rooms {
+          navigation MainNavigation
+      }
+
+      navigator MainNavigation {
+          stack {
+              screen Home
+
+              screen Room RoomScreen {
+                  title "Room"
+                  path "/rooms/:RoomId"
+                  param RoomId text
+              }
+          }
+      }
+    `)
+
+  testFormatter('formats tab destinations and icons')
+    .format(`
+      navigator MainNavigation{tabs{tab Home { title "Home" icon   system   house } tab Settings SettingsView{icon system settings}}}
+    `)
+    .equals(`
+      navigator MainNavigation {
+          tabs {
+              tab Home {
+                  title "Home"
+                  icon system house
+              }
+
+              tab Settings SettingsView {
+                  icon system settings
+              }
+          }
+      }
+    `)
+
+  testFormatter('formats navigation action payloads')
+    .format(`
+      action Go RoomId text {
+      navigation   push   Room { RoomId   RoomId Count   1 }
+      navigation   pop
+      navigation   tab   Search
+      }
+    `)
+    .equals(`
+      action Go RoomId text {
+          navigation push Room {
+              RoomId RoomId
+              Count 1
+          }
+          navigation pop
+          navigation tab Search
+      }
+    `)
+
+  testFormatter('navigation formatting is idempotent')
+    .format(
+      `
+      navigator MainNavigation {
+          tabs {
+              tab Home {
+                  title "Home"
+                  icon system house
+              }
+
+              tab Settings {
+                  title "Settings"
+                  icon system settings
+              }
+          }
+      }
+    `,
+      2,
+    )
+    .equals(`
+      navigator MainNavigation {
+          tabs {
+              tab Home {
+                  title "Home"
+                  icon system house
+              }
+
+              tab Settings {
+                  title "Settings"
+                  icon system settings
+              }
+          }
+      }
+    `)
+})
+
 describe('Formatter — data schema:', () => {
   testFormatter('formats minimal data block')
     .format(`data    MyData   {  }`)
