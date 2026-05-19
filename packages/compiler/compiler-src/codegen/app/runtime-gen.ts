@@ -374,7 +374,7 @@ class RuntimeGen {
       ${this.navigationNavigatorDefinitions(ir.root)}
       const TaoAppNavigationRoot = createStaticNavigation(${navigationNavigatorConstName(ir.root)})
       export function AppNavigationRoot() {
-        return <TaoAppNavigationRoot ref={_taoNavigationRootRef} />
+        return <TaoAppNavigationRoot ref={_taoNavigationRootRef}${this.navigationLinkingProp(ir)} />
       }
     `
   }
@@ -427,7 +427,7 @@ ${designContext}
       .map(param =>
         `${param.name}={TR.Literal(_taoNavigationRouteParam(_routeParams.${param.name}, ${
           JSON.stringify(param.type)
-        }))}`
+        }, ${JSON.stringify(param.name)}))}`
       )
       .join(' ')
     return `function ${navigationScreenComponentName(destination)}(_ScreenProps: any) {
@@ -441,9 +441,20 @@ ${designContext}
     if (!collectNavigationDestinations(ir.root).some(destination => destination.params.length > 0)) {
       return ''
     }
-    return `function _taoNavigationRouteParam(value: unknown, type: 'text' | 'number' | 'boolean') {
+    return `function _taoNavigationRouteParam(value: unknown, type: 'text' | 'number' | 'boolean', name: string) {
+  const fail = () => {
+    throw new Error(\`Invalid navigation param '\${name}': expected \${type}.\`)
+  }
   if (type === 'number') {
-    return typeof value === 'number' ? value : Number(value)
+    const decoded = typeof value === 'number'
+      ? value
+      : typeof value === 'string' && value.trim() !== ''
+      ? Number(value)
+      : Number.NaN
+    if (Number.isFinite(decoded)) {
+      return decoded
+    }
+    fail()
   }
   if (type === 'boolean') {
     if (typeof value === 'boolean') {
@@ -455,10 +466,19 @@ ${designContext}
     if (value === 'false') {
       return false
     }
-    return Boolean(value)
+    fail()
   }
-  return typeof value === 'string' ? value : value == null ? '' : String(value)
+  if (typeof value === 'string') {
+    return value
+  }
+  fail()
 }`
+  }
+
+  private navigationLinkingProp(ir: TaoNavigationIR): string {
+    return collectNavigationDestinations(ir.root).some(destination => destination.path !== undefined)
+      ? ' linking={{ enabled: true }}'
+      : ''
   }
 
   private navigationScreenDesignStyleProp(target: Extract<TaoNavigationTargetIR, { kind: 'view' }>): string {

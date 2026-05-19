@@ -400,9 +400,10 @@ Suggested commit: `feat(navigation): validate navigation v1`
   React Navigation 8, native tab backends, and broader URL/link policy.
 - 2026-05-19 implementation review follow-up tightened navigation validation
   for duplicate options/params, primitive-only route params, duplicate child
-  navigator targets, and root-navigator-only v1 action targets; generated route
-  params are now coerced before Tao view invocation, and navigation bootstraps
-  are wrapped in `SafeAreaProvider`.
+  navigator targets, imported app navigators, and root-navigator-only v1 action
+  targets; generated route params are now strictly decoded before Tao view
+  invocation, destination paths activate React Navigation static linking, and
+  navigation bootstraps are wrapped in `SafeAreaProvider`.
 
 ## Deferrals
 
@@ -422,6 +423,8 @@ Suggested commit: `feat(navigation): validate navigation v1`
 - Push/navigate fallback semantics across stack, tab, and nested navigator
   boundaries.
 - Grammar redesign for unambiguous multi-param shorthand navigation payloads.
+- Full mounted React Navigation state-machine tests for compiled Tao navigation
+  actions.
 - Multi-file navigator-local destination scoping beyond the module/app tree
   needed for v1.
 - Multi-file navigation action runtime access. In v1, navigation actions require

@@ -70,12 +70,12 @@ describe('codegen — navigation:', () => {
     expect(emitted).toContain('const _TaoNavigator_SearchTabs = createBottomTabNavigator({')
     expect(emitted).toContain('const _TaoNavigator_MainNavigation = createNativeStackNavigator({')
     expect(emitted).toContain(
-      'RoomId={TR.Literal(_taoNavigationRouteParam(_routeParams.RoomId, "text"))}',
+      'RoomId={TR.Literal(_taoNavigationRouteParam(_routeParams.RoomId, "text", "RoomId"))}',
     )
     expect(emitted).toContain('linking: { path: "/rooms/:RoomId" }')
     expect(emitted).toContain('tabBarIcon: _taoNavigationTabIcon("search")')
     expect(emitted).toContain('const TaoAppNavigationRoot = createStaticNavigation(_TaoNavigator_MainNavigation)')
-    expect(emitted).toContain('return <TaoAppNavigationRoot ref={_taoNavigationRootRef} />')
+    expect(emitted).toContain('return <TaoAppNavigationRoot ref={_taoNavigationRootRef} linking={{ enabled: true }} />')
     expect(bootstrap).toContain('import { AppNavigationRoot }')
     expect(bootstrap).toContain("import { SafeAreaProvider } from 'react-native-safe-area-context'")
     expect(bootstrap).toContain('<SafeAreaProvider>')
@@ -181,13 +181,15 @@ describe('codegen — navigation:', () => {
     const emitted = result.files.map(file => file.content).join('\n')
 
     expect(emitted).toContain(
-      "function _taoNavigationRouteParam(value: unknown, type: 'text' | 'number' | 'boolean')",
+      "function _taoNavigationRouteParam(value: unknown, type: 'text' | 'number' | 'boolean', name: string)",
+    )
+    expect(emitted).toContain("throw new Error(`Invalid navigation param '${name}': expected ${type}.`)")
+    expect(emitted).toContain('if (Number.isFinite(decoded))')
+    expect(emitted).toContain(
+      'Count={TR.Literal(_taoNavigationRouteParam(_routeParams.Count, "number", "Count"))}',
     )
     expect(emitted).toContain(
-      'Count={TR.Literal(_taoNavigationRouteParam(_routeParams.Count, "number"))}',
-    )
-    expect(emitted).toContain(
-      'Pinned={TR.Literal(_taoNavigationRouteParam(_routeParams.Pinned, "boolean"))}',
+      'Pinned={TR.Literal(_taoNavigationRouteParam(_routeParams.Pinned, "boolean", "Pinned"))}',
     )
   })
 

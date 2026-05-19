@@ -1,6 +1,6 @@
 import { validationMessages } from '@compiler/validation/tao-lang-validator'
 import { expectHasHumanErrors, expectHumanMessagesContain } from './test-utils/diagnostics'
-import { describe, parseASTWithErrors, parseTaoFully, test } from './test-utils/test-harness'
+import { describe, parseASTWithErrors, parseMultipleFiles, parseTaoFully, test } from './test-utils/test-harness'
 
 describe('navigation validation:', () => {
   test('valid stack navigation validates', async () => {
@@ -113,6 +113,32 @@ describe('navigation validation:', () => {
       ui Home { render inject \`\`\`ts return null \`\`\` }
     `)
     expectHumanMessagesContain(report, validationMessages.appNavigationMustReferenceNavigator)
+  })
+
+  test('app navigation rejects imported navigators in v1', async () => {
+    const result = await parseMultipleFiles([
+      {
+        path: '/app/main.tao',
+        code: `
+          use MainNavigation from ./nav
+          app Bad {
+            navigation MainNavigation
+          }
+        `,
+      },
+      {
+        path: '/app/nav.tao',
+        code: `
+          share navigator MainNavigation {
+            stack {
+              screen Home
+            }
+          }
+          ui Home { render inject \`\`\`ts return null \`\`\` }
+        `,
+      },
+    ])
+    expectHumanMessagesContain(result.getErrors(), validationMessages.appNavigationMustReferenceLocalNavigator)
   })
 
   test('navigator destinations validate names and targets', async () => {

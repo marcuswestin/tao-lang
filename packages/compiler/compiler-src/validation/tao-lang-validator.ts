@@ -48,6 +48,8 @@ export const validationMessages = {
   duplicateAppNavigationRelated: 'Another navigation declaration here.',
   appUiMustReferenceView: 'App ui must reference a ui, frame, layout, or variant declaration.',
   appNavigationMustReferenceNavigator: 'App navigation must reference a navigator declaration.',
+  appNavigationMustReferenceLocalNavigator:
+    'App navigation must reference a navigator declared in the same source file for navigation v1.',
   duplicateAppProvider: 'App can only have one provider declaration.',
   duplicateAppProviderRelated: 'Another provider declaration here.',
   duplicateAppDesign: 'App can only have one design block.',
@@ -299,6 +301,13 @@ export const validator: langium.ValidationChecks<AST.TaoLangAstType> = {
       const ref = stmt.navigation.ref
       if (ref !== undefined && !AST.isNavigatorDeclaration(ref)) {
         report.error(validationMessages.appNavigationMustReferenceNavigator, {
+          node: stmt,
+          property: 'navigation',
+        })
+        continue
+      }
+      if (ref !== undefined && AST.Utils.findRootNode(ref) !== AST.Utils.findRootNode(stmt)) {
+        report.error(validationMessages.appNavigationMustReferenceLocalNavigator, {
           node: stmt,
           property: 'navigation',
         })
