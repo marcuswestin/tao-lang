@@ -33,6 +33,7 @@ mock.module('react-native', () => ({
       return Promise.resolve(false)
     },
   },
+  ActivityIndicator: 'ActivityIndicator',
   Appearance: { getColorScheme: () => 'light' },
   Dimensions: { get: () => ({ width: 320 }) },
   PixelRatio: { getFontScale: () => 1 },
@@ -242,5 +243,55 @@ describe('Views baseline styles:', () => {
     const style = flatten(element.props['style'])
     expect(style['backgroundColor']).toBe('#e2e8f0')
     expect(style['color']).toBe('#94a3b8')
+  })
+
+  test('Card renders with surface background, border and radius', async () => {
+    const Views = await loadViews()
+    const element = render(Views.Card, { children: 'inside card' })
+    const style = flatten(element.props['style'])
+    expect(style['backgroundColor']).toBe('#ffffff')
+    expect(style['borderColor']).toBe('#e2e8f0')
+    expect(style['borderRadius']).toBe(14)
+    expect(style['borderWidth']).toBe(1)
+    expect(style['padding']).toBe(16)
+    expect(element.children[0]).toBe('inside card')
+  })
+
+  test('EmptyState renders title and message inside a surface', async () => {
+    const Views = await loadViews()
+    const element = render(Views.EmptyState, { message: 'Nothing here yet.', title: 'No items' })
+    const surfaceStyle = flatten(element.props['style'])
+    expect(surfaceStyle['backgroundColor']).toBe('#ffffff')
+    expect(surfaceStyle['alignItems']).toBe('center')
+
+    const [titleEl, messageEl] = element.children as RenderedElement[]
+    expect(titleEl!.children[0]).toBe('No items')
+    expect(messageEl!.children[0]).toBe('Nothing here yet.')
+    const titleStyle = flatten(titleEl!.props['style'])
+    const messageStyle = flatten(messageEl!.props['style'])
+    expect(titleStyle['fontWeight']).toBe('600')
+    expect(messageStyle['color']).toBe('#64748b')
+  })
+
+  test('ErrorState uses error-tinted title and message colors', async () => {
+    const Views = await loadViews()
+    const element = render(Views.ErrorState, {
+      message: 'Please retry in a moment.',
+      title: 'Something went wrong',
+    })
+    const [titleEl, messageEl] = element.children as RenderedElement[]
+    const titleStyle = flatten(titleEl!.props['style'])
+    const messageStyle = flatten(messageEl!.props['style'])
+    expect(titleStyle['color']).toBe('#b91c1c')
+    expect(messageStyle['color']).toBe('#7f1d1d')
+  })
+
+  test('LoadingState renders an activity indicator with progressbar role', async () => {
+    const Views = await loadViews()
+    const element = render(Views.LoadingState, { message: 'Loading items' })
+    expect(element.props['accessibilityRole']).toBe('progressbar')
+    const [indicatorEl, messageEl] = element.children as RenderedElement[]
+    expect(indicatorEl!.props['color']).toBe('#2563eb')
+    expect(messageEl!.children[0]).toBe('Loading items')
   })
 })

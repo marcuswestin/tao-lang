@@ -132,6 +132,32 @@ describe('UI design inference locks and codegen:', () => {
     expect(bootstrap).toContain('<TaoDesignProvider value={_compiledTaoAppDesignContextOverrides}>')
   })
 
+  test('Card, EmptyState, ErrorState and LoadingState std-lib primitives compile through codegen', async () => {
+    const result = await compileDesignSource(`
+      use Card, Col, EmptyState, ErrorState, LoadingState, Text from @tao/ui
+
+      app DefaultsApp {
+        ui Root
+      }
+
+      ui Root {
+        render Col {
+          Card {
+            Text "Inside a card"
+          }
+          EmptyState .Title "No items", .Message "Add your first item to get started."
+          ErrorState .Title "Could not load", .Message "Check the network and try again."
+          LoadingState .Message "Loading items"
+        }
+      }
+    `)
+    const emitted = result.files.map(f => f.content).join('\n')
+    expect(emitted).toContain('TR.Views.Card')
+    expect(emitted).toContain('TR.Views.EmptyState')
+    expect(emitted).toContain('TR.Views.ErrorState')
+    expect(emitted).toContain('TR.Views.LoadingState')
+  })
+
   test('generated modules import design runtime and every referenced style key exists', async () => {
     const result = await compileDesignSource(designAppSource())
     const designModule = result.files.find(f => f.relativePath === 'tao-design.ts')?.content ?? ''

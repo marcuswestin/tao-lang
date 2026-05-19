@@ -237,6 +237,10 @@ export const Views = {
   WrappingRow: FlexView('WrappingRow', RN.View, { flexDirection: 'row', flexWrap: 'wrap' }),
 
   Button: ButtonView('Button', {}),
+  Card: CardView('Card'),
+  EmptyState: FeedbackStateView('EmptyState', 'empty'),
+  ErrorState: FeedbackStateView('ErrorState', 'error'),
+  LoadingState: LoadingStateView('LoadingState'),
 }
 
 /** taoBaselinePaletteFor returns the baseline palette for a color scheme and accent. */
@@ -408,6 +412,132 @@ function ButtonView(
 
   Wrapped.displayName = viewDisplayName
   return Wrapped
+}
+
+type TaoCardProps = RN.ViewProps & TaoLayoutProp
+
+function CardView(viewDisplayName: string) {
+  const Wrapped = (props: TaoCardProps) => {
+    const { _taoDesignStyle, _taoLayout, children, style, ...viewProps } = props
+    const palette = useTaoBaselinePalette()
+    const baseline = baselineCardStyleFor(palette)
+    return React.createElement(
+      RN.View,
+      {
+        ...viewProps,
+        style: [baseline, _taoLayout, taoDesignViewStyleForState(_taoDesignStyle, 'default'), style],
+      },
+      children,
+    )
+  }
+
+  Wrapped.displayName = viewDisplayName
+  return Wrapped
+}
+
+type TaoFeedbackKind = 'empty' | 'error'
+
+type TaoFeedbackStateProps = RN.ViewProps & TaoLayoutProp & {
+  message: string
+  title: string
+}
+
+function FeedbackStateView(viewDisplayName: string, kind: TaoFeedbackKind) {
+  const Wrapped = (props: TaoFeedbackStateProps) => {
+    const { _taoDesignStyle, _taoLayout, message, style, title, ...viewProps } = props
+    const palette = useTaoBaselinePalette()
+    const surface = baselineFeedbackSurfaceFor(palette, kind)
+    const titleStyle = baselineFeedbackTitleFor(palette, kind)
+    const messageStyle = baselineFeedbackMessageFor(palette, kind)
+    return React.createElement(
+      RN.View,
+      {
+        ...viewProps,
+        accessibilityRole: 'summary',
+        style: [surface, _taoLayout, taoDesignViewStyleForState(_taoDesignStyle, 'default'), style],
+      },
+      React.createElement(RN.Text, { style: titleStyle }, title),
+      React.createElement(RN.Text, { style: messageStyle }, message),
+    )
+  }
+
+  Wrapped.displayName = viewDisplayName
+  return Wrapped
+}
+
+type TaoLoadingStateProps = RN.ViewProps & TaoLayoutProp & {
+  message: string
+}
+
+function LoadingStateView(viewDisplayName: string) {
+  const Wrapped = (props: TaoLoadingStateProps) => {
+    const { _taoDesignStyle, _taoLayout, message, style, ...viewProps } = props
+    const palette = useTaoBaselinePalette()
+    const surface = baselineFeedbackSurfaceFor(palette, 'empty')
+    const messageStyle = baselineFeedbackMessageFor(palette, 'empty')
+    return React.createElement(
+      RN.View,
+      {
+        ...viewProps,
+        accessibilityRole: 'progressbar',
+        style: [surface, _taoLayout, taoDesignViewStyleForState(_taoDesignStyle, 'default'), style],
+      },
+      React.createElement(RN.ActivityIndicator, { color: palette.accent, size: 'small' }),
+      React.createElement(
+        RN.Text,
+        { style: [messageStyle, { marginTop: 8 }] },
+        message,
+      ),
+    )
+  }
+
+  Wrapped.displayName = viewDisplayName
+  return Wrapped
+}
+
+function baselineCardStyleFor(palette: TaoBaselinePalette): RN.ViewStyle {
+  return {
+    backgroundColor: palette.surfaceBackground,
+    borderColor: palette.border,
+    borderRadius: TAO_BASELINE_SPACING.surfaceRadius,
+    borderWidth: TAO_BASELINE_SPACING.borderWidth,
+    flexDirection: 'column',
+    gap: 12,
+    padding: 16,
+  }
+}
+
+function baselineFeedbackSurfaceFor(palette: TaoBaselinePalette, kind: TaoFeedbackKind): RN.ViewStyle {
+  return {
+    alignItems: 'center',
+    backgroundColor: palette.surfaceBackground,
+    borderColor: kind === 'error' ? '#fecaca' : palette.border,
+    borderRadius: TAO_BASELINE_SPACING.surfaceRadius,
+    borderWidth: TAO_BASELINE_SPACING.borderWidth,
+    flexDirection: 'column',
+    gap: 6,
+    paddingHorizontal: 20,
+    paddingVertical: 24,
+  }
+}
+
+function baselineFeedbackTitleFor(palette: TaoBaselinePalette, kind: TaoFeedbackKind): RN.TextStyle {
+  return {
+    color: kind === 'error' ? '#b91c1c' : palette.primaryText,
+    fontSize: 16,
+    fontWeight: '600',
+    lineHeight: 22,
+    textAlign: 'center',
+  }
+}
+
+function baselineFeedbackMessageFor(palette: TaoBaselinePalette, kind: TaoFeedbackKind): RN.TextStyle {
+  return {
+    color: kind === 'error' ? '#7f1d1d' : palette.mutedText,
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: 'center',
+  }
 }
 
 function baselineTextStyleFor(role: BaselineTextRole, palette: TaoBaselinePalette): RN.TextStyle {

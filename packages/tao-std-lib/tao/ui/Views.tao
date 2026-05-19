@@ -80,3 +80,41 @@ share ui Button Title text, Action action {
     })
   ```
 }
+
+share frame Card {
+  render inject ```ts
+    return TR.Views.Card(_ViewProps)
+  ```
+}
+
+share ui EmptyState Title is text, Message is text {
+  render inject ```ts
+    return TR.Views.EmptyState({
+      _taoLayout: _ViewProps._taoLayout,
+      _taoDesignStyle: _ViewProps._taoDesignStyle,
+      message: _ViewProps.Message.evaluate().jsValue.toString(),
+      title: _ViewProps.Title.evaluate().jsValue.toString()
+    })
+  ```
+}
+
+share ui ErrorState Title is text, Message is text {
+  render inject ```ts
+    return TR.Views.ErrorState({
+      _taoLayout: _ViewProps._taoLayout,
+      _taoDesignStyle: _ViewProps._taoDesignStyle,
+      message: _ViewProps.Message.evaluate().jsValue.toString(),
+      title: _ViewProps.Title.evaluate().jsValue.toString()
+    })
+  ```
+}
+
+share ui LoadingState Message is text {
+  render inject ```ts
+    return TR.Views.LoadingState({
+      _taoLayout: _ViewProps._taoLayout,
+      _taoDesignStyle: _ViewProps._taoDesignStyle,
+      message: _ViewProps.Message.evaluate().jsValue.toString()
+    })
+  ```
+}
