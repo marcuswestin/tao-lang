@@ -85,4 +85,4 @@ Tao is a programming language for building native and web apps.
 ## Skills
 
 Canonical agent workflows live in `skills/`. Use the relevant skill for task-specific procedures such as code review, TODO work, git workflow, compiler work, Langium formatting/scoping, and agent-system maintenance.
-For project selection and execution, use the numbered workflow skills starting with `skills/project-1-decide-next-project` and continuing through `skills/project-7-prepare-merge`.
+For project selection and execution, use the numbered workflow skills starting with `skills/project-1-decide-next-project` and continuing through `skills/project-8-finalize-merge`.
