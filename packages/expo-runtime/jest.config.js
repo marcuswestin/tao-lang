@@ -11,5 +11,6 @@ module.exports = {
     '^react/jsx-dev-runtime$': '<rootDir>/node_modules/react/jsx-dev-runtime',
     '^react/jsx-runtime$': '<rootDir>/node_modules/react/jsx-runtime',
     '^react-native$': '<rootDir>/node_modules/react-native',
+    '^react-native-safe-area-context$': '<rootDir>/tests-expo-runtime/safe-area-context-mock.tsx',
   },
 }

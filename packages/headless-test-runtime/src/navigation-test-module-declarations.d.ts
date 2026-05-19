@@ -21,3 +21,7 @@ declare module '@react-navigation/native' {
 declare module '@react-navigation/native-stack' {
   export function createNativeStackNavigator(config: unknown): unknown
 }
+
+declare module 'react-native-safe-area-context' {
+  export function SafeAreaProvider(props: { children?: import('react').ReactNode }): import('react').ReactElement
+}

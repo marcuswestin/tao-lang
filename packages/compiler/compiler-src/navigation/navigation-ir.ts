@@ -1,4 +1,5 @@
 import { AST } from '@parser/parser'
+import { throwUnexpectedBehaviorError } from '@shared/TaoErrors'
 import { designStyleKeyForNode, type TaoDesignCodegenContext } from '../design/design-codegen'
 import { stringTemplateTextOnlyLiteral } from '../design/design-strings'
 import { isViewLikeDeclaration, viewLikeUsesStatefulDesignStyle } from '../design/variant-resolution'
@@ -94,7 +95,6 @@ function buildDestinationIR(
   stack: readonly AST.NavigatorDeclaration[],
   design: TaoDesignCodegenContext | undefined,
 ): TaoNavigationDestinationIR {
-  const target = destination.target
   return {
     icon: navigationIconIR(destination),
     kind: destination.kind === 'stack' ? 'stack' : 'tab',
@@ -102,23 +102,40 @@ function buildDestinationIR(
     parentNavigatorName: destination.parentNavigator.name,
     params: destination.params.map(param => ({ name: param.name, type: param.type })),
     path: stringTemplateTextOnlyLiteral(destination.path?.value),
-    target: AST.isNavigatorDeclaration(target) && !stack.includes(target)
-      ? { kind: 'navigator', navigator: buildNavigatorIR(target, destinationsByNavigator, stack, design) }
-      : isViewLikeDeclaration(target)
-      ? {
-        componentName: target.name,
-        designStyleKey: designStyleKeyForNode(design, target),
-        designStyleStateful: viewLikeUsesStatefulDesignStyle(target),
-        kind: 'view',
-      }
-      : {
-        componentName: destination.targetName,
-        designStyleStateful: false,
-        kind: 'view',
-      },
+    target: buildNavigationTargetIR(destination, destinationsByNavigator, stack, design),
     targetName: destination.targetName,
     title: navigationTitle(destination.node),
   }
+}
+
+function buildNavigationTargetIR(
+  destination: TaoNavigationDestination,
+  destinationsByNavigator: ReadonlyMap<AST.NavigatorDeclaration, readonly TaoNavigationDestination[]>,
+  stack: readonly AST.NavigatorDeclaration[],
+  design: TaoDesignCodegenContext | undefined,
+): TaoNavigationTargetIR {
+  const target = destination.target
+  if (AST.isNavigatorDeclaration(target)) {
+    if (stack.includes(target)) {
+      throwUnexpectedBehaviorError({
+        humanMessage: 'Navigation cycle should have been rejected before codegen.',
+        logInfo: { destination: destination.name, target: target.name },
+      })
+    }
+    return { kind: 'navigator', navigator: buildNavigatorIR(target, destinationsByNavigator, stack, design) }
+  }
+  if (isViewLikeDeclaration(target)) {
+    return {
+      componentName: target.name,
+      designStyleKey: designStyleKeyForNode(design, target),
+      designStyleStateful: viewLikeUsesStatefulDesignStyle(target),
+      kind: 'view',
+    }
+  }
+  throwUnexpectedBehaviorError({
+    humanMessage: 'Navigation destination target should have been resolved and validated before codegen.',
+    logInfo: { destination: destination.name, targetName: destination.targetName },
+  })
 }
 
 function navigationTitle(destination: AST.StackDestination | AST.TabDestination): string | undefined {

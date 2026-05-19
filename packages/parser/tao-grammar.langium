@@ -306,6 +306,9 @@ NavigationTabAction:
 NavigationActionPayload:
     '{' assignments+=NavigationActionParamAssignment* '}';
 
+// Bare shorthand (`RoomId`) is only unambiguous for a single payload entry.
+// Use explicit `Name Value` assignments for multi-param payloads until the
+// payload grammar grows separators or another disambiguator.
 NavigationActionParamAssignment:
     name=ID value=Expression?;
 

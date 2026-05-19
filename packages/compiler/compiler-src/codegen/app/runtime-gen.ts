@@ -369,6 +369,7 @@ class RuntimeGen {
       ${this.navigationTabIconHelper(ir)}
       const _taoNavigationRootRef = createNavigationContainerRef()
       ${this.navigationActionRuntime(declaration)}
+      ${this.navigationRouteParamHelper(ir)}
       ${this.navigationScreenComponents(ir.root)}
       ${this.navigationNavigatorDefinitions(ir.root)}
       const TaoAppNavigationRoot = createStaticNavigation(${navigationNavigatorConstName(ir.root)})
@@ -423,12 +424,40 @@ ${designContext}
 }`
     }
     const props = destination.params
-      .map(param => `${param.name}={TR.Literal(_routeParams.${param.name})}`)
+      .map(param =>
+        `${param.name}={TR.Literal(_taoNavigationRouteParam(_routeParams.${param.name}, ${
+          JSON.stringify(param.type)
+        }))}`
+      )
       .join(' ')
     return `function ${navigationScreenComponentName(destination)}(_ScreenProps: any) {
   const _routeParams = _ScreenProps.route?.params ?? {}
 ${designContext}
   return <${target.componentName} ${props}${designStyle} />
+}`
+  }
+
+  private navigationRouteParamHelper(ir: TaoNavigationIR): string {
+    if (!collectNavigationDestinations(ir.root).some(destination => destination.params.length > 0)) {
+      return ''
+    }
+    return `function _taoNavigationRouteParam(value: unknown, type: 'text' | 'number' | 'boolean') {
+  if (type === 'number') {
+    return typeof value === 'number' ? value : Number(value)
+  }
+  if (type === 'boolean') {
+    if (typeof value === 'boolean') {
+      return value
+    }
+    if (value === 'true') {
+      return true
+    }
+    if (value === 'false') {
+      return false
+    }
+    return Boolean(value)
+  }
+  return typeof value === 'string' ? value : value == null ? '' : String(value)
 }`
   }
 
@@ -528,6 +557,9 @@ ${screens}
       return compileNode(moduleDecl)`
         export const ${name} = ${this.actionLiteral(moduleDecl.declaration, name)}
       `
+    }
+    if (AST.isNavigatorDeclaration(moduleDecl.declaration)) {
+      return compileNoop()
     }
     const visibility = compileNodeProperty(moduleDecl, 'visibility', (val) => val ? 'export ' : '')
     const declaration = this.Statement(moduleDecl.declaration)

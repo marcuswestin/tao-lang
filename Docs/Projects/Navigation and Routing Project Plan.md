@@ -398,6 +398,11 @@ Suggested commit: `feat(navigation): validate navigation v1`
   scenario support, and Expo shared-scenario smoke coverage.
 - Follow-up work remains deferred below: drawer navigation, guards/auth,
   React Navigation 8, native tab backends, and broader URL/link policy.
+- 2026-05-19 implementation review follow-up tightened navigation validation
+  for duplicate options/params, primitive-only route params, duplicate child
+  navigator targets, and root-navigator-only v1 action targets; generated route
+  params are now coerced before Tao view invocation, and navigation bootstraps
+  are wrapped in `SafeAreaProvider`.
 
 ## Deferrals
 
@@ -412,10 +417,11 @@ Suggested commit: `feat(navigation): validate navigation v1`
 - Complete removal of legacy app-level `ui` syntax.
 - Destination `role` metadata and screen presentation roles.
 - Compile-time icon name validation against a platform-aware registry.
-- Broad nested navigator reachability validation for action targets.
+- Nested navigator action dispatch beyond root navigator destinations.
 - Query-string encoding for params not represented by path placeholders.
 - Push/navigate fallback semantics across stack, tab, and nested navigator
   boundaries.
+- Grammar redesign for unambiguous multi-param shorthand navigation payloads.
 - Multi-file navigator-local destination scoping beyond the module/app tree
   needed for v1.
 - Multi-file navigation action runtime access. In v1, navigation actions require

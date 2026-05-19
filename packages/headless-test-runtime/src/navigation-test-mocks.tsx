@@ -2,7 +2,9 @@ import {
   type ComponentType,
   createElement,
   forwardRef,
+  Fragment,
   type ReactElement,
+  type ReactNode,
 } from 'react'
 
 type HeadlessNavigationScreenProps = {
@@ -92,6 +94,11 @@ export const StackActions = {
 
 export const TabActions = {
   jumpTo: (name: string, params?: Record<string, unknown>) => ({ payload: { name, params }, type: 'JUMP_TO' }),
+}
+
+/** SafeAreaProvider is a pass-through wrapper for generated navigation bootstraps in headless tests. */
+export function SafeAreaProvider(props: { children?: ReactNode }) {
+  return createElement(Fragment, null, props.children)
 }
 
 /** Ionicons is a no-op icon component for headless navigation tests. */

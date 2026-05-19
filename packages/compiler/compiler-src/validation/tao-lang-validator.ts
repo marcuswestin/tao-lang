@@ -59,12 +59,20 @@ export const validationMessages = {
   duplicateObjectProperty: (name: string) => `Duplicate object property '${name}'.`,
   duplicateNavigatorDestination: (name: string) => `Navigator destination '${name}' is declared more than once.`,
   duplicateNavigatorDestinationRelated: 'Another destination with this name is declared here.',
+  duplicateNavigationActionParam: (name: string) => `Navigation action param '${name}' is provided more than once.`,
+  duplicateNavigationDestinationParam: (name: string) => `Navigation param '${name}' is declared more than once.`,
+  duplicateNavigationIcon: '`icon` can only be declared once per navigation destination.',
+  duplicateNavigationOptionRelated: 'First declaration is here.',
+  duplicateNavigationPath: '`path` can only be declared once per navigation destination.',
+  duplicateNavigationTitle: '`title` can only be declared once per navigation destination.',
   navigationIconStackOnly: '`icon` is only supported on tab destinations.',
   navigationPathMustBePlain: 'Navigation paths must be plain strings without interpolation.',
   navigationPathMissingParam: (name: string) => `Navigation path placeholder ':${name}' has no matching param.`,
   navigationParamMissingFromPath: (name: string) => `Navigation param '${name}' must appear in the path.`,
   navigationParamMissingFromTarget: (name: string, target: string) =>
     `Navigation param '${name}' has no matching parameter on target '${target}'.`,
+  navigationParamUnsupportedTargetType: (name: string, target: string) =>
+    `Navigation target '${target}' param '${name}' must be text, number, or boolean.`,
   navigationTargetMissingParam: (name: string, target: string) =>
     `Navigation target '${target}' requires param '${name}'.`,
   navigationParamTypeMismatch: (name: string, expected: string, actual: string) =>
@@ -74,11 +82,15 @@ export const validationMessages = {
   navigationActionAmbiguousTarget: (name: string) => `Navigation action target '${name}' is ambiguous.`,
   navigationPushTargetMustBeStack: (name: string) => `navigation push target '${name}' must be a stack destination.`,
   navigationTabTargetMustBeTab: (name: string) => `navigation tab target '${name}' must be a tab destination.`,
+  navigationActionTargetMustBeRootDestination: (name: string) =>
+    `Navigation action target '${name}' must be declared directly in the app's root navigator.`,
   navigationPopRequiresStack: 'navigation pop requires a reachable stack destination.',
   navigationActionMissingParam: (name: string, target: string) =>
     `Navigation action for '${target}' is missing param '${name}'.`,
   navigationActionExtraParam: (name: string, target: string) =>
     `Navigation action for '${target}' provides unknown param '${name}'.`,
+  navigationActionParamUnsupportedExpression: (name: string) =>
+    `Navigation action param '${name}' must evaluate to text, number, or boolean.`,
   navigationActionParamTypeMismatch: (name: string, expected: string, actual: string) =>
     `Navigation action param '${name}' is '${actual}' but destination expects '${expected}'.`,
   navigationActionShorthandParamUnknown: (name: string) =>
@@ -406,6 +418,7 @@ function validateNavigationDestination(
   destination: TaoNavigationDestination,
   report: Reporter<AST.AppDeclaration>,
 ): void {
+  validateNavigationDestinationOptionCardinality(destination, report)
   if (destination.kind === 'stack') {
     for (const icon of navigationDestinationIcons(destination.node)) {
       report.error(validationMessages.navigationIconStackOnly, icon)
@@ -413,6 +426,54 @@ function validateNavigationDestination(
   }
   validateNavigationPathParams(destination, report)
   validateNavigationTargetParams(destination, report)
+}
+
+function validateNavigationDestinationOptionCardinality(
+  destination: TaoNavigationDestination,
+  report: Reporter<AST.AppDeclaration>,
+): void {
+  validateSingleNavigationOption(
+    destination.node.options?.options.filter(AST.isNavigationTitleOption) ?? [],
+    validationMessages.duplicateNavigationTitle,
+    report,
+  )
+  validateSingleNavigationOption(
+    destination.node.options?.options.filter(AST.isNavigationPathOption) ?? [],
+    validationMessages.duplicateNavigationPath,
+    report,
+  )
+  validateSingleNavigationOption(
+    navigationDestinationIcons(destination.node),
+    validationMessages.duplicateNavigationIcon,
+    report,
+  )
+  const seenParams = new Map<string, AST.NavigationParamDeclaration>()
+  for (const param of destination.params) {
+    const first = seenParams.get(param.name)
+    if (first !== undefined) {
+      report.error(validationMessages.duplicateNavigationDestinationParam(param.name), param, {
+        alsoCheck: () => ({ node: first, message: validationMessages.duplicateNavigationOptionRelated }),
+      })
+    } else {
+      seenParams.set(param.name, param)
+    }
+  }
+}
+
+function validateSingleNavigationOption<T extends AST.Node>(
+  options: readonly T[],
+  message: string,
+  report: Reporter<AST.AppDeclaration>,
+): void {
+  const [first, ...duplicates] = options
+  if (first === undefined) {
+    return
+  }
+  for (const duplicate of duplicates) {
+    report.error(message, duplicate, {
+      alsoCheck: () => ({ node: first, message: validationMessages.duplicateNavigationOptionRelated }),
+    })
+  }
 }
 
 function validateNavigationPathParams(
@@ -454,13 +515,22 @@ function validateNavigationTargetParams(
   }
   const destinationParams = new Map(destination.params.map(param => [param.name, param]))
   const targetParams = new Map((target.parameterList?.parameters ?? []).map(param => [param.name, param]))
+  const targetParamTypes = new Map<AST.ParameterDeclaration, AST.NavigationParamType>()
+  for (const targetParam of target.parameterList?.parameters ?? []) {
+    const targetType = navigationSafeParameterType(targetParam)
+    if (targetType === undefined) {
+      report.error(validationMessages.navigationParamUnsupportedTargetType(targetParam.name, target.name), targetParam)
+    } else {
+      targetParamTypes.set(targetParam, targetType)
+    }
+  }
   for (const param of destination.params) {
     const targetParam = targetParams.get(param.name)
     if (targetParam === undefined) {
       report.error(validationMessages.navigationParamMissingFromTarget(param.name, target.name), param)
       continue
     }
-    const targetType = navigationSafeParameterType(targetParam)
+    const targetType = targetParamTypes.get(targetParam)
     if (targetType !== undefined && targetType !== param.type) {
       report.error(validationMessages.navigationParamTypeMismatch(param.name, targetType, param.type), param)
     }
@@ -533,6 +603,10 @@ function navigationActionDestination<NodeT extends AST.NavigationPushAction | AS
     report.error(validationMessages.navigationTabTargetMustBeTab(target), node)
     return undefined
   }
+  if (tree.root !== undefined && destination.parentNavigator !== tree.root) {
+    report.error(validationMessages.navigationActionTargetMustBeRootDestination(target), node)
+    return undefined
+  }
   return destination
 }
 
@@ -542,7 +616,17 @@ function validateNavigationActionPayload<NodeT extends AST.NavigationPushAction 
   report: Reporter<NodeT>,
 ): void {
   const assignments = node.payload?.assignments ?? []
-  const assignmentByName = new Map(assignments.map(assignment => [assignment.name, assignment]))
+  const assignmentByName = new Map<string, AST.NavigationActionParamAssignment>()
+  for (const assignment of assignments) {
+    const first = assignmentByName.get(assignment.name)
+    if (first !== undefined) {
+      report.error(validationMessages.duplicateNavigationActionParam(assignment.name), assignment, {
+        alsoCheck: () => ({ node: first, message: validationMessages.duplicateNavigationOptionRelated }),
+      })
+    } else {
+      assignmentByName.set(assignment.name, assignment)
+    }
+  }
   const paramsByName = new Map(destination.params.map(param => [param.name, param]))
   for (const param of destination.params) {
     const assignment = assignmentByName.get(param.name)
@@ -551,7 +635,9 @@ function validateNavigationActionPayload<NodeT extends AST.NavigationPushAction 
       continue
     }
     const actualType = navigationPayloadValueType(assignment)
-    if (actualType !== undefined && actualType !== param.type) {
+    if (actualType === undefined) {
+      report.error(validationMessages.navigationActionParamUnsupportedExpression(param.name), assignment)
+    } else if (actualType !== param.type) {
       report.error(
         validationMessages.navigationActionParamTypeMismatch(param.name, param.type, actualType),
         assignment,

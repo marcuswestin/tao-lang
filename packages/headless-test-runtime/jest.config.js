@@ -14,6 +14,7 @@ module.exports = {
     '^@react-navigation/bottom-tabs$': '<rootDir>/src/navigation-test-mocks.tsx',
     '^@react-navigation/native$': '<rootDir>/src/navigation-test-mocks.tsx',
     '^@react-navigation/native-stack$': '<rootDir>/src/navigation-test-mocks.tsx',
+    '^react-native-safe-area-context$': '<rootDir>/src/navigation-test-mocks.tsx',
   },
   // Scenario compiles emit under repo `.builds/`; modulePaths lets Jest resolve `react-native` for modules loaded from there.
   modulePaths: [path.join(__dirname, 'node_modules')],

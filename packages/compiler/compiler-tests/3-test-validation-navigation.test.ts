@@ -174,6 +174,36 @@ describe('navigation validation:', () => {
     )
   })
 
+  test('destination options reject duplicate singleton options and params', async () => {
+    const report = await parseASTWithErrors(`
+      app Bad { navigation MainNavigation }
+      navigator MainNavigation {
+        tabs {
+          tab Room RoomScreen {
+            title "Room"
+            title "Duplicate"
+            icon system home
+            icon system search
+            path "/rooms/:RoomId"
+            path "/duplicate/:RoomId"
+            param RoomId text
+            param RoomId text
+          }
+        }
+      }
+      ui RoomScreen RoomId text {
+        render inject \`\`\`ts return null \`\`\`
+      }
+    `)
+    expectHumanMessagesContain(
+      report,
+      validationMessages.duplicateNavigationTitle,
+      validationMessages.duplicateNavigationIcon,
+      validationMessages.duplicateNavigationPath,
+      validationMessages.duplicateNavigationDestinationParam('RoomId'),
+    )
+  })
+
   test('destination params must match target view params', async () => {
     const report = await parseASTWithErrors(`
       app Bad { navigation MainNavigation }
@@ -194,6 +224,26 @@ describe('navigation validation:', () => {
       validationMessages.navigationParamMissingFromTarget('Extra', 'RoomScreen'),
       validationMessages.navigationTargetMissingParam('RoomId', 'RoomScreen'),
       validationMessages.navigationParamTypeMismatch('Count', 'text', 'number'),
+    )
+  })
+
+  test('destination params reject non-navigation target param types', async () => {
+    const report = await parseASTWithErrors(`
+      app Bad { navigation MainNavigation }
+      navigator MainNavigation {
+        stack {
+          screen Room RoomScreen {
+            param OnSelect text
+          }
+        }
+      }
+      ui RoomScreen OnSelect action {
+        render inject \`\`\`ts return null \`\`\`
+      }
+    `)
+    expectHumanMessagesContain(
+      report,
+      validationMessages.navigationParamUnsupportedTargetType('OnSelect', 'RoomScreen'),
     )
   })
 
@@ -249,11 +299,13 @@ describe('navigation validation:', () => {
           RoomId RoomId
           Count "wrong"
           Extra "x"
+          Extra "again"
         }
       }
     `)
     expectHumanMessagesContain(
       payload,
+      validationMessages.duplicateNavigationActionParam('Extra'),
       validationMessages.navigationActionExtraParam('Extra', 'Room'),
       validationMessages.navigationActionParamTypeMismatch('Count', 'number', 'text'),
     )
@@ -305,6 +357,52 @@ describe('navigation validation:', () => {
       shorthand,
       validationMessages.navigationActionShorthandParamUnknown('RoomId'),
     )
+
+    const unsupportedPayload = await parseASTWithErrors(`
+      app Bad { navigation MainNavigation }
+      navigator MainNavigation {
+        stack {
+          screen Room RoomScreen {
+            param RoomId text
+          }
+        }
+      }
+      ui RoomScreen RoomId text {
+        render inject \`\`\`ts return null \`\`\`
+      }
+      action Go OnSelect action {
+        navigation push Room {
+          RoomId OnSelect
+        }
+      }
+    `)
+    expectHumanMessagesContain(
+      unsupportedPayload,
+      validationMessages.navigationActionParamUnsupportedExpression('RoomId'),
+    )
+  })
+
+  test('navigation actions reject nested destination targets in v1', async () => {
+    const report = await parseASTWithErrors(`
+      app Bad { navigation MainNavigation }
+      navigator MainNavigation {
+        stack {
+          screen Home
+          screen SearchTabs
+        }
+      }
+      navigator SearchTabs {
+        tabs {
+          tab Search
+        }
+      }
+      ui Home { render inject \`\`\`ts return null \`\`\` }
+      ui Search { render inject \`\`\`ts return null \`\`\` }
+      action Go {
+        navigation tab Search
+      }
+    `)
+    expectHumanMessagesContain(report, validationMessages.navigationActionTargetMustBeRootDestination('Search'))
   })
 
   test('navigation pop in tabs-only app emits diagnostic', async () => {
@@ -332,6 +430,20 @@ describe('navigation validation:', () => {
     expectHumanMessagesContain(report, validationMessages.navigationActionNeedsAppNavigation)
   })
 
+  test('top-level navigation actions are rejected by statement placement validation', async () => {
+    const report = await parseASTWithErrors(`
+      app Bad { navigation MainNavigation }
+      navigator MainNavigation {
+        stack {
+          screen Home
+        }
+      }
+      ui Home { render inject \`\`\`ts return null \`\`\` }
+      navigation pop
+    `)
+    expectHumanMessagesContain(report, validationMessages.topLevel)
+  })
+
   test('ambiguous navigation action target is rejected', async () => {
     const report = await parseASTWithErrors(`
       app Bad { navigation MainNavigation }
@@ -352,5 +464,27 @@ describe('navigation validation:', () => {
       }
     `)
     expectHumanMessagesContain(report, validationMessages.navigationActionAmbiguousTarget('Home'))
+  })
+
+  test('same child navigator cannot be targeted by multiple destinations', async () => {
+    const report = await parseASTWithErrors(`
+      app Bad { navigation MainNavigation }
+      navigator MainNavigation {
+        stack {
+          screen First ChildNavigation
+          screen Second ChildNavigation
+        }
+      }
+      navigator ChildNavigation {
+        stack {
+          screen Home
+        }
+      }
+      ui Home { render inject \`\`\`ts return null \`\`\` }
+    `)
+    expectHumanMessagesContain(
+      report,
+      "Navigator 'ChildNavigation' can only be targeted by one navigation destination.",
+    )
   })
 })

@@ -281,6 +281,9 @@ function compileBootstrapNode(
     ? `import { AppNavigationRoot } from '${appRoot.modulePath}'`
     : `import { AppUIView } from '${appRoot.modulePath}'`
   const designImport = `import { TaoDesignProvider, resolveStyle, useTaoDesignContext } from './tao-design'`
+  const safeAreaImport = appRoot.kind === 'navigation'
+    ? `import { SafeAreaProvider } from 'react-native-safe-area-context'`
+    : ''
   const initImports = initImportPaths
     .map((path, idx) =>
       `import { _taoOpenDataProviders as _taoOpenDataProviders${idx}, _taoRunAppInits as _taoRunAppInits${idx} } from '${path}'`
@@ -290,7 +293,11 @@ function compileBootstrapNode(
   const initCalls = initImportPaths.map((_, idx) => `_taoRunAppInits${idx}()`).join('\n')
   const appContent = appRoot.kind === 'navigation'
     ? `function CompiledTaoAppContent() {
-  return <AppNavigationRoot />
+  return (
+    <SafeAreaProvider>
+      <AppNavigationRoot />
+    </SafeAreaProvider>
+  )
 }`
     : `const _compiledTaoAppRootDesignStyleKey = ${JSON.stringify(appRoot.appRootStyleKey ?? null)}
 const _compiledTaoAppRootViewStyle = { flex: 1 }
@@ -318,6 +325,7 @@ function CompiledTaoAppContent() {
 import * as RN from 'react-native'
 ${appRootImport}
 ${designImport}
+${safeAreaImport}
 ${initImports}
 
 ${dataProviderInitCalls}

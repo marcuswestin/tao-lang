@@ -69,17 +69,21 @@ describe('codegen — navigation:', () => {
     expect(emitted).not.toContain('createTaoNavigationRuntime')
     expect(emitted).toContain('const _TaoNavigator_SearchTabs = createBottomTabNavigator({')
     expect(emitted).toContain('const _TaoNavigator_MainNavigation = createNativeStackNavigator({')
-    expect(emitted).toContain('RoomId={TR.Literal(_routeParams.RoomId)}')
+    expect(emitted).toContain(
+      'RoomId={TR.Literal(_taoNavigationRouteParam(_routeParams.RoomId, "text"))}',
+    )
     expect(emitted).toContain('linking: { path: "/rooms/:RoomId" }')
     expect(emitted).toContain('tabBarIcon: _taoNavigationTabIcon("search")')
     expect(emitted).toContain('const TaoAppNavigationRoot = createStaticNavigation(_TaoNavigator_MainNavigation)')
     expect(emitted).toContain('return <TaoAppNavigationRoot ref={_taoNavigationRootRef} />')
     expect(bootstrap).toContain('import { AppNavigationRoot }')
+    expect(bootstrap).toContain("import { SafeAreaProvider } from 'react-native-safe-area-context'")
+    expect(bootstrap).toContain('<SafeAreaProvider>')
     expect(bootstrap).toContain('<AppNavigationRoot />')
     expect(bootstrap).not.toContain('<AppUIView />')
   })
 
-  test('lowers navigation actions to runtime helper calls', async () => {
+  test('lowers stack navigation actions and shorthand params to runtime helper calls', async () => {
     const result = await compileNavigationSource(`
       app Rooms {
         navigation MainNavigation
@@ -90,15 +94,6 @@ describe('codegen — navigation:', () => {
           screen Home
           screen Room RoomScreen {
             param RoomId text
-          }
-          screen SearchTabs
-        }
-      }
-
-      navigator SearchTabs {
-        tabs {
-          tab Search SearchView {
-            param Query text
           }
         }
       }
@@ -111,18 +106,11 @@ describe('codegen — navigation:', () => {
         render inject \`\`\`ts return null \`\`\`
       }
 
-      ui SearchView Query text {
-        render inject \`\`\`ts return null \`\`\`
-      }
-
       action OpenRoom RoomId text {
         navigation push Room {
-          RoomId RoomId
+          RoomId
         }
         navigation pop
-        navigation tab Search {
-          Query "recent"
-        }
       }
     `)
     const emitted = result.files.map(file => file.content).join('\n')
@@ -138,8 +126,69 @@ describe('codegen — navigation:', () => {
     expect(emitted).toContain('_taoNavigationRuntime.push("Room", {')
     expect(emitted).toContain('"RoomId": _Scope.RoomId.evaluate().jsValue,')
     expect(emitted).toContain('_taoNavigationRuntime.pop()')
+  })
+
+  test('lowers root tab navigation actions to runtime helper calls', async () => {
+    const result = await compileNavigationSource(`
+      app Tabs {
+        navigation MainNavigation
+      }
+
+      navigator MainNavigation {
+        tabs {
+          tab Search SearchView {
+            param Query text
+          }
+        }
+      }
+
+      ui SearchView Query text {
+        render inject \`\`\`ts return null \`\`\`
+      }
+
+      action OpenSearch {
+        navigation tab Search {
+          Query "recent"
+        }
+      }
+    `)
+    const emitted = result.files.map(file => file.content).join('\n')
+
     expect(emitted).toContain('_taoNavigationRuntime.tab("Search", {')
     expect(emitted).toContain('"Query": TR.Literal("recent").evaluate().jsValue,')
+  })
+
+  test('coerces number and boolean route params before passing them to Tao views', async () => {
+    const result = await compileNavigationSource(`
+      app Rooms {
+        navigation MainNavigation
+      }
+
+      navigator MainNavigation {
+        stack {
+          screen Room RoomScreen {
+            path "/rooms/:Count/:Pinned"
+            param Count number
+            param Pinned boolean
+          }
+        }
+      }
+
+      ui RoomScreen Count number, Pinned boolean {
+        render inject \`\`\`ts return null \`\`\`
+      }
+    `)
+    const emitted = result.files.map(file => file.content).join('\n')
+
+    expect(emitted).toContain(
+      "function _taoNavigationRouteParam(value: unknown, type: 'text' | 'number' | 'boolean')",
+    )
+    expect(emitted).toContain(
+      'Count={TR.Literal(_taoNavigationRouteParam(_routeParams.Count, "number"))}',
+    )
+    expect(emitted).toContain(
+      'Pinned={TR.Literal(_taoNavigationRouteParam(_routeParams.Pinned, "boolean"))}',
+    )
   })
 
   test('keeps legacy ui-root bootstrap output unchanged', async () => {
@@ -157,6 +206,29 @@ describe('codegen — navigation:', () => {
 
     expect(emitted).not.toContain('@react-navigation/native')
     expect(bootstrap).toContain('import { AppUIView }')
+    expect(bootstrap).not.toContain('SafeAreaProvider')
     expect(bootstrap).toContain('<AppUIView />')
+  })
+
+  test('module-wrapped navigator declarations do not emit broken standalone exports', async () => {
+    const result = await compileNavigationSource(`
+      app Rooms {
+        navigation MainNavigation
+      }
+
+      share navigator MainNavigation {
+        stack {
+          screen Home
+        }
+      }
+
+      ui Home {
+        render inject \`\`\`ts return null \`\`\`
+      }
+    `)
+    const emitted = result.files.map(file => file.content).join('\n')
+
+    expect(emitted).toContain('const _TaoNavigator_MainNavigation = createNativeStackNavigator({')
+    expect(emitted).not.toContain('\nexport \n')
   })
 })

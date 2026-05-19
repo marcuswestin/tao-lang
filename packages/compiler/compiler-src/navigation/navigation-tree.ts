@@ -34,6 +34,7 @@ export function buildTaoNavigationTree(appNavigation: AST.AppNavigationStatement
   const destinations: TaoNavigationDestination[] = []
   const destinationsByName = new Map<string, TaoNavigationDestination[]>()
   const issues: TaoNavigationTreeIssue[] = []
+  const targetedNavigators = new Map<AST.NavigatorDeclaration, AST.StackDestination | AST.TabDestination>()
   const root = appNavigation.navigation.ref
 
   if (!AST.isNavigatorDeclaration(root)) {
@@ -46,7 +47,7 @@ export function buildTaoNavigationTree(appNavigation: AST.AppNavigationStatement
     return { appNavigation, destinations, destinationsByName, issues }
   }
 
-  collectNavigator(root, [], destinations, destinationsByName, issues)
+  collectNavigator(root, [], destinations, destinationsByName, targetedNavigators, issues)
   return { appNavigation, root, destinations, destinationsByName, issues }
 }
 
@@ -76,6 +77,7 @@ function collectNavigator(
   stack: readonly AST.NavigatorDeclaration[],
   destinations: TaoNavigationDestination[],
   destinationsByName: Map<string, TaoNavigationDestination[]>,
+  targetedNavigators: Map<AST.NavigatorDeclaration, AST.StackDestination | AST.TabDestination>,
   issues: TaoNavigationTreeIssue[],
 ): void {
   if (stack.includes(navigator)) {
@@ -126,7 +128,16 @@ function collectNavigator(
       continue
     }
     if (AST.isNavigatorDeclaration(target)) {
-      collectNavigator(target, nextStack, destinations, destinationsByName, issues)
+      const firstDestination = targetedNavigators.get(target)
+      if (firstDestination !== undefined) {
+        issues.push({
+          node,
+          message: `Navigator '${target.name}' can only be targeted by one navigation destination.`,
+        })
+        continue
+      }
+      targetedNavigators.set(target, node)
+      collectNavigator(target, nextStack, destinations, destinationsByName, targetedNavigators, issues)
     }
   }
 }
