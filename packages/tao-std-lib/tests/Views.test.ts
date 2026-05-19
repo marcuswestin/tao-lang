@@ -81,6 +81,30 @@ function flatten(style: unknown): Record<string, unknown> {
   return flattenStyleEntries(style)
 }
 
+function contrastRatio(hexA: string, hexB: string): number {
+  const lA = relativeLuminance(hexA)
+  const lB = relativeLuminance(hexB)
+  const lighter = Math.max(lA, lB)
+  const darker = Math.min(lA, lB)
+  return (lighter + 0.05) / (darker + 0.05)
+}
+
+function relativeLuminance(hex: string): number {
+  const channels = parseHex(hex).map(channel => {
+    const c = channel / 255
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)
+  })
+  return 0.2126 * channels[0]! + 0.7152 * channels[1]! + 0.0722 * channels[2]!
+}
+
+function parseHex(hex: string): [number, number, number] {
+  const value = hex.startsWith('#') ? hex.slice(1) : hex
+  const r = parseInt(value.slice(0, 2), 16)
+  const g = parseInt(value.slice(2, 4), 16)
+  const b = parseInt(value.slice(4, 6), 16)
+  return [r, g, b]
+}
+
 describe('Views baseline styles:', () => {
   test('Text renders with light-mode body color and 16px body size', async () => {
     const Views = await loadViews()
@@ -99,6 +123,34 @@ describe('Views baseline styles:', () => {
     expect(dark.appBackground).not.toBe(light.appBackground)
     expect(dark.surfaceBackground).not.toBe(light.surfaceBackground)
     expect(dark.inputBackground).not.toBe(light.inputBackground)
+  })
+
+  test('Every curated accent meets WCAG 3:1 contrast for accent vs on-accent text', async () => {
+    const { taoBaselinePaletteFor } = await import('../tao/tao-runtime/Views')
+    const { TAO_BASELINE_ACCENT_NAMES } = await import('../tao/tao-runtime/tao-design-runtime')
+    for (const accentName of TAO_BASELINE_ACCENT_NAMES) {
+      for (const scheme of ['light', 'dark'] as const) {
+        const palette = taoBaselinePaletteFor(scheme, accentName)
+        const ratio = contrastRatio(palette.accent, palette.onAccentText)
+        if (ratio < 3) {
+          throw new Error(
+            `${scheme}/${accentName}: accent ${palette.accent} vs onAccent ${palette.onAccentText} ratio ${
+              ratio.toFixed(2)
+            } < 3.0`,
+          )
+        }
+        expect(ratio).toBeGreaterThanOrEqual(3)
+      }
+    }
+  })
+
+  test('Each accent name selects a distinct primary accent color in light mode', async () => {
+    const { taoBaselinePaletteFor } = await import('../tao/tao-runtime/Views')
+    const { TAO_BASELINE_ACCENT_NAMES } = await import('../tao/tao-runtime/tao-design-runtime')
+    const accents = new Set(
+      TAO_BASELINE_ACCENT_NAMES.map(name => taoBaselinePaletteFor('light', name).accent),
+    )
+    expect(accents.size).toBe(TAO_BASELINE_ACCENT_NAMES.length)
   })
 
   test('TextLabel uses label-weight typography distinct from body', async () => {

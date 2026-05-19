@@ -2,7 +2,11 @@ import React from 'react'
 import * as RN from 'react-native'
 
 import type { TaoResolvedLayoutStyle } from './Layout'
-import { type TaoDesignColorScheme, useTaoDesignContext } from './tao-design-runtime'
+import {
+  type TaoBaselineAccentName,
+  type TaoDesignColorScheme,
+  useTaoDesignContext,
+} from './tao-design-runtime'
 
 type TaoLayoutProp = {
   _taoLayout?: TaoResolvedLayoutStyle
@@ -44,45 +48,158 @@ type TaoBaselinePalette = {
   focusRing: string
 }
 
-const TAO_BASELINE_PALETTE: Record<TaoDesignColorScheme, TaoBaselinePalette> = {
+type TaoBaselineAccentValues = {
+  accent: string
+  accentPressed: string
+  accentSubtle: string
+  focusRing: string
+  onAccentText: string
+}
+
+const TAO_BASELINE_NEUTRALS: Record<
+  TaoDesignColorScheme,
+  Omit<TaoBaselinePalette, keyof TaoBaselineAccentValues>
+> = {
   light: {
-    accent: '#2563eb',
-    accentPressed: '#1d4ed8',
-    accentSubtle: '#dbeafe',
     appBackground: '#f7f8fa',
     border: '#e2e8f0',
     borderStrong: '#cbd5e1',
     disabledBackground: '#e2e8f0',
     disabledForeground: '#94a3b8',
-    focusRing: '#2563eb',
     inputBackground: '#ffffff',
     inputBorder: '#cbd5e1',
     mutedText: '#64748b',
-    onAccentText: '#ffffff',
     placeholder: '#94a3b8',
     primaryText: '#0f172a',
     secondaryText: '#334155',
     surfaceBackground: '#ffffff',
   },
   dark: {
-    accent: '#60a5fa',
-    accentPressed: '#3b82f6',
-    accentSubtle: '#1e3a8a',
     appBackground: '#0f1115',
     border: '#1f2937',
     borderStrong: '#334155',
     disabledBackground: '#1f2937',
     disabledForeground: '#64748b',
-    focusRing: '#60a5fa',
     inputBackground: '#111827',
     inputBorder: '#334155',
     mutedText: '#94a3b8',
-    onAccentText: '#0b1220',
     placeholder: '#64748b',
     primaryText: '#f8fafc',
     secondaryText: '#cbd5e1',
     surfaceBackground: '#1c1f26',
   },
+}
+
+const TAO_BASELINE_ACCENTS: Record<
+  TaoBaselineAccentName,
+  Record<TaoDesignColorScheme, TaoBaselineAccentValues>
+> = {
+  blue: {
+    light: {
+      accent: '#2563eb',
+      accentPressed: '#1d4ed8',
+      accentSubtle: '#dbeafe',
+      focusRing: '#2563eb',
+      onAccentText: '#ffffff',
+    },
+    dark: {
+      accent: '#60a5fa',
+      accentPressed: '#3b82f6',
+      accentSubtle: '#1e3a8a',
+      focusRing: '#60a5fa',
+      onAccentText: '#0b1220',
+    },
+  },
+  teal: {
+    light: {
+      accent: '#0f766e',
+      accentPressed: '#115e59',
+      accentSubtle: '#ccfbf1',
+      focusRing: '#0f766e',
+      onAccentText: '#ffffff',
+    },
+    dark: {
+      accent: '#2dd4bf',
+      accentPressed: '#14b8a6',
+      accentSubtle: '#134e4a',
+      focusRing: '#2dd4bf',
+      onAccentText: '#042f2e',
+    },
+  },
+  green: {
+    light: {
+      accent: '#166534',
+      accentPressed: '#14532d',
+      accentSubtle: '#dcfce7',
+      focusRing: '#166534',
+      onAccentText: '#ffffff',
+    },
+    dark: {
+      accent: '#4ade80',
+      accentPressed: '#22c55e',
+      accentSubtle: '#14532d',
+      focusRing: '#4ade80',
+      onAccentText: '#052e16',
+    },
+  },
+  amber: {
+    light: {
+      accent: '#b45309',
+      accentPressed: '#92400e',
+      accentSubtle: '#fef3c7',
+      focusRing: '#b45309',
+      onAccentText: '#ffffff',
+    },
+    dark: {
+      accent: '#fbbf24',
+      accentPressed: '#f59e0b',
+      accentSubtle: '#78350f',
+      focusRing: '#fbbf24',
+      onAccentText: '#1c1917',
+    },
+  },
+  rose: {
+    light: {
+      accent: '#be123c',
+      accentPressed: '#9f1239',
+      accentSubtle: '#ffe4e6',
+      focusRing: '#be123c',
+      onAccentText: '#ffffff',
+    },
+    dark: {
+      accent: '#fb7185',
+      accentPressed: '#f43f5e',
+      accentSubtle: '#881337',
+      focusRing: '#fb7185',
+      onAccentText: '#1c0a10',
+    },
+  },
+  indigo: {
+    light: {
+      accent: '#4f46e5',
+      accentPressed: '#4338ca',
+      accentSubtle: '#e0e7ff',
+      focusRing: '#4f46e5',
+      onAccentText: '#ffffff',
+    },
+    dark: {
+      accent: '#818cf8',
+      accentPressed: '#6366f1',
+      accentSubtle: '#312e81',
+      focusRing: '#818cf8',
+      onAccentText: '#0b0c20',
+    },
+  },
+}
+
+function buildBaselinePalette(
+  scheme: TaoDesignColorScheme,
+  accentName: TaoBaselineAccentName,
+): TaoBaselinePalette {
+  return {
+    ...TAO_BASELINE_NEUTRALS[scheme],
+    ...TAO_BASELINE_ACCENTS[accentName][scheme],
+  }
 }
 
 const TAO_BASELINE_SPACING = {
@@ -122,9 +239,12 @@ export const Views = {
   Button: ButtonView('Button', {}),
 }
 
-/** taoBaselinePaletteFor returns the baseline palette for a color scheme. */
-export function taoBaselinePaletteFor(scheme: TaoDesignColorScheme): TaoBaselinePalette {
-  return TAO_BASELINE_PALETTE[scheme]
+/** taoBaselinePaletteFor returns the baseline palette for a color scheme and accent. */
+export function taoBaselinePaletteFor(
+  scheme: TaoDesignColorScheme,
+  accentName: TaoBaselineAccentName = 'blue',
+): TaoBaselinePalette {
+  return buildBaselinePalette(scheme, accentName)
 }
 
 /** taoBaselineSpacing exposes the baseline spacing/sizing constants used by std-lib runtime views. */
@@ -132,7 +252,7 @@ export const taoBaselineSpacing = TAO_BASELINE_SPACING
 
 function useTaoBaselinePalette(): TaoBaselinePalette {
   const context = useTaoDesignContext()
-  return TAO_BASELINE_PALETTE[context.colorScheme]
+  return buildBaselinePalette(context.colorScheme, context.accentName)
 }
 
 function View<P extends { style?: RN.StyleProp<any> }>(

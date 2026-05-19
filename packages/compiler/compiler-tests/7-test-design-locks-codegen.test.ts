@@ -123,6 +123,15 @@ describe('UI design inference locks and codegen:', () => {
     expect(bootstrap).toContain('<RN.View style={_compiledTaoAppContentFrameStyle(_taoDesignContext)}')
   })
 
+  test('bootstrap emits a seeded accent name and passes it through TaoDesignProvider', async () => {
+    const result = await compileDesignSource(designAppSource())
+    const bootstrap = result.files.find(f => f.relativePath === 'app-bootstrap.tsx')?.content ?? ''
+
+    expect(bootstrap).toMatch(/const _compiledTaoAppAccentName = "(blue|teal|green|amber|rose|indigo)"/)
+    expect(bootstrap).toContain('accentName: _compiledTaoAppAccentName')
+    expect(bootstrap).toContain('<TaoDesignProvider value={_compiledTaoAppDesignContextOverrides}>')
+  })
+
   test('generated modules import design runtime and every referenced style key exists', async () => {
     const result = await compileDesignSource(designAppSource())
     const designModule = result.files.find(f => f.relativePath === 'tao-design.ts')?.content ?? ''

@@ -5,7 +5,11 @@ export type TaoDesignScreenSize = 'compact' | 'regular'
 export type TaoDesignColorScheme = 'light' | 'dark'
 export type TaoDesignState = 'default' | 'pressed' | 'disabled' | 'focused' | 'selected'
 
+export const TAO_BASELINE_ACCENT_NAMES = ['blue', 'teal', 'green', 'amber', 'rose', 'indigo'] as const
+export type TaoBaselineAccentName = (typeof TAO_BASELINE_ACCENT_NAMES)[number]
+
 export type TaoDesignContextValue = {
+  accentName: TaoBaselineAccentName
   colorScheme: TaoDesignColorScheme
   platform: string
   textScale: number
@@ -35,6 +39,7 @@ const COMPACT_SCREEN_MAX_WIDTH = 600
 const LARGE_TEXT_SCALE_MIN = 1.2
 
 const defaultDesignContext: TaoDesignContextValue = {
+  accentName: 'blue',
   colorScheme: 'light',
   platform: RN.Platform.OS,
   reducedMotion: false,
@@ -88,6 +93,7 @@ export function createTaoDesign(input: TaoDesignInput) {
     const reducedMotion = useReducedMotion()
     const textScale = window.fontScale ?? RN.PixelRatio.getFontScale()
     const measured = React.useMemo<TaoDesignContextValue>(() => ({
+      accentName: 'blue',
       colorScheme: colorScheme === 'dark' ? 'dark' : 'light',
       platform: RN.Platform.OS,
       reducedMotion,

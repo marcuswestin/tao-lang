@@ -2,6 +2,7 @@ import { compileNode, CompositeGeneratorNode, GeneratorNode } from '@compiler/co
 import type { UriAndPath } from '@compiler/resolution/ModuleResolution'
 import { AST } from '@parser'
 import { FS } from '@shared'
+import { selectTaoBaselineAccent, type TaoBaselineAccentName } from '../../design/baseline-accent'
 import {
   designStyleKeyForNode,
   TAO_DESIGN_MODULE_RELATIVE_PATH,
@@ -82,6 +83,7 @@ export function generateTypescriptReactNativeApp(
     bootstrapImports,
     entryImportPath,
     appRootDesignStyleKey(mainTaoFile, resolvedCodegen.design),
+    appAccentName(mainTaoFile, entryAbsolutePath),
   )
 
   return {
@@ -216,6 +218,13 @@ function appRootDesignStyleKey(
   return designStyleKeyForNode(design, root)
 }
 
+/** appAccentName derives the default seeded accent for the entry app from stable app identity. */
+function appAccentName(mainTaoFile: AST.TaoFile, entryAbsolutePath: string): TaoBaselineAccentName {
+  const app = findEntryAppDeclaration(mainTaoFile)
+  const seed = app?.name ?? FS.splitPath(entryAbsolutePath).pop() ?? entryAbsolutePath
+  return selectTaoBaselineAccent(seed)
+}
+
 /** stringConfigValue returns a string property from an app config object. */
 function stringConfigValue(config: TaoAppConfigObject, key: string): string | undefined {
   const value = config[key]
@@ -251,6 +260,7 @@ function compileBootstrapNode(
   initImportPaths: string[],
   appUIViewModulePath: string,
   appRootStyleKey: string | undefined,
+  appAccentName: TaoBaselineAccentName,
 ): GeneratorNode {
   const n = new CompositeGeneratorNode()
   const appUiImport = `import { AppUIView } from '${appUIViewModulePath}'`
@@ -272,6 +282,8 @@ ${dataProviderInitCalls}
 ${initCalls}
 
 const _compiledTaoAppRootDesignStyleKey = ${JSON.stringify(appRootStyleKey ?? null)}
+const _compiledTaoAppAccentName = ${JSON.stringify(appAccentName)}
+const _compiledTaoAppDesignContextOverrides = { accentName: _compiledTaoAppAccentName }
 const _compiledTaoAppRootViewStyle = { flex: 1 }
 const _compiledTaoAppContentMaxWidth = 720
 const _compiledTaoAppContentCompactPadding = {
@@ -325,7 +337,7 @@ function CompiledTaoAppContent() {
 
 export default function CompiledTaoApp() {
   return (
-    <TaoDesignProvider>
+    <TaoDesignProvider value={_compiledTaoAppDesignContextOverrides}>
       <CompiledTaoAppContent />
     </TaoDesignProvider>
   )
