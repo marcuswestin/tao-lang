@@ -121,7 +121,7 @@ run_codex() {
     echo "$codex_cmd CLI not found in PATH." > "$pass_dir/codex.stderr"
     return 127
   fi
-  local args=(exec --cd "$REPO_ROOT" --sandbox read-only --ask-for-approval never)
+  local args=(exec --cd "$REPO_ROOT" --sandbox read-only --approval-policy never)
   if [ -n "${CODEX_MODEL:-}" ]; then
     args+=(--model "$CODEX_MODEL")
   fi
