@@ -20,7 +20,9 @@ description: Review an implemented Tao project against its plan by running Codex
    ./agent project-review --mode implementation --base main <plan-path>
    ```
 
-3. Read both review outputs from the reported artifact directory. If one reviewer fails or hangs, use any completed output and rerun only the missing reviewer with the existing prompt instead of starting broader research.
+   The shared reviewer script defaults Claude to pinned `opus-4.6`. Do not use a floating `opus` alias or `opus-4.7` unless the user explicitly changes the model.
+
+3. Read both review outputs from the reported artifact directory. The prompt asks reviewers to be brief and return only the most important issues rather than a full deep-dive audit. If one reviewer fails or hangs, use any completed output and rerun only the missing reviewer with the existing prompt instead of starting broader research.
 4. Treat stale-doc findings as first-class implementation issues when the code, plan, roadmap, historical docs, command names, or acceptance paths disagree.
 5. Incorporate valid findings that fix bugs, missed requirements, missing tests, unclear generated behavior, or meaningful maintainability risks.
 6. Document valid deferred work in the plan or roadmap.

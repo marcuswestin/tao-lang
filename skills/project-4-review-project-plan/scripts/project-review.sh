@@ -20,7 +20,7 @@ Environment:
   CODEX_CMD                 Codex CLI command. Default: codex
   CLAUDE_CMD                Claude CLI command. Default: claude
   CODEX_MODEL               Optional Codex model.
-  CLAUDE_MODEL              Claude model. Default: sonnet
+  CLAUDE_MODEL              Claude model. Default: opus-4.6
   REVIEW_TIMEOUT_SECONDS    Timeout per reviewer. Default: 600
   PROJECT_REVIEW_DIR        Artifact root. Default: /private/tmp/tao-project-reviews
 USAGE
@@ -194,7 +194,7 @@ run_claude() {
   local prompt_file="$1"
   local pass_dir="$2"
   local claude_cmd="${CLAUDE_CMD:-claude}"
-  local model="${CLAUDE_MODEL:-sonnet}"
+  local model="${CLAUDE_MODEL:-opus-4.6}"
   if ! command -v "$claude_cmd" >/dev/null 2>&1; then
     echo "$claude_cmd CLI not found in PATH." > "$pass_dir/claude.stderr"
     return 127
@@ -294,13 +294,15 @@ for pass in $(seq 1 "$PASSES"); do
     echo "# Tao Project ${MODE} Review"
     echo
     echo "You are reviewing a Tao project ${MODE}. Be direct and actionable."
+    echo "Be brief: return only the most important points, not a thorough deep dive into every possible issue."
+    echo "Prefer a small number of findings that could materially change correctness, implementation safety, scope, or validation."
     echo "Prioritize correctness, missing decisions, unclear sequencing, missing validation, and scope drift."
     echo "Read the included plan, research, roadmap, and directly referenced local context before judging whether docs are stale or inconsistent."
     echo "Check links, historical docs, roadmap status, command names, acceptance paths, and implementation ownership against the included context."
     echo "If important context is missing, report that as a finding instead of doing broad open-ended archaeology."
     echo "Use external research only when the plan depends on a current third-party API, and keep that research narrow."
     echo "Return Markdown with sections: Findings, Questions, Suggested Changes, Deferred Ideas."
-    echo "Do not spend space praising the plan or implementation."
+    echo "Do not spend space praising the plan or implementation, and do not enumerate minor nits unless they block the work."
     if [ "$pass" -gt 1 ]; then
       echo
       echo "This is review pass $pass of $PASSES. Focus on new issues not already raised below."

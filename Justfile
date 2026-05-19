@@ -19,6 +19,7 @@ setup: _setup_git_repo
 
 # DEV_APP := "./Apps/Test Apps/Data Schema/Data Schema.tao"
 BUN_TEST_ROOTS := "packages/shared packages/parser packages/formatter packages/compiler packages/tao-cli packages/ide-extension packages/tao-std-lib"
+BUN_TEST_NON_COMPILER_ROOTS := "packages/shared packages/parser packages/formatter packages/tao-cli packages/ide-extension packages/tao-std-lib"
 
 DEV_APP := "./Apps/Test Apps/TODOs/TODOs.tao"
 
@@ -48,9 +49,20 @@ ensure-repo-clean: _ensure_repo_clean
 # Run tests for whatever directory we're in, with an optional filter
 [no-cd]
 test *FILTER: gen
-    TAO_SKIP_GEN=1 bun test {{ BUN_TEST_ROOTS }} --reporter=dot --test-name-pattern '{{ FILTER }}'
-    TAO_SKIP_GEN=1 just headless-test-runtime test '{{ FILTER }}'
-    TAO_SKIP_GEN=1 just expo-runtime test '{{ FILTER }}'
+    #!{{ ZSH_INIT }}
+    filter='{{ FILTER }}'
+    if [[ -z "$filter" ]]; then
+        TAO_SKIP_GEN=1 just concurrently-exec-named \
+            "bun-roots" "bun test {{ BUN_TEST_NON_COMPILER_ROOTS }} --reporter=dot --test-name-pattern '$filter'" \
+            "compiler" "just compiler test '$filter'" \
+            "headless" "just headless-test-runtime test '$filter'" \
+            "expo" "just expo-runtime test '$filter'"
+    else
+        TAO_SKIP_GEN=1 just concurrently-exec-named \
+            "bun-roots" "bun test {{ BUN_TEST_ROOTS }} --reporter=dot --test-name-pattern '$filter'" \
+            "headless" "just headless-test-runtime test '$filter'" \
+            "expo" "just expo-runtime test '$filter'"
+    fi
 
 theadless *FILTER: gen
     just headless-test-runtime test '{{ FILTER }}'

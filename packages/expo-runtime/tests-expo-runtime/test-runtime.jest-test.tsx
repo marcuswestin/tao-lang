@@ -248,7 +248,9 @@ describe('runtime:', () => {
   test('compile and run with sdk', async () => {
     const { needle, runtimeDir, taoPath } = makeNeedleApp()
     const repoRoot = FS.resolvePath(runtimeDir, '../..')
-    const taoSdkModuleUrl = FS.pathToFileURL(FS.resolvePath(runtimeDir, '_gen-tao-lib/tao-cli-main.js')).href
+    const taoSdkModuleUrl = FS.pathToFileURL(
+      FS.resolvePath(repoRoot, '.builds/expo-runtime/_gen-tao-lib/tao-cli-main.js'),
+    ).href
     const outputPath = FS.resolvePath(runtimeDir, '_gen/tao-app/app-bootstrap.tsx')
 
     const command = runTaoSdkCompileBunSync({

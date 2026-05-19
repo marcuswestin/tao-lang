@@ -27,7 +27,9 @@ export const headlessScenarioCompileOutputRoot = FS.resolvePath(
 export const stdLibRoot = FS.resolvePath(repoRoot, 'packages/tao-std-lib')
 /** headlessDefaultCompiledAppBootstrapPath is the default `TaoSDK_compile` output used when headless tests do not pass a per-scenario path. */
 export const headlessDefaultCompiledAppBootstrapPath = resolveTaoRuntimeBootstrapAbsolutePath(runtimeDir)
-const taoSdkModuleUrl = FS.pathToFileURL(FS.resolvePath(repoRoot, 'packages/tao-cli/cli-src/tao-cli-main.ts')).href
+const taoSdkModuleUrl = FS.pathToFileURL(
+  FS.resolvePath(repoRoot, '.builds/headless-test-runtime/_gen-tao-lib/tao-cli-main.js'),
+).href
 
 /** getHeadlessTestRuntimeDir returns this package’s root—the `runtimeDir` passed to `TaoSDK_compile` from headless tests. */
 export function getHeadlessTestRuntimeDir() {

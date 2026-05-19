@@ -12,7 +12,7 @@ prebuild:
     bunx expo prebuild
 
 build: _deps
-    just cli build-lib {{ justfile_directory() }}/_gen-tao-lib
+    just cli build-lib {{ justfile_directory() }}/../../.builds/expo-runtime/_gen-tao-lib
 
 install-ios-platform:
     xcodebuild -downloadPlatform iOS
