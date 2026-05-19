@@ -12,7 +12,7 @@ Environment:
   CODEX_CMD                 Codex CLI command. Default: codex
   CLAUDE_CMD                Claude CLI command. Default: claude
   CODEX_MODEL               Optional Codex model.
-  CLAUDE_MODEL              Claude model. Default: sonnet
+  CLAUDE_MODEL              Claude model. Default: opus-4.6
   REVIEW_TIMEOUT_SECONDS    Timeout per local agent. Default: 600
   PROJECT_REVIEW_DIR        Artifact root. Default: /private/tmp/tao-project-reviews
 USAGE
@@ -29,6 +29,16 @@ safe_slug() {
 
 repo_root() {
   cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd
+}
+
+agent_prompt() {
+  local prompt_file="$1"
+  {
+    echo "Be brief: focus on the most important points, decisions, risks, and plan changes."
+    echo "Do not produce a thorough deep dive into every possible issue."
+    echo
+    cat "$prompt_file"
+  }
 }
 
 wait_with_timeout() {
@@ -63,7 +73,7 @@ run_codex() {
   if [ -n "${CODEX_MODEL:-}" ]; then
     args+=(--model "$CODEX_MODEL")
   fi
-  args+=("$(cat "$prompt_file")")
+  args+=("$(agent_prompt "$prompt_file")")
   "$codex_cmd" "${args[@]}" > "$pass_dir/codex-review.md" 2> "$pass_dir/codex.stderr"
 }
 
@@ -71,7 +81,7 @@ run_claude() {
   local prompt_file="$1"
   local pass_dir="$2"
   local claude_cmd="${CLAUDE_CMD:-claude}"
-  local model="${CLAUDE_MODEL:-sonnet}"
+  local model="${CLAUDE_MODEL:-opus-4.6}"
   if ! command -v "$claude_cmd" >/dev/null 2>&1; then
     echo "$claude_cmd CLI not found in PATH." > "$pass_dir/claude.stderr"
     return 127
@@ -81,7 +91,7 @@ run_claude() {
     --print \
     --output-format json \
     --model "$model" \
-    "$(cat "$prompt_file")" > "$pass_dir/claude.raw.json" 2> "$pass_dir/claude.stderr"
+    "$(agent_prompt "$prompt_file")" > "$pass_dir/claude.raw.json" 2> "$pass_dir/claude.stderr"
 
   if command -v jq >/dev/null 2>&1 && jq -e '.result' "$pass_dir/claude.raw.json" >/dev/null 2>&1; then
     jq -r '.result' "$pass_dir/claude.raw.json" > "$pass_dir/claude-review.md"

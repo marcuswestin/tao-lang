@@ -20,7 +20,9 @@ description: Review a Tao project plan with Codex and Claude through the project
    ./agent project-review --mode plan <plan-path>
    ```
 
-3. Read both review outputs from the reported artifact directory. If one reviewer fails or hangs, use any completed output and rerun only the missing reviewer with the existing prompt instead of starting broader research.
+   The shared reviewer script defaults Claude to pinned `opus-4.6`. Do not use a floating `opus` alias or `opus-4.7` unless the user explicitly changes the model.
+
+3. Read both review outputs from the reported artifact directory. The prompt asks reviewers to be brief and return only the most important issues rather than a full deep-dive audit. If one reviewer fails or hangs, use any completed output and rerun only the missing reviewer with the existing prompt instead of starting broader research.
 4. Treat stale-doc findings as first-class plan issues: broken links, historical docs treated as active scope, roadmap/status drift, invalid command names, and acceptance paths that do not exercise the claimed provider/runtime.
 5. Incorporate findings that improve clarity, sequencing, scope control, validation, or implementation safety.
 6. Record valid future work in a deferred or follow-up section in the plan.
