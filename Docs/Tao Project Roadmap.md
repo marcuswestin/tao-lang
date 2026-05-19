@@ -4,6 +4,19 @@ This is the shared source of truth for Tao project selection, current priority o
 
 Each section names a major feature area, gives the current high-level status, separates the MVP remainder from later work, and links to the document that owns the detailed plan where one exists.
 
+## Focus Queue
+
+Short list of the highest-priority work. The full project queue and feature inventory below remain the source of truth for status and detail.
+
+1. Data Schema and Queries MVP
+2. Navigation and routing
+3. Android runtime bring-up
+4. Core language surface
+5. Forms and inputs
+6. Runtime targets: production builds and staging builds
+7. Demo apps: Still and Rooms
+8. Live preview in the Tao VS Code extension
+
 ## Current Project Queue
 
 Use this table to decide the next project and keep planning state visible. Detailed project work belongs in sibling research and plan docs under `Docs/Projects/`.
