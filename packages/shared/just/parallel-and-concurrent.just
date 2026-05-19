@@ -10,8 +10,10 @@ CONCURRENTLY_EXIT_ALL_TOGETHER := "--kill-others --kill-others-on-fail"
 # Hide Justfile auto-fmt watcher success spam (still runs; only output is suppressed).
 
 CONCURRENTLY_HIDE_FMT_WATCHER := "--hide fmt_justfile"
+[private]
+_CONCURRENTLY_AGENT_FLAGS := if _IS_AGENT != "" { "--group --no-color" } else { "" }
 CONCURRENTLY_CMD := "./packages/shared/node_modules/.bin/concurrently"
-CONCURRENTLY_RUN_ALL_CMD := CONCURRENTLY_CMD + " " + CONCURRENTLY_COLORS + " " + CONCURRENTLY_SUCCESS_ALL + " " + CONCURRENTLY_KILL_ON_FAIL + " " + CONCURRENTLY_HIDE_FMT_WATCHER
+CONCURRENTLY_RUN_ALL_CMD := CONCURRENTLY_CMD + " " + CONCURRENTLY_COLORS + " " + CONCURRENTLY_SUCCESS_ALL + " " + CONCURRENTLY_KILL_ON_FAIL + " " + CONCURRENTLY_HIDE_FMT_WATCHER + " " + _CONCURRENTLY_AGENT_FLAGS
 CONCURRENTLY_DEV_LOOP_CMD := CONCURRENTLY_CMD + " " + CONCURRENTLY_COLORS + " " + CONCURRENTLY_SUCCESS_DEV_CONTROL + " " + CONCURRENTLY_EXIT_ALL_TOGETHER + " " + CONCURRENTLY_HIDE_FMT_WATCHER
 
 # Watch tests: clock + suite name on every line (re-runs get new timestamps); no --hide/--group (group buffers until a process exits).

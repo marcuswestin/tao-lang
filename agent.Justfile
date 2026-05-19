@@ -3,6 +3,9 @@ import "./packages/shared/just/_shared-vars.just"
 MAIN_JUSTFILE := "--justfile Justfile"
 AGENT_JUSTFILE := "--justfile agent.Justfile"
 
+set no-exit-message
+export TAO_AGENT := "1"
+
 # `./agent` is the effective whitelist of commands agents may run in this repo.
 
 READ_COMMANDS := "ls|cat|head|tail|wc|tree|less|bat|grep|rg|find|fd|sort|uniq|cut|sed|tr|diff|jq|yq|echo|printf|pwd|id|date"
@@ -74,23 +77,29 @@ clean:
     just {{ MAIN_JUSTFILE }} clean
 
 # Package commands: Run commands in packages/expo-runtime
+[positional-arguments]
 expo-runtime *ARGS:
-    just {{ MAIN_JUSTFILE }} expo-runtime {{ ARGS }}
+    just {{ MAIN_JUSTFILE }} expo-runtime "$@"
 
+[positional-arguments]
 compiler *ARGS:
-    just {{ MAIN_JUSTFILE }} compiler {{ ARGS }}
+    just {{ MAIN_JUSTFILE }} compiler "$@"
 
+[positional-arguments]
 headless-test-runtime *ARGS:
-    just {{ MAIN_JUSTFILE }} headless-test-runtime {{ ARGS }}
+    just {{ MAIN_JUSTFILE }} headless-test-runtime "$@"
 
+[positional-arguments]
 ide-extension *ARGS:
-    just {{ MAIN_JUSTFILE }} ide-extension {{ ARGS }}
+    just {{ MAIN_JUSTFILE }} ide-extension "$@"
 
+[positional-arguments]
 shared *ARGS:
-    just {{ MAIN_JUSTFILE }} shared {{ ARGS }}
+    just {{ MAIN_JUSTFILE }} shared "$@"
 
+[positional-arguments]
 cli *ARGS:
-    just {{ MAIN_JUSTFILE }} cli {{ ARGS }}
+    just {{ MAIN_JUSTFILE }} cli "$@"
 
 [positional-arguments]
 tao *ARGS:

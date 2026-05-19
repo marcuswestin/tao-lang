@@ -57,14 +57,14 @@ _check:
     just concurrently-exec-named \
         "lint" "just lint" \
         "dprint" "{{ DPRINT_CMD }} check --incremental=false" \
-        "compiler-build" "cd packages/compiler && tsc -b --force"
+        "compiler-build" "cd packages/compiler && tsc -b --force {{ _TSC_PRETTY }}"
     just concurrently-exec-named \
-        "compiler" "cd packages/compiler && tsc --noEmit --noUnusedLocals" \
-        "tao-cli" "cd packages/tao-cli && tsc --noEmit --noUnusedLocals" \
-        "shared" "cd packages/shared && tsc --noEmit --noUnusedLocals" \
-        "headless-runtime" "cd packages/headless-test-runtime && tsc --noEmit --noUnusedLocals" \
-        "ide-extension" "cd packages/ide-extension && tsc --noEmit --noUnusedLocals" \
-        "expo-runtime" "cd packages/expo-runtime && tsc --noEmit --noUnusedLocals" \
+        "compiler" "cd packages/compiler && tsc --noEmit --noUnusedLocals {{ _TSC_PRETTY }}" \
+        "tao-cli" "cd packages/tao-cli && tsc --noEmit --noUnusedLocals {{ _TSC_PRETTY }}" \
+        "shared" "cd packages/shared && tsc --noEmit --noUnusedLocals {{ _TSC_PRETTY }}" \
+        "headless-runtime" "cd packages/headless-test-runtime && tsc --noEmit --noUnusedLocals {{ _TSC_PRETTY }}" \
+        "ide-extension" "cd packages/ide-extension && tsc --noEmit --noUnusedLocals {{ _TSC_PRETTY }}" \
+        "expo-runtime" "cd packages/expo-runtime && tsc --noEmit --noUnusedLocals {{ _TSC_PRETTY }}" \
         "expo-lint" "just expo-runtime lint"
 
 _lint:

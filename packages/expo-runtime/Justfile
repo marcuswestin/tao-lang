@@ -54,7 +54,7 @@ JEST_WATCH_ARGS := JEST_ARGS + " --watch --silent --reporter=dot"
 
 [no-quiet]
 test *FILTER: _deps build
-    bunx jest {{ JEST_ARGS }} -t {{ FILTER }}
+    bunx jest {{ JEST_ARGS }} {{ _JEST_REPORTER }} -t {{ FILTER }}
 
 watch *FILTER:
     bunx jest {{ JEST_WATCH_ARGS }} -t {{ FILTER }}

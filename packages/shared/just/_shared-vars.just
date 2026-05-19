@@ -6,5 +6,16 @@ set fallback
 
 ZSH_INIT := "/bin/zsh -eu -o pipefail"
 DEV_METRO_PORT := "8081"
+
+# Agent-mode quiet flags (TAO_AGENT=1 is exported by agent.Justfile).
+[private]
+_IS_AGENT := env_var_or_default("TAO_AGENT", "")
+[private]
+_JEST_REPORTER := if _IS_AGENT != "" { "--reporter=dot" } else { "" }
+[private]
+_TSC_PRETTY := if _IS_AGENT != "" { "--pretty false" } else { "" }
+[private]
+_BUN_INSTALL_AGENT_SUFFIX := if _IS_AGENT != "" { "--silent" } else { "" }
+
 # Local InstantDB seeded app UUID (`just instantdb-local`, `just dev` compile overrides). Keep in sync with `Apps/Test Apps/Data Schema/Data Schema.tao` provider appId. Defined here so imported justfiles (e.g. `dev-watch.just`) can interpolate it; root `Justfile` also uses this value.
 LOCAL_INSTANTDB_APP_ID := "9faf89c0-c15c-49b4-bf3f-3b5b2cd9a19f"
