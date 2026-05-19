@@ -105,6 +105,13 @@ Exit criteria:
 - Navigation examples parse into generated AST nodes.
 - Existing non-navigation parser tests remain green.
 
+Implementation note:
+
+- 2026-05-19: `./agent gen` rejected a sibling navigation grammar that reused
+  the main grammar's `StringTemplateExpression` rule. Navigation grammar is
+  inline in `packages/parser/tao-grammar.langium` for v1; splitting it into a
+  sibling grammar remains deferred cleanup.
+
 Suggested commit: `feat(navigation): add parser syntax`
 
 ### 2. Add Validation And Scoping

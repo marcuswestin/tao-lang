@@ -103,10 +103,14 @@ class RuntimeGen {
       ViewDeclaration: (n) => this.ViewDeclaration(n),
       VariantDeclaration: (n) => this.VariantDeclaration(n),
       ActionDeclaration: (n) => this.ActionDeclaration(n),
+      NavigatorDeclaration: (n) => this.NavigatorDeclaration(n),
       RenderStatement: (n) => this.RenderStatement(n),
       ViewRender: (n) => this.ViewRender(n),
       ChildrenSplice: (n) => this.ChildrenSplice(n),
       ActionRender: (n) => this.ActionRender(n),
+      NavigationPushAction: (n) => this.NavigationPushAction(n),
+      NavigationPopAction: (n) => this.NavigationPopAction(n),
+      NavigationTabAction: (n) => this.NavigationTabAction(n),
       TypeDeclaration: (n) => this.TypeDeclaration(n),
       DataDeclaration: (n) => this.dataDeclarationRuntime(n),
       QueryDeclaration: (n) => this.QueryDeclaration(n),
@@ -122,6 +126,7 @@ class RuntimeGen {
       AppDeclaration: (n) => this.AppDeclaration(n),
       ActionDeclaration: (n) => this.ActionDeclaration(n),
       ViewDeclaration: (n) => this.ViewDeclaration(n),
+      NavigatorDeclaration: (n) => this.NavigatorDeclaration(n),
       VariantDeclaration: (n) => this.VariantDeclaration(n),
       TypeDeclaration: (n) => this.TypeDeclaration(n),
       DataDeclaration: (n) => this.dataDeclarationRuntime(n),
@@ -131,6 +136,22 @@ class RuntimeGen {
   /** TypeDeclaration emits nothing at runtime — nominal types are a compile-time construct only. */
   TypeDeclaration(node: AST.TypeDeclaration): Compiled {
     return compileNode(node)``
+  }
+
+  NavigatorDeclaration(node: AST.NavigatorDeclaration): Compiled {
+    return compileTODO(node, 'navigation runtime generation is implemented in the navigation codegen step')
+  }
+
+  NavigationPushAction(node: AST.NavigationPushAction): Compiled {
+    return compileTODO(node, 'navigation actions are implemented in the navigation runtime step')
+  }
+
+  NavigationPopAction(node: AST.NavigationPopAction): Compiled {
+    return compileTODO(node, 'navigation actions are implemented in the navigation runtime step')
+  }
+
+  NavigationTabAction(node: AST.NavigationTabAction): Compiled {
+    return compileTODO(node, 'navigation actions are implemented in the navigation runtime step')
   }
 
   /** objectLiteralRuntime emits `TR.Object({ … })` for a Tao object literal (shared by expressions, assignments, nested properties, and `${…}` holes). */
@@ -519,6 +540,7 @@ class RuntimeGen {
       AppDeclaration: () => compileNoop(),
       AssignmentDeclaration: () => compileNoop(),
       ViewDeclaration: () => compileNoop(),
+      NavigatorDeclaration: () => compileNoop(),
       VariantDeclaration: () => compileNoop(),
       ActionDeclaration: () => compileNoop(),
     })
@@ -604,6 +626,9 @@ class RuntimeGen {
   }
 
   typeDeclaration(declaration: AST.RuntimeDeclaration): Compiled {
+    if (AST.isNavigatorDeclaration(declaration)) {
+      return compileNoop()
+    }
     const runtimeType = this.runtimeTypes[declaration.type]
     return compileNode(declaration)`
       ${declaration.name}: ReturnType<_TaoRuntime['${runtimeType}']>

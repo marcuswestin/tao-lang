@@ -625,6 +625,7 @@ function getStateUpdateTargetKind(ref: Exclude<AST.Referenceable, AST.Assignment
     ParameterDeclaration: () => 'parameter',
     ActionDeclaration: () => 'action',
     AppDeclaration: () => 'app',
+    NavigatorDeclaration: () => 'navigator',
     VariantDeclaration: () => 'variant',
     TypeDeclaration: () => 'type',
     DataDeclaration: () => 'data',
