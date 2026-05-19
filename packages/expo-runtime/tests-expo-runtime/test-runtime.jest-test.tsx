@@ -16,11 +16,25 @@ const rowLayoutStyle = { gap: 8, justifyContent: 'space-between' } as const
 const labelLayoutStyle = { alignSelf: 'center', width: 120 } as const
 const buttonLayoutStyle = { alignSelf: 'center', width: 180 } as const
 
+type ExpoRuntimePackageJson = {
+  readonly main?: string
+}
+
 describe('runtime:', () => {
   test('renders <MockTestView />', async () => {
     const MockTestView = () => <RN.Text>Hello Mock Test View</RN.Text>
     const res = await render(<MockTestView />).findByText('Hello Mock Test View')
     expect(res).toBeDefined()
+  })
+
+  test('uses a direct Expo root entry', () => {
+    const packageJsonPath = FS.resolvePath(__dirname, '../package.json')
+    const packageJson = JSON.parse(FS.readTextFile(packageJsonPath)) as ExpoRuntimePackageJson
+    const entrySource = FS.readTextFile(FS.resolvePath(__dirname, '../index.ts'))
+
+    expect(packageJson.main).toBe('index.ts')
+    expect(entrySource).toContain('registerRootComponent(ExpoRuntimeEntrypoint)')
+    expect(entrySource).not.toContain('expo-router')
   })
 
   test('maps Tao layout specs to React Native style props', () => {
