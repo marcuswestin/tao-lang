@@ -82,7 +82,13 @@ export function taoFileHasNavigationIcon(taoFile: AST.TaoFile): boolean {
 export function buildRuntimePreambleImports(
   taoFile: AST.TaoFile,
   importBase: string,
-): { iconImport: string; navigationImport: string; reactImport: string; taoDataImport: string } {
+): {
+  iconImport: string
+  navigationImport: string
+  navigationRuntimeImport: string
+  reactImport: string
+  taoDataImport: string
+} {
   const taoDataImport = taoFileNeedsTaoDataImport(taoFile)
     ? (() => {
       const names = ['getTaoData']
@@ -95,15 +101,18 @@ export function buildRuntimePreambleImports(
   const reactImport = taoFileUsesForLoop(taoFile) ? `import * as React from 'react'\n` : ''
   const navigationImport = taoFileHasAppNavigation(taoFile)
     ? [
-      `import { createStaticNavigation } from '@react-navigation/native'`,
+      `import { createNavigationContainerRef, createStaticNavigation, StackActions, TabActions } from '@react-navigation/native'`,
       `import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'`,
       `import { createNativeStackNavigator } from '@react-navigation/native-stack'`,
     ].join('\n') + '\n'
     : ''
+  const navigationRuntimeImport = taoFileHasAppNavigation(taoFile)
+    ? `import { createTaoNavigationRuntime } from '${importBase}use/@tao/tao-runtime/navigation-runtime'\n`
+    : ''
   const iconImport = taoFileHasNavigationIcon(taoFile)
     ? `import Ionicons from '@expo/vector-icons/Ionicons'\n`
     : ''
-  return { iconImport, navigationImport, reactImport, taoDataImport }
+  return { iconImport, navigationImport, navigationRuntimeImport, reactImport, taoDataImport }
 }
 
 /** buildUriToTaoMap maps document URI string to TaoFile AST. */

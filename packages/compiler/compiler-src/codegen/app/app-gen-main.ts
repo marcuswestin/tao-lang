@@ -134,12 +134,13 @@ function compileOneTaoFileModule(
   const result = new CompositeGeneratorNode()
   const dirCount = FS.splitPath(relativePath).length
   const importBase = '../'.repeat(dirCount - 1)
-  const { iconImport, navigationImport, reactImport, taoDataImport } = buildRuntimePreambleImports(taoFile, importBase)
+  const { iconImport, navigationImport, navigationRuntimeImport, reactImport, taoDataImport } =
+    buildRuntimePreambleImports(taoFile, importBase)
   const designImportPath = emitRelativeImport(relativePath, TAO_DESIGN_MODULE_RELATIVE_PATH).replace(/\.ts$/, '')
   const taoDesignImport = `import { resolveStyle, useTaoDesignContext } from '${designImportPath}'\n`
   result.append(compileNode(taoFile)`
     import { _TaoRuntime, TR } from '${importBase}use/@tao/tao-runtime/tao-runtime'
-    ${reactImport}${navigationImport}${iconImport}${taoDataImport}${taoDesignImport}${importHeader} // ${
+    ${reactImport}${navigationImport}${navigationRuntimeImport}${iconImport}${taoDataImport}${taoDesignImport}${importHeader} // ${
     taoFile.$document!.uri
   }
   `)

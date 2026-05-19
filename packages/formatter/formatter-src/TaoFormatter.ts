@@ -393,6 +393,7 @@ export default class TaoFormatter extends AbstractFormatter {
     f.keyword('navigation').append(Formatting.oneSpace())
     f.property('action').append(Formatting.oneSpace())
     f.property('target')
+    this._spaceBeforeProperty(node, 'payload')
   }
 
   private formatNavigationActionPayload(node: AST.NavigationActionPayload): void {

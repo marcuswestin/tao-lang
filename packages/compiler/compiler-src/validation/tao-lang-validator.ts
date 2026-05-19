@@ -497,7 +497,10 @@ function validateNavigationTabAction(
   node: AST.NavigationTabAction,
   report: Reporter<AST.NavigationTabAction>,
 ): void {
-  navigationActionDestination(node, node.target, 'tab', report)
+  const destination = navigationActionDestination(node, node.target, 'tab', report)
+  if (destination !== undefined) {
+    validateNavigationActionPayload(node, destination, report)
+  }
 }
 
 function navigationActionDestination<NodeT extends AST.NavigationPushAction | AST.NavigationTabAction>(
@@ -531,10 +534,10 @@ function navigationActionDestination<NodeT extends AST.NavigationPushAction | AS
   return destination
 }
 
-function validateNavigationActionPayload(
-  node: AST.NavigationPushAction,
+function validateNavigationActionPayload<NodeT extends AST.NavigationPushAction | AST.NavigationTabAction>(
+  node: NodeT,
   destination: TaoNavigationDestination,
-  report: Reporter<AST.NavigationPushAction>,
+  report: Reporter<NodeT>,
 ): void {
   const assignments = node.payload?.assignments ?? []
   const assignmentByName = new Map(assignments.map(assignment => [assignment.name, assignment]))

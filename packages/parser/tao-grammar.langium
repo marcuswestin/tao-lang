@@ -301,7 +301,7 @@ NavigationPopAction:
     'navigation' action='pop';
 
 NavigationTabAction:
-    'navigation' action='tab' target=ID;
+    'navigation' action='tab' target=ID payload=NavigationActionPayload?;
 
 NavigationActionPayload:
     '{' assignments+=NavigationActionParamAssignment* '}';

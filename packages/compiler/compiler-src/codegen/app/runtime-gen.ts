@@ -150,15 +150,38 @@ class RuntimeGen {
   }
 
   NavigationPushAction(node: AST.NavigationPushAction): Compiled {
-    return compileTODO(node, 'navigation actions are implemented in the navigation runtime step')
+    return compileNode(node)`_taoNavigationRuntime.push(${JSON.stringify(node.target)}, ${
+      this.navigationActionParams(node, node.payload)
+    })`
   }
 
   NavigationPopAction(node: AST.NavigationPopAction): Compiled {
-    return compileTODO(node, 'navigation actions are implemented in the navigation runtime step')
+    return compileNode(node)`_taoNavigationRuntime.pop()`
   }
 
   NavigationTabAction(node: AST.NavigationTabAction): Compiled {
-    return compileTODO(node, 'navigation actions are implemented in the navigation runtime step')
+    return compileNode(node)`_taoNavigationRuntime.tab(${JSON.stringify(node.target)}, ${
+      this.navigationActionParams(node, node.payload)
+    })`
+  }
+
+  private navigationActionParams(
+    anchor: AST.NavigationPushAction | AST.NavigationTabAction,
+    payload: AST.NavigationActionPayload | undefined,
+  ): Compiled {
+    if (payload === undefined || payload.assignments.length === 0) {
+      return compileNode(anchor)`{}`
+    }
+    return compileNode(payload)`{
+      ${compileIndentedNodeList(payload.assignments, assignment => this.navigationActionParam(assignment))}
+    }`
+  }
+
+  private navigationActionParam(assignment: AST.NavigationActionParamAssignment): Compiled {
+    const value = assignment.value === undefined
+      ? compileNode(assignment)`_Scope.${assignment.name}`
+      : this.Expression(assignment.value)
+    return compileNode(assignment)`${JSON.stringify(assignment.name)}: ${value}.evaluate().jsValue,`
   }
 
   /** objectLiteralRuntime emits `TR.Object({ … })` for a Tao object literal (shared by expressions, assignments, nested properties, and `${…}` holes). */
@@ -342,10 +365,18 @@ class RuntimeGen {
     }
     return compileNode(declaration)`
       ${this.navigationTabIconHelper(ir)}
+      const _taoNavigationRootRef = createNavigationContainerRef()
+      const _taoNavigationRuntime = createTaoNavigationRuntime(_taoNavigationRootRef, {
+        stackPush: StackActions.push,
+        stackPop: StackActions.pop,
+        tabJumpTo: TabActions.jumpTo,
+      })
       ${this.navigationScreenComponents(ir.root)}
       ${this.navigationNavigatorDefinitions(ir.root)}
-      const _AppNavigationRoot = createStaticNavigation(${navigationNavigatorConstName(ir.root)})
-      export const AppNavigationRoot = _AppNavigationRoot
+      const TaoAppNavigationRoot = createStaticNavigation(${navigationNavigatorConstName(ir.root)})
+      export function AppNavigationRoot() {
+        return <TaoAppNavigationRoot ref={_taoNavigationRootRef} />
+      }
     `
   }
 

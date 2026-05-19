@@ -45,6 +45,7 @@ describe('navigation validation:', () => {
           tab Settings SettingsView {
             title "Settings"
             icon system settings
+            param Section text
           }
         }
       }
@@ -53,12 +54,14 @@ describe('navigation validation:', () => {
         render inject \`\`\`ts return null \`\`\`
       }
 
-      ui SettingsView {
+      ui SettingsView Section text {
         render inject \`\`\`ts return null \`\`\`
       }
 
-      action SelectSettings {
-        navigation tab Settings
+      action SelectSettings Section text {
+        navigation tab Settings {
+          Section Section
+        }
       }
     `)
   })
@@ -231,6 +234,31 @@ describe('navigation validation:', () => {
       payload,
       validationMessages.navigationActionExtraParam('Extra', 'Room'),
       validationMessages.navigationActionParamTypeMismatch('Count', 'number', 'text'),
+    )
+
+    const tabPayload = await parseASTWithErrors(`
+      app Bad { navigation MainNavigation }
+      navigator MainNavigation {
+        tabs {
+          tab Search SearchView {
+            param Query text
+          }
+        }
+      }
+      ui SearchView Query text {
+        render inject \`\`\`ts return null \`\`\`
+      }
+      action Go {
+        navigation tab Search {
+          Query 2
+          Extra "x"
+        }
+      }
+    `)
+    expectHumanMessagesContain(
+      tabPayload,
+      validationMessages.navigationActionExtraParam('Extra', 'Search'),
+      validationMessages.navigationActionParamTypeMismatch('Query', 'text', 'number'),
     )
   })
 

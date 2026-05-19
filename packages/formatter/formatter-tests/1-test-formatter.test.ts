@@ -886,7 +886,7 @@ describe('Formatter — navigation:', () => {
       action Go RoomId text {
       navigation   push   Room { RoomId   RoomId Count   1 }
       navigation   pop
-      navigation   tab   Search
+      navigation   tab   Search { Query   "recent" }
       }
     `)
     .equals(`
@@ -896,7 +896,9 @@ describe('Formatter — navigation:', () => {
               Count 1
           }
           navigation pop
-          navigation tab Search
+          navigation tab Search {
+              Query "recent"
+          }
       }
     `)
 

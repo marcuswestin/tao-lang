@@ -80,7 +80,9 @@ describe('parse navigation:', () => {
           RoomId RoomId
         }
         navigation pop
-        navigation tab Search
+        navigation tab Search {
+          Query "recent"
+        }
       }
     `)
 
@@ -93,9 +95,13 @@ describe('parse navigation:', () => {
     void assignment.value.as_MemberAccessExpression
 
     statements[1]!.as_NavigationPopAction.expect('action').toBe('pop')
-    statements[2]!.as_NavigationTabAction.match({
+    const tab = statements[2]!.as_NavigationTabAction
+    tab.match({
       action: 'tab',
       target: 'Search',
     })
+    const tabAssignment = tab.payload.assignments.first
+    tabAssignment.expect('name').toBe('Query')
+    void tabAssignment.value.as_StringTemplateExpression
   })
 })
