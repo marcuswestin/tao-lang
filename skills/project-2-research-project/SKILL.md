@@ -38,7 +38,7 @@ The standard research and plan pair stays directly under `Docs/Projects/` even w
 4. Prefer questions that change scope, semantics, UX, implementation approach, validation, or priority.
 5. Inspect repo files before asking questions that can be answered locally.
 6. Use web search when current external facts, APIs, platform behavior, or tool behavior matter.
-7. Record each decision and conclusion in the research doc as it becomes stable.
+7. Record stable decisions and conclusions in the research doc in coherent batches. Do not rewrite the document after every interview answer when the user is still answering a block of related questions.
 8. Stop when the research doc records every decision needed to write the plan.
 9. Update the roadmap status to `Researching` or `Ready for plan` as appropriate, using the roadmap's project queue status values.
 
@@ -51,5 +51,5 @@ The standard research and plan pair stays directly under `Docs/Projects/` even w
 
 ## Validation
 
-- Run `./agent dprint check --incremental=false` and `./agent git diff --check` after doc edits.
+- Run `./agent dprint check --incremental=false` and `./agent git diff --check` after the full batch of doc edits is done. Do not interrupt rapid research edits with repeated validation unless the user asks.
 - Do not run code tests for docs-only research.
