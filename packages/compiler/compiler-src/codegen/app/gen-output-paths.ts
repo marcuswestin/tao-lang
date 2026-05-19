@@ -1,6 +1,14 @@
 import { AST } from '@parser/parser'
 import { FS } from '@shared'
 
+function encodeAppEmitPathSegment(segment: string): string {
+  return encodeURIComponent(segment).replace(/[!'()*]/g, char => `%${char.charCodeAt(0).toString(16).toUpperCase()}`)
+}
+
+function encodeAppEmitRelativePath(relativePath: string): string {
+  return relativePath.split('/').map(encodeAppEmitPathSegment).join('/')
+}
+
 /** longestCommonDirectoryPrefix returns the longest directory prefix shared by all absolute file paths. */
 export function longestCommonDirectoryPrefix(absolutePaths: string[]): string {
   if (absolutePaths.length === 0) {
@@ -39,7 +47,7 @@ export function emitPathUnderTaoApp(
     const withExt = parts.join('/').replace(/\.tao$/i, '.tsx')
     return FS.posixPath('use', ...withExt.split('/').filter(Boolean))
   }
-  const rel = FS.relativePathWithPosixSlashes(projectRoot, normSource)
+  const rel = encodeAppEmitRelativePath(FS.relativePathWithPosixSlashes(projectRoot, normSource))
   const withExt = rel.replace(/\.tao$/i, '.tsx')
   return FS.posixPath('app', withExt)
 }

@@ -1,4 +1,5 @@
-import { compileTaoSource } from '@compiler/compiler-main'
+import { compileTao, compileTaoSource } from '@compiler/compiler-main'
+import { FS } from '@shared'
 import { describe, expect, test } from 'bun:test'
 import { formatParseErrorHumanMessages } from './test-utils/diagnostics'
 
@@ -11,6 +12,44 @@ async function compileNavigationSource(source: string) {
 }
 
 describe('codegen — navigation:', () => {
+  test('emits Metro-safe module paths for navigation apps with spaces in source filenames', async () => {
+    const tmpDir = FS.mkTmpDir(FS.joinPath(FS.tmpdir(), 'tao-navigation-path-'))
+    try {
+      const appPath = FS.joinPath(tmpDir, 'Navigation Dev.tao')
+      FS.writeFile(
+        appPath,
+        `
+          app NavigationDev {
+            navigation MainNavigation
+          }
+
+          navigator MainNavigation {
+            stack {
+              screen Home
+            }
+          }
+
+          ui Home {
+            render inject \`\`\`ts return null \`\`\`
+          }
+        `,
+      )
+
+      const result = await compileTao({ file: appPath })
+      if (!result.ok) {
+        throw new Error(`Compile failed:\n${formatParseErrorHumanMessages(result.errorReport)}`)
+      }
+
+      const bootstrap = result.files.find(file => file.relativePath === 'app-bootstrap.tsx')?.content ?? ''
+
+      expect(result.files.some(file => file.relativePath === 'app/Navigation%20Dev.tsx')).toBe(true)
+      expect(bootstrap).toContain("from './app/Navigation%20Dev'")
+      expect(bootstrap).not.toContain("from './app/Navigation Dev'")
+    } finally {
+      FS.rmDirectory(tmpDir)
+    }
+  })
+
   test('emits React Navigation static config for stacks, tabs, params, and linking', async () => {
     const result = await compileNavigationSource(`
       app Rooms {
