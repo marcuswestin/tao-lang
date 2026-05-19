@@ -49,7 +49,8 @@ export function queryDeclarationEntity(node: AST.QueryDeclaration): AST.DataEnti
   return node.target?.ref
 }
 
-/** dataEntityNamedInFile finds a data entity visible from the Tao file that contains `anchor`. */
+/** dataEntityNamedInFile finds a data entity visible from the Tao file that contains `anchor`.
+ * V1 row-handle shorthand does not resolve data entities across files. */
 export function dataEntityNamedInFile(anchor: AST.Node, name: string): AST.DataEntityDeclaration | undefined {
   const root = AST.Utils.findRootNode(anchor)
   if (!AST.isTaoFile(root)) {

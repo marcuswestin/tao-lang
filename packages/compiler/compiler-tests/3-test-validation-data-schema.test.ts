@@ -383,7 +383,7 @@ describe('validation — for / create:', () => {
       app A { ui V }
       ui V { render inject \`\`\`ts return null \`\`\` }
     `)
-    expectHumanMessagesContain(report, forCreateMessages.updateDateLiteralUnsupported('StartsAt'))
+    expectHumanMessagesContain(report, forCreateMessages.dateFieldLiteralUnsupported('StartsAt'))
   })
 })
 
@@ -629,6 +629,31 @@ describe('validation — selection-block data queries:', () => {
       app A { ui V }
       ui V { render inject \`\`\`ts return null \`\`\` }
     `)
+  })
+
+  test('predicate entries validate scalar literal types and date literals', async () => {
+    const report = await parseASTWithErrors(`
+      data D {
+        Events Event {
+          Title text,
+          StartsAt date,
+          Active boolean,
+        }
+      }
+      query D.Events {
+        Title = 123,
+        StartsAt = 123,
+        Active = "yes",
+      }
+      app A { ui V }
+      ui V { render inject \`\`\`ts return null \`\`\` }
+    `)
+    expectHumanMessagesContain(
+      report,
+      queryValidationMessages.queryPredicateLiteralType('Title', 'text', 'number'),
+      queryValidationMessages.queryDateLiteralUnsupported('StartsAt'),
+      queryValidationMessages.queryPredicateLiteralType('Active', 'boolean', 'text'),
+    )
   })
 
   test('singular query may use unique equality inside where', async () => {

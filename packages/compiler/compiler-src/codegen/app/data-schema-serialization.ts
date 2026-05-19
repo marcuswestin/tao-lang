@@ -4,7 +4,7 @@ import { collectionSlugFromPlural } from '../../query/query-model'
 
 /** Codegen-time field shape narrowed to known Tao primitives; structurally assignable to `TaoDatasetFieldShape` in tao-data-client. */
 export type TaoSerializedDatasetFieldShape = string | {
-  type: 'string' | 'number' | 'boolean' | 'any'
+  type: 'string' | 'number' | 'boolean' | 'date' | 'any'
   optional?: boolean
   unique?: boolean
   indexed?: boolean
@@ -71,7 +71,7 @@ export function dataFieldToRuntimeFieldShape(field: AST.DataFieldDeclaration): T
 }
 
 /** dataFieldPrimitiveType maps a Tao data field to a provider-neutral primitive type name. */
-function dataFieldPrimitiveType(field: AST.DataFieldDeclaration): 'string' | 'number' | 'boolean' | 'any' {
+function dataFieldPrimitiveType(field: AST.DataFieldDeclaration): 'string' | 'number' | 'boolean' | 'date' | 'any' {
   const ft = field.type
   if (!ft || ft.primitiveType === undefined) {
     return 'any'
@@ -80,7 +80,7 @@ function dataFieldPrimitiveType(field: AST.DataFieldDeclaration): 'string' | 'nu
     text: () => 'string',
     number: () => 'number',
     boolean: () => 'boolean',
-    date: () => 'number',
+    date: () => 'date',
     action: () => 'any',
     view: () => 'any',
   })

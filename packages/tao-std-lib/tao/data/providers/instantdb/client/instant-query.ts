@@ -106,6 +106,8 @@ function instantFilter(filter: TaoQueryFilter | undefined): unknown {
     return instantPredicate(filter.predicate)
   }
   const compiled = filter.filters.map(instantFilter)
+  // OR cannot be partially sent to the server: if any branch is client-only,
+  // omit the whole OR and let the complete client-side filter preserve semantics.
   if (filter.kind === 'or' && compiled.some(part => part === undefined)) {
     return undefined
   }

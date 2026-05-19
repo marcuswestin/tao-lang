@@ -6,6 +6,7 @@ import {
   type TaoQueryPredicate,
   useReactiveQueryPlan,
 } from './tao-query'
+import { projectTaoQueryRow } from './tao-query-projection'
 
 describe('tao query runtime helpers:', () => {
   test('useReactiveQueryPlan subscribes expression-valued predicate values before evaluating them', () => {
@@ -94,6 +95,35 @@ describe('tao query runtime helpers:', () => {
       predicate: { path: ['Age'], op: '>', value: 18 },
     })
     expect(taoQueryIdentity(normalized)).toContain('"orderBy":{"path":["Age"],"direction":"desc"}')
+  })
+
+  test('nested relationship projection applies existence filters before projection', () => {
+    const projected = projectTaoQueryRow({
+      Rsvps: [
+        { Name: 'Missing status' },
+        { Name: 'Confirmed', ConfirmedAt: 10, Status: 'going' },
+        { Name: 'Null status', Status: null },
+        { Name: 'Declined', Status: 'no' },
+      ],
+    }, [{
+      path: ['Rsvps'],
+      filter: {
+        kind: 'or',
+        filters: [
+          { kind: 'predicate', predicate: { path: ['Status'], op: 'missing' } },
+          { kind: 'predicate', predicate: { path: ['ConfirmedAt'], op: 'exists' } },
+        ],
+      },
+      select: [{ path: ['Name'] }],
+    }])
+
+    expect(projected).toEqual({
+      Rsvps: [
+        { Name: 'Missing status' },
+        { Name: 'Confirmed' },
+        { Name: 'Null status' },
+      ],
+    })
   })
 })
 

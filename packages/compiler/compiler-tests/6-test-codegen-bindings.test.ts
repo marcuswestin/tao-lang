@@ -502,6 +502,9 @@ describe('codegen — app provider selection and overrides:', () => {
           Status text,
         }
       }
+      query D.Rsvps as Rsvps {
+        Status,
+      }
       query D.Rsvp as CurrentRsvp {
         id = "rsvp-1",
         Status,
@@ -517,7 +520,21 @@ describe('codegen — app provider selection and overrides:', () => {
         }
       }
       app A { ui V }
+      layout Col {
+        render inject \`\`\`ts return TR.Views.Col(_ViewProps) \`\`\`
+      }
       ui V {
+        render Col {
+          for Rsvp in Rsvps {
+            Button "Maybe", action {
+              update Rsvp {
+                Status "maybe"
+              }
+            }
+          }
+        }
+      }
+      ui Button Title text, Action action {
         render inject \`\`\`ts return null \`\`\`
       }
     `)
@@ -525,6 +542,7 @@ describe('codegen — app provider selection and overrides:', () => {
     expect(out).toContain('getTaoData("D").update("rsvps", _Scope.Rsvp, {')
     expect(out).toContain('"Status": TR.Literal("going"),')
     expect(out).toContain('getTaoData("D").update("rsvps", TR.QueryData(_Scope.CurrentRsvp), {')
+    expect(out).toContain('"Status": TR.Literal("maybe"),')
   })
 
   test('bare relationship selection emits scalar-only nested projection', async () => {
@@ -607,6 +625,11 @@ describe('codegen — app provider selection and overrides:', () => {
     expect(result.appDataProvider.name).toBe('InstantDB')
     const schema = result.dataSchemas.find(s => s.name === 'MeetupData')
     expect(schema?.shape.entities['events']?.['Ordering']).toEqual({ type: 'number', indexed: true })
+    expect(schema?.shape.entities['events']?.['CreatedAt']).toEqual({
+      type: 'date',
+      optional: true,
+      indexed: true,
+    })
     expect(schema?.shape.entities['people']?.['Email']).toEqual({
       type: 'string',
       optional: true,

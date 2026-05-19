@@ -6,7 +6,7 @@ import {
   dataRowHandleForReference,
 } from '../../query/query-model'
 import { makeValidater, type Reporter } from '../ValidationReporter'
-import { isUnderViewDeclaration } from './validation-utils'
+import { directLiteralPrimitive, isUnderViewDeclaration } from './validation-utils'
 
 /** forCreateMessages are diagnostics for `for` and `create` data statements. */
 export const forCreateMessages = {
@@ -30,7 +30,7 @@ export const forCreateMessages = {
     `To-many relationship replacement for '${field}' is deferred; use a single-link relationship field.`,
   updateScalarLiteralType: (field: string, expected: string, actual: string) =>
     `Field '${field}' expects ${expected}, not ${actual}.`,
-  updateDateLiteralUnsupported: (field: string) =>
+  dateFieldLiteralUnsupported: (field: string) =>
     `Date field '${field}' does not accept direct literals yet; use a row value or helper once date values are supported.`,
 } as const
 
@@ -144,7 +144,7 @@ function validateFieldAssignmentValue(
     return
   }
   if (primitive === 'date') {
-    report.error(forCreateMessages.updateDateLiteralUnsupported(assignment.field), assignment.value)
+    report.error(forCreateMessages.dateFieldLiteralUnsupported(assignment.field), assignment.value)
     return
   }
   if (actual !== 'null' && actual !== primitive) {
@@ -187,20 +187,4 @@ function validateRelationshipAssignmentValue(
 
 function updateTargetEntity(node: AST.UpdateStatement): AST.DataEntityDeclaration | undefined {
   return dataRowHandleForReference(node.target.ref)?.entity
-}
-
-function directLiteralPrimitive(expr: AST.Expression): AST.PrimitiveType | 'null' | undefined {
-  if (AST.isStringTemplateExpression(expr)) {
-    return 'text'
-  }
-  if (AST.isNumberLiteral(expr)) {
-    return 'number'
-  }
-  if (AST.isBooleanLiteral(expr)) {
-    return 'boolean'
-  }
-  if (AST.isNullLiteral(expr)) {
-    return 'null'
-  }
-  return undefined
 }

@@ -250,6 +250,7 @@ function queryPredicateValue(
 }
 
 function queryOrderBy(block: AST.QuerySelectionBlock): Compiled {
+  Assert(block.orderByClauses.length <= 1, 'QuerySelectionBlock must have at most one order by after validation.')
   const orderBy = block.orderByClauses[0]
   if (!orderBy) {
     return compileNoop()

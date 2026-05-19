@@ -1,7 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 import type { TaoQueryPlan } from '../../tao-query'
 import { instantQueryShape, instantResultRows } from './instant-query'
-import { instantStrictUpdateOptions } from './instant-write'
+import {
+  instantInsertChunk,
+  instantStrictUpdateChunk,
+  instantStrictUpdateOptions,
+} from './instant-write'
 
 describe('InstantDBTaoClient query planning:', () => {
   test('lowers server-safe where and order while preserving JS fallback semantics', () => {
@@ -88,7 +92,33 @@ describe('InstantDBTaoClient query planning:', () => {
     }, plan))).toEqual(['Open', 'Mine'])
   })
 
-  test('uses strict update options for InstantDB row-handle updates', () => {
+  test('uses strict update options only for InstantDB row-handle updates', () => {
+    const calls: unknown[] = []
+    const db = {
+      tx: {
+        rsvps: {
+          'rsvp-1': {
+            update: (payload: Record<string, unknown>, options?: unknown) => {
+              calls.push({ payload, options })
+              return { payload, options }
+            },
+          },
+        },
+      },
+    }
+
+    expect(instantInsertChunk(db, 'rsvps', 'rsvp-1', { Status: 'going' })).toEqual({
+      payload: { Status: 'going' },
+      options: undefined,
+    })
+    expect(instantStrictUpdateChunk(db, 'rsvps', 'rsvp-1', { Status: 'no' })).toEqual({
+      payload: { Status: 'no' },
+      options: instantStrictUpdateOptions,
+    })
+    expect(calls).toEqual([
+      { payload: { Status: 'going' }, options: undefined },
+      { payload: { Status: 'no' }, options: { upsert: false } },
+    ])
     expect(instantStrictUpdateOptions).toEqual({ upsert: false })
   })
 })

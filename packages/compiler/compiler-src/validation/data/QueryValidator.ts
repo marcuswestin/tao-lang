@@ -10,6 +10,7 @@ import {
 } from '../../query/query-model'
 import { makeValidater, type Reporter } from '../ValidationReporter'
 import {
+  directLiteralPrimitive,
   isUnderViewDeclaration,
   validateDuplicateIdentifier,
   validateUppercaseIdentifierName,
@@ -173,6 +174,9 @@ function validateQuerySelectionBlock(
       continue
     }
 
+    if (entry.op !== undefined) {
+      validateScalarPredicateValue(pathLabel, resolved, entry.value, report)
+    }
     addProjection(projected, pathLabel, entry.path, report)
   }
 }
@@ -392,22 +396,6 @@ function isUniqueEqualityPredicate(resolved: QueryPathResolution): boolean {
   return resolved.normalizedPath.length === 1
     && !resolved.finalTarget
     && (fieldName === 'id' || resolved.finalField?.metadata.some(m => m.kind === 'unique') === true)
-}
-
-function directLiteralPrimitive(expr: AST.Expression): AST.PrimitiveType | 'null' | undefined {
-  if (AST.isStringTemplateExpression(expr)) {
-    return 'text'
-  }
-  if (AST.isNumberLiteral(expr)) {
-    return 'number'
-  }
-  if (AST.isBooleanLiteral(expr)) {
-    return 'boolean'
-  }
-  if (AST.isNullLiteral(expr)) {
-    return 'null'
-  }
-  return undefined
 }
 
 function resolveQueryFieldPath(

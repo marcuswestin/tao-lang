@@ -20,7 +20,7 @@ import {
   useReactiveQueryPlan,
 } from '../../tao-query'
 import { instantQueryShape, instantResultRows } from './instant-query'
-import { instantStrictUpdateOptions } from './instant-write'
+import { instantInsertChunk, instantStrictUpdateChunk } from './instant-write'
 import { createTaoIDBClient } from './TaoIDBClient'
 
 type InstantDb = ReturnType<typeof IDB.init>
@@ -36,6 +36,7 @@ const iTypeFns: Record<string, () => ReturnType<typeof IDB.i.string>> = {
   string: () => IDB.i.string(),
   number: () => IDB.i.number(),
   boolean: () => IDB.i.boolean(),
+  date: () => IDB.i.date(),
 }
 
 /** buildInstantAttr turns Tao field metadata into InstantDB attr metadata. */
@@ -117,6 +118,10 @@ function assertValueMatchesDeclaredTaoField(
   }
   if (declared === 'number') {
     Assert(typeof value === 'number', `Instant insert ${collection}.${field}: expected number`)
+    return
+  }
+  if (declared === 'date') {
+    Assert(typeof value === 'number' || value instanceof Date, `Instant insert ${collection}.${field}: expected date`)
     return
   }
   if (declared === 'boolean') {
@@ -239,7 +244,7 @@ export class InstantDBTaoClient implements TaoDataClient {
     const fieldTypes = this.instantMergedEntityFieldTypes(collection)
     const payload = assertNormalizedMatchesInstantEntityDecl(collection, fieldTypes, normalized)
     const rowId = IDB.id()
-    void this.db.transact((this.db.tx as any)[collection][rowId].update(omitId(payload), instantStrictUpdateOptions))
+    void this.db.transact(instantInsertChunk(this.db as any, collection, rowId, omitId(payload)))
   }
 
   update(collection: string, row: unknown, patch: TaoDataUpdatePatch): void {
@@ -250,7 +255,7 @@ export class InstantDBTaoClient implements TaoDataClient {
     const normalized = evaluateRecordFields(patch)
     const fieldTypes = this.instantMergedEntityFieldTypes(collection)
     const payload = assertNormalizedMatchesInstantEntityDecl(collection, fieldTypes, normalized)
-    void this.db.transact((this.db.tx as any)[collection][rowId].update(omitId(payload)))
+    void this.db.transact(instantStrictUpdateChunk(this.db as any, collection, rowId, omitId(payload)))
   }
 
   /** instantMergedEntityFieldTypes mirrors `open`’s shallow merge of `entities` so insert checks match the Instant schema. */
