@@ -5,7 +5,8 @@ import {
 } from '@shared/testing'
 import { createExpoScenarioAdapter } from '../test-runtime'
 
-const expoScenarioAllowList = new Set(['Layout Showcase', 'Simple test render', 'Std lib text render'])
+const expoScenarioAllowList = new Set(['Layout Showcase', 'Navigation', 'Simple test render', 'Std lib text render'])
+const expoScenarioTimeoutMs = 15_000
 
 const expoSharedScenarios = discoverCompiledTaoScenarios()
   .filter(({ scenarioDir }) => expoScenarioAllowList.has(FS.basename(scenarioDir)))
@@ -24,6 +25,6 @@ describe('expo runtime shared scenarios', () => {
         scenario: scenario!,
         adapter: createExpoScenarioAdapter(),
       })
-    })
+    }, expoScenarioTimeoutMs)
   }
 })

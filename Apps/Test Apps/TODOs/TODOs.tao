@@ -10,7 +10,13 @@ app TODOs {
       apiURI "http://localhost:9020"
       websocketURI "ws://localhost:9020/runtime/session"
    }
-   ui Today
+   navigation MainNavigation
+}
+
+navigator MainNavigation {
+   stack {
+      screen Today
+   }
 }
 
 variant Screen = Col <"full screen app surface with generous readable spacing">

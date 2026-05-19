@@ -1,7 +1,13 @@
 use Text, Button, Row, Col from @tao/ui
 
 app ScopesApp {
-   ui RootView
+   navigation MainNavigation
+}
+
+navigator MainNavigation {
+   stack {
+      screen RootView
+   }
 }
 
 state FileState = 100

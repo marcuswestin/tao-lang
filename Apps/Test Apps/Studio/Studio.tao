@@ -1,7 +1,13 @@
 use Text, Button, Col from @tao/ui
 
 app TaoStudio {
-   ui RootView
+   navigation MainNavigation
+}
+
+navigator MainNavigation {
+   stack {
+      screen RootView
+   }
 }
 
 state GlobalCount = 100

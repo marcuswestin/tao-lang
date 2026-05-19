@@ -1,7 +1,13 @@
 use Text, Number, Button, Row, Col from @tao/ui
 
 app HandlersStateAndActionsApp {
-   ui RootView
+   navigation MainNavigation
+}
+
+navigator MainNavigation {
+   stack {
+      screen RootView
+   }
 }
 
 state GlobalCount = 300

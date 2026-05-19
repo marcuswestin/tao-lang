@@ -1,5 +1,11 @@
 app SimpleTextRenderApp {
-   ui RootView
+   navigation MainNavigation
+}
+
+navigator MainNavigation {
+   stack {
+      screen RootView
+   }
 }
 
 ui RootView {

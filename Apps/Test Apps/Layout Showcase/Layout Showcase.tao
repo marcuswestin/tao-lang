@@ -1,5 +1,11 @@
 app LayoutShowcaseApp {
-   ui RootView
+   navigation MainNavigation
+}
+
+navigator MainNavigation {
+   stack {
+      screen RootView
+   }
 }
 
 use Box, Button, Col, MultiLineText, Number, Row, Stack, Text, TextLabel, WrappingRow from @tao/ui
