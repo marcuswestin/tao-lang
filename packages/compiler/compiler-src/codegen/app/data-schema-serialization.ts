@@ -80,6 +80,7 @@ function dataFieldPrimitiveType(field: AST.DataFieldDeclaration): 'string' | 'nu
     text: () => 'string',
     number: () => 'number',
     boolean: () => 'boolean',
+    date: () => 'number',
     action: () => 'any',
     view: () => 'any',
   })

@@ -4,7 +4,7 @@ entry TaoFile:
     statements += Statement*;
 
 Statement: Declaration | ModuleDeclaration | UseStatement | Debugger | Injection | RenderStatement | ViewRender | ChildrenSplice | ActionRender | StateUpdate
-    | QueryDeclaration | GuardStatement | ForStatement | CreateStatement;
+    | QueryDeclaration | GuardStatement | ForStatement | CreateStatement | UpdateStatement;
 
 
 
@@ -19,7 +19,7 @@ type ScopeRelevantNode = UseStatement | Declaration | VariantDeclaration | AppDe
 type ViewFragmentStatement = RenderStatement | ViewRender | ChildrenSplice | Injection | ForStatement | Debugger | QueryDeclaration | GuardStatement | Declaration;
 type ViewStatement = RenderStatement | ViewRender | ChildrenSplice | Injection | AssignmentDeclaration | BlockDeclaration | Debugger | QueryDeclaration | GuardStatement | ForStatement;
 type TopLevelStatement = Declaration | UseStatement | Injection | Debugger | QueryDeclaration;
-type ActionStatement = StateUpdate | Injection | Debugger | AssignmentDeclaration | BlockDeclaration | ActionRender | CreateStatement;
+type ActionStatement = StateUpdate | Injection | Debugger | AssignmentDeclaration | BlockDeclaration | ActionRender | CreateStatement | UpdateStatement;
 
 // ArgumentListHost groups the call-site nodes that own an `ArgumentList`. Generic argument-binding logic
 // (see `tao-argument-bindings.ts`) keys off this union, so adding a new host kind (e.g. function calls)
@@ -32,7 +32,7 @@ type ArgumentListHost = RenderStatement | ViewRender | ActionRender;
 RuntimeDeclaration: AppDeclaration | AssignmentDeclaration | BlockDeclaration;
 Declaration: RuntimeDeclaration | VariantDeclaration | TypeDeclaration | DataDeclaration;
 
-PrimitiveType returns string: 'text' | 'number' | 'boolean' | 'action' | 'view';
+PrimitiveType returns string: 'text' | 'number' | 'boolean' | 'date' | 'action' | 'view';
 
 // Type expressions form the type-position grammar.
 // `TypeExpression` is the full form (primitive, named, or struct shape) and is used in
@@ -131,13 +131,48 @@ QueryDeclaration:
     'query' schema=[DataDeclaration:ID] '.' target=[DataEntityDeclaration:ID] ('as' name=ID)? (selection=QuerySelectionBlock)?;
 
 QuerySelectionBlock:
-    '{' (entries+=QuerySelectionEntry (',' entries+=QuerySelectionEntry)* ','?)? '}';
+    '{' (
+        whereClauses+=QueryWhereStatement
+        | orderByClauses+=QueryOrderByClause
+        | entries+=QuerySelectionEntry
+        | ','
+    )* '}';
 
 QuerySelectionEntry:
-    path=QueryFieldPath ((op=QueryComparisonOperator value=Expression) | selection=QuerySelectionBlock)?;
+    path=QueryFieldPath ((op=QueryComparisonOperator value=Expression) | existence=QueryExistenceOperator | selection=QuerySelectionBlock)?;
+
+QueryWhereStatement:
+    'where' expression=QueryFilterExpression;
+
+QueryFilterExpression:
+    QueryOrExpression;
+
+QueryOrExpression infers QueryFilterExpression:
+    QueryAndExpression ({infer QueryLogicalExpression.left=current} op='or' right=QueryAndExpression)*;
+
+QueryAndExpression infers QueryFilterExpression:
+    QueryFilterAtom ({infer QueryLogicalExpression.left=current} op='and' right=QueryFilterAtom)*;
+
+QueryFilterAtom infers QueryFilterExpression:
+    QueryGroupedFilterExpression | QueryFieldPredicateExpression;
+
+QueryGroupedFilterExpression:
+    '(' expression=QueryFilterExpression ')';
+
+QueryFieldPredicateExpression:
+    path=QueryFieldPath ((op=QueryComparisonOperator value=Expression) | existence=QueryExistenceOperator);
 
 QueryComparisonOperator returns string:
     '=' | '!=' | '<=' | '>=' | '<' | '>';
+
+QueryExistenceOperator returns string:
+    ID;
+
+QueryOrderByClause:
+    'order' 'by' field=ID direction=QueryOrderDirection?;
+
+QueryOrderDirection returns string:
+    'asc' | 'desc';
 
 QueryFieldPath:
     segments+=ID ('.' segments+=ID)*;
@@ -154,6 +189,10 @@ CreateStatement:
 
 CreateFieldAssignment:
     field=ID value=Expression?;
+
+UpdateStatement:
+    'update' target=[Referenceable:ID]
+    '{' (fields+=CreateFieldAssignment (',' fields+=CreateFieldAssignment)* ','?)? '}';
 
 // Field inside an entity. When `type` is absent, it's a shorthand field: `Event,` means name equals type.
 DataFieldDeclaration:

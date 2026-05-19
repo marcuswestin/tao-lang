@@ -85,10 +85,16 @@ export default class TaoFormatter extends AbstractFormatter {
       QueryDeclaration: (n) => this.formatQueryDeclaration(n),
       QuerySelectionBlock: (n) => this.formatQuerySelectionBlock(n),
       QuerySelectionEntry: (n) => this.formatQuerySelectionEntry(n),
+      QueryWhereStatement: (n) => this.formatQueryWhereStatement(n),
+      QueryLogicalExpression: (n) => this.formatQueryLogicalExpression(n),
+      QueryGroupedFilterExpression: (n) => this.formatQueryGroupedFilterExpression(n),
+      QueryFieldPredicateExpression: (n) => this.formatQueryFieldPredicateExpression(n),
+      QueryOrderByClause: (n) => this.formatQueryOrderByClause(n),
       QueryFieldPath: (n) => this.formatQueryFieldPath(n),
       GuardStatement: (n) => this.formatGuardStatement(n),
       ForStatement: (n) => this.formatForStatement(n),
       CreateStatement: (n) => this.formatCreateStatement(n),
+      UpdateStatement: (n) => this.formatUpdateStatement(n),
       CreateFieldAssignment: (n) => this.formatCreateFieldAssignment(n),
     })
   }
@@ -279,10 +285,24 @@ export default class TaoFormatter extends AbstractFormatter {
 
   private formatQuerySelectionBlock(node: AST.QuerySelectionBlock): void {
     const f = this.getNodeFormatter(node)
-    this._indentBlock(node, 'entries')
+    const open = f.keyword('{')
+    const close = f.keyword('}')
+    const itemCount = node.entries.length + node.whereClauses.length + node.orderByClauses.length
+    if (itemCount === 0) {
+      open.append(Formatting.oneSpace())
+    } else {
+      f.interior(open, close).prepend(Formatting.indent())
+      close.prepend(Formatting.newLine())
+    }
     this._spaceBetweenCommaSeperatedItems(node)
     for (const entry of node.entries) {
       f.node(entry).prepend(Formatting.indent())
+    }
+    for (const whereClause of node.whereClauses) {
+      f.node(whereClause).prepend(Formatting.indent())
+    }
+    for (const orderBy of node.orderByClauses) {
+      f.node(orderBy).prepend(Formatting.indent())
     }
   }
 
@@ -292,8 +312,51 @@ export default class TaoFormatter extends AbstractFormatter {
     if (node.op) {
       f.property('op').surround(Formatting.oneSpace())
     }
+    if (node.existence) {
+      f.property('existence').prepend(Formatting.oneSpace())
+    }
     if (node.selection) {
       f.node(node.selection).prepend(Formatting.oneSpace())
+    }
+  }
+
+  private formatQueryWhereStatement(node: AST.QueryWhereStatement): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('where').append(Formatting.oneSpace())
+    f.node(node.expression)
+  }
+
+  private formatQueryLogicalExpression(node: AST.QueryLogicalExpression): void {
+    const f = this.getNodeFormatter(node)
+    f.node(node.left)
+    f.property('op').surround(Formatting.oneSpace())
+    f.node(node.right)
+  }
+
+  private formatQueryGroupedFilterExpression(node: AST.QueryGroupedFilterExpression): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('(').append(Formatting.noSpace())
+    f.node(node.expression)
+    f.keyword(')').prepend(Formatting.noSpace())
+  }
+
+  private formatQueryFieldPredicateExpression(node: AST.QueryFieldPredicateExpression): void {
+    const f = this.getNodeFormatter(node)
+    f.node(node.path)
+    if (node.op) {
+      f.property('op').surround(Formatting.oneSpace())
+    }
+    if (node.existence) {
+      f.property('existence').prepend(Formatting.oneSpace())
+    }
+  }
+
+  private formatQueryOrderByClause(node: AST.QueryOrderByClause): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('order').append(Formatting.oneSpace())
+    f.keyword('by').append(Formatting.oneSpace())
+    if (node.direction) {
+      f.property('direction').prepend(Formatting.oneSpace())
     }
   }
 
@@ -337,6 +400,17 @@ export default class TaoFormatter extends AbstractFormatter {
       f.node(node.value)
     } else {
       f.property('field')
+    }
+  }
+
+  private formatUpdateStatement(node: AST.UpdateStatement): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('update').append(Formatting.oneSpace())
+    f.property('target').append(Formatting.oneSpace())
+    this._indentBlock(node, 'fields')
+    this._spaceBetweenCommaSeperatedItems(node)
+    for (const field of node.fields) {
+      f.node(field).prepend(Formatting.indent())
     }
   }
 

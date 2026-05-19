@@ -113,6 +113,7 @@ class RuntimeGen {
       GuardStatement: (n) => this.GuardStatement(n),
       ForStatement: (n) => this.ForStatement(n),
       CreateStatement: (n) => this.CreateStatement(n),
+      UpdateStatement: (n) => this.UpdateStatement(n),
     })
   }
 
@@ -556,6 +557,11 @@ class RuntimeGen {
         ${props}
       })
     `
+  }
+
+  /** UpdateStatement is parsed before the strict row-handle update lowering is implemented. */
+  UpdateStatement(node: AST.UpdateStatement): Compiled {
+    return compileNode(node)`throw new Error('Tao update statements are not lowered yet')`
   }
 
   /** createFieldAssignment emits one object property for `create { … }`. */
