@@ -1,13 +1,16 @@
 import type { LGM as langium } from '@parser'
 import { AST } from '@parser/parser'
 import {
+  dataFieldPrimitiveType,
   dataFieldTargetEntity,
+  dataRowHandleForReference,
   normalizedQueryFieldPathSegments,
   queryDeclarationCardinality,
   queryDeclarationEntity,
 } from '../../query/query-model'
 import { makeValidater, type Reporter } from '../ValidationReporter'
 import {
+  directLiteralPrimitive,
   isUnderViewDeclaration,
   validateDuplicateIdentifier,
   validateUppercaseIdentifierName,
@@ -24,9 +27,25 @@ export const queryValidationMessages = {
     `Scalar field '${field}' cannot have a nested query selection block.`,
   queryRelationshipPredicateOperator: (field: string) =>
     `Relationship predicate '${field}' only supports '=' and '!=' identity comparisons.`,
+  queryRelationshipPredicateValue: (field: string) =>
+    `Relationship predicate '${field}' must compare to a data row handle.`,
+  queryRelationshipPredicateValueEntity: (field: string, expected: string, actual: string) =>
+    `Relationship predicate '${field}' expects a '${expected}' row handle, not '${actual}'.`,
   queryNestedRelationshipPath: (path: string) =>
     `Query path '${path}' traverses a relationship; use a nested selection block instead.`,
   queryDuplicateProjection: (path: string) => `Duplicate query projection '${path}'.`,
+  queryBareWherePredicate: (path: string) =>
+    `where predicate '${path}' must use a comparison, 'exists', or 'missing'. Boolean fields require '= true' or '= false'.`,
+  queryUnknownExistenceOperator: (op: string, path: string) =>
+    `Query predicate '${path}' must use 'exists' or 'missing', not '${op}'.`,
+  queryOrderDuplicate: 'Only one `order by` clause is allowed in a query selection block.',
+  queryOrderUnknownField: (field: string, entity: string) => `Unknown order field '${field}' on entity '${entity}'.`,
+  queryOrderMustBeScalar: (field: string) => `order by '${field}' must target a direct scalar field.`,
+  queryOrderMustBeIndexed: (field: string) => `order by '${field}' requires the field to be indexed or unique.`,
+  queryPredicateLiteralType: (field: string, expected: string, actual: string) =>
+    `Predicate '${field}' expects ${expected}, not ${actual}.`,
+  queryDateLiteralUnsupported: (field: string) =>
+    `Date field '${field}' does not accept direct literals yet; use 'exists' or 'missing' for now.`,
 } as const
 
 export const queryValidator: Pick<langium.ValidationChecks<AST.TaoLangAstType>, 'QueryDeclaration'> = {
@@ -99,6 +118,10 @@ function validateQuerySelectionBlock(
   if (!entity || !block) {
     return
   }
+  validateQueryOrderClauses(block, entity, report)
+  for (const whereClause of block.whereClauses) {
+    validateQueryFilterExpression(whereClause.expression, entity, report)
+  }
   const projected = new Set<string>()
   for (const entry of block.entries) {
     const resolved = resolveQueryFieldPath(entity, entry.path)
@@ -107,8 +130,12 @@ function validateQuerySelectionBlock(
       continue
     }
     const pathLabel = resolved.normalizedPath.join('.')
-    const isPredicate = entry.op !== undefined
+    const isPredicate = entry.op !== undefined || entry.existence !== undefined
     const isRelationship = resolved.finalTarget !== undefined
+
+    if (entry.existence && !validateExistenceOperator(entry.existence, pathLabel, entry, report)) {
+      continue
+    }
 
     if (
       resolved.relationshipPrefixes.length > 0
@@ -131,17 +158,181 @@ function validateQuerySelectionBlock(
       continue
     }
 
+    if (entry.existence) {
+      addProjection(projected, pathLabel, entry.path, report)
+      continue
+    }
+
     if (isRelationship) {
       if (!isPredicate) {
         addProjection(projected, pathLabel, entry.path, report)
       } else if (entry.op !== '=' && entry.op !== '!=') {
         report.error(queryValidationMessages.queryRelationshipPredicateOperator(pathLabel), entry.path)
+      } else {
+        validateRelationshipPredicateValue(pathLabel, resolved.finalTarget, entry.value, report)
       }
       continue
     }
 
+    if (entry.op !== undefined) {
+      validateScalarPredicateValue(pathLabel, resolved, entry.value, report)
+    }
     addProjection(projected, pathLabel, entry.path, report)
   }
+}
+
+function validateQueryOrderClauses(
+  block: AST.QuerySelectionBlock,
+  entity: AST.DataEntityDeclaration,
+  report: Reporter<AST.QueryDeclaration>,
+): void {
+  for (let i = 1; i < block.orderByClauses.length; i++) {
+    report.error(queryValidationMessages.queryOrderDuplicate, block.orderByClauses[i]!)
+  }
+  for (const orderBy of block.orderByClauses) {
+    if (orderBy.field === 'id') {
+      continue
+    }
+    const field = entity.fields.find(f => f.name === orderBy.field)
+    if (!field) {
+      report.error(queryValidationMessages.queryOrderUnknownField(orderBy.field, entity.name), {
+        node: orderBy,
+        property: 'field',
+      })
+      continue
+    }
+    if (dataFieldTargetEntity(field) || !dataFieldPrimitiveType(field)) {
+      report.error(queryValidationMessages.queryOrderMustBeScalar(orderBy.field), { node: orderBy, property: 'field' })
+      continue
+    }
+    if (!field.metadata.some(m => m.kind === 'indexed' || m.kind === 'unique')) {
+      report.error(queryValidationMessages.queryOrderMustBeIndexed(orderBy.field), { node: orderBy, property: 'field' })
+    }
+  }
+}
+
+function validateQueryFilterExpression(
+  expr: AST.QueryFilterExpression,
+  entity: AST.DataEntityDeclaration,
+  report: Reporter<AST.QueryDeclaration>,
+): void {
+  if (AST.isQueryLogicalExpression(expr)) {
+    validateQueryFilterExpression(expr.left, entity, report)
+    validateQueryFilterExpression(expr.right, entity, report)
+    return
+  }
+  if (AST.isQueryGroupedFilterExpression(expr)) {
+    validateQueryFilterExpression(expr.expression, entity, report)
+    return
+  }
+  if (AST.isQueryFieldPredicateExpression(expr)) {
+    validateQueryFieldPredicateExpression(expr, entity, report)
+  }
+}
+
+function validateQueryFieldPredicateExpression(
+  expr: AST.QueryFieldPredicateExpression,
+  entity: AST.DataEntityDeclaration,
+  report: Reporter<AST.QueryDeclaration>,
+): void {
+  const resolved = resolveQueryFieldPath(entity, expr.path)
+  if (resolved.error) {
+    report.error(resolved.error.message, resolved.error.node)
+    return
+  }
+  const pathLabel = resolved.normalizedPath.join('.')
+
+  if (
+    resolved.relationshipPrefixes.length > 0
+    && resolved.relationshipPrefixes[0]!.length < resolved.normalizedPath.length
+  ) {
+    report.error(queryValidationMessages.queryNestedRelationshipPath(pathLabel), expr.path)
+    return
+  }
+
+  if (expr.op === undefined && expr.existence === undefined) {
+    report.error(queryValidationMessages.queryBareWherePredicate(pathLabel), expr.path)
+    return
+  }
+
+  if (expr.existence !== undefined) {
+    validateExistenceOperator(expr.existence, pathLabel, expr, report)
+    return
+  }
+
+  if (resolved.finalTarget) {
+    if (expr.op !== '=' && expr.op !== '!=') {
+      report.error(queryValidationMessages.queryRelationshipPredicateOperator(pathLabel), expr.path)
+      return
+    }
+    validateRelationshipPredicateValue(pathLabel, resolved.finalTarget, expr.value, report)
+    return
+  }
+
+  validateScalarPredicateValue(pathLabel, resolved, expr.value, report)
+}
+
+function validateRelationshipPredicateValue(
+  pathLabel: string,
+  targetEntity: AST.DataEntityDeclaration,
+  value: AST.Expression | undefined,
+  report: Reporter<AST.QueryDeclaration>,
+): void {
+  if (!value || !AST.isMemberAccessExpression(value) || value.properties.length > 0) {
+    report.error(queryValidationMessages.queryRelationshipPredicateValue(pathLabel), value ?? targetEntity)
+    return
+  }
+  const actualEntity = dataRowHandleForReference(value.root.ref)?.entity
+  if (!actualEntity) {
+    report.error(queryValidationMessages.queryRelationshipPredicateValue(pathLabel), value)
+    return
+  }
+  if (actualEntity !== targetEntity) {
+    report.error(
+      queryValidationMessages.queryRelationshipPredicateValueEntity(pathLabel, targetEntity.name, actualEntity.name),
+      value,
+    )
+  }
+}
+
+function validateScalarPredicateValue(
+  pathLabel: string,
+  resolved: QueryPathResolution,
+  value: AST.Expression | undefined,
+  report: Reporter<AST.QueryDeclaration>,
+): void {
+  if (!value) {
+    return
+  }
+  const primitive = resolved.normalizedPath[0] === 'id'
+    ? 'text'
+    : resolved.finalField
+    ? dataFieldPrimitiveType(resolved.finalField)
+    : undefined
+  const actual = directLiteralPrimitive(value)
+  if (!primitive || !actual) {
+    return
+  }
+  if (primitive === 'date') {
+    report.error(queryValidationMessages.queryDateLiteralUnsupported(pathLabel), value)
+    return
+  }
+  if (actual !== 'null' && actual !== primitive) {
+    report.error(queryValidationMessages.queryPredicateLiteralType(pathLabel, primitive, actual), value)
+  }
+}
+
+function validateExistenceOperator(
+  op: string,
+  pathLabel: string,
+  node: AST.Node,
+  report: Reporter<AST.QueryDeclaration>,
+): op is 'exists' | 'missing' {
+  if (op === 'exists' || op === 'missing') {
+    return true
+  }
+  report.error(queryValidationMessages.queryUnknownExistenceOperator(op, pathLabel), node)
+  return false
 }
 
 function addProjection(
@@ -168,16 +359,43 @@ function queryHasUniqueEqualityPredicate(
       continue
     }
     const resolved = resolveQueryFieldPath(entity, entry.path)
-    const fieldName = resolved.normalizedPath[0]
-    if (
-      resolved.normalizedPath.length === 1
-      && !resolved.finalTarget
-      && (fieldName === 'id' || resolved.finalField?.metadata.some(m => m.kind === 'unique') === true)
-    ) {
+    if (isUniqueEqualityPredicate(resolved)) {
+      return true
+    }
+  }
+  for (const whereClause of block.whereClauses) {
+    if (filterExpressionHasUniqueEqualityPredicate(whereClause.expression, entity)) {
       return true
     }
   }
   return false
+}
+
+function filterExpressionHasUniqueEqualityPredicate(
+  expr: AST.QueryFilterExpression,
+  entity: AST.DataEntityDeclaration,
+): boolean {
+  if (AST.isQueryLogicalExpression(expr)) {
+    if (expr.op === 'and') {
+      return filterExpressionHasUniqueEqualityPredicate(expr.left, entity)
+        || filterExpressionHasUniqueEqualityPredicate(expr.right, entity)
+    }
+    return false
+  }
+  if (AST.isQueryGroupedFilterExpression(expr)) {
+    return filterExpressionHasUniqueEqualityPredicate(expr.expression, entity)
+  }
+  if (AST.isQueryFieldPredicateExpression(expr) && expr.op === '=') {
+    return isUniqueEqualityPredicate(resolveQueryFieldPath(entity, expr.path))
+  }
+  return false
+}
+
+function isUniqueEqualityPredicate(resolved: QueryPathResolution): boolean {
+  const fieldName = resolved.normalizedPath[0]
+  return resolved.normalizedPath.length === 1
+    && !resolved.finalTarget
+    && (fieldName === 'id' || resolved.finalField?.metadata.some(m => m.kind === 'unique') === true)
 }
 
 function resolveQueryFieldPath(

@@ -14,6 +14,7 @@ type InstantBaseFieldType =
   | ReturnType<typeof i.string>
   | ReturnType<typeof i.number>
   | ReturnType<typeof i.boolean>
+  | ReturnType<typeof i.date>
   | ReturnType<typeof i.any>
 
 type InstantFieldType =
@@ -26,6 +27,7 @@ const instantTypeFns: Record<string, () => InstantBaseFieldType> = {
   string: () => i.string(),
   number: () => i.number(),
   boolean: () => i.boolean(),
+  date: () => i.date(),
 }
 
 /** InstantTaoDataAdmin pushes Tao schemas through the Instant Platform API. */

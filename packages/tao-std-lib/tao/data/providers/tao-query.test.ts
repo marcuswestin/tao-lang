@@ -1,5 +1,12 @@
 import { describe, expect, test } from 'bun:test'
-import { evaluateQueryPlan, type TaoQueryPlan, type TaoQueryPredicate, useReactiveQueryPlan } from './tao-query'
+import {
+  evaluateQueryPlan,
+  taoQueryIdentity,
+  type TaoQueryPlan,
+  type TaoQueryPredicate,
+  useReactiveQueryPlan,
+} from './tao-query'
+import { projectTaoQueryRow } from './tao-query-projection'
 
 describe('tao query runtime helpers:', () => {
   test('useReactiveQueryPlan subscribes expression-valued predicate values before evaluating them', () => {
@@ -44,6 +51,79 @@ describe('tao query runtime helpers:', () => {
 
     expect(calls).toEqual(['evaluate'])
     expect(normalized.select[0]?.where?.[0]?.value).toBe(18)
+  })
+
+  test('filter trees and order descriptors are normalized into query identity', () => {
+    const calls: string[] = []
+    const plan: TaoQueryPlan = {
+      schema: 'Data',
+      collection: 'People',
+      cardinality: 'many',
+      where: [],
+      filter: {
+        kind: 'and',
+        filters: [
+          { kind: 'predicate', predicate: { path: ['Age'], op: '>', value: makeRuntimeExpression(calls, 30) } },
+          { kind: 'predicate', predicate: { path: ['Email'], op: 'exists' } },
+        ],
+      },
+      orderBy: { path: ['Age'], direction: 'desc' },
+      select: [{
+        path: ['Friends'],
+        filter: {
+          kind: 'predicate',
+          predicate: { path: ['Age'], op: '>', value: makeRuntimeExpression(calls, 18) },
+        },
+        orderBy: { path: ['Age'], direction: 'asc' },
+        select: [{ path: ['Name'] }],
+      }],
+    }
+
+    const normalized = evaluateQueryPlan(plan)
+
+    expect(calls).toEqual(['evaluate', 'evaluate'])
+    expect(normalized.filter).toEqual({
+      kind: 'and',
+      filters: [
+        { kind: 'predicate', predicate: { path: ['Age'], op: '>', value: 30 } },
+        { kind: 'predicate', predicate: { path: ['Email'], op: 'exists' } },
+      ],
+    })
+    expect(normalized.orderBy).toEqual({ path: ['Age'], direction: 'desc' })
+    expect(normalized.select[0]?.filter).toEqual({
+      kind: 'predicate',
+      predicate: { path: ['Age'], op: '>', value: 18 },
+    })
+    expect(taoQueryIdentity(normalized)).toContain('"orderBy":{"path":["Age"],"direction":"desc"}')
+  })
+
+  test('nested relationship projection applies existence filters before projection', () => {
+    const projected = projectTaoQueryRow({
+      Rsvps: [
+        { Name: 'Missing status' },
+        { Name: 'Confirmed', ConfirmedAt: 10, Status: 'going' },
+        { Name: 'Null status', Status: null },
+        { Name: 'Declined', Status: 'no' },
+      ],
+    }, [{
+      path: ['Rsvps'],
+      filter: {
+        kind: 'or',
+        filters: [
+          { kind: 'predicate', predicate: { path: ['Status'], op: 'missing' } },
+          { kind: 'predicate', predicate: { path: ['ConfirmedAt'], op: 'exists' } },
+        ],
+      },
+      select: [{ path: ['Name'] }],
+    }])
+
+    expect(projected).toEqual({
+      Rsvps: [
+        { Name: 'Missing status' },
+        { Name: 'Confirmed' },
+        { Name: 'Null status' },
+      ],
+    })
   })
 })
 

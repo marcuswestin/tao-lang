@@ -398,6 +398,65 @@ describe('codegen — app provider selection and overrides:', () => {
     expect(out).toContain('cardinality: "one"')
   })
 
+  test('selection-block query emits filter trees existence predicates and ordering descriptors', async () => {
+    const out = await writeAndCompile(`
+      data D {
+        People Person {
+          Email text unique,
+          Name text,
+        }
+        Rsvps Rsvp {
+          Status text indexed,
+          CreatedAt date indexed,
+          Guest Person,
+        }
+        Events Event {
+          Title text,
+          Ordering number indexed,
+          Cancelled boolean indexed,
+          Host Person,
+          Rsvps [Rsvp],
+        }
+      }
+      state MinimumOrdering = 10
+      query D.Person as CurrentUser {
+        Email = "ro@example.test",
+      }
+      query D.Events as Upcoming {
+        Title,
+        where Ordering >= MinimumOrdering,
+        where Cancelled = false or Host = CurrentUser,
+        order by Ordering desc
+        Rsvps {
+          Status exists,
+          where Status != "no" or Status missing,
+          order by CreatedAt asc
+        }
+      }
+      app A { ui V }
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
+      }
+    `)
+    const queryPlan = slicePeekQueryPlanObject(out, '_Scope.Upcoming = getTaoData("D").peekQuery(')
+
+    expect(queryPlan).toContain('filter: {')
+    expect(queryPlan).toContain('kind: "and"')
+    expect(queryPlan).toContain('kind: "or"')
+    expect(queryPlan).toContain('path: ["Ordering"]')
+    expect(queryPlan).toContain('value: _Scope.MinimumOrdering')
+    expect(queryPlan).toContain('path: ["Cancelled"]')
+    expect(queryPlan).toContain('path: ["Host"]')
+    expect(queryPlan).toContain('compareField: "id"')
+    expect(queryPlan).toContain('clientOnly: true')
+    expect(queryPlan).toContain('orderBy: {')
+    expect(queryPlan).toContain('direction: "desc"')
+    expect(queryPlan).toContain('op: "exists"')
+    expect(queryPlan).toContain('op: "missing"')
+    expect(queryPlan).toContain('path: ["CreatedAt"]')
+    expect(queryPlan).toContain('direction: "asc"')
+  })
+
   test('relationship identity predicates emit hidden-id comparison metadata', async () => {
     const out = await writeAndCompile(`
       data D {
@@ -434,6 +493,56 @@ describe('codegen — app provider selection and overrides:', () => {
     expect(queryPlan).toContain('path: ["Title"]')
     expect(selectBlock).not.toContain('path: ["Host"]')
     expect(selectBlock).not.toContain('path: ["Attendees"]')
+  })
+
+  test('row-handle update emits provider-neutral data client call sites', async () => {
+    const out = await writeAndCompile(`
+      data D {
+        Rsvps Rsvp {
+          Status text,
+        }
+      }
+      query D.Rsvps as Rsvps {
+        Status,
+      }
+      query D.Rsvp as CurrentRsvp {
+        id = "rsvp-1",
+        Status,
+      }
+      action MarkGoing Rsvp {
+        update Rsvp {
+          Status "going"
+        }
+      }
+      action MarkCurrent {
+        update CurrentRsvp {
+          Status "going"
+        }
+      }
+      app A { ui V }
+      layout Col {
+        render inject \`\`\`ts return TR.Views.Col(_ViewProps) \`\`\`
+      }
+      ui V {
+        render Col {
+          for Rsvp in Rsvps {
+            Button "Maybe", action {
+              update Rsvp {
+                Status "maybe"
+              }
+            }
+          }
+        }
+      }
+      ui Button Title text, Action action {
+        render inject \`\`\`ts return null \`\`\`
+      }
+    `)
+
+    expect(out).toContain('getTaoData("D").update("rsvps", _Scope.Rsvp, {')
+    expect(out).toContain('"Status": TR.Literal("going"),')
+    expect(out).toContain('getTaoData("D").update("rsvps", TR.QueryData(_Scope.CurrentRsvp), {')
+    expect(out).toContain('"Status": TR.Literal("maybe"),')
   })
 
   test('bare relationship selection emits scalar-only nested projection', async () => {
@@ -516,6 +625,12 @@ describe('codegen — app provider selection and overrides:', () => {
     expect(result.appDataProvider.name).toBe('InstantDB')
     const schema = result.dataSchemas.find(s => s.name === 'MeetupData')
     expect(schema?.shape.entities['events']?.['Ordering']).toEqual({ type: 'number', indexed: true })
+    expect(schema?.shape.entities['events']?.['CreatedAt']).toEqual({
+      type: 'date',
+      optional: true,
+      indexed: true,
+    })
+    expect(schema?.shape.entities['rsvps']?.['Status']).toEqual({ type: 'string' })
     expect(schema?.shape.entities['people']?.['Email']).toEqual({
       type: 'string',
       optional: true,

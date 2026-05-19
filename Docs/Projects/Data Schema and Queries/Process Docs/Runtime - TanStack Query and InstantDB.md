@@ -58,9 +58,9 @@ Open questions (also listed in [Data and Queries - Design — Outstanding and de
 - `id` is treated as the provider row id and can be queried without being declared as a Tao field.
 - Query field paths are normalized before execution: root prefixes such as `Person.Email` / `People.Email` become `Email`, while nested relationship paths remain explicit.
 - Memory applies the structured plan in-process. InstantDB V1 treats Tao relationships as `any` attributes (not link edges), so nested shape is not sent as an InstaQL include tree. Scalar predicates that are not `clientOnly` become InstaQL `where`; relationship identity predicates are `clientOnly` and run only in JS. The client then evaluates **every** root `where` entry, filters nested relationship `where` inside the selection tree, and projects. If **all** root predicates are `clientOnly`, InstaQL has no top-level `where` and the SDK may return **every row in that collection** before JS filtering, which is acceptable for dev-sized data but not a long-term large-table strategy.
-- Ordering, limiting, and pagination are intentionally not implemented in V1. They need a provider-capability design before Tao commits to a portable query-plan shape.
+- One direct scalar `order by` per query block is implemented for Memory and InstantDB. Limiting and pagination are intentionally not implemented in V1; they need a provider-capability design before Tao commits to a portable query-plan shape.
 
-Current limits: ordering, limiting/pagination, provider capability manifests, and strict compile-time rejection of provider-specific gaps are still deferred. Nested relationship loading is provider-sensitive and should be rejected, denormalized, or handled by a provider-specific strategy before deeper traversal is treated as generally portable.
+Current limits: limiting/pagination, provider-specific ordering modes, provider capability manifests, and strict compile-time rejection of provider-specific gaps are still deferred. Nested relationship loading is provider-sensitive and should be rejected, denormalized, or handled by a provider-specific strategy before deeper traversal is treated as generally portable.
 
 ---
 
