@@ -20,8 +20,10 @@ recheck
 ## Maintainer Setup
 
 The repository-side CLA workflow lives in `.github/workflows/cla.yml`. To make
-the CLA check block merges, configure GitHub repository rules or branch
-protection for `main` with:
+the CLA check block merges, configure a GitHub repository ruleset with:
+
+- Target branches: include all branches, then exclude `cla-signatures`.
+- Active enforcement.
 
 - Require pull requests before merging.
 - Require status checks to pass before merging.
