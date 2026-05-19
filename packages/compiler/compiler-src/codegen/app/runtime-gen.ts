@@ -367,6 +367,7 @@ class RuntimeGen {
         logInfo: { navigation: appNavigation.navigation.$refText },
       })
     }
+    const navigationLinkingProp = this.navigationLinkingProp(ir)
     return compileNode(declaration)`
       ${this.navigationTabIconHelper(ir)}
       const _taoNavigationRootRef = createNavigationContainerRef()
@@ -375,8 +376,8 @@ class RuntimeGen {
       ${this.navigationScreenComponents(ir.root)}
       ${this.navigationNavigatorDefinitions(ir.root)}
       const TaoAppNavigationRoot = createStaticNavigation(${navigationNavigatorConstName(ir.root)})
-      export function AppNavigationRoot() {
-        return <TaoAppNavigationRoot ref={_taoNavigationRootRef}${this.navigationLinkingProp(ir)} />
+      export function AppNavigationRoot(props) {
+        return <TaoAppNavigationRoot ref={_taoNavigationRootRef}${navigationLinkingProp} onReady={props?.onReady} />
       }
     `
   }

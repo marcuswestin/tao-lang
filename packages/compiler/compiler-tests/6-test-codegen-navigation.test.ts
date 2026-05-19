@@ -114,11 +114,14 @@ describe('codegen — navigation:', () => {
     expect(emitted).toContain('linking: { path: "/rooms/:RoomId" }')
     expect(emitted).toContain('tabBarIcon: _taoNavigationTabIcon("search")')
     expect(emitted).toContain('const TaoAppNavigationRoot = createStaticNavigation(_TaoNavigator_MainNavigation)')
-    expect(emitted).toContain('return <TaoAppNavigationRoot ref={_taoNavigationRootRef} linking={{ enabled: true }} />')
+    expect(emitted).toContain(
+      'return <TaoAppNavigationRoot ref={_taoNavigationRootRef} linking={{ enabled: true }} onReady={props?.onReady} />',
+    )
     expect(bootstrap).toContain('import { AppNavigationRoot }')
     expect(bootstrap).toContain("import { SafeAreaProvider } from 'react-native-safe-area-context'")
     expect(bootstrap).toContain('<SafeAreaProvider>')
-    expect(bootstrap).toContain('<AppNavigationRoot />')
+    expect(bootstrap).toContain('export default function CompiledTaoApp(props)')
+    expect(bootstrap).toContain('<AppNavigationRoot onReady={props?.onRuntimeReady} />')
     expect(bootstrap).not.toContain('<AppUIView />')
   })
 

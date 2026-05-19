@@ -156,7 +156,7 @@ describe('UI design inference locks and codegen:', () => {
 
     expect(designModule).toContain('style.app.app.home')
     expect(emitted).toContain('_taoDesignStyle={resolveStyle("style.')
-    expect(bootstrap).toContain('<AppNavigationRoot />')
+    expect(bootstrap).toContain('<AppNavigationRoot onReady={props?.onRuntimeReady} />')
   })
 
   test('variant wrappers pass target design style before variant style', async () => {

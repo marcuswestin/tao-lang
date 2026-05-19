@@ -292,10 +292,10 @@ function compileBootstrapNode(
   const dataProviderInitCalls = initImportPaths.map((_, idx) => `_taoOpenDataProviders${idx}()`).join('\n')
   const initCalls = initImportPaths.map((_, idx) => `_taoRunAppInits${idx}()`).join('\n')
   const appContent = appRoot.kind === 'navigation'
-    ? `function CompiledTaoAppContent() {
+    ? `function CompiledTaoAppContent(props) {
   return (
     <SafeAreaProvider>
-      <AppNavigationRoot />
+      <AppNavigationRoot onReady={props?.onRuntimeReady} />
     </SafeAreaProvider>
   )
 }`
@@ -333,10 +333,10 @@ ${initCalls}
 
 ${appContent}
 
-export default function CompiledTaoApp() {
+export default function CompiledTaoApp(props) {
   return (
     <TaoDesignProvider>
-      <CompiledTaoAppContent />
+      <CompiledTaoAppContent onRuntimeReady={props?.onRuntimeReady} />
     </TaoDesignProvider>
   )
 }
