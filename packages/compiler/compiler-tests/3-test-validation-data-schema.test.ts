@@ -183,10 +183,7 @@ describe('validation — for / create:', () => {
       app A { ui V }
       ui V { render Text "x" }
     `)
-    expectHumanMessagesContain(
-      report,
-      'Only state/action/inject and set (state update) statements are allowed in an action body.',
-    )
+    expectHumanMessagesContain(report, validationMessages.actionBody)
   })
 
   test('for over singular query alias fails', async () => {
