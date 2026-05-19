@@ -56,6 +56,40 @@ launch_simulator() {
   open_simulator_dev_client
 }
 
+physical_device_is_available() {
+  local devices_json
+  devices_json="$(mktemp "${TMPDIR:-/tmp}/tao-devicectl-devices.XXXXXX.json")"
+
+  if ! xcrun devicectl list devices --json-output "$devices_json" >/dev/null 2>&1; then
+    rm -f "$devices_json"
+    echo "[iphone_launcher] Could not list connected iPhones; skipping iPhone install/open." >&2
+    return 1
+  fi
+
+  if jq -e --arg target "$target" '
+    (.result.devices // [])
+    | any(. as $device |
+        $device.hardwareProperties.deviceType == "iPhone"
+        and $device.hardwareProperties.reality == "physical"
+        and (
+          $device.deviceProperties.name == $target
+          or $device.identifier == $target
+          or $device.hardwareProperties.udid == $target
+          or $device.hardwareProperties.serialNumber == $target
+          or (($device.hardwareProperties.ecid // "" | tostring) == $target)
+          or (($device.connectionProperties.potentialHostnames // []) | index($target))
+        )
+      )
+  ' "$devices_json" >/dev/null 2>&1; then
+    rm -f "$devices_json"
+    return 0
+  fi
+
+  rm -f "$devices_json"
+  echo "[iphone_launcher] No connected physical iPhone matching '${target}'; skipping iPhone install/open." >&2
+  return 1
+}
+
 device_app_is_installed() {
   local apps_output
   apps_output="$(xcrun devicectl device info apps \
@@ -84,6 +118,10 @@ open_device_dev_client() {
 }
 
 launch_physical_device() {
+  if ! physical_device_is_available; then
+    return 0
+  fi
+
   if device_app_is_installed; then
     echo "[iphone_launcher] App is already installed on ${target}; skipping Expo iOS install." >&2
     open_device_dev_client no
