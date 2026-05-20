@@ -10,6 +10,7 @@
     "**/*-lock.json",
     "**/_gen-*",
     "**/_gen/**",
+    "prototypes/**", // throwaway exploration; not held to format/lint gates
   ],
   "typescript": {
     "semiColons": "asi",

@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tao Auto-Design Lab (prototype)</title>
+<style>
+  :root {
+    --ink: #0f172a;
+    --ink-soft: #475569;
+    --ink-mute: #94a3b8;
+    --line: #e2e8f0;
+    --panel: #ffffff;
+    --page: #eef1f5;
+    --brand: #4f46e5;
+    --shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(15, 23, 42, 0.08);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--ink);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 28px 22px 80px; }
+  header.hero { margin-bottom: 22px; }
+  .badge {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--brand);
+    background: #eef0ff;
+    border: 1px solid #dfe2ff;
+    padding: 4px 10px;
+    border-radius: 999px;
+  }
+  h1 { font-size: 30px; margin: 12px 0 6px; letter-spacing: -0.02em; }
+  .sub { color: var(--ink-soft); max-width: 760px; font-size: 15px; }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+  }
+  .pad { padding: 18px; }
+  .section-title {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin: 30px 0 12px;
+  }
+
+  /* Describe panel */
+  .describe { display: grid; grid-template-columns: 1fr; gap: 14px; }
+  textarea#desc {
+    width: 100%;
+    min-height: 70px;
+    resize: vertical;
+    font: inherit;
+    font-size: 16px;
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px 14px;
+    background: #fbfcfe;
+  }
+  textarea#desc:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px #e0e3ff; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  button.btn {
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    padding: 10px 16px;
+    background: var(--brand);
+    color: #fff;
+  }
+  button.btn:hover { filter: brightness(1.05); }
+  button.ghost { background: #fff; color: var(--ink); border-color: var(--line); }
+  .chip {
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: #fff;
+    color: var(--ink-soft);
+    padding: 6px 12px;
+  }
+  .chip:hover { border-color: var(--brand); color: var(--brand); }
+
+  /* Knobs */
+  .knobs { display: flex; flex-wrap: wrap; gap: 22px; align-items: center; }
+  .knob { display: flex; flex-direction: column; gap: 4px; min-width: 150px; }
+  .knob label { font-size: 12px; font-weight: 600; color: var(--ink-soft); }
+  .knob input[type="range"] { width: 170px; }
+  .knob .val { font-size: 12px; color: var(--ink-mute); }
+  .toggle { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
+
+  /* Result layout */
+  .result { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 18px; align-items: start; }
+  @media (max-width: 880px) { .result { grid-template-columns: 1fr; } }
+
+  .rationale .pill-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 12px; }
+  .term {
+    font-size: 12px;
+    background: #f1f5f9;
+    color: var(--ink-soft);
+    border-radius: 6px;
+    padding: 3px 8px;
+  }
+  .rationale p { margin: 6px 0; font-size: 14px; color: var(--ink-soft); }
+  .rationale .template-name { font-size: 20px; font-weight: 700; color: var(--ink); letter-spacing: -0.01em; }
+
+  .tokens { display: grid; gap: 14px; margin-top: 6px; }
+  .swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+  .sw { width: 46px; text-align: center; font-size: 10px; color: var(--ink-mute); }
+  .sw i { display: block; height: 38px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.08); margin-bottom: 4px; }
+  .typeramp > div { line-height: 1.15; margin: 2px 0; color: var(--ink); }
+  .meta-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; font-size: 13px; }
+  .meta-grid .k { color: var(--ink-mute); }
+  .meta-grid .v { color: var(--ink); font-weight: 600; }
+
+  /* Phone preview — everything below uses theme vars set inline on .phone */
+  .phone-shell { display: flex; justify-content: center; }
+  .phone {
+    width: 360px;
+    max-width: 100%;
+    border-radius: 30px;
+    padding: 14px;
+    background: var(--bg);
+    border: 1px solid rgba(0,0,0,0.10);
+    box-shadow: var(--app-shadow), 0 20px 50px rgba(15,23,42,0.18);
+    overflow: hidden;
+  }
+  .phone .statusbar {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 12px; color: var(--text-mute); padding: 2px 6px 10px;
+  }
+  .phone .dot { width: 6px; height: 6px; border-radius: 999px; background: var(--text-mute); display: inline-block; margin-left: 4px; }
+
+  .app { display: flex; flex-direction: column; gap: var(--gap); }
+  .kicker {
+    font-family: var(--font-body);
+    font-size: var(--fs-cap);
+    font-weight: 700;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .title { font-family: var(--font-display); font-size: var(--fs-display); font-weight: 700; color: var(--text); letter-spacing: -0.01em; line-height: 1.1; }
+  .subtitle { font-family: var(--font-body); font-size: var(--fs-body); color: var(--text-soft); }
+
+  .metrics { display: flex; gap: var(--gap-sm); }
+  .metric {
+    flex: 1;
+    background: var(--surface-alt);
+    border: var(--bw) solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: calc(var(--unit) * 1.4) calc(var(--unit) * 1.2);
+  }
+  .metric .m-label { font-family: var(--font-body); font-size: var(--fs-cap); color: var(--text-mute); font-weight: 600; }
+  .metric .m-value { font-family: var(--font-display); font-size: var(--fs-title); font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+
+  .surface {
+    background: var(--surface);
+    border: var(--bw) solid var(--border);
+    border-radius: var(--radius);
+    padding: calc(var(--unit) * 1.8);
+    box-shadow: var(--card-shadow);
+    display: flex; flex-direction: column; gap: var(--gap-sm);
+  }
+  .field-label { font-family: var(--font-body); font-size: var(--fs-label); font-weight: 600; color: var(--text-soft); }
+  .input {
+    font-family: var(--font-body);
+    font-size: var(--fs-body);
+    color: var(--text-mute);
+    background: var(--input-bg);
+    border: var(--bw) solid var(--input-border);
+    border-radius: var(--radius-sm);
+    padding: calc(var(--unit) * 1.2) calc(var(--unit) * 1.4);
+  }
+  .btns { display: flex; gap: var(--gap-sm); }
+  .b {
+    flex: 1;
+    text-align: center;
+    font-family: var(--font-body);
+    font-size: var(--fs-body);
+    font-weight: 600;
+    border-radius: var(--radius-sm);
+    padding: calc(var(--unit) * 1.3) var(--unit);
+  }
+  .b.primary { background: var(--accent); color: var(--on-accent); box-shadow: var(--accent-shadow); }
+  .b.secondary { background: transparent; color: var(--accent); border: var(--bw) solid var(--border); }
+
+  .list { display: flex; flex-direction: column; gap: var(--gap-sm); }
+  .listrow {
+    display: flex; align-items: center; justify-content: space-between; gap: var(--unit);
+    background: var(--surface);
+    border: var(--bw) solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: calc(var(--unit) * 1.3) calc(var(--unit) * 1.5);
+    box-shadow: var(--card-shadow);
+  }
+  .listrow .lr-title { font-family: var(--font-body); font-size: var(--fs-body); color: var(--text); font-weight: 600; }
+  .listrow .lr-meta { font-family: var(--font-body); font-size: var(--fs-cap); color: var(--text-mute); }
+  .pill {
+    font-family: var(--font-body);
+    font-size: var(--fs-cap);
+    font-weight: 700;
+    color: var(--accent);
+    background: var(--accent-subtle);
+    border-radius: 999px;
+    padding: 3px 10px;
+  }
+
+  .states { display: flex; flex-direction: column; gap: var(--gap-sm); }
+  .state {
+    text-align: center;
+    background: var(--surface);
+    border: var(--bw) solid var(--border);
+    border-radius: var(--radius);
+    padding: calc(var(--unit) * 1.8) var(--unit);
+  }
+  .state .s-title { font-family: var(--font-display); font-size: var(--fs-body); font-weight: 700; color: var(--text); }
+  .state .s-msg { font-family: var(--font-body); font-size: var(--fs-cap); color: var(--text-mute); }
+  .state.error { border-color: var(--error-border); }
+  .state.error .s-title { color: var(--error-title); }
+  .state.error .s-msg { color: var(--error-msg); }
+  .spinner {
+    width: 22px; height: 22px; margin: 0 auto 6px;
+    border-radius: 999px;
+    border: 3px solid var(--accent-subtle);
+    border-top-color: var(--accent);
+    animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Gallery */
+  .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; }
+  .gallery .g-card { display: flex; flex-direction: column; gap: 10px; }
+  .gallery .g-desc { font-size: 13px; color: var(--ink-soft); }
+  .gallery .g-name { font-size: 12px; font-weight: 700; color: var(--ink); }
+  .gallery .phone { width: 100%; }
+
+  .ba { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 720px) { .ba { grid-template-columns: 1fr; } }
+  .ba .label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-mute); margin-bottom: 8px; }
+
+  /* Raw / unstyled app (the "before") */
+  .raw { font-family: Times, serif; background: #fff; border: 1px solid #bbb; padding: 10px; }
+  .raw .r-title { font-size: 17px; font-weight: 700; }
+  .raw input { display: block; margin: 6px 0; font: inherit; }
+  .raw button { font: inherit; margin-right: 6px; }
+  .raw .r-row { border-bottom: 1px solid #ddd; padding: 4px 0; }
+
+  footer { margin-top: 36px; font-size: 13px; color: var(--ink-mute); border-top: 1px solid var(--line); padding-top: 16px; }
+  code { background: #eef1f5; padding: 1px 6px; border-radius: 5px; font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <span class="badge">Prototype &middot; not production</span>
+    <h1>Tao Auto-Design Lab</h1>
+    <p class="sub">
+      Describe an app in plain language. A stand-in design intelligence reads the intent and generates a complete,
+      cohesive look &mdash; palette, type, spacing, shape, and a template &mdash; then dresses a live Tao app in it.
+      No theme authored, no tokens picked. This is a sketch of what AI-driven design could feel like inside Tao.
+    </p>
+  </header>
+
+  <div class="card pad describe">
+    <textarea id="desc" spellcheck="false">A calm meditation journal for winding down at night</textarea>
+    <div class="row">
+      <button class="btn" id="designBtn">Design it</button>
+      <button class="btn ghost" id="surpriseBtn">Surprise me</button>
+      <span style="width:8px"></span>
+      <button class="chip" data-preset="A calm meditation journal for winding down at night">Meditation journal</button>
+      <button class="chip" data-preset="A bold streetwear shop with hype drops and big energy">Streetwear shop</button>
+      <button class="chip" data-preset="A minimal expense tracker for freelancers">Expense tracker</button>
+      <button class="chip" data-preset="A cozy recipe box for family dinners">Recipe box</button>
+      <button class="chip" data-preset="A technical API status board for an on-call team">API status board</button>
+      <button class="chip" data-preset="A playful reading app for kids learning to read">Kids reading app</button>
+    </div>
+    <div class="knobs">
+      <div class="knob">
+        <label>Tone &mdash; quiet to expressive</label>
+        <input type="range" id="tone" min="0" max="100" value="50" />
+        <span class="val" id="toneVal">balanced</span>
+      </div>
+      <div class="knob">
+        <label>Density &mdash; airy to compact</label>
+        <input type="range" id="density" min="0" max="100" value="50" />
+        <span class="val" id="densityVal">balanced</span>
+      </div>
+      <div class="knob">
+        <label>Seed &mdash; same brief, new variant</label>
+        <input type="range" id="seed" min="1" max="40" value="7" />
+        <span class="val" id="seedVal">#7</span>
+      </div>
+      <label class="toggle"><input type="checkbox" id="dark" /> Dark mode</label>
+    </div>
+  </div>
+
+  <div class="result" style="margin-top:18px">
+    <div class="card pad rationale" id="rationale"></div>
+    <div class="phone-shell" id="preview"></div>
+  </div>
+
+  <div class="section-title">Same app source, different briefs</div>
+  <p class="sub" style="margin-bottom:6px">
+    Every screen below is the <em>same</em> Tao app content. Only the one-line description changed &mdash; the engine did the rest.
+    Hit "Reshuffle seeds" to see deterministic per-app variation within each look.
+  </p>
+  <div class="row" style="margin:10px 0 14px"><button class="btn ghost" id="reshuffle">Reshuffle seeds</button></div>
+  <div class="gallery" id="gallery"></div>
+
+  <div class="section-title">Before &middot; raw primitives vs. auto-designed</div>
+  <div class="card pad">
+    <div class="ba">
+      <div>
+        <div class="label">Raw (no design)</div>
+        <div class="raw" id="rawApp"></div>
+      </div>
+      <div>
+        <div class="label">Auto-designed</div>
+        <div class="phone-shell" id="afterApp"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>
+      <strong>How this maps to real Tao.</strong> The engine here is a deterministic heuristic standing in for an LLM.
+      In the real system it would live in the compiler's design module, read the existing
+      <code>design { description "..." }</code> block, and emit the same token shape that
+      <code>tao-design-runtime</code> and <code>Views.tsx</code> already consume (palette, accent, spacing, radius, type).
+      Swapping the heuristic for a real model is an implementation detail behind one interface &mdash; everything you see
+      rendering here is driven by that token output.
+    </p>
+  </footer>
+</div>
+
+<script>
+"use strict";
+
+/* ---------- deterministic randomness ---------- */
+function hashStr(s) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+  return h >>> 0;
+}
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/* ---------- color helpers (hue jitter for per-seed variation) ---------- */
+function hexToRgb(hex) {
+  const v = hex.replace('#', '');
+  return [parseInt(v.slice(0, 2), 16), parseInt(v.slice(2, 4), 16), parseInt(v.slice(4, 6), 16)];
+}
+function rgbToHex(r, g, b) {
+  const c = (n) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, '0');
+  return '#' + c(r) + c(g) + c(b);
+}
+function rgbToHsl(r, g, b) {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h = 0, s = 0; const l = (max + min) / 2;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
+    else if (max === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h /= 6;
+  }
+  return [h * 360, s, l];
+}
+function hslToRgb(h, s, l) {
+  h /= 360;
+  if (s === 0) { const v = l * 255; return [v, v, v]; }
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+  const p = 2 * l - q;
+  const hk = (t) => {
+    if (t < 0) t += 1; if (t > 1) t -= 1;
+    if (t < 1 / 6) return p + (q - p) * 6 * t;
+    if (t < 1 / 2) return q;
+    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+    return p;
+  };
+  return [hk(h + 1 / 3) * 255, hk(h) * 255, hk(h - 1 / 3) * 255];
+}
+function shiftHue(hex, deg) {
+  const [r, g, b] = hexToRgb(hex);
+  const [h, s, l] = rgbToHsl(r, g, b);
+  const [nr, ng, nb] = hslToRgb((h + deg + 360) % 360, s, l);
+  return rgbToHex(nr, ng, nb);
+}
+
+/* ---------- archetypes (curated so output always looks tasteful) ---------- */
+const ARCHETYPES = {
+  quietCraft: {
+    name: "Quiet Craft",
+    blurb: "Calm, focused, generous whitespace.",
+    fontDisplay: "'New York', Georgia, 'Times New Roman', serif",
+    fontBody: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+    ratio: 1.25, base: 16, radius: 16, border: 1, unit: 9,
+    shadow: { light: "0 1px 2px rgba(15,23,42,.05), 0 10px 26px rgba(15,23,42,.06)", dark: "0 1px 2px rgba(0,0,0,.4)" },
+    neutralLight: { bg: "#f6f7f9", surface: "#ffffff", surfaceAlt: "#f0f2f5", border: "#e3e7ec", inputBg: "#ffffff", inputBorder: "#cdd4dd", text: "#1b2330", textSoft: "#46505f", textMute: "#7a8595" },
+    neutralDark: { bg: "#0e1116", surface: "#161b22", surfaceAlt: "#1d242d", border: "#2a323d", inputBg: "#0f141b", inputBorder: "#2a323d", text: "#eef2f7", textSoft: "#c2cad6", textMute: "#8b95a4" },
+    accents: [
+      { l: { accent: "#4f46e5", subtle: "#e6e7ff", on: "#ffffff" }, d: { accent: "#a5b4fc", subtle: "#312e81", on: "#0b1020" } },
+      { l: { accent: "#0f766e", subtle: "#d3f3ee", on: "#ffffff" }, d: { accent: "#5eead4", subtle: "#134e4a", on: "#04231f" } },
+      { l: { accent: "#4d7c0f", subtle: "#e8f3d6", on: "#ffffff" }, d: { accent: "#bef264", subtle: "#365314", on: "#1a2406" } }
+    ]
+  },
+  crispOps: {
+    name: "Crisp Operations",
+    blurb: "Dense, precise, data-forward.",
+    fontDisplay: "ui-sans-serif, 'Inter', 'Helvetica Neue', Arial, sans-serif",
+    fontBody: "ui-sans-serif, 'Inter', 'Helvetica Neue', Arial, sans-serif",
+    ratio: 1.18, base: 15, radius: 8, border: 1, unit: 6,
+    shadow: { light: "0 1px 1px rgba(15,23,42,.04)", dark: "0 1px 1px rgba(0,0,0,.5)" },
+    neutralLight: { bg: "#f4f5f7", surface: "#ffffff", surfaceAlt: "#eef0f3", border: "#d6dae0", inputBg: "#ffffff", inputBorder: "#c4cad2", text: "#0f172a", textSoft: "#3a4659", textMute: "#6b7787" },
+    neutralDark: { bg: "#0b0e14", surface: "#11161f", surfaceAlt: "#171d28", border: "#232b38", inputBg: "#0c1118", inputBorder: "#232b38", text: "#f1f5fa", textSoft: "#b9c2cf", textMute: "#7e8a99" },
+    accents: [
+      { l: { accent: "#2563eb", subtle: "#dbeafe", on: "#ffffff" }, d: { accent: "#60a5fa", subtle: "#1e3a8a", on: "#0b1220" } },
+      { l: { accent: "#0e7490", subtle: "#cffafe", on: "#ffffff" }, d: { accent: "#22d3ee", subtle: "#164e63", on: "#04222b" } },
+      { l: { accent: "#475569", subtle: "#e2e8f0", on: "#ffffff" }, d: { accent: "#94a3b8", subtle: "#1e293b", on: "#0b1220" } }
+    ]
+  },
+  expressive: {
+    name: "Expressive Product",
+    blurb: "Bold, rounded, high energy.",
+    fontDisplay: "'Avenir Next', 'Nunito', system-ui, sans-serif",
+    fontBody: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+    ratio: 1.333, base: 16, radius: 22, border: 0, unit: 8,
+    shadow: { light: "0 6px 18px rgba(124,58,237,.18)", dark: "0 8px 22px rgba(0,0,0,.5)" },
+    neutralLight: { bg: "#fbf7ff", surface: "#ffffff", surfaceAlt: "#f4ecff", border: "#ece0fb", inputBg: "#ffffff", inputBorder: "#e0d2f7", text: "#1f1235", textSoft: "#4b3b66", textMute: "#8276a0" },
+    neutralDark: { bg: "#120a1f", surface: "#1c1130", surfaceAlt: "#261640", border: "#38245c", inputBg: "#160d26", inputBorder: "#38245c", text: "#f6eeff", textSoft: "#d6c6f0", textMute: "#9c8bc0" },
+    accents: [
+      { l: { accent: "#7c3aed", subtle: "#ede9fe", on: "#ffffff" }, d: { accent: "#c4b5fd", subtle: "#4c1d95", on: "#1a0b2e" } },
+      { l: { accent: "#e11d48", subtle: "#ffe4e6", on: "#ffffff" }, d: { accent: "#fb7185", subtle: "#881337", on: "#2a0b14" } },
+      { l: { accent: "#ea580c", subtle: "#ffedd5", on: "#ffffff" }, d: { accent: "#fdba74", subtle: "#7c2d12", on: "#2a1206" } },
+      { l: { accent: "#059669", subtle: "#d1fae5", on: "#ffffff" }, d: { accent: "#6ee7b7", subtle: "#064e3b", on: "#04231a" } }
+    ]
+  },
+  warmEditorial: {
+    name: "Warm Editorial",
+    blurb: "Warm paper, serif, unhurried.",
+    fontDisplay: "'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif",
+    fontBody: "'Charter', 'Iowan Old Style', Georgia, serif",
+    ratio: 1.28, base: 17, radius: 10, border: 1, unit: 9,
+    shadow: { light: "0 1px 2px rgba(74,55,40,.06), 0 12px 28px rgba(74,55,40,.07)", dark: "0 1px 2px rgba(0,0,0,.5)" },
+    neutralLight: { bg: "#fbf6ee", surface: "#fffdf8", surfaceAlt: "#f3ead9", border: "#e7d9c2", inputBg: "#fffdf8", inputBorder: "#ddcdb2", text: "#2b211a", textSoft: "#5a4a3b", textMute: "#8a7762" },
+    neutralDark: { bg: "#1a140d", surface: "#221a11", surfaceAlt: "#2c2216", border: "#3d2f1e", inputBg: "#1d160e", inputBorder: "#3d2f1e", text: "#f6ecdc", textSoft: "#d8c6ad", textMute: "#a48a6b" },
+    accents: [
+      { l: { accent: "#b45309", subtle: "#fde7c8", on: "#ffffff" }, d: { accent: "#fbbf24", subtle: "#78350f", on: "#2a1c06" } },
+      { l: { accent: "#9f1239", subtle: "#fbd9e1", on: "#ffffff" }, d: { accent: "#fb7185", subtle: "#881337", on: "#2a0b12" } },
+      { l: { accent: "#4d7c0f", subtle: "#e9f0d3", on: "#ffffff" }, d: { accent: "#bef264", subtle: "#365314", on: "#1a2406" } }
+    ]
+  },
+  nocturne: {
+    name: "Nocturne",
+    blurb: "Dark-first, calm glow.",
+    fontDisplay: "'Avenir Next', system-ui, sans-serif",
+    fontBody: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+    ratio: 1.3, base: 16, radius: 18, border: 1, unit: 8,
+    darkFirst: true,
+    shadow: { light: "0 8px 22px rgba(76,29,149,.14)", dark: "0 8px 26px rgba(0,0,0,.6)" },
+    neutralLight: { bg: "#eef1fb", surface: "#ffffff", surfaceAlt: "#e7ecfb", border: "#dfe4f5", inputBg: "#ffffff", inputBorder: "#d3daf0", text: "#141a2e", textSoft: "#46506e", textMute: "#7a85a3" },
+    neutralDark: { bg: "#070a14", surface: "#0e1424", surfaceAlt: "#141d33", border: "#1f2b47", inputBg: "#0b1120", inputBorder: "#1f2b47", text: "#eaf0ff", textSoft: "#b7c4e0", textMute: "#7c8aae" },
+    accents: [
+      { l: { accent: "#6d28d9", subtle: "#ede9fe", on: "#ffffff" }, d: { accent: "#a78bfa", subtle: "#3b0764", on: "#0b0820" } },
+      { l: { accent: "#0d9488", subtle: "#ccfbf1", on: "#ffffff" }, d: { accent: "#2dd4bf", subtle: "#0f3d3a", on: "#03201d" } },
+      { l: { accent: "#2563eb", subtle: "#dbeafe", on: "#ffffff" }, d: { accent: "#60a5fa", subtle: "#1e3a8a", on: "#0a1430" } }
+    ]
+  }
+};
+
+/* ---------- intent analysis (stands in for the model) ---------- */
+const LEXICON = {
+  quietCraft: ["calm", "mindful", "meditation", "meditate", "zen", "serene", "focus", "quiet", "minimal", "simple", "breathe", "wellness", "journal", "notes", "study", "slow", "gratitude", "habit"],
+  crispOps: ["dashboard", "ops", "operations", "finance", "fintech", "banking", "analytics", "data", "admin", "enterprise", "b2b", "productivity", "task", "project", "crm", "metrics", "monitor", "status", "api", "developer", "technical", "trading", "invoice", "expense", "on-call", "team"],
+  expressive: ["bold", "playful", "fun", "vibrant", "social", "creative", "music", "party", "game", "gaming", "kids", "sports", "fitness", "energy", "street", "streetwear", "hype", "bright", "colorful", "community", "chat", "drop", "drops"],
+  warmEditorial: ["recipe", "recipes", "cooking", "food", "cozy", "warm", "home", "story", "blog", "editorial", "magazine", "travel", "photography", "wedding", "garden", "coffee", "book", "books", "craft", "premium", "elegant", "luxury", "family", "dinner"],
+  nocturne: ["night", "nighttime", "sleep", "dark", "astronomy", "stars", "dream", "nocturne", "midnight", "cinema", "movie", "moon", "evening"]
+};
+
+function analyze(text) {
+  const words = (text.toLowerCase().match(/[a-z]+/g) || []);
+  const scores = { quietCraft: 0, crispOps: 0, expressive: 0, warmEditorial: 0, nocturne: 0 };
+  const hits = {};
+  for (const w of words) {
+    for (const key in LEXICON) {
+      if (LEXICON[key].includes(w)) { scores[key] += 1; (hits[key] = hits[key] || []).push(w); }
+    }
+  }
+  // pick highest; default to quietCraft when nothing matches
+  let best = "quietCraft", bestScore = -1;
+  for (const key in scores) { if (scores[key] > bestScore) { best = key; bestScore = scores[key]; } }
+  // "night/dark" intent nudges to nocturne even alongside calm
+  const nightish = scores.nocturne > 0;
+  if (nightish && best === "quietCraft") best = "nocturne";
+  const matched = [];
+  for (const key in hits) for (const w of hits[key]) if (matched.indexOf(w) === -1) matched.push(w);
+  return { archetypeKey: best, matched, scores, anyMatch: bestScore > 0 };
+}
+
+/* ---------- build a full design profile ---------- */
+function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)); }
+
+function buildProfile(opts) {
+  const a = analyze(opts.description);
+  const arch = ARCHETYPES[a.archetypeKey];
+  const rng = mulberry32(hashStr(opts.description) ^ (opts.seed * 0x9e3779b1));
+
+  // tone: 0 quiet .. 1 expressive ; density: 0 airy .. 1 compact
+  const tone = clamp(opts.tone, 0, 1);
+  const density = clamp(opts.density, 0, 1);
+
+  const ratio = arch.ratio * (0.96 + tone * 0.12);
+  const radius = Math.round(arch.radius * (0.85 + tone * 0.55));
+  const unit = arch.unit * (1.18 - density * 0.42);
+  const base = Math.round((arch.base + 0.5 - density * 1.5) * 10) / 10;
+
+  const accent = arch.accents[Math.floor(rng() * arch.accents.length)];
+  const hueJitter = Math.round((rng() * 2 - 1) * 12); // +/-12 deg, deterministic per seed
+
+  const sizes = {
+    display: Math.round(base * Math.pow(ratio, 3)),
+    title: Math.round(base * Math.pow(ratio, 1.6)),
+    body: Math.round(base),
+    label: Math.round(base * 0.86),
+    cap: Math.round(base * 0.78)
+  };
+
+  const mode = opts.dark ? "dark" : "light";
+  const neutral = mode === "dark" ? arch.neutralDark : arch.neutralLight;
+  const acc = mode === "dark" ? accent.d : accent.l;
+  const accentColor = shiftHue(acc.accent, hueJitter);
+  const accentSubtle = shiftHue(acc.subtle, hueJitter);
+
+  return {
+    archetypeKey: a.archetypeKey,
+    template: arch.name,
+    blurb: arch.blurb,
+    analysis: a,
+    darkFirst: !!arch.darkFirst,
+    mode: mode,
+    ratio: Math.round(ratio * 1000) / 1000,
+    radius: radius,
+    unit: Math.round(unit * 10) / 10,
+    base: base,
+    border: arch.border,
+    sizes: sizes,
+    fontDisplay: arch.fontDisplay,
+    fontBody: arch.fontBody,
+    shadow: mode === "dark" ? arch.shadow.dark : arch.shadow.light,
+    palette: {
+      bg: neutral.bg, surface: neutral.surface, surfaceAlt: neutral.surfaceAlt,
+      border: neutral.border, inputBg: neutral.inputBg, inputBorder: neutral.inputBorder,
+      text: neutral.text, textSoft: neutral.textSoft, textMute: neutral.textMute,
+      accent: accentColor, accentSubtle: accentSubtle, onAccent: acc.on
+    },
+    errorColors: mode === "dark"
+      ? { border: "#7f1d1d", title: "#fca5a5", msg: "#f0a8a8" }
+      : { border: "#fecaca", title: "#b91c1c", msg: "#7f1d1d" },
+    hueJitter: hueJitter
+  };
+}
+
+/* ---------- render: theme variables + static app markup ---------- */
+function themeVars(p) {
+  const radiusSm = Math.max(6, Math.round(p.radius * 0.66));
+  const accentShadow = p.template === "Expressive Product" || p.template === "Nocturne"
+    ? "0 6px 16px " + hexWithAlpha(p.palette.accent, 0.35)
+    : "none";
+  const cardShadow = p.border > 0 && p.template === "Crisp Operations" ? "none" : p.shadow;
+  return [
+    "--bg:" + p.palette.bg,
+    "--surface:" + p.palette.surface,
+    "--surface-alt:" + p.palette.surfaceAlt,
+    "--border:" + p.palette.border,
+    "--input-bg:" + p.palette.inputBg,
+    "--input-border:" + p.palette.inputBorder,
+    "--text:" + p.palette.text,
+    "--text-soft:" + p.palette.textSoft,
+    "--text-mute:" + p.palette.textMute,
+    "--accent:" + p.palette.accent,
+    "--accent-subtle:" + p.palette.accentSubtle,
+    "--on-accent:" + p.palette.onAccent,
+    "--error-border:" + p.errorColors.border,
+    "--error-title:" + p.errorColors.title,
+    "--error-msg:" + p.errorColors.msg,
+    "--font-display:" + p.fontDisplay,
+    "--font-body:" + p.fontBody,
+    "--fs-display:" + p.sizes.display + "px",
+    "--fs-title:" + p.sizes.title + "px",
+    "--fs-body:" + p.sizes.body + "px",
+    "--fs-label:" + p.sizes.label + "px",
+    "--fs-cap:" + p.sizes.cap + "px",
+    "--radius:" + p.radius + "px",
+    "--radius-sm:" + radiusSm + "px",
+    "--bw:" + p.border + "px",
+    "--unit:" + p.unit + "px",
+    "--gap:" + (p.unit * 1.6) + "px",
+    "--gap-sm:" + (p.unit * 1.0) + "px",
+    "--app-shadow:" + p.shadow,
+    "--card-shadow:" + cardShadow,
+    "--accent-shadow:" + accentShadow
+  ].join(";");
+}
+function hexWithAlpha(hex, a) {
+  const [r, g, b] = hexToRgb(hex);
+  return "rgba(" + r + "," + g + "," + b + "," + a + ")";
+}
+
+function titleFromDescription(desc) {
+  const stop = ["a", "an", "the", "for", "with", "of", "and", "to", "app", "that"];
+  const words = (desc.match(/[A-Za-z']+/g) || []).filter(w => stop.indexOf(w.toLowerCase()) === -1);
+  const pick = words.slice(0, 2).map(w => w[0].toUpperCase() + w.slice(1)).join(" ");
+  return pick || "My App";
+}
+
+function appMarkup(desc) {
+  const title = titleFromDescription(desc);
+  return ''
+    + '<div class="statusbar"><span>9:41</span><span><i class="dot"></i><i class="dot"></i><i class="dot"></i></span></div>'
+    + '<div class="app">'
+    + '  <div>'
+    + '    <div class="kicker">Today</div>'
+    + '    <div class="title">' + esc(title) + '</div>'
+    + '    <div class="subtitle">' + esc(desc) + '</div>'
+    + '  </div>'
+    + '  <div class="metrics">'
+    + '    <div class="metric"><div class="m-label">Streak</div><div class="m-value">12</div></div>'
+    + '    <div class="metric"><div class="m-label">This week</div><div class="m-value">5</div></div>'
+    + '    <div class="metric"><div class="m-label">Saved</div><div class="m-value">28</div></div>'
+    + '  </div>'
+    + '  <div class="surface">'
+    + '    <div class="field-label">Add a new entry</div>'
+    + '    <div class="input">What is on your mind?</div>'
+    + '    <div class="btns"><div class="b primary">Save</div><div class="b secondary">Clear</div></div>'
+    + '  </div>'
+    + '  <div class="list">'
+    + '    <div class="listrow"><div><div class="lr-title">Morning pages</div><div class="lr-meta">Captured 8:02</div></div><div class="pill">Done</div></div>'
+    + '    <div class="listrow"><div><div class="lr-title">Evening reflection</div><div class="lr-meta">Captured 21:30</div></div><div class="pill">New</div></div>'
+    + '  </div>'
+    + '  <div class="states">'
+    + '    <div class="state"><div class="spinner"></div><div class="s-msg">Loading recent entries...</div></div>'
+    + '    <div class="state error"><div class="s-title">Could not sync</div><div class="s-msg">Check your connection and try again.</div></div>'
+    + '  </div>'
+    + '</div>';
+}
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+
+function phoneHTML(profile, desc) {
+  return '<div class="phone" style="' + themeVars(profile) + '">' + appMarkup(desc) + '</div>';
+}
+
+/* ---------- rationale + tokens panel ---------- */
+function renderRationale(profile, desc) {
+  const a = profile.analysis;
+  const terms = a.matched.length
+    ? a.matched.map(t => '<span class="term">' + esc(t) + '</span>').join('')
+    : '<span class="term">no strong signal &mdash; defaulting to calm</span>';
+  const pal = profile.palette;
+  const swKeys = [["accent", "accent"], ["surface", "surface"], ["bg", "background"], ["text", "text"], ["border", "border"], ["accentSubtle", "subtle"]];
+  const swatches = swKeys.map(([k, label]) =>
+    '<div class="sw"><i style="background:' + pal[k] + '"></i>' + label + '</div>').join('');
+  return ''
+    + '<div class="template-name">' + esc(profile.template) + '</div>'
+    + '<div style="color:var(--ink-mute);font-size:13px;margin-bottom:4px">' + esc(profile.blurb) + '</div>'
+    + '<div class="pill-row">' + terms + '</div>'
+    + '<p>From the brief, the engine inferred a <strong>' + esc(profile.template)
+    + '</strong> direction, chose a coherent palette, set a <strong>' + profile.ratio
+    + '&times;</strong> type scale, <strong>' + profile.radius + 'px</strong> corners, and a '
+    + (profile.unit >= 8.5 ? 'generous' : (profile.unit <= 6.5 ? 'compact' : 'balanced'))
+    + ' spacing rhythm.</p>'
+    + '<div class="tokens">'
+    + '  <div class="swatches">' + swatches + '</div>'
+    + '  <div class="typeramp">'
+    + '    <div style="font-family:' + profile.fontDisplay + ';font-size:' + Math.min(34, profile.sizes.display) + 'px;font-weight:700">Display</div>'
+    + '    <div style="font-family:' + profile.fontDisplay + ';font-size:' + profile.sizes.title + 'px;font-weight:700">Title text</div>'
+    + '    <div style="font-family:' + profile.fontBody + ';font-size:' + profile.sizes.body + 'px">Body copy reads comfortably at this size.</div>'
+    + '    <div style="font-family:' + profile.fontBody + ';font-size:' + profile.sizes.cap + 'px;color:var(--ink-mute)">Caption / metadata</div>'
+    + '  </div>'
+    + '  <div class="meta-grid">'
+    + '    <div><span class="k">Template</span> &middot; <span class="v">' + esc(profile.template) + '</span></div>'
+    + '    <div><span class="k">Type scale</span> &middot; <span class="v">' + profile.ratio + '&times;</span></div>'
+    + '    <div><span class="k">Radius</span> &middot; <span class="v">' + profile.radius + 'px</span></div>'
+    + '    <div><span class="k">Spacing unit</span> &middot; <span class="v">' + profile.unit + 'px</span></div>'
+    + '    <div><span class="k">Accent</span> &middot; <span class="v">' + profile.palette.accent + '</span></div>'
+    + '    <div><span class="k">Seed shift</span> &middot; <span class="v">' + profile.hueJitter + '&deg; hue</span></div>'
+    + '  </div>'
+    + '</div>';
+}
+
+/* ---------- raw (unstyled) app for the before/after ---------- */
+function rawMarkup(desc) {
+  const title = titleFromDescription(desc);
+  return ''
+    + '<div class="r-title">' + esc(title) + '</div>'
+    + '<div>' + esc(desc) + '</div>'
+    + '<div>Add a new entry</div>'
+    + '<input placeholder="What is on your mind?" />'
+    + '<button>Save</button><button>Clear</button>'
+    + '<div class="r-row">Morning pages &mdash; Done</div>'
+    + '<div class="r-row">Evening reflection &mdash; New</div>'
+    + '<div>Loading recent entries...</div>';
+}
+
+/* ---------- state + wiring ---------- */
+const state = { description: "A calm meditation journal for winding down at night", tone: 0.5, density: 0.5, seed: 7, dark: false };
+
+const $ = (id) => document.getElementById(id);
+
+function currentProfile() {
+  return buildProfile({ description: state.description, tone: state.tone, density: state.density, seed: state.seed, dark: state.dark });
+}
+
+function renderMain() {
+  const p = currentProfile();
+  $("rationale").innerHTML = renderRationale(p, state.description);
+  $("preview").innerHTML = phoneHTML(p, state.description);
+  // before/after mirrors the current brief
+  $("rawApp").innerHTML = rawMarkup(state.description);
+  $("afterApp").innerHTML = phoneHTML(p, state.description);
+}
+
+const GALLERY_BRIEFS = [
+  "A calm meditation journal for winding down at night",
+  "A bold streetwear shop with hype drops and big energy",
+  "A minimal expense tracker for freelancers",
+  "A cozy recipe box for family dinners",
+  "A technical API status board for an on-call team",
+  "A playful reading app for kids learning to read"
+];
+let gallerySeedBump = 0;
+function renderGallery() {
+  const html = GALLERY_BRIEFS.map((brief, i) => {
+    const p = buildProfile({ description: brief, tone: 0.5, density: 0.5, seed: (i + 1) * 3 + gallerySeedBump, dark: state.dark });
+    return '<div class="g-card">'
+      + '<div class="g-desc">&ldquo;' + esc(brief) + '&rdquo;</div>'
+      + '<div class="g-name">' + esc(p.template) + '</div>'
+      + phoneHTML(p, brief)
+      + '</div>';
+  }).join('');
+  $("gallery").innerHTML = html;
+}
+
+function toneLabel(v) { return v < 0.34 ? "quiet" : (v > 0.66 ? "expressive" : "balanced"); }
+function densityLabel(v) { return v < 0.34 ? "airy" : (v > 0.66 ? "compact" : "balanced"); }
+
+function wire() {
+  $("desc").addEventListener("input", (e) => { state.description = e.target.value || ""; });
+  $("designBtn").addEventListener("click", () => { state.description = $("desc").value || ""; renderMain(); });
+  $("surpriseBtn").addEventListener("click", () => {
+    const pick = GALLERY_BRIEFS[Math.floor(Math.random() * GALLERY_BRIEFS.length)];
+    $("desc").value = pick; state.description = pick;
+    // also surprise the knobs a little
+    state.seed = 1 + Math.floor(Math.random() * 40); $("seed").value = state.seed; $("seedVal").textContent = "#" + state.seed;
+    renderMain();
+  });
+  document.querySelectorAll(".chip").forEach(c => c.addEventListener("click", () => {
+    const v = c.getAttribute("data-preset"); $("desc").value = v; state.description = v; renderMain();
+  }));
+  $("tone").addEventListener("input", (e) => { state.tone = e.target.value / 100; $("toneVal").textContent = toneLabel(state.tone); renderMain(); });
+  $("density").addEventListener("input", (e) => { state.density = e.target.value / 100; $("densityVal").textContent = densityLabel(state.density); renderMain(); });
+  $("seed").addEventListener("input", (e) => { state.seed = parseInt(e.target.value, 10); $("seedVal").textContent = "#" + state.seed; renderMain(); });
+  $("dark").addEventListener("change", (e) => { state.dark = e.target.checked; renderMain(); renderGallery(); });
+  $("reshuffle").addEventListener("click", () => { gallerySeedBump += 5; renderGallery(); });
+}
+
+wire();
+renderMain();
+renderGallery();
+</script>
+</body>
+</html>
