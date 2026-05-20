@@ -33,6 +33,10 @@ type ExpoRuntimeAppJson = {
   }
 }
 
+type SafeAreaContextTestMock = {
+  setSafeAreaInsetsForTests(insets: { bottom: number; left: number; right: number; top: number }): void
+}
+
 describe('runtime:', () => {
   test('renders <MockTestView />', async () => {
     const MockTestView = () => <RN.Text>Hello Mock Test View</RN.Text>
@@ -194,34 +198,61 @@ describe('runtime:', () => {
   })
 
   test('applies safe-area insets to the native Tao app shell content frame', () => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const safeAreaMock = require('react-native-safe-area-context') as {
-      setSafeAreaInsetsForTests(insets: { bottom: number; left: number; right: number; top: number }): void
-    }
+    const safeAreaMock = safeAreaContextTestMock()
     safeAreaMock.setSafeAreaInsetsForTests({ bottom: 20, left: 3, right: 4, top: 10 })
 
-    const screen = render(
-      <TaoAppShell
-        backgroundColor="#f7f8fa"
-        contentStyle={appShellContentStyle}
-        kind="ui"
-      >
-        <RN.Text>Shell content</RN.Text>
-      </TaoAppShell>,
-    )
-    const scrollView = screen.UNSAFE_getByType(RN.ScrollView)
+    try {
+      const screen = render(
+        <TaoAppShell
+          backgroundColor="#f7f8fa"
+          contentStyle={appShellContentStyle}
+          kind="ui"
+        >
+          <RN.Text>Shell content</RN.Text>
+        </TaoAppShell>,
+      )
+      const scrollView = screen.UNSAFE_getByType(RN.ScrollView)
 
-    expect(flattenStyle(scrollView.props.style)).toMatchObject({
-      backgroundColor: '#f7f8fa',
-      flex: 1,
-    })
-    expect(flattenStyle(scrollView.props.contentContainerStyle)).toMatchObject({
-      paddingBottom: 20,
-      paddingLeft: 10,
-      paddingRight: 11,
-      paddingTop: 15,
-    })
-    safeAreaMock.setSafeAreaInsetsForTests({ bottom: 0, left: 0, right: 0, top: 0 })
+      expect(flattenStyle(scrollView.props.style)).toMatchObject({
+        backgroundColor: '#f7f8fa',
+        flex: 1,
+      })
+      expect(flattenStyle(scrollView.props.contentContainerStyle)).toMatchObject({
+        paddingBottom: 20,
+        paddingLeft: 10,
+        paddingRight: 11,
+        paddingTop: 15,
+      })
+    } finally {
+      safeAreaMock.setSafeAreaInsetsForTests({ bottom: 0, left: 0, right: 0, top: 0 })
+    }
+  })
+
+  test('does not add safe-area padding around native navigation shell content', () => {
+    const safeAreaMock = safeAreaContextTestMock()
+    safeAreaMock.setSafeAreaInsetsForTests({ bottom: 20, left: 3, right: 4, top: 10 })
+
+    try {
+      const screen = render(
+        <TaoAppShell
+          backgroundColor="#101820"
+          contentStyle={appShellContentStyle}
+          kind="navigation"
+        >
+          <RN.Text>Navigation shell content</RN.Text>
+        </TaoAppShell>,
+      )
+      const rootView = screen.UNSAFE_getByType(RN.View)
+
+      expect(() => screen.UNSAFE_getByType(RN.ScrollView)).toThrow(/No instances found/)
+      expect(flattenStyle(rootView.props.style)).toMatchObject({
+        backgroundColor: '#101820',
+        flex: 1,
+      })
+      expect(screen.getByText('Navigation shell content')).toBeDefined()
+    } finally {
+      safeAreaMock.setSafeAreaInsetsForTests({ bottom: 0, left: 0, right: 0, top: 0 })
+    }
   })
 
   test('applies standard container host styles through std-lib views', () => {
@@ -438,6 +469,11 @@ function makeNeedleApp() {
 
 function flattenStyle(style: RN.StyleProp<any>) {
   return RN.StyleSheet.flatten(style)
+}
+
+function safeAreaContextTestMock(): SafeAreaContextTestMock {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  return require('react-native-safe-area-context') as SafeAreaContextTestMock
 }
 
 async function _cmd(cmd: string, args: string[], opts?: { cwd: string }): Promise<number> {
