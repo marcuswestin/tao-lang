@@ -8,6 +8,37 @@ export type TaoDesignState = 'default' | 'pressed' | 'disabled' | 'focused' | 's
 export const TAO_BASELINE_ACCENT_NAMES = ['blue', 'teal', 'green', 'amber', 'rose', 'indigo'] as const
 export type TaoBaselineAccentName = (typeof TAO_BASELINE_ACCENT_NAMES)[number]
 
+export type TaoRuntimeDesignPalette = {
+  appBackground: string
+  surfaceBackground: string
+  primaryText: string
+  secondaryText: string
+  mutedText: string
+  border: string
+  borderStrong: string
+  inputBackground: string
+  inputBorder: string
+  accent: string
+  accentPressed: string
+  accentSubtle: string
+  onAccentText: string
+  placeholder: string
+  disabledForeground: string
+  disabledBackground: string
+  focusRing: string
+}
+
+/** A generated design profile (from an app `design { description }`) that overrides the baseline look at runtime. */
+export type TaoRuntimeDesignProfile = {
+  template: string
+  controlRadius: number
+  surfaceRadius: number
+  spacingUnit: number
+  baseFontSize: number
+  light: TaoRuntimeDesignPalette
+  dark: TaoRuntimeDesignPalette
+}
+
 export type TaoDesignContextValue = {
   accentName: TaoBaselineAccentName
   colorScheme: TaoDesignColorScheme
@@ -15,6 +46,7 @@ export type TaoDesignContextValue = {
   textScale: number
   screenSize: TaoDesignScreenSize
   reducedMotion: boolean
+  profile?: TaoRuntimeDesignProfile
 }
 
 type TaoDesignStyle = Record<string, unknown>

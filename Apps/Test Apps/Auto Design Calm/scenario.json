@@ -1,0 +1,8 @@
+{
+  "steps": [
+    { "assertVisibleText": "Evening reflections" },
+    { "assertVisibleText": "Tonight's thought" },
+    { "assertVisibleText": "Save" },
+    { "assertVisibleText": "No entries yet" }
+  ]
+}

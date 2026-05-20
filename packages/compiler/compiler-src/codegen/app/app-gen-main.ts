@@ -8,6 +8,7 @@ import {
   TAO_DESIGN_MODULE_RELATIVE_PATH,
   type TaoDesignCodegenContext,
 } from '../../design/design-codegen'
+import { selectTaoDesignProfile, type TaoDesignProfile } from '../../design/design-profile'
 import { decodeTaoTemplateTextChunk } from '../tao-template-text-chunk'
 import {
   isAppConfigObject,
@@ -84,6 +85,7 @@ export function generateTypescriptReactNativeApp(
     entryImportPath,
     appRootDesignStyleKey(mainTaoFile, resolvedCodegen.design),
     appAccentName(mainTaoFile, entryAbsolutePath),
+    appDesignProfile(mainTaoFile, entryAbsolutePath),
   )
 
   return {
@@ -220,9 +222,22 @@ function appRootDesignStyleKey(
 
 /** appAccentName derives the default seeded accent for the entry app from stable app identity. */
 function appAccentName(mainTaoFile: AST.TaoFile, entryAbsolutePath: string): TaoBaselineAccentName {
-  const app = findEntryAppDeclaration(mainTaoFile)
-  const seed = app?.name ?? FS.splitPath(entryAbsolutePath).pop() ?? entryAbsolutePath
+  const seed = appIdentitySeed(mainTaoFile, entryAbsolutePath)
   return selectTaoBaselineAccent(seed)
+}
+
+/** appDesignProfile generates a full runtime design profile from the entry app `design { description }`, when present. */
+function appDesignProfile(mainTaoFile: AST.TaoFile, entryAbsolutePath: string): TaoDesignProfile | undefined {
+  const app = findEntryAppDeclaration(mainTaoFile)
+  const design = app?.appStatements.find(AST.isAppDesignBlock)
+  const description = stringTemplateTextOnlyLiteral(design?.description.value) ?? ''
+  return selectTaoDesignProfile({ description, seed: appIdentitySeed(mainTaoFile, entryAbsolutePath) })
+}
+
+/** appIdentitySeed returns a stable per-app seed string (app name, else entry file name). */
+function appIdentitySeed(mainTaoFile: AST.TaoFile, entryAbsolutePath: string): string {
+  const app = findEntryAppDeclaration(mainTaoFile)
+  return app?.name ?? FS.splitPath(entryAbsolutePath).pop() ?? entryAbsolutePath
 }
 
 /** stringConfigValue returns a string property from an app config object. */
@@ -261,6 +276,7 @@ function compileBootstrapNode(
   appUIViewModulePath: string,
   appRootStyleKey: string | undefined,
   appAccentName: TaoBaselineAccentName,
+  appDesignProfile: TaoDesignProfile | undefined,
 ): GeneratorNode {
   const n = new CompositeGeneratorNode()
   const appUiImport = `import { AppUIView } from '${appUIViewModulePath}'`
@@ -283,7 +299,8 @@ ${initCalls}
 
 const _compiledTaoAppRootDesignStyleKey = ${JSON.stringify(appRootStyleKey ?? null)}
 const _compiledTaoAppAccentName = ${JSON.stringify(appAccentName)}
-const _compiledTaoAppDesignContextOverrides = { accentName: _compiledTaoAppAccentName }
+const _compiledTaoAppDesignProfile = ${JSON.stringify(appDesignProfile ?? null)}
+const _compiledTaoAppDesignContextOverrides = { accentName: _compiledTaoAppAccentName, profile: _compiledTaoAppDesignProfile }
 const _compiledTaoAppRootViewStyle = { flex: 1 }
 const _compiledTaoAppContentMaxWidth = 720
 const _compiledTaoAppContentCompactPadding = {
@@ -303,9 +320,15 @@ function _compiledTaoAppRootBackground(_taoDesignContext) {
     ? undefined
     : RN.StyleSheet.flatten(resolveStyle(_compiledTaoAppRootDesignStyleKey, _taoDesignContext))
   const designBackground = designStyle?.backgroundColor
+  const profilePalette = _taoDesignContext.profile
+    ? (_taoDesignContext.colorScheme === 'dark' ? _taoDesignContext.profile.dark : _taoDesignContext.profile.light)
+    : undefined
+  const fallbackBackground = profilePalette
+    ? profilePalette.appBackground
+    : (_taoDesignContext.colorScheme === 'dark' ? '#0f1115' : '#f7f8fa')
   const backgroundColor = typeof designBackground === 'string' || typeof designBackground === 'number'
     ? designBackground
-    : (_taoDesignContext.colorScheme === 'dark' ? '#0f1115' : '#f7f8fa')
+    : fallbackBackground
   return [_compiledTaoAppRootViewStyle, { backgroundColor }]
 }
 

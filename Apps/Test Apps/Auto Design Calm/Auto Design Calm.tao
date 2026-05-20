@@ -1,0 +1,32 @@
+use Button, Card, Col, EmptyState, MultiLineText, Row, Stack, Text, TextInput, TextLabel from @tao/ui
+
+app AutoDesignCalm {
+   design {
+      description "a calm meditation journal for winding down at night"
+   }
+   ui MainScreen
+}
+
+state DraftNote = ""
+
+action UpdateDraftNote Value text {
+   set DraftNote = Value
+}
+
+ui MainScreen {
+   render Col [items top stretch, gap 16, width fill] {
+      Text "Evening reflections"
+      MultiLineText "A calm space to wind down and note what mattered today."
+      Card {
+         Stack [gap 12] {
+            TextLabel "Tonight's thought"
+            TextInput DraftNote, .Label "Thought", UpdateDraftNote
+            Row [gap 8] {
+               Button "Save", action { }
+               Button "Clear", action { }
+            }
+         }
+      }
+      EmptyState .Title "No entries yet", .Message "Your reflections will gather here."
+   }
+}

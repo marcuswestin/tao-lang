@@ -132,6 +132,45 @@ describe('UI design inference locks and codegen:', () => {
     expect(bootstrap).toContain('<TaoDesignProvider value={_compiledTaoAppDesignContextOverrides}>')
   })
 
+  test('bootstrap emits a design profile when the app declares a description', async () => {
+    const result = await compileDesignSource(`
+      use Col, Text from @tao/ui
+
+      app BoldApp {
+        design { description "a bold playful vibrant streetwear shop with hype drops" }
+        ui Root
+      }
+
+      ui Root {
+        render Col {
+          Text "Drop 07"
+        }
+      }
+    `)
+    const bootstrap = result.files.find(f => f.relativePath === 'app-bootstrap.tsx')?.content ?? ''
+    expect(bootstrap).toContain('_compiledTaoAppDesignProfile')
+    expect(bootstrap).toContain('"template":"Expressive Product"')
+    expect(bootstrap).toContain('profile: _compiledTaoAppDesignProfile')
+    // the profile carries a full per-scheme palette
+    expect(bootstrap).toMatch(/"light":\{[^}]*"accent":"#[0-9a-f]{6}"/)
+  })
+
+  test('bootstrap emits a null design profile when the app has no description', async () => {
+    const result = await compileDesignSource(`
+      use Col, Text from @tao/ui
+
+      app PlainApp { ui Root }
+
+      ui Root {
+        render Col {
+          Text "Hello"
+        }
+      }
+    `)
+    const bootstrap = result.files.find(f => f.relativePath === 'app-bootstrap.tsx')?.content ?? ''
+    expect(bootstrap).toContain('_compiledTaoAppDesignProfile = null')
+  })
+
   test('Card, EmptyState, ErrorState and LoadingState std-lib primitives compile through codegen', async () => {
     const result = await compileDesignSource(`
       use Card, Col, EmptyState, ErrorState, LoadingState, Text from @tao/ui

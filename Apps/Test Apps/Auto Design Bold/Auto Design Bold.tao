@@ -1,0 +1,32 @@
+use Button, Card, Col, EmptyState, MultiLineText, Row, Stack, Text, TextInput, TextLabel from @tao/ui
+
+app AutoDesignBold {
+   design {
+      description "a bold playful streetwear shop with vibrant hype drops and big energy"
+   }
+   ui MainScreen
+}
+
+state Search = ""
+
+action UpdateSearch Value text {
+   set Search = Value
+}
+
+ui MainScreen {
+   render Col [items top stretch, gap 16, width fill] {
+      Text "Drop 07"
+      MultiLineText "Limited heat. Cop it before it is gone."
+      Card {
+         Stack [gap 12] {
+            TextLabel "Search the drop"
+            TextInput Search, .Label "Search", UpdateSearch
+            Row [gap 8] {
+               Button "Shop now", action { }
+               Button "Save", action { }
+            }
+         }
+      }
+      EmptyState .Title "Sold out", .Message "Restock alerts open soon."
+   }
+}

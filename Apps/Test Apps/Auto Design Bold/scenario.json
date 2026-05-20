@@ -1,0 +1,8 @@
+{
+  "steps": [
+    { "assertVisibleText": "Drop 07" },
+    { "assertVisibleText": "Search the drop" },
+    { "assertVisibleText": "Shop now" },
+    { "assertVisibleText": "Sold out" }
+  ]
+}
