@@ -136,15 +136,17 @@ Everything LLM-shaped, template-file-shaped, lock-file-shaped, or author-choice-
 
 **Context:** The single most visible "this looks broken" failure on web is content stretching to the viewport edge. On native, an unhandled safe-area is equally jarring. The generated app bootstrap currently does neither. System font on web defaults to a generic browser font when not specified.
 
+**2026-05-20 update:** The App Shell Safe Area and Keyboard project now provides the mechanical `TaoAppShell`, root `SafeAreaProvider`, plain UI-root safe-area padding, native keyboard-aware scrolling, Android keyboard mode, and bottom-tab hide-on-keyboard defaults. This slice should keep owning web max-width, status bar, splash, system font, and visual shell polish, and should reuse the hardened shell instead of introducing a parallel app-shell helper.
+
 **Work:**
 
 - Extend `packages/compiler/compiler-src/codegen/app/` to emit a `TaoDefaultDesignProvider` wrapping the generated app root. The provider:
   - calls `createDefaultDesign(appQualifiedName)` once at mount;
   - publishes the design via React context for `useTaoDefaultDesign()`.
   - The `appQualifiedName` is read from the compiled app declaration; if absent, use the package name.
-- Add `packages/tao-std-lib/tao/tao-runtime/AppShell.tsx`:
+- Extend the existing `packages/tao-std-lib/tao/tao-runtime/AppShell.tsx`:
   - **Web.** Outer container with `maxWidth: 960pt`, centered (`marginHorizontal: auto`), body background = `color.background.app`; inner content uses `surface.card`. `MultiLineText` clamps to a prose max-width of `680pt` on web.
-  - **Native.** Wrap in `SafeAreaProvider` from `react-native-safe-area-context`; apply top + bottom safe-area insets at the screen root.
+  - **Native.** Preserve existing `SafeAreaProvider`, safe-area padding, keyboard-aware scroll behavior, and bottom-tab keyboard defaults while adding template-owned visual shell spacing.
   - **Status bar.** `expo-status-bar` with `style` derived from `background.app` brightness (`light` if background is dark, `dark` otherwise). Re-evaluate per color scheme.
   - **Splash.** `expo-splash-screen` `backgroundColor` set to `background.app` so the splash blends into first paint.
   - **System font stack.** On web, set `fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, Roboto, "Helvetica Neue", Arial, sans-serif'` in the Text role tokens. On native, omit `fontFamily` so the platform default (San Francisco on iOS, Roboto on Android) takes over.

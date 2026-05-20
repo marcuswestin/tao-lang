@@ -377,6 +377,7 @@ Implementation validation:
 - 2026-05-20 Step 4: accepted `react-native-keyboard-controller` for the native UI shell path. Expo SDK 54 lists bundled version `1.18.5`, and the Tao Expo runtime already carries `react-native-reanimated` and `react-native-worklets`. The concrete package is installed only in the Expo runtime; `@tao/std-lib` keeps it as an optional peer/dev dependency so web and headless paths do not need native keyboard-controller resolution. Native iOS and Android dev-client smoke remains part of the device checklist/final validation.
 - 2026-05-20 Step 6: adopted Expo's documented Android bottom-tab keyboard mitigation with `android.softwareKeyboardLayoutMode: "pan"` in the Expo runtime config, and set generated bottom-tab navigators to `tabBarHideOnKeyboard: true`. Jest coverage now verifies both defaults, but physical Android bottom-tab keyboard smoke remains pending.
 - 2026-05-20 Step 7: added the `App Shell Safe Area and Keyboard` shared fixture with a long plain UI-root form, bottom text input, and bottom submit action. The Expo runtime README now records the real-device smoke checklist and local commands; manual iOS and Android device smoke remains pending.
+- 2026-05-20 Step 8: updated the roadmap status to `Implemented` and narrowed overlapping Beautiful App Defaults / Look Great By Default ownership so future visual-defaults work builds on this hardened shell instead of reimplementing mechanical safe-area and keyboard behavior.
 
 ## Deferrals
 

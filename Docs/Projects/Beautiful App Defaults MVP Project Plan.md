@@ -305,12 +305,13 @@ Required template tokens and recipe slots should fail in template completeness t
 
 **Context:** Max width and web layout are central to the product goal. A good button is not enough if the app shell stretches a form across a desktop viewport.
 
+**2026-05-20 update:** The App Shell Safe Area and Keyboard project now owns the mechanical native safe-area padding, bottom spacing, keyboard-aware native UI-root scrolling, Android keyboard mode, and bottom-tab hide-on-keyboard defaults. This step should build visual shell polish, web/tablet width behavior, and template-aware spacing on top of that hardened shell rather than reimplementing those mechanics.
+
 **Work:**
 
 - Add app-shell defaults for:
-  - safe-area aware root padding on native platforms;
-  - scrollable page content with sensible bottom padding;
-  - keyboard-aware form screen behavior where React Native/Expo support is available;
+  - template-aware shell spacing layered over the existing native safe-area and bottom-spacing mechanics;
+  - visual scroll padding rules that preserve the existing keyboard-aware native UI-root behavior;
   - compact/regular width page insets;
   - web/tablet max-width content columns;
   - optional split content regions for regular-width operational screens when the selected template supports it.
@@ -320,9 +321,9 @@ Required template tokens and recipe slots should fail in template completeness t
 **Likely commit units:**
 
 - App shell design context integration.
-- Safe-area and scroll shell defaults.
+- Visual shell spacing on top of existing safe-area and scroll shell mechanics.
 - Web/tablet max-width constraints.
-- Keyboard-aware defaults where current runtime support permits.
+- Template-aware form spacing while preserving the existing keyboard-aware shell.
 
 **Validation:**
 
@@ -334,7 +335,7 @@ Required template tokens and recipe slots should fail in template completeness t
 **Exit criteria:**
 
 - A simple form/detail screen does not stretch edge to edge on web/tablet.
-- Native screens respect safe-area and bottom spacing defaults without app-authored layout boilerplate.
+- Native screens keep the hardened safe-area, bottom spacing, and keyboard behavior while adding template-owned visual polish.
 
 **Suggested commit subject pattern:** `feat(runtime): add beautiful app shell defaults`
 
