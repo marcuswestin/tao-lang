@@ -4,6 +4,7 @@
 
 When starting in a new worktree (or fresh repo clone), the very first thing you must do is:
 
+0. Setup nix devenv: `direnv allow`
 1. Run bootstrap: `bash .config/bootstrap-dev-env.sh`.
 2. Run setup if bootstrap was skipped because tools already exist: `./agent setup`.
 
