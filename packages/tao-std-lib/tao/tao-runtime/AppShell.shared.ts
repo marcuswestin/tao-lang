@@ -33,6 +33,16 @@ export function taoAppShellSafeAreaContentStyle(
   }
 }
 
+/** taoAppShellKeyboardBottomOffset returns the shell spacing that should remain between a focused input and keyboard. */
+export function taoAppShellKeyboardBottomOffset(
+  style: RN.StyleProp<RN.ViewStyle> | undefined,
+  insets: TaoAppShellInsets,
+  styleSheet: Pick<typeof RN.StyleSheet, 'flatten'>,
+): number {
+  const flat = styleSheet.flatten(style) ?? {}
+  return basePadding(flat.paddingBottom, flat.paddingVertical, flat.padding) + insets.bottom
+}
+
 function basePadding(...values: unknown[]): number {
   for (const value of values) {
     const n = numericStyleValue(value)

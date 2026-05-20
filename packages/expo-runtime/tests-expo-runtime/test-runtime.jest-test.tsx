@@ -223,6 +223,8 @@ describe('runtime:', () => {
         paddingRight: 11,
         paddingTop: 15,
       })
+      expect(scrollView.props.bottomOffset).toBe(20)
+      expect(scrollView.props.keyboardShouldPersistTaps).toBe('handled')
     } finally {
       safeAreaMock.setSafeAreaInsetsForTests({ bottom: 0, left: 0, right: 0, top: 0 })
     }

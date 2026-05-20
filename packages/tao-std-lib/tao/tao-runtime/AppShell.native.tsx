@@ -1,11 +1,16 @@
 import React from 'react'
 import * as RN from 'react-native'
 import {
+  KeyboardAwareScrollView,
+  KeyboardProvider,
+} from 'react-native-keyboard-controller'
+import {
   SafeAreaProvider,
   useSafeAreaInsets,
 } from 'react-native-safe-area-context'
 
 import {
+  taoAppShellKeyboardBottomOffset,
   type TaoAppShellProps,
   taoAppShellSafeAreaContentStyle,
 } from './AppShell.shared'
@@ -21,7 +26,11 @@ export function TaoAppShell(props: TaoAppShellProps) {
   return React.createElement(
     SafeAreaProvider,
     null,
-    React.createElement(TaoNativeAppShellContent, props),
+    React.createElement(
+      KeyboardProvider,
+      null,
+      React.createElement(TaoNativeAppShellContent, props),
+    ),
   )
 }
 
@@ -32,8 +41,9 @@ function TaoNativeAppShellContent(props: TaoAppShellProps) {
     return React.createElement(RN.View, { style: rootStyle }, props.children)
   }
   return React.createElement(
-    RN.ScrollView,
+    KeyboardAwareScrollView,
     {
+      bottomOffset: taoAppShellKeyboardBottomOffset(props.contentStyle, insets, RN.StyleSheet),
       contentContainerStyle: [
         props.contentStyle,
         taoAppShellSafeAreaContentStyle(props.contentStyle, insets, RN.StyleSheet),
