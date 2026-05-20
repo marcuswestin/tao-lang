@@ -372,6 +372,10 @@ Implementation validation:
 - Manual iOS notch/home-indicator smoke.
 - Manual Android edge-to-edge keyboard smoke.
 
+## Implementation Notes
+
+- 2026-05-20 Step 4: accepted `react-native-keyboard-controller` for the native UI shell path. Expo SDK 54 lists bundled version `1.18.5`, and the Tao Expo runtime already carries `react-native-reanimated` and `react-native-worklets`. The concrete package is installed only in the Expo runtime; `@tao/std-lib` keeps it as an optional peer/dev dependency so web and headless paths do not need native keyboard-controller resolution. Native iOS and Android dev-client smoke remains part of the device checklist/final validation.
+
 ## Deferrals
 
 - Source-level safe-area, keyboard, form, or scroll syntax.

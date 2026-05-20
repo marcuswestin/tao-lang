@@ -9,53 +9,62 @@ import { FS } from '@shared'
 import { describe, expect, test } from './test-utils/test-harness'
 
 const STD_LIB_ROOT = FS.resolvePath(FS.joinPath(__dirname, '../../tao-std-lib'))
+const DESIGN_LOCK_TEST_TIMEOUT_MS = 15_000
 
 describe('UI design inference locks and codegen:', () => {
-  test('writes deterministic suggestions, accepted locks, and production compiles', async () => {
-    const { appPath, tmpDir } = writeDesignApp()
-    try {
-      const accepted = await acceptTaoDesignSuggestions({ file: appPath, stdLibRoot: STD_LIB_ROOT })
-      expect(FS.isFile(accepted.suggestionPath)).toBe(true)
-      expect(FS.isFile(accepted.acceptedPath)).toBe(true)
-      expect(accepted.diagnostics.some(d => d.kind === 'new-entry')).toBe(true)
-      expect(Object.values(accepted.lock.entries).every(entry => entry.status === 'accepted')).toBe(true)
-      expect(FS.readTextFile(accepted.acceptedPath)).toBe(`${stableStringify(accepted.lock)}\n`)
+  test(
+    'writes deterministic suggestions, accepted locks, and production compiles',
+    async () => {
+      const { appPath, tmpDir } = writeDesignApp()
+      try {
+        const accepted = await acceptTaoDesignSuggestions({ file: appPath, stdLibRoot: STD_LIB_ROOT })
+        expect(FS.isFile(accepted.suggestionPath)).toBe(true)
+        expect(FS.isFile(accepted.acceptedPath)).toBe(true)
+        expect(accepted.diagnostics.some(d => d.kind === 'new-entry')).toBe(true)
+        expect(Object.values(accepted.lock.entries).every(entry => entry.status === 'accepted')).toBe(true)
+        expect(FS.readTextFile(accepted.acceptedPath)).toBe(`${stableStringify(accepted.lock)}\n`)
 
-      const locked = await compileTao({ file: appPath, stdLibRoot: STD_LIB_ROOT, designMode: 'production' })
-      expect(locked.ok).toBe(true)
-    } finally {
-      FS.rmDirectory(tmpDir)
-    }
-  })
-
-  test('production rejects missing or stale locks while body edits do not stale entries', async () => {
-    const { appPath, tmpDir } = writeDesignApp()
-    try {
-      const missing = await compileTao({ file: appPath, stdLibRoot: STD_LIB_ROOT, designMode: 'production' })
-      expect(missing.ok).toBe(false)
-      if (!missing.ok) {
-        expect(missing.errorReport.getHumanErrorMessage()).toContain('Missing accepted design lock')
+        const locked = await compileTao({ file: appPath, stdLibRoot: STD_LIB_ROOT, designMode: 'production' })
+        expect(locked.ok).toBe(true)
+      } finally {
+        FS.rmDirectory(tmpDir)
       }
+    },
+    DESIGN_LOCK_TEST_TIMEOUT_MS,
+  )
 
-      const accepted = await acceptTaoDesignSuggestions({ file: appPath, stdLibRoot: STD_LIB_ROOT })
-      const lock = JSON.parse(FS.readTextFile(accepted.acceptedPath)) as TaoDesignLock
-      lock.generatedAt = '2099-01-01T00:00:00.000Z'
-      FS.writeFile(accepted.acceptedPath, `${stableStringify(lock)}\n`)
+  test(
+    'production rejects missing or stale locks while body edits do not stale entries',
+    async () => {
+      const { appPath, tmpDir } = writeDesignApp()
+      try {
+        const missing = await compileTao({ file: appPath, stdLibRoot: STD_LIB_ROOT, designMode: 'production' })
+        expect(missing.ok).toBe(false)
+        if (!missing.ok) {
+          expect(missing.errorReport.getHumanErrorMessage()).toContain('Missing accepted design lock')
+        }
 
-      FS.writeFile(appPath, designAppSource({ text: 'Hello after body edit' }))
-      const bodyEdit = await generateTaoDesignSuggestions({ file: appPath, stdLibRoot: STD_LIB_ROOT })
-      expect(bodyEdit.diagnostics.some(d => d.kind === 'changed-entry' || d.kind === 'stale-entry')).toBe(false)
+        const accepted = await acceptTaoDesignSuggestions({ file: appPath, stdLibRoot: STD_LIB_ROOT })
+        const lock = JSON.parse(FS.readTextFile(accepted.acceptedPath)) as TaoDesignLock
+        lock.generatedAt = '2099-01-01T00:00:00.000Z'
+        FS.writeFile(accepted.acceptedPath, `${stableStringify(lock)}\n`)
 
-      FS.writeFile(appPath, designAppSource({ spec: 'secondary dashboard home' }))
-      const stale = await compileTao({ file: appPath, stdLibRoot: STD_LIB_ROOT, designMode: 'production' })
-      expect(stale.ok).toBe(false)
-      if (!stale.ok) {
-        expect(stale.errorReport.getHumanErrorMessage()).toContain('Stale accepted design entry')
+        FS.writeFile(appPath, designAppSource({ text: 'Hello after body edit' }))
+        const bodyEdit = await generateTaoDesignSuggestions({ file: appPath, stdLibRoot: STD_LIB_ROOT })
+        expect(bodyEdit.diagnostics.some(d => d.kind === 'changed-entry' || d.kind === 'stale-entry')).toBe(false)
+
+        FS.writeFile(appPath, designAppSource({ spec: 'secondary dashboard home' }))
+        const stale = await compileTao({ file: appPath, stdLibRoot: STD_LIB_ROOT, designMode: 'production' })
+        expect(stale.ok).toBe(false)
+        if (!stale.ok) {
+          expect(stale.errorReport.getHumanErrorMessage()).toContain('Stale accepted design entry')
+        }
+      } finally {
+        FS.rmDirectory(tmpDir)
       }
-    } finally {
-      FS.rmDirectory(tmpDir)
-    }
-  })
+    },
+    DESIGN_LOCK_TEST_TIMEOUT_MS,
+  )
 
   test('production rejects malformed accepted locks', async () => {
     const { appPath, tmpDir } = writeDesignApp()
