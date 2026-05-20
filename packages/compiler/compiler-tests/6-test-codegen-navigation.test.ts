@@ -119,9 +119,12 @@ describe('codegen — navigation:', () => {
       'return <TaoAppNavigationRoot ref={_taoNavigationRootRef} linking={{ enabled: true }} onReady={props?.onReady} />',
     )
     expect(bootstrap).toContain('import { AppNavigationRoot }')
-    expect(bootstrap).toContain("import { SafeAreaProvider } from 'react-native-safe-area-context'")
-    expect(bootstrap).toContain('<SafeAreaProvider>')
+    expect(bootstrap).toContain("import { TaoAppShell } from './use/@tao/tao-runtime/AppShell'")
+    expect(bootstrap).not.toContain('SafeAreaProvider')
     expect(bootstrap).toContain('export default function CompiledTaoApp(props)')
+    expect(bootstrap).toContain('<TaoAppShell')
+    expect(bootstrap).toContain('kind="navigation"')
+    expect(bootstrap).toContain('onRuntimeReady={props?.onRuntimeReady}')
     expect(bootstrap).toContain('<AppNavigationRoot onReady={props?.onRuntimeReady} />')
     expect(bootstrap).not.toContain('<AppUIView />')
   })
@@ -236,7 +239,7 @@ describe('codegen — navigation:', () => {
     )
   })
 
-  test('keeps legacy ui-root bootstrap output unchanged', async () => {
+  test('emits app shell for ui-root bootstrap output', async () => {
     const result = await compileNavigationSource(`
       app Legacy {
         ui Home
@@ -251,7 +254,12 @@ describe('codegen — navigation:', () => {
 
     expect(emitted).not.toContain('@react-navigation/native')
     expect(bootstrap).toContain('import { AppUIView }')
+    expect(bootstrap).toContain("import { TaoAppShell } from './use/@tao/tao-runtime/AppShell'")
     expect(bootstrap).not.toContain('SafeAreaProvider')
+    expect(bootstrap).not.toContain('<RN.ScrollView')
+    expect(bootstrap).toContain('TaoDesignProvider')
+    expect(bootstrap).toContain('backgroundColor={_compiledTaoAppRootBackground(_taoDesignContext)}')
+    expect(bootstrap).toContain('kind="ui"')
     expect(bootstrap).toContain('<AppUIView />')
   })
 
