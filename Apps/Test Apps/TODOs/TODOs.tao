@@ -1,6 +1,6 @@
 use Button, Col, MultiLineText, Number, Row, Stack, Text, TextInput, TextLabel, WrappingRow from @tao/ui
 
-app TODOs {
+app TripPlanner {
    design {
       description "A calm native TODO workspace for capturing today's tasks, reviewing focus, and tracking small completion momentum. The interface should feel precise, optimistic, readable, and polished on phones."
    }
@@ -84,12 +84,14 @@ ui Today <"root todo dashboard for creating and reviewing today's tasks"> {
       Title,
       Done,
       Ordering,
+      order by Ordering desc
    }
    guard {
       Text "Loading tasks..."
    }
    render Screen [items top stretch, gap 18, pad 20, width fill] {
       Hero [gap 12, pad 18, width fill] {
+         Button "Delete", action { }
          HeroKicker "Today"
          HeroTitle "TODOs"
          HeroCopy "Capture the next useful task, keep the list readable, and make small progress visible without turning the app into a project dashboard."
