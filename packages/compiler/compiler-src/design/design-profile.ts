@@ -26,6 +26,7 @@ export type TaoDesignProfilePalette = {
 /** A full generated design profile emitted into the app bootstrap and consumed by the runtime design context. */
 export type TaoDesignProfile = {
   template: string
+  fontFamily: string
   controlRadius: number
   surfaceRadius: number
   spacingUnit: number
@@ -50,6 +51,7 @@ type ArchetypeAccent = { accent: string; subtle: string; on: string }
 
 type Archetype = {
   name: string
+  fontFamily: string
   controlRadius: number
   surfaceRadius: number
   spacingUnit: number
@@ -65,6 +67,7 @@ type ArchetypeKey = 'quietCraft' | 'crispOps' | 'expressive' | 'warmEditorial' |
 const ARCHETYPES: Record<ArchetypeKey, Archetype> = {
   quietCraft: {
     name: 'Quiet Craft',
+    fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
     controlRadius: 14,
     surfaceRadius: 16,
     spacingUnit: 10,
@@ -104,6 +107,7 @@ const ARCHETYPES: Record<ArchetypeKey, Archetype> = {
   },
   crispOps: {
     name: 'Crisp Operations',
+    fontFamily: "ui-sans-serif, 'Inter', 'Helvetica Neue', Arial, sans-serif",
     controlRadius: 8,
     surfaceRadius: 10,
     spacingUnit: 7,
@@ -143,6 +147,7 @@ const ARCHETYPES: Record<ArchetypeKey, Archetype> = {
   },
   expressive: {
     name: 'Expressive Product',
+    fontFamily: "'Avenir Next', 'Trebuchet MS', system-ui, sans-serif",
     controlRadius: 22,
     surfaceRadius: 22,
     spacingUnit: 9,
@@ -184,6 +189,7 @@ const ARCHETYPES: Record<ArchetypeKey, Archetype> = {
   },
   warmEditorial: {
     name: 'Warm Editorial',
+    fontFamily: "Georgia, 'Iowan Old Style', 'Times New Roman', serif",
     controlRadius: 10,
     surfaceRadius: 12,
     spacingUnit: 10,
@@ -223,6 +229,7 @@ const ARCHETYPES: Record<ArchetypeKey, Archetype> = {
   },
   nocturne: {
     name: 'Nocturne',
+    fontFamily: "'Avenir Next', system-ui, -apple-system, 'Segoe UI', sans-serif",
     controlRadius: 18,
     surfaceRadius: 18,
     spacingUnit: 9,
@@ -383,15 +390,17 @@ export function selectTaoDesignProfile(opts: { description: string; seed: string
   if (description === '') {
     return undefined
   }
-  const key = analyzeArchetype(description)
-  const arch = ARCHETYPES[key]
+  const arch = ARCHETYPES[analyzeArchetype(description)]
+  const tone = inferAxis(description, TONE_EXPRESSIVE_TERMS, TONE_QUIET_TERMS)
+  const density = inferAxis(description, DENSITY_COMPACT_TERMS, DENSITY_AIRY_TERMS)
   const idx = fnv1aHash32(opts.seed) % Math.max(arch.accentsLight.length, 1)
   return {
     template: arch.name,
-    controlRadius: arch.controlRadius,
-    surfaceRadius: arch.surfaceRadius,
-    spacingUnit: arch.spacingUnit,
-    baseFontSize: arch.baseFontSize,
+    fontFamily: arch.fontFamily,
+    controlRadius: Math.round(arch.controlRadius * (0.7 + tone * 0.6)),
+    surfaceRadius: Math.round(arch.surfaceRadius * (0.7 + tone * 0.6)),
+    spacingUnit: Math.round(arch.spacingUnit * (1.15 - density * 0.3) * 10) / 10,
+    baseFontSize: Math.round(arch.baseFontSize * (1.06 - density * 0.12)),
     light: paletteFor(arch.neutralLight, arch.accentsLight[idx]!, 'light'),
     dark: paletteFor(arch.neutralDark, arch.accentsDark[idx]!, 'dark'),
   }
@@ -404,6 +413,77 @@ export function taoDesignTemplateForDescription(description: string): string | u
     return undefined
   }
   return ARCHETYPES[analyzeArchetype(trimmed)].name
+}
+
+const TONE_EXPRESSIVE_TERMS = [
+  'bold',
+  'vibrant',
+  'playful',
+  'fun',
+  'energetic',
+  'hype',
+  'loud',
+  'big',
+  'dynamic',
+  'expressive',
+  'exciting',
+  'punchy',
+]
+const TONE_QUIET_TERMS = [
+  'calm',
+  'minimal',
+  'quiet',
+  'subtle',
+  'refined',
+  'understated',
+  'serene',
+  'gentle',
+  'soft',
+  'clean',
+  'simple',
+  'muted',
+]
+const DENSITY_COMPACT_TERMS = [
+  'dense',
+  'compact',
+  'data',
+  'dashboard',
+  'analytics',
+  'packed',
+  'efficient',
+  'professional',
+  'metrics',
+  'monitor',
+  'trading',
+  'ops',
+  'operations',
+]
+const DENSITY_AIRY_TERMS = [
+  'airy',
+  'spacious',
+  'generous',
+  'relaxed',
+  'simple',
+  'minimal',
+  'calm',
+  'breathe',
+  'slow',
+  'open',
+]
+
+/** inferAxis returns a 0..1 score: each "up" term pushes toward 1, each "down" term toward 0, centered at 0.5. */
+function inferAxis(description: string, up: string[], down: string[]): number {
+  const words = description.toLowerCase().match(/[a-z]+/g) ?? []
+  let score = 0
+  for (const word of words) {
+    if (up.includes(word)) {
+      score += 1
+    }
+    if (down.includes(word)) {
+      score -= 1
+    }
+  }
+  return Math.max(0, Math.min(1, 0.5 + score * 0.18))
 }
 
 function analyzeArchetype(description: string): ArchetypeKey {

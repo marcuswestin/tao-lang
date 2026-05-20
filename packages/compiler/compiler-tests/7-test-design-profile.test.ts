@@ -29,6 +29,27 @@ describe('selectTaoDesignProfile:', () => {
     expect(calm.surfaceRadius).not.toBe(bold.surfaceRadius)
   })
 
+  test('carries a font family, with a serif for the editorial archetype', () => {
+    const editorial = selectTaoDesignProfile({ description: 'a cozy warm family recipe box', seed: 'X' })!
+    const ops = selectTaoDesignProfile({ description: 'a finance analytics dashboard for an ops team', seed: 'X' })!
+    expect(editorial.fontFamily).toContain('serif')
+    expect(ops.fontFamily).not.toBe(editorial.fontFamily)
+  })
+
+  test('tone words change corner radius within the same template', () => {
+    const loud = selectTaoDesignProfile({ description: 'a bold punchy loud streetwear shop', seed: 'X' })!
+    const calm = selectTaoDesignProfile({ description: 'a refined understated muted streetwear shop', seed: 'X' })!
+    expect(loud.template).toBe(calm.template)
+    expect(loud.surfaceRadius).toBeGreaterThan(calm.surfaceRadius)
+  })
+
+  test('density words tighten spacing within the same template', () => {
+    const packed = selectTaoDesignProfile({ description: 'a packed efficient compact streetwear shop', seed: 'X' })!
+    const airy = selectTaoDesignProfile({ description: 'an airy spacious generous streetwear shop', seed: 'X' })!
+    expect(packed.template).toBe(airy.template)
+    expect(packed.spacingUnit).toBeLessThan(airy.spacingUnit)
+  })
+
   test('produces a full palette for both color schemes', () => {
     const p = selectTaoDesignProfile({ description: 'a bold playful streetwear shop', seed: 'Shop' })!
     for (const scheme of [p.light, p.dark]) {

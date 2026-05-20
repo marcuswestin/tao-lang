@@ -31,6 +31,7 @@ type TaoButtonProps = Omit<RN.PressableProps, 'children' | 'style'> & TaoLayoutP
 
 type TaoBaselinePalette = TaoRuntimeDesignPalette
 type TaoBaselineSpacing = typeof TAO_BASELINE_SPACING
+type TaoResolvedSpacing = TaoBaselineSpacing & { fontFamily?: string }
 
 type TaoBaselineAccentValues = {
   accent: string
@@ -246,7 +247,7 @@ function useTaoBaselinePalette(): TaoBaselinePalette {
   return buildBaselinePalette(context.colorScheme, context.accentName)
 }
 
-function useTaoBaselineSpacing(): TaoBaselineSpacing {
+function useTaoBaselineSpacing(): TaoResolvedSpacing {
   const context = useTaoDesignContext()
   const profile = context.profile
   if (!profile) {
@@ -260,6 +261,7 @@ function useTaoBaselineSpacing(): TaoBaselineSpacing {
     controlPaddingHorizontal: Math.round(unit * 1.6),
     controlPaddingVertical: Math.round(unit * 1.2),
     controlRadius: profile.controlRadius,
+    fontFamily: profile.fontFamily,
     labelFontSize: Math.max(12, Math.round(profile.baseFontSize * 0.875)),
     labelLineHeight: Math.round(profile.baseFontSize * 1.25),
     surfaceRadius: profile.surfaceRadius,
@@ -509,7 +511,7 @@ function LoadingStateView(viewDisplayName: string) {
   return Wrapped
 }
 
-function baselineCardStyleFor(palette: TaoBaselinePalette, spacing: TaoBaselineSpacing): RN.ViewStyle {
+function baselineCardStyleFor(palette: TaoBaselinePalette, spacing: TaoResolvedSpacing): RN.ViewStyle {
   return {
     backgroundColor: palette.surfaceBackground,
     borderColor: palette.border,
@@ -523,7 +525,7 @@ function baselineCardStyleFor(palette: TaoBaselinePalette, spacing: TaoBaselineS
 
 function baselineFeedbackSurfaceFor(
   palette: TaoBaselinePalette,
-  spacing: TaoBaselineSpacing,
+  spacing: TaoResolvedSpacing,
   kind: TaoFeedbackKind,
 ): RN.ViewStyle {
   return {
@@ -541,11 +543,12 @@ function baselineFeedbackSurfaceFor(
 
 function baselineFeedbackTitleFor(
   palette: TaoBaselinePalette,
-  spacing: TaoBaselineSpacing,
+  spacing: TaoResolvedSpacing,
   kind: TaoFeedbackKind,
 ): RN.TextStyle {
   return {
     color: kind === 'error' ? '#b91c1c' : palette.primaryText,
+    fontFamily: spacing.fontFamily,
     fontSize: spacing.bodyFontSize,
     fontWeight: '600',
     lineHeight: Math.round(spacing.bodyFontSize * 1.375),
@@ -555,11 +558,12 @@ function baselineFeedbackTitleFor(
 
 function baselineFeedbackMessageFor(
   palette: TaoBaselinePalette,
-  spacing: TaoBaselineSpacing,
+  spacing: TaoResolvedSpacing,
   kind: TaoFeedbackKind,
 ): RN.TextStyle {
   return {
     color: kind === 'error' ? '#7f1d1d' : palette.mutedText,
+    fontFamily: spacing.fontFamily,
     fontSize: spacing.labelFontSize,
     lineHeight: spacing.labelLineHeight,
     textAlign: 'center',
@@ -569,10 +573,12 @@ function baselineFeedbackMessageFor(
 function baselineTextStyleFor(
   role: BaselineTextRole,
   palette: TaoBaselinePalette,
-  spacing: TaoBaselineSpacing,
+  spacing: TaoResolvedSpacing,
 ): RN.TextStyle {
+  const font = spacing.fontFamily ? { fontFamily: spacing.fontFamily } : {}
   if (role === 'label') {
     return {
+      ...font,
       color: palette.secondaryText,
       fontSize: spacing.labelFontSize,
       fontWeight: '600',
@@ -582,6 +588,7 @@ function baselineTextStyleFor(
   }
   if (role === 'number') {
     return {
+      ...font,
       color: palette.primaryText,
       fontSize: spacing.bodyFontSize,
       fontVariant: ['tabular-nums'],
@@ -589,6 +596,7 @@ function baselineTextStyleFor(
     }
   }
   return {
+    ...font,
     color: palette.primaryText,
     fontSize: spacing.bodyFontSize,
     lineHeight: spacing.bodyLineHeight,
@@ -597,7 +605,7 @@ function baselineTextStyleFor(
 
 function baselineTextInputStyleFor(
   palette: TaoBaselinePalette,
-  spacing: TaoBaselineSpacing,
+  spacing: TaoResolvedSpacing,
   state: TaoDesignStateName,
 ): RN.TextStyle {
   const focused = state === 'focused'
@@ -608,6 +616,7 @@ function baselineTextInputStyleFor(
     borderRadius: spacing.controlRadius,
     borderWidth: focused ? spacing.borderWidth + 1 : spacing.borderWidth,
     color: disabled ? palette.disabledForeground : palette.primaryText,
+    fontFamily: spacing.fontFamily,
     fontSize: spacing.bodyFontSize,
     lineHeight: spacing.bodyLineHeight,
     minHeight: spacing.controlHeight,
@@ -618,7 +627,7 @@ function baselineTextInputStyleFor(
 
 function baselineButtonViewStyleFor(
   palette: TaoBaselinePalette,
-  spacing: TaoBaselineSpacing,
+  spacing: TaoResolvedSpacing,
   state: TaoDesignStateName,
 ): RN.ViewStyle {
   const disabled = state === 'disabled'
@@ -636,11 +645,12 @@ function baselineButtonViewStyleFor(
 
 function baselineButtonTextStyleFor(
   palette: TaoBaselinePalette,
-  spacing: TaoBaselineSpacing,
+  spacing: TaoResolvedSpacing,
   state: TaoDesignStateName,
 ): RN.TextStyle {
   return {
     color: state === 'disabled' ? palette.disabledForeground : palette.onAccentText,
+    fontFamily: spacing.fontFamily,
     fontSize: spacing.bodyFontSize,
     lineHeight: spacing.bodyLineHeight,
   }
@@ -650,6 +660,7 @@ function buttonTextStyle(style: RN.StyleProp<any>): RN.TextStyle {
   const flat = RN.StyleSheet.flatten(style) ?? {}
   const textStyle: RN.TextStyle = {}
   copyTextStyleProp(textStyle, flat, 'color')
+  copyTextStyleProp(textStyle, flat, 'fontFamily')
   copyTextStyleProp(textStyle, flat, 'fontSize')
   copyTextStyleProp(textStyle, flat, 'fontWeight')
   copyTextStyleProp(textStyle, flat, 'letterSpacing')

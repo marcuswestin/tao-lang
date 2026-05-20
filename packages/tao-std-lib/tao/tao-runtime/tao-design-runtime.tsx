@@ -31,6 +31,7 @@ export type TaoRuntimeDesignPalette = {
 /** A generated design profile (from an app `design { description }`) that overrides the baseline look at runtime. */
 export type TaoRuntimeDesignProfile = {
   template: string
+  fontFamily: string
   controlRadius: number
   surfaceRadius: number
   spacingUnit: number
