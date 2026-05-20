@@ -1,0 +1,64 @@
+use Button, Col, MultiLineText, Text, TextInput, TextLabel from @tao/ui
+
+app AppShellSafeAreaKeyboardApp {
+   ui ShellDeviceFixture
+}
+
+state Name = ""
+
+state Email = ""
+
+state Notes = ""
+
+state BottomField = ""
+
+state Submitted = "Ready for device smoke"
+
+action UpdateName Value text {
+   set Name = Value
+}
+
+action UpdateEmail Value text {
+   set Email = Value
+}
+
+action UpdateNotes Value text {
+   set Notes = Value
+}
+
+action UpdateBottomField Value text {
+   set BottomField = Value
+}
+
+action SubmitBottomField {
+   set Submitted = "Submitted"
+}
+
+ui ShellDeviceFixture {
+   render Col [items top stretch, gap 16, pad 20, width fill] {
+      Text "App Shell Device Fixture"
+      MultiLineText "This fixture is intentionally taller than a phone screen so the generated Tao app shell has to provide safe-area padding and keyboard-aware scrolling without author boilerplate."
+      Col [gap 8, pad 12, width fill] {
+         TextLabel "Top safe-area marker"
+         MultiLineText "On notched devices this copy should start below the unsafe status-bar area while still leaving the screen scrollable."
+      }
+      TextInput Name, .Label "Full name", UpdateName [width fill]
+      TextInput Email, .Label "Email address", UpdateEmail [width fill]
+      Col [gap 8, pad 12, height 120, width fill] {
+         TextLabel "Scroll spacer one"
+         MultiLineText "This section creates enough body content for a focused lower field to require keyboard-aware movement."
+      }
+      Col [gap 8, pad 12, height 120, width fill] {
+         TextLabel "Scroll spacer two"
+         MultiLineText "The screen should remain usable on compact phones, large phones, Android edge-to-edge devices, and web."
+      }
+      TextInput Notes, .Label "Middle notes", UpdateNotes [width fill]
+      Col [gap 8, pad 12, height 140, width fill] {
+         TextLabel "Bottom approach"
+         MultiLineText "The final input and primary action sit near the bottom of the scroll content, where home indicators and software keyboards usually expose shell bugs."
+      }
+      TextInput BottomField, .Label "Bottom keyboard field", UpdateBottomField [width fill]
+      Button "Submit bottom field", SubmitBottomField [width fill]
+      Text Submitted
+   }
+}

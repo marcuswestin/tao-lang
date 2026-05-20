@@ -1,0 +1,20 @@
+{
+  "steps": [
+    { "assertVisibleText": "App Shell Device Fixture" },
+    { "assertVisibleText": "Top safe-area marker" },
+    {
+      "typeText": {
+        "placeholder": "Bottom keyboard field",
+        "value": "keyboard reaches here"
+      }
+    },
+    {
+      "assertInputValue": {
+        "placeholder": "Bottom keyboard field",
+        "value": "keyboard reaches here"
+      }
+    },
+    { "pressVisibleText": "Submit bottom field" },
+    { "assertVisibleText": "Submitted" }
+  ]
+}

@@ -41,6 +41,26 @@ When building runtime-dependent behavior:
 just expo-runtime test
 ```
 
+## Device smoke
+
+Use `Apps/Test Apps/App Shell Safe Area and Keyboard/App Shell Safe Area and Keyboard.tao` for safe-area and keyboard checks.
+
+Checklist:
+
+- iOS notch device: top content starts below the unsafe status-bar area.
+- iOS home indicator: the bottom input and submit action can scroll above the keyboard and home indicator.
+- Android edge-to-edge: top and bottom system UI do not cover content.
+- Android keyboard: focusing `Bottom keyboard field` keeps the field visible and does not push bottom tabs awkwardly.
+- Web: the fixture still scrolls through the normal web shell.
+
+Useful local commands:
+
+```sh
+just dev roPhone "./Apps/Test Apps/App Shell Safe Area and Keyboard/App Shell Safe Area and Keyboard.tao"
+just expo-runtime android-start
+just expo-runtime web
+```
+
 ## Test file naming
 
 Files use `*.jest-test.ts(x)` to distinguish from Bun's `*.test.ts` pattern used elsewhere in the monorepo. This prevents `bun test` from accidentally picking them up.
