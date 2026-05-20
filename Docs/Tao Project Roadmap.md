@@ -11,12 +11,13 @@ Short list of the highest-priority work. The full project queue and feature inve
 1. Data Schema and Queries MVP
 2. Navigation and routing
 3. Android runtime bring-up
-4. Core language surface
-5. Beautiful App Defaults MVP
-6. Forms and inputs
-7. Runtime targets: production builds and staging builds
-8. Demo apps: Still and Rooms
-9. Live preview in the Tao VS Code extension
+4. App-shell hardening
+5. Core language surface
+6. Beautiful App Defaults MVP
+7. Forms and inputs
+8. Runtime targets: production builds and staging builds
+9. Demo apps: Still and Rooms
+10. Live preview in the Tao VS Code extension
 
 ## Current Project Queue
 
@@ -27,13 +28,14 @@ Use this table to decide the next project and keep planning state visible. Detai
 | 1        | Data Schema and Queries MVP          | Merged      | [Research](./Projects/Data%20Schema%20and%20Queries%20MVP%20Project%20Research.md)                                      | [Plan](./Projects/Data%20Schema%20and%20Queries%20MVP%20Project%20Plan.md)                                      | -                                     | Landed in `main` as `7f46ca9`; remote feature branch preserved for reference              |
 | 2        | Navigation and routing               | Merged      | [Research](./Projects/Navigation%20and%20Routing%20Project%20Research.md)                                               | [Plan](./Projects/Navigation%20and%20Routing%20Project%20Plan.md)                                               | -                                     | Landed in `main`; remote feature branch preserved for reference                           |
 | 3        | Android runtime bring-up             | Merged      | -                                                                                                                       | -                                                                                                               | -                                     | Android SDK/devenv and Expo Android commands landed; remote feature branch preserved      |
-| 4        | Beautiful App Defaults MVP           | Planned     | [Research](./Projects/Beautiful%20App%20Defaults%20MVP%20Project%20Research.md)                                         | [Plan](./Projects/Beautiful%20App%20Defaults%20MVP%20Project%20Plan.md)                                         | Run `project-4-review-project-plan`   | Make quick Tao apps look good by default before flagship demo polish                      |
-| 4 (alt)  | Look Great By Default MVP            | Planned     | [Research](./Projects/Look%20Great%20By%20Default%20MVP%20Project%20Research.md)                                        | [Plan](./Projects/Look%20Great%20By%20Default%20MVP%20Project%20Plan.md)                                        | Run `project-4-review-project-plan`   | Alt research/plan track for the same scope as priority 4; reconcile before implementation |
-| 5        | Demo apps: Still and Rooms           | Planned     | [Still](./Projects/Still%20App%20Project%20Research.md); [Rooms](./Projects/Rooms%20Chat%20App%20Project%20Research.md) | [Still](./Projects/Still%20App%20Project%20Plan.md); [Rooms](./Projects/Rooms%20Chat%20App%20Project%20Plan.md) | Run `project-4-review-project-plan`   | Implement the personal focus and realtime chat demos                                      |
-| 6        | Full design inference and styling    | Planned     | -                                                                                                                       | [Plan](./Projects/UI%20-%20Layout%20and%20Styling/UI%20Design/UI%20Design%20Inference%20Project%20Plan.md)      | Run `project-4-review-project-plan`   | Broader accepted-lock, variant, generated style, and future styling workflow              |
-| 7        | Layout era architecture improvements | Planned     | -                                                                                                                       | [Plan](./Projects/UI%20-%20Layout%20Era%20Architecture%20Improvements%20Plan.md)                                | Run `project-2-research-project`      | Compiler architecture cleanup                                                             |
-| 8        | Project workflow skills and roadmap  | Implemented | -                                                                                                                       | -                                                                                                               | Run `project-6-review-implementation` | Workflow closure item                                                                     |
-| 9        | Agent skill opportunity workflow     | Implemented | -                                                                                                                       | -                                                                                                               | Run `project-6-review-implementation` | Workflow closure item                                                                     |
+| 4        | App-shell hardening                  | Reviewed    | -                                                                                                                       | [Plan](./Projects/App%20Shell%20Safe%20Area%20and%20Keyboard%20Project%20Plan.md)                               | Run `project-5-implement-project`     | Generated app shell safe-area and keyboard-aware scrolling for real devices               |
+| 5        | Beautiful App Defaults MVP           | Planned     | [Research](./Projects/Beautiful%20App%20Defaults%20MVP%20Project%20Research.md)                                         | [Plan](./Projects/Beautiful%20App%20Defaults%20MVP%20Project%20Plan.md)                                         | Run `project-4-review-project-plan`   | Make quick Tao apps look good by default before flagship demo polish                      |
+| 5 (alt)  | Look Great By Default MVP            | Planned     | [Research](./Projects/Look%20Great%20By%20Default%20MVP%20Project%20Research.md)                                        | [Plan](./Projects/Look%20Great%20By%20Default%20MVP%20Project%20Plan.md)                                        | Run `project-4-review-project-plan`   | Alt research/plan track for the same scope as priority 5; reconcile before implementation |
+| 6        | Demo apps: Still and Rooms           | Planned     | [Still](./Projects/Still%20App%20Project%20Research.md); [Rooms](./Projects/Rooms%20Chat%20App%20Project%20Research.md) | [Still](./Projects/Still%20App%20Project%20Plan.md); [Rooms](./Projects/Rooms%20Chat%20App%20Project%20Plan.md) | Run `project-4-review-project-plan`   | Implement the personal focus and realtime chat demos                                      |
+| 7        | Full design inference and styling    | Planned     | -                                                                                                                       | [Plan](./Projects/UI%20-%20Layout%20and%20Styling/UI%20Design/UI%20Design%20Inference%20Project%20Plan.md)      | Run `project-4-review-project-plan`   | Broader accepted-lock, variant, generated style, and future styling workflow              |
+| 8        | Layout era architecture improvements | Planned     | -                                                                                                                       | [Plan](./Projects/UI%20-%20Layout%20Era%20Architecture%20Improvements%20Plan.md)                                | Run `project-2-research-project`      | Compiler architecture cleanup                                                             |
+| 9        | Project workflow skills and roadmap  | Implemented | -                                                                                                                       | -                                                                                                               | Run `project-6-review-implementation` | Workflow closure item                                                                     |
+| 10       | Agent skill opportunity workflow     | Implemented | -                                                                                                                       | -                                                                                                               | Run `project-6-review-implementation` | Workflow closure item                                                                     |
 
 Project queue status values:
 
@@ -91,7 +93,7 @@ Feature inventory fields:
 - Status: Design: standard layout views and the layout/styling boundary are actively specified; Implementation: `Row`, `Col`, `Box`, `Stack`, `WrappingRow`, layout validation, codegen, runtime lowering, and layout tests are underway.
 - MVP remaining: finish the raw layout MVP, cover responsive/adaptive essentials, preserve React Native/Expo mapping, and decide the minimum safe-area and keyboard-aware layout contract.
 - Deferred: grid/table/masonry, absolute positioning, overflow/layers, container queries, measure functions, display-contents edge cases, and outside-bounds effects.
-- Project docs: [UI Layout Specification](./Tao%20Language%20Design/UI%20Layout%20Specification.md), [Layout and Styling Project Plan](./Projects/UI%20-%20Layout%20and%20Styling/Layout%20and%20Styling%20Project%20Plan.md), [Layout MVP Implementation Plan](./Projects/UI%20-%20Layout%20and%20Styling/Layout%20MVP%20Implementation%20Plan.md).
+- Project docs: [UI Layout Specification](./Tao%20Language%20Design/UI%20Layout%20Specification.md), [Layout and Styling Project Plan](./Projects/UI%20-%20Layout%20and%20Styling/Layout%20and%20Styling%20Project%20Plan.md), [Layout MVP Implementation Plan](./Projects/UI%20-%20Layout%20and%20Styling/Layout%20MVP%20Implementation%20Plan.md), [App Shell Safe Area and Keyboard Project Plan](./Projects/App%20Shell%20Safe%20Area%20and%20Keyboard%20Project%20Plan.md).
 
 ## Design Inference, Appearance, Variants, And Visual Defaults
 
@@ -173,9 +175,9 @@ Feature inventory fields:
 ## Runtime Targets: Expo Native, Web, Headless Tests, App Shell, And Runtime Manifest
 
 - Status: Design: Expo native/web and headless runtime boundaries are documented; Implementation: Expo runtime, headless runtime, app shell, generated app compile flow, and runtime package tests exist.
-- MVP remaining: harden the generated app shell, Android bring-up, shared runtime manifest parsing, compiled-app test helpers, web behavior, source maps, and runtime parity expectations.
+- MVP remaining: implement app-shell hardening, shared runtime manifest parsing, compiled-app test helpers, web behavior, source maps, and runtime parity expectations.
 - Deferred: additional runtime targets, advanced platform adaptation, runtime plugin hosting, production observability hooks, and deep performance tuning.
-- Project docs: [Expo Runtime README](../packages/expo-runtime/README.md), [Headless Test Runtime README](../packages/headless-test-runtime/README.md), [SourceMapping Plan](./Projects/Misc/SourceMapping-Plan.md), Needs project doc for runtime manifest.
+- Project docs: [App Shell Safe Area and Keyboard Project Plan](./Projects/App%20Shell%20Safe%20Area%20and%20Keyboard%20Project%20Plan.md), [Expo Runtime README](../packages/expo-runtime/README.md), [Headless Test Runtime README](../packages/headless-test-runtime/README.md), [SourceMapping Plan](./Projects/Misc/SourceMapping-Plan.md), Needs project doc for runtime manifest.
 
 ## Parser, Compiler, Formatter, CLI, Source Maps, And IDE/Editor Tooling
 
