@@ -9,12 +9,14 @@ import {
 import { fireEvent, render } from '@testing-library/react-native'
 import type { ComponentType } from 'react'
 import * as RN from 'react-native'
+import { TaoAppShell } from '../../tao-std-lib/tao/tao-runtime/AppShell.native'
 import { Layout } from '../../tao-std-lib/tao/tao-runtime/Layout'
 import { TR } from '../../tao-std-lib/tao/tao-runtime/tao-runtime'
 
 const rowLayoutStyle = { gap: 8, justifyContent: 'space-between' } as const
 const labelLayoutStyle = { alignSelf: 'center', width: 120 } as const
 const buttonLayoutStyle = { alignSelf: 'center', width: 180 } as const
+const appShellContentStyle = { paddingHorizontal: 7, paddingTop: 5 } as const
 
 type ExpoRuntimePackageJson = {
   readonly dependencies?: Record<string, string>
@@ -189,6 +191,37 @@ describe('runtime:', () => {
       alignSelf: 'center',
       width: 120,
     })
+  })
+
+  test('applies safe-area insets to the native Tao app shell content frame', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const safeAreaMock = require('react-native-safe-area-context') as {
+      setSafeAreaInsetsForTests(insets: { bottom: number; left: number; right: number; top: number }): void
+    }
+    safeAreaMock.setSafeAreaInsetsForTests({ bottom: 20, left: 3, right: 4, top: 10 })
+
+    const screen = render(
+      <TaoAppShell
+        backgroundColor="#f7f8fa"
+        contentStyle={appShellContentStyle}
+        kind="ui"
+      >
+        <RN.Text>Shell content</RN.Text>
+      </TaoAppShell>,
+    )
+    const scrollView = screen.UNSAFE_getByType(RN.ScrollView)
+
+    expect(flattenStyle(scrollView.props.style)).toMatchObject({
+      backgroundColor: '#f7f8fa',
+      flex: 1,
+    })
+    expect(flattenStyle(scrollView.props.contentContainerStyle)).toMatchObject({
+      paddingBottom: 20,
+      paddingLeft: 10,
+      paddingRight: 11,
+      paddingTop: 15,
+    })
+    safeAreaMock.setSafeAreaInsetsForTests({ bottom: 0, left: 0, right: 0, top: 0 })
   })
 
   test('applies standard container host styles through std-lib views', () => {

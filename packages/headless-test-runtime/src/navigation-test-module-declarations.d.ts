@@ -23,5 +23,7 @@ declare module '@react-navigation/native-stack' {
 }
 
 declare module 'react-native-safe-area-context' {
+  export const initialWindowMetrics: null
   export function SafeAreaProvider(props: { children?: import('react').ReactNode }): import('react').ReactElement
+  export function useSafeAreaInsets(): { bottom: number; left: number; right: number; top: number }
 }
