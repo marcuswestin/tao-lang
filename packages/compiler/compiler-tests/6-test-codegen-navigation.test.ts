@@ -107,6 +107,9 @@ describe('codegen — navigation:', () => {
     expect(emitted).not.toContain('StackActions')
     expect(emitted).not.toContain('createTaoNavigationRuntime')
     expect(emitted).toContain('const _TaoNavigator_SearchTabs = createBottomTabNavigator({')
+    expect(emitted).toContain(`screenOptions: {
+    tabBarHideOnKeyboard: true,
+  },`)
     expect(emitted).toContain('const _TaoNavigator_MainNavigation = createNativeStackNavigator({')
     expect(emitted).toContain(
       'RoomId={TR.Literal(_taoNavigationRouteParam(_routeParams.RoomId, "text", "RoomId"))}',

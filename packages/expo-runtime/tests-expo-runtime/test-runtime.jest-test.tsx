@@ -27,6 +27,9 @@ type ExpoRuntimeAppJson = {
   readonly expo?: {
     readonly experiments?: Record<string, unknown>
     readonly plugins?: unknown[]
+    readonly android?: {
+      readonly softwareKeyboardLayoutMode?: string
+    }
     readonly web?: {
       readonly output?: string
     }
@@ -57,6 +60,7 @@ describe('runtime:', () => {
     expect(packageJson.dependencies?.['expo-splash-screen']).toBeDefined()
     expect(appJson.expo?.plugins).not.toContain('expo-router')
     expect(appJson.expo?.experiments?.['typedRoutes']).toBeUndefined()
+    expect(appJson.expo?.android?.softwareKeyboardLayoutMode).toBe('pan')
     expect(appJson.expo?.web?.output).toBe('single')
     expect(entrySource).toContain('registerRootComponent(ExpoRuntimeEntrypoint)')
     expect(entrySource).not.toContain('expo-router')

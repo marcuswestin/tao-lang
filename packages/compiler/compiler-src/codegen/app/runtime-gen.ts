@@ -513,10 +513,16 @@ ${designContext}
     emitted.add(constName)
     const factory = navigator.kind === 'stack' ? 'createNativeStackNavigator' : 'createBottomTabNavigator'
     const screens = navigator.destinations.map(destination => this.navigationDestinationConfig(destination)).join('\n')
+    const screenOptions = navigator.kind === 'tabs'
+      ? `
+  screenOptions: {
+    tabBarHideOnKeyboard: true,
+  },`
+      : ''
     return `const ${constName} = ${factory}({
   screens: {
 ${screens}
-  },
+  },${screenOptions}
 })`
   }
 
