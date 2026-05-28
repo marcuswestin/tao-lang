@@ -21,7 +21,8 @@ description: Guides Tao parser, validator, formatter, compiler, and runtime emis
 6. Use `name` for grammar properties that can be referenced.
 7. For UI/app-runtime features, verify the React Native/Expo target surface first. Unsupported behavior must become a validation error, a deliberate runtime error, or a clearly named Tao runtime helper instead of ad hoc generated code.
 8. Update formatter behavior and tests when syntax shape changes.
-9. Feature new language/runtime behavior in at least one `Apps/Test Apps/` app.
+9. Prefer runtime helpers for language constructs when a construct has reusable runtime semantics. Codegen should pass compiled operands, callbacks, or flags into a clearly named `TR.*` helper instead of expanding the construct’s full behavior inline at every call site.
+10. Feature new language/runtime behavior in at least one `Apps/Test Apps/` app.
 
 ## Validation
 

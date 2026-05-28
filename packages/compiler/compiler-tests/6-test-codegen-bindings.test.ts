@@ -115,6 +115,75 @@ describe('codegen — call-site argument bindings:', () => {
   })
 })
 
+describe('codegen — control syntax mini slice:', () => {
+  test('function calls emit props and return expressions', async () => {
+    const out = await writeAndCompile(`
+      app A { ui V }
+      ui Text Value text { render inject \`\`\`ts return null \`\`\` }
+      function Label Count number {
+        if Count = 0 {
+          return null
+        } else {
+          return "Count: \${Count}"
+        }
+      }
+      ui V {
+        state Count = 0
+        render Text call Label Count
+      }
+    `)
+    expect(out).toMatch(/_Scope\.Label = TR\.Function\(function Label\(_FunctionProps\)/)
+    expect(out).toContain('Count: ')
+    expect(out).toMatch(/Label\.invoke\(\{[\s\S]*Count:/)
+    expect(out).toContain("TR.BinaryOperation(_Scope.Count, '=', TR.Literal(0))")
+  })
+
+  test('view if statements emit conditional fragments', async () => {
+    const out = await writeAndCompile(`
+      app A { ui V }
+      ui Text Value text { render inject \`\`\`ts return null \`\`\` }
+      frame Col { render inject \`\`\`ts return <>{_ViewProps.children}</> \`\`\` }
+      ui V {
+        state Count = 0
+        render Col {
+          if Count > 0 {
+            Text "non-empty"
+          } else {
+            Text "empty"
+          }
+        }
+      }
+    `)
+    expect(out).toContain("TR.IfStatement(TR.BinaryOperation(_Scope.Count, '>', TR.Literal(0)),")
+    expect(out).toMatch(/TR\.IfStatement[\s\S]*non-empty[\s\S]*empty[\s\S]*true/)
+  })
+
+  test('query .Empty compiles as member access on query data', async () => {
+    const out = await writeAndCompile(`
+      data D {
+        Items Item { Title text }
+      }
+      app A {
+        provider InstantDB { appId "00000000-0000-0000-0000-000000000001" }
+        ui V
+      }
+      ui Text Value text { render inject \`\`\`ts return null \`\`\` }
+      frame Col { render inject \`\`\`ts return <>{_ViewProps.children}</> \`\`\` }
+      ui V {
+        query D.Items as Items
+        render Col {
+          if (Items.Empty) {
+            Text "empty"
+          } else {
+            Text "ready"
+          }
+        }
+      }
+    `)
+    expect(out).toContain("TR.IfStatement(TR.MemberAccess(TR.QueryData(_Scope.Items), ['Empty']),")
+  })
+})
+
 describe('codegen — action local parameter types (Phase 3):', () => {
   test('all three forms emit equivalent Step prop key', async () => {
     const outBare = await writeAndCompile(SNIPPET_MINIMAL_BUMP_APP_BARE_STEP)

@@ -63,6 +63,7 @@ export const typeSystemValidator: Pick<
   | 'RenderStatement'
   | 'ViewRender'
   | 'ActionRender'
+  | 'FunctionCallExpression'
 > = {
   TypedLiteralExpression: makeValidater((node, report) => {
     validateDotLocalTypeRef(node, report)
@@ -99,6 +100,10 @@ export const typeSystemValidator: Pick<
 
   ActionRender: makeValidater((node, report) => {
     validateActionRenderCallee(node, report)
+    validateNoObjectInCallArgument(node, report)
+  }),
+
+  FunctionCallExpression: makeValidater((node, report) => {
     validateNoObjectInCallArgument(node, report)
   }),
 }

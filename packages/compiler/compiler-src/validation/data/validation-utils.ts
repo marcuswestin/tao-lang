@@ -136,13 +136,13 @@ function bindingName(node: AST.Node & { name?: string }): string | undefined {
   return AST.isQueryDeclaration(node) ? queryDeclarationAliasName(node) : node.name
 }
 
-/** findParameterizedDeclaration returns the nearest enclosing view or action that may own parameters. */
+/** findParameterizedDeclaration returns the nearest enclosing callable declaration that may own parameters. */
 function findParameterizedDeclaration(
   binding: AST.Referenceable,
-): AST.ViewDeclaration | AST.ActionDeclaration | undefined {
+): AST.ViewDeclaration | AST.ActionDeclaration | AST.FunctionDeclaration | undefined {
   let current: AST.Node | undefined = binding.$container
   while (current) {
-    if (AST.isBlockDeclaration(current)) {
+    if (AST.isCallableDeclaration(current)) {
       return current
     }
     current = current.$container

@@ -18,6 +18,7 @@ const moduleScopedRefRules: readonly {
 }[] = [
   { property: 'view', isContainer: (node) => AST.isViewRender(node) || AST.isRenderStatement(node) },
   { property: 'action', isContainer: AST.isActionRender },
+  { property: 'function', isContainer: AST.isFunctionCallExpression },
   { property: 'ui', isContainer: AST.isAppUiStatement },
   { property: 'navigation', isContainer: AST.isAppNavigationStatement },
   { property: 'target', isContainer: AST.isVariantDeclaration },
@@ -126,7 +127,7 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
   /** addCalleeLocalTypeDescriptions adds synthetic TypeDeclaration descriptions for a callee's local
    * parameter types so that unqualified constructor heads resolve in argument context. */
   private addCalleeLocalTypeDescriptions(
-    callee: AST.ViewDeclaration | AST.ActionDeclaration,
+    callee: AST.ViewDeclaration | AST.ActionDeclaration | AST.FunctionDeclaration,
     document: langium.LangiumDocument,
     out: AST.NodeDescription[],
   ): void {

@@ -16,6 +16,12 @@ Format new entries like this and put them at the top of `Open`:
 
 ## Open
 
+### 2026-05-28 - Prefer runtime helpers for language construct semantics.
+
+- Source/context: review feedback on the control-syntax slice asked for `TR.*` helpers rather than expanding each `if`/function behavior directly in codegen.
+- Why it matters: language constructs with repeated semantics get harder to audit when every call site expands custom generated code.
+- Possible follow-up: keep `skills/tao-compiler-work` guidance current and consider a compiler-work checklist item that asks whether a new construct deserves a runtime helper.
+
 ### 2026-05-19 - Expo generated app imports can still break on spaced source filenames.
 
 - Source/context: during Android emulator validation, compiling `Apps/Test Apps/Simple test render/Simple test render.tao` produced `_gen/tao-app/app-bootstrap.tsx` imports such as `./app/Simple test render`, and Metro failed with `Unable to resolve "./app/Simple test render"`.

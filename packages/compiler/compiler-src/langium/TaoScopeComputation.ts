@@ -76,6 +76,7 @@ export class TaoScopeComputation extends langium.DefaultScopeComputation {
         NavigatorDeclaration: (n) => this.collectSymbolForScope(n, document, localSymbols),
         VariantDeclaration: (n) => this.collectSymbolForScope(n, document, localSymbols),
         ActionDeclaration: (n) => this.collectSymbolForScope(n, document, localSymbols),
+        FunctionDeclaration: (n) => this.collectSymbolForScope(n, document, localSymbols),
         TypeDeclaration: (n) => this.collectSymbolForScope(n, document, localSymbols),
         DataDeclaration: (n) => this.collectSymbolForScope(n, document, localSymbols),
         DataEntityDeclaration: (n) => this.collectSymbolForScope(n, document, localSymbols, n.$container),
@@ -97,7 +98,7 @@ export class TaoScopeComputation extends langium.DefaultScopeComputation {
   ) {
     const paramList = node.$container
     const parentDecl = paramList?.$container
-    if (!AST.isParameterList(paramList) || !AST.isBlockDeclaration(parentDecl)) {
+    if (!AST.isParameterList(paramList) || !AST.isCallableDeclaration(parentDecl)) {
       return
     }
     this.collectSymbolForScope(node, document, localSymbols, parentDecl)
