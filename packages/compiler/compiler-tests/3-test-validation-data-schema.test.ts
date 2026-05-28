@@ -1,7 +1,7 @@
 import { dataSchemaValidationMessages, forCreateMessages, queryValidationMessages } from '@compiler/validation/data'
 import { validationMessages } from '@compiler/validation/tao-lang-validator'
-import { expectHumanMessagesContain } from './test-utils/diagnostics'
-import { describe, parseASTWithErrors, parseTaoFully, test } from './test-utils/test-harness'
+import { expectHasHumanErrors, expectHumanMessagesContain } from './test-utils/diagnostics'
+import { describe, parseASTWithErrors, parseMultipleFiles, parseTaoFully, test } from './test-utils/test-harness'
 
 describe('validation — app provider:', () => {
   test('duplicate app provider fails validation', async () => {
@@ -25,6 +25,22 @@ describe('validation — app provider:', () => {
       ui Root { render inject \`\`\`ts return null \`\`\` }
     `)
     expectHumanMessagesContain(report, validationMessages.unknownAppDataProvider('AcmeDb'))
+  })
+
+  test('partial app root statements do not crash validation', async () => {
+    const result = await parseMultipleFiles([
+      {
+        path: '/workspace/partial-app.tao',
+        code: `
+          app MyApp {
+            provider
+            ui
+            navigation
+          }
+        `,
+      },
+    ])
+    expectHasHumanErrors(result.getErrors())
   })
 })
 
@@ -149,6 +165,25 @@ describe('validation — data schema:', () => {
         }
       }
     `)
+  })
+
+  test('partial data entity declarations do not crash scoped query validation', async () => {
+    const result = await parseMultipleFiles([
+      {
+        path: '/workspace/partial-data.tao',
+        code: `
+          data MeetupData {
+            People Person { Name text }
+            Events Event { Title text }
+            Rsvps {
+              Event,
+            }
+          }
+          query MeetupData.Events as Events { Title }
+        `,
+      },
+    ])
+    expectHasHumanErrors(result.getErrors())
   })
 })
 

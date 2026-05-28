@@ -1,4 +1,4 @@
-use Text, Number, Button, Box, Row from @tao/ui
+use Text, Number, Button, Box, Row, Col from @tao/ui
 
 app TaoStudio {
    ui RootView
@@ -7,10 +7,14 @@ app TaoStudio {
 state GlobalCount = 100
 
 ui RootView {
-   Text "DEV APP"
-   Number GlobalCount
-   Button "Click me", StartDebugger { }
-   Box {
+   render Col {
+      Text "DEV APP"
+      Number GlobalCount
+      Button "Click me", StartDebugger { }
+      Box {
+         Text "Hello"
+      }
+   }
 
    // @Header Row {
    //     Text "Hello"
@@ -25,7 +29,6 @@ ui RootView {
    //     Text "Hello"
    //     Text "World"
    // }
-    }
 }
 
 action StartDebugger {

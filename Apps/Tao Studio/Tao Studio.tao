@@ -5,5 +5,5 @@ app TaoStudio {
 }
 
 ui RootView {
-   Text "Hello World"
+   render Text "Hello World"
 }

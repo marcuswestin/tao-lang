@@ -47,20 +47,24 @@ function validateNoDuplicateEntityNames(node: AST.DataDeclaration, report: Repor
   const seenPluralNames = new Map<string, AST.DataEntityDeclaration>()
 
   for (const entity of entities) {
-    const existingName = seenNames.get(entity.name)
-    if (existingName) {
-      report.error(dataSchemaValidationMessages.duplicateEntityName(entity.name), { node: entity, property: 'name' })
+    if (isPresentIdentifier(entity.name)) {
+      const existingName = seenNames.get(entity.name)
+      if (existingName) {
+        report.error(dataSchemaValidationMessages.duplicateEntityName(entity.name), { node: entity, property: 'name' })
+      }
+      seenNames.set(entity.name, entity)
     }
-    seenNames.set(entity.name, entity)
 
-    const existingPlural = seenPluralNames.get(entity.pluralName)
-    if (existingPlural) {
-      report.error(
-        dataSchemaValidationMessages.duplicateEntityPluralName(entity.pluralName),
-        { node: entity, property: 'pluralName' },
-      )
+    if (isPresentIdentifier(entity.pluralName)) {
+      const existingPlural = seenPluralNames.get(entity.pluralName)
+      if (existingPlural) {
+        report.error(
+          dataSchemaValidationMessages.duplicateEntityPluralName(entity.pluralName),
+          { node: entity, property: 'pluralName' },
+        )
+      }
+      seenPluralNames.set(entity.pluralName, entity)
     }
-    seenPluralNames.set(entity.pluralName, entity)
   }
 }
 
@@ -69,10 +73,10 @@ function validateEntityUppercaseNames(
   node: AST.DataEntityDeclaration,
   report: Reporter<AST.DataEntityDeclaration>,
 ): void {
-  if (!startsUppercase(node.name)) {
+  if (isPresentIdentifier(node.name) && !startsUppercase(node.name)) {
     report.error(dataSchemaValidationMessages.entityNameMustBeUppercase(node.name), { node, property: 'name' })
   }
-  if (!startsUppercase(node.pluralName)) {
+  if (isPresentIdentifier(node.pluralName) && !startsUppercase(node.pluralName)) {
     report.error(
       dataSchemaValidationMessages.entityNameMustBeUppercase(node.pluralName),
       { node, property: 'pluralName' },
@@ -87,9 +91,12 @@ function validateNoDuplicateFieldNames(
 ): void {
   const seen = new Set<string>()
   for (const field of node.fields) {
+    if (!isPresentIdentifier(field.name)) {
+      continue
+    }
     if (seen.has(field.name)) {
       report.error(
-        dataSchemaValidationMessages.duplicateFieldName(node.name, field.name),
+        dataSchemaValidationMessages.duplicateFieldName(node.name ?? '?', field.name),
         { node: field, property: 'name' },
       )
     }
@@ -102,7 +109,7 @@ function validateFieldUppercaseName(
   node: AST.DataFieldDeclaration,
   report: Reporter<AST.DataFieldDeclaration>,
 ): void {
-  if (!startsUppercase(node.name)) {
+  if (isPresentIdentifier(node.name) && !startsUppercase(node.name)) {
     report.error(dataSchemaValidationMessages.fieldNameMustBeUppercase(node.name), { node, property: 'name' })
   }
 }
@@ -112,7 +119,7 @@ function validateDataTypeUppercaseName(
   node: AST.DataTypeDeclaration,
   report: Reporter<AST.DataTypeDeclaration>,
 ): void {
-  if (!startsUppercase(node.name)) {
+  if (isPresentIdentifier(node.name) && !startsUppercase(node.name)) {
     report.error(dataSchemaValidationMessages.entityNameMustBeUppercase(node.name), { node, property: 'name' })
   }
 }
@@ -133,12 +140,12 @@ function validateShorthandFieldType(
     return
   }
   const entityNames = new Set(
-    dataDecl.dataStatements.filter(AST.isDataEntityDeclaration).map(e => e.name),
+    dataDecl.dataStatements.filter(AST.isDataEntityDeclaration).map(e => e.name).filter(isPresentIdentifier),
   )
   const typeNames = new Set(
-    dataDecl.dataStatements.filter(AST.isDataTypeDeclaration).map(t => t.name),
+    dataDecl.dataStatements.filter(AST.isDataTypeDeclaration).map(t => t.name).filter(isPresentIdentifier),
   )
-  if (!entityNames.has(node.name) && !typeNames.has(node.name)) {
+  if (isPresentIdentifier(node.name) && !entityNames.has(node.name) && !typeNames.has(node.name)) {
     report.error(
       dataSchemaValidationMessages.shorthandFieldNotAnEntity(node.name),
       { node, property: 'name' },
@@ -188,4 +195,8 @@ function findParentDataDeclaration(node: AST.Node): AST.DataDeclaration | undefi
 function startsUppercase(name: string): boolean {
   const first = name.charAt(0)
   return first !== '' && first === first.toUpperCase() && first !== first.toLowerCase()
+}
+
+function isPresentIdentifier(value: unknown): value is string {
+  return typeof value === 'string' && value.length > 0
 }

@@ -127,6 +127,10 @@ gen:
 extension-build-package-and-install:
     just ide-extension build-package-and-install
 
+# Uninstall the extension from cursor and vscode
+uninstall-extension:
+    just ide-extension uninstall-extension
+
 # Drop build outputs and local caches. Does not stop local InstantDB or remove node_modules.
 clean:
     echo "Removing all build artifacts ..."

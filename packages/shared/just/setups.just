@@ -27,12 +27,6 @@ _setup_git_repo:
     just deps
     just _setup_dprint_plugins
     just gen build
-    just _print_keybinding_info
 
 _setup_dprint_plugins:
     dprint config update --yes
-
-_print_keybinding_info:
-    @echo "\n\tInfo: Optional keybinding for build and reload extension."
-    @echo "\tAdd this to your ~/.vscode-keybindings.json file if it is not already installed:"
-    @echo "\n\t\t"'{ "key": "cmd+shift+b", "command": "multiCommand.buildExtensionThenRestartHost" },\n'

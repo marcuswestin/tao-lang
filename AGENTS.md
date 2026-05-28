@@ -48,6 +48,7 @@ Tao is a programming language for building native and web apps.
 ## Approach
 
 - Read existing files before writing, and re-read before editing if the file may have changed.
+- Assume other agents may be working in parallel in this checkout or other worktrees. Dirty changes may be unrelated; check status when useful and preserve work you did not make.
 - Be thorough in reasoning and concise in user-facing output.
 - Avoid loading large files wholesale unless required; use targeted search or chunks first.
 - If one issue takes multiple failed or partial approaches, use `skills/multi-pass-debugging`, keep a working notes document, and re-research the owning layer before adding more shims.

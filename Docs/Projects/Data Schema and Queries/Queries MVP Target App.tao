@@ -1,3 +1,5 @@
+use Text, Col, Button from @tao/ui
+
 // This app is the target for the Queries MVP.
 // Let's get it to compile and run.
 
@@ -51,7 +53,6 @@ app MeetupLite {
 // App
 //////
 
-use Text, Col, Button from @tao/ui
 
 view AppRoot {
   guard { Text "Loading MeetupLite..." }
