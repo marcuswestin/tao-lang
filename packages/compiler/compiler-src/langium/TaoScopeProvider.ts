@@ -180,7 +180,11 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
     if (!stmt) {
       return this.createScope([])
     }
-    const schema = stmt.schema.ref
+    const schemaRef = stmt.schema
+    if (!schemaRef) {
+      return this.createScope([])
+    }
+    const schema = schemaRef.ref
     if (!schema || !AST.isDataDeclaration(schema)) {
       return this.createScope([])
     }
@@ -194,12 +198,17 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
       .filter(AST.isDataEntityDeclaration)
       .flatMap((e) => {
         if (naming === 'both') {
-          return [
-            this.descriptions.createDescription(e, e.name, document),
-            this.descriptions.createDescription(e, e.pluralName, document),
-          ]
+          const descriptions: AST.NodeDescription[] = []
+          if (isPresentIdentifier(e.name)) {
+            descriptions.push(this.descriptions.createDescription(e, e.name, document))
+          }
+          if (isPresentIdentifier(e.pluralName)) {
+            descriptions.push(this.descriptions.createDescription(e, e.pluralName, document))
+          }
+          return descriptions
         }
-        return [this.descriptions.createDescription(e, naming === 'plural' ? e.pluralName : e.name, document)]
+        const name = naming === 'plural' ? e.pluralName : e.name
+        return isPresentIdentifier(name) ? [this.descriptions.createDescription(e, name, document)] : []
       })
     return this.createScope(descs)
   }
@@ -332,4 +341,8 @@ export class TaoScopeProvider extends langium.DefaultScopeProvider {
 
     return locals
   }
+}
+
+function isPresentIdentifier(value: unknown): value is string {
+  return typeof value === 'string' && value.length > 0
 }

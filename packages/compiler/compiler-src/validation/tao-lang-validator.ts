@@ -292,13 +292,13 @@ export const validator: langium.ValidationChecks<AST.TaoLangAstType> = {
     }
 
     for (const stmt of providerStatements) {
-      if (!isKnownTaoAppDataProviderName(stmt.provider)) {
+      if (isPresentIdentifier(stmt.provider) && !isKnownTaoAppDataProviderName(stmt.provider)) {
         report.error(validationMessages.unknownAppDataProvider(stmt.provider), { node: stmt, property: 'provider' })
       }
     }
 
     for (const stmt of uiStatements) {
-      const ref = stmt.ui.ref
+      const ref = stmt.ui?.ref
       if (ref !== undefined && !isViewLikeDeclaration(ref)) {
         report.error(validationMessages.appUiMustReferenceView, {
           node: stmt,
@@ -308,15 +308,18 @@ export const validator: langium.ValidationChecks<AST.TaoLangAstType> = {
     }
 
     for (const stmt of navigationStatements) {
-      const ref = stmt.navigation.ref
-      if (ref !== undefined && !AST.isNavigatorDeclaration(ref)) {
+      const ref = stmt.navigation?.ref
+      if (ref === undefined) {
+        continue
+      }
+      if (!AST.isNavigatorDeclaration(ref)) {
         report.error(validationMessages.appNavigationMustReferenceNavigator, {
           node: stmt,
           property: 'navigation',
         })
         continue
       }
-      if (ref !== undefined && AST.Utils.findRootNode(ref) !== AST.Utils.findRootNode(stmt)) {
+      if (AST.Utils.findRootNode(ref) !== AST.Utils.findRootNode(stmt)) {
         report.error(validationMessages.appNavigationMustReferenceLocalNavigator, {
           node: stmt,
           property: 'navigation',
@@ -1210,4 +1213,8 @@ function validateParameterShorthandType(
 /** removeItemFrom returns a copy of the array without the first matching item reference. */
 function removeItemFrom<T>(item: T, array: T[]): T[] {
   return array.filter(itemB => itemB !== item)
+}
+
+function isPresentIdentifier(value: unknown): value is string {
+  return typeof value === 'string' && value.length > 0
 }
