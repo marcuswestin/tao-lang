@@ -4,7 +4,7 @@ entry TaoFile:
     statements += Statement*;
 
 Statement: Declaration | ModuleDeclaration | UseStatement | Debugger | Injection | RenderStatement | ViewRender | ChildrenSplice | ActionRender | StateUpdate
-    | NavigationActionStatement | QueryDeclaration | GuardStatement | ForStatement | CreateStatement | UpdateStatement;
+    | NavigationActionStatement | QueryDeclaration | GuardStatement | ForStatement | IfStatement | ReturnStatement | CreateStatement | UpdateStatement;
 
 
 
@@ -12,24 +12,27 @@ Statement: Declaration | ModuleDeclaration | UseStatement | Debugger | Injection
 ///////////////
 
 type Referenceable = Declaration | VariantDeclaration | ParameterDeclaration | QueryDeclaration | ForStatement;
+type CallableDeclaration = ViewDeclaration | ActionDeclaration | FunctionDeclaration;
 
 type ScopeRelevantNode = UseStatement | Declaration | VariantDeclaration | AppDeclaration | ParameterDeclaration | DataEntityDeclaration | DataTypeDeclaration | QueryDeclaration | ForStatement;
+type ViewNestedBlockHost = RenderStatement | ViewRender | GuardStatement | ForStatement | IfStatement;
 
 // ViewFragmentStatement groups view-ordered body items handled by `viewFragmentStatement` codegen (exhaustive switch); not every `Statement` is a fragment statement.
-type ViewFragmentStatement = RenderStatement | ViewRender | ChildrenSplice | Injection | ForStatement | Debugger | QueryDeclaration | GuardStatement | Declaration;
-type ViewStatement = RenderStatement | ViewRender | ChildrenSplice | Injection | AssignmentDeclaration | BlockDeclaration | Debugger | QueryDeclaration | GuardStatement | ForStatement;
+type ViewFragmentStatement = RenderStatement | ViewRender | ChildrenSplice | Injection | ForStatement | IfStatement | Debugger | QueryDeclaration | GuardStatement | Declaration;
+type ViewStatement = RenderStatement | ViewRender | ChildrenSplice | Injection | AssignmentDeclaration | BlockDeclaration | Debugger | QueryDeclaration | GuardStatement | ForStatement | IfStatement;
 type TopLevelStatement = Declaration | UseStatement | Injection | Debugger | QueryDeclaration;
-type ActionStatement = StateUpdate | Injection | Debugger | AssignmentDeclaration | BlockDeclaration | ActionRender | NavigationActionStatement | CreateStatement | UpdateStatement;
+type ActionStatement = StateUpdate | Injection | Debugger | AssignmentDeclaration | BlockDeclaration | ActionRender | NavigationActionStatement | IfStatement | CreateStatement | UpdateStatement;
+type FunctionStatement = AssignmentDeclaration | Debugger | IfStatement | ReturnStatement;
 
 // ArgumentListHost groups the call-site nodes that own an `ArgumentList`. Generic argument-binding logic
 // (see `tao-argument-bindings.ts`) keys off this union, so adding a new host kind (e.g. function calls)
 // only requires extending this type and the resolver's callee dispatch.
-type ArgumentListHost = RenderStatement | ViewRender | ActionRender;
+type ArgumentListHost = RenderStatement | ViewRender | ActionRender | FunctionCallExpression;
 
 // Shared Statements
 ////////////////////
 
-RuntimeDeclaration: AppDeclaration | NavigatorDeclaration | AssignmentDeclaration | BlockDeclaration;
+RuntimeDeclaration: AppDeclaration | NavigatorDeclaration | AssignmentDeclaration | BlockDeclaration | FunctionDeclaration;
 Declaration: RuntimeDeclaration | VariantDeclaration | TypeDeclaration | DataDeclaration;
 
 PrimitiveType returns string: 'text' | 'number' | 'boolean' | 'date' | 'action' | 'view';
@@ -186,6 +189,12 @@ GuardStatement:
 ForStatement:
     'for' name=ID 'in' collection=[Referenceable:ID] block=Block;
 
+IfStatement:
+    'if' condition=Expression thenBlock=Block ('else' elseBlock=Block)?;
+
+ReturnStatement:
+    'return' value=Expression;
+
 CreateStatement:
     'create' schema=[DataDeclaration:ID] '.' entity=[DataEntityDeclaration:ID]
     '{' (fields+=CreateFieldAssignment (',' fields+=CreateFieldAssignment)* ','?)? '}';
@@ -229,6 +238,7 @@ BlockDeclaration: ViewDeclaration | ActionDeclaration;
 ViewDeclaration: type=ViewDeclarationKind name=ID parameterList=ParameterList? designSpec=DesignSpec? layoutClause=LayoutClause? block=Block;
 ViewDeclarationKind returns string: 'ui' | 'frame' | 'layout';
 ActionDeclaration: type='action' name=ID parameterList=ParameterList? block=Block;
+FunctionDeclaration: 'function' name=ID parameterList=ParameterList? block=Block;
 VariantDeclaration: 'variant' name=ID '=' target=[Referenceable:ID] designSpec=DesignSpec?;
 DesignSpec: '<' description=StringTemplateExpression '>';
 
@@ -375,7 +385,13 @@ ArgumentList:
 ////////////////////
 
 Expression:
-    Addition;
+    Equality;
+
+Equality infers Expression:
+    Comparison ({infer BinaryExpression.left=current} op=('=' | '!=') right=Comparison)*;
+
+Comparison infers Expression:
+    Addition ({infer BinaryExpression.left=current} op=('<=' | '>=' | '<' | '>') right=Addition)*;
 
 Addition infers Expression:
     Multiplication ({infer BinaryExpression.left=current} op=('+' | '-') right=Multiplication)*;
@@ -390,7 +406,7 @@ UnaryExpression infers Expression:
     | PostfixExpression;
 
 UnaryOperand:
-    TypedLiteralExpression | MemberAccessExpression | PostfixExpression;
+    TypedLiteralExpression | MemberAccessExpression | FunctionCallExpression | PostfixExpression;
 
 // Inline anonymous action for arguments, e.g. `Button Title "Go", Action action { set N = 1 }`.
 // Named actions must be declared via `action Name { ... }` and referenced by name — the inline form is anonymous only.
@@ -416,7 +432,10 @@ MemberAccessExpression:
 
 // PostfixExpression covers non-reference atoms and grouped expressions (no `.prop` suffix here; use `MemberAccessExpression` for `name.prop`).
 PostfixExpression infers Expression:
-    '(' Expression ')' | StringTemplateExpression | NumberLiteral | BooleanLiteral | NullLiteral | ActionExpression;
+    '(' Expression ')' | StringTemplateExpression | NumberLiteral | BooleanLiteral | NullLiteral | FunctionCallExpression | ActionExpression;
+
+FunctionCallExpression:
+    'call' function=[FunctionDeclaration:ID] argumentList=ArgumentList?;
 
 // ObjectLiteral shares `{` `}` with `Block` — see invariant comment on `Block`.
 ObjectLiteral:

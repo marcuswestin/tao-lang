@@ -219,6 +219,32 @@ describe('type checking — operators and string templates:', () => {
     expectHumanMessagesContain(report, '+')
   })
 
+  test('if condition must be boolean', async () => {
+    const report = await parseASTWithErrors(`
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
+        if "yes" {
+          debugger
+        }
+      }
+    `)
+    expectHumanMessagesContain(report, '`if` condition must be boolean.')
+  })
+
+  test('function return statements must have compatible types', async () => {
+    const report = await parseASTWithErrors(`
+      function Label Flag boolean {
+        if Flag {
+          return "ready"
+        } else {
+          return 1
+        }
+      }
+      ui V { render inject \`\`\`ts return null \`\`\` }
+    `)
+    expectHumanMessagesContain(report, 'Function return statements must have compatible types.')
+  })
+
   test('text repetition requires text on the left and number on the right', async () => {
     await parseTaoFully(`
       alias Repeated = "ha" * 3

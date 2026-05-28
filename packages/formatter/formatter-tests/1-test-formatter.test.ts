@@ -167,6 +167,28 @@ describe('Formatter', () => {
           Child { }
       }
     `)
+  testFormatter('control syntax mini slice')
+    .format(
+      `function Label Count number{if Count=0{return null}else{return "Count: \${Count}"}} ui V{render Text call Label Count if Count>0{Text "non-empty"}else{Text "empty"}}`,
+    )
+    .equals(`
+      function Label Count number {
+          if Count = 0 {
+              return null
+          } else {
+              return "Count: \${ Count }"
+          }
+      }
+
+      ui V {
+          render Text call Label Count
+          if Count > 0 {
+              Text "non-empty"
+          } else {
+              Text "empty"
+          }
+      }
+    `)
   testFormatter('view with single statement')
     .format(`ui MyView {Child {}}`)
     .equals(`

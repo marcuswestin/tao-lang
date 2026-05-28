@@ -20,6 +20,7 @@ import {
   getCalleeDeclaration,
   resolveArgumentBindings,
 } from './tao-argument-bindings'
+import { BOOLEAN_OPERATORS, functionReturnStatements, functionReturnStatementsFromRef } from './tao-control-flow'
 import { typedLiteralType, typeIdentityKey } from './tao-local-parameter-types'
 
 /** astNodeHasDocument returns true when `node` is linked into a Langium document (Typir inference caching requires this). */
@@ -66,8 +67,21 @@ function classifyBinaryOp(
   typir: TaoTypirServices,
   textT: Type,
   numberT: Type,
+  booleanT: Type,
 ): BinaryOpClassification {
   const a = typir.Assignability.isAssignable.bind(typir.Assignability)
+  if (BOOLEAN_OPERATORS.has(op)) {
+    if (op === '=' || op === '!=') {
+      if (a(lt, rt) || a(rt, lt)) {
+        return { kind: 'ok', resultType: booleanT }
+      }
+      return { kind: 'invalid', expectedMessage: `'${op}' expects comparable operands.` }
+    }
+    if (a(lt, numberT) && a(rt, numberT)) {
+      return { kind: 'ok', resultType: booleanT }
+    }
+    return { kind: 'invalid', expectedMessage: `'${op}' expects number operands.` }
+  }
   switch (op) {
     case '+': {
       if (a(lt, textT) && a(rt, textT)) {
@@ -211,7 +225,7 @@ export class TaoTypeSystem implements LangiumTypeSystemDefinition<TaoSpecifics> 
         return InferenceRuleNotApplicable
       },
       BinaryExpression: (n) => {
-        if (!numberT || !textT) {
+        if (!numberT || !textT || !booleanT) {
           return InferenceRuleNotApplicable
         }
         const lt = safeInferType(typir, n.left)
@@ -219,8 +233,20 @@ export class TaoTypeSystem implements LangiumTypeSystemDefinition<TaoSpecifics> 
         if (!lt || !rt) {
           return InferenceRuleNotApplicable
         }
-        const result = classifyBinaryOp(n.op, lt, rt, typir, textT, numberT)
+        const result = classifyBinaryOp(n.op, lt, rt, typir, textT, numberT, booleanT)
         return result.kind === 'ok' ? result.resultType : InferenceRuleNotApplicable
+      },
+      FunctionCallExpression: (n) => {
+        if (!astNodeHasDocument(n)) {
+          return InferenceRuleNotApplicable
+        }
+        for (const returned of functionReturnStatementsFromRef(n.function)) {
+          const inferred = safeInferType(typir, returned.value)
+          if (inferred) {
+            return inferred
+          }
+        }
+        return InferenceRuleNotApplicable
       },
       UnaryExpression: (n) => {
         if (n.op !== '-' || !numberT) {
@@ -279,8 +305,17 @@ export class TaoTypeSystem implements LangiumTypeSystemDefinition<TaoSpecifics> 
       ActionRender: (host, accept) => {
         validateCallSiteArguments(host, accept, typir)
       },
+      FunctionCallExpression: (host, accept) => {
+        validateCallSiteArguments(host, accept, typir)
+      },
+      FunctionDeclaration: (fn, accept) => {
+        validateFunctionReturnTypes(fn, accept, typir)
+      },
+      IfStatement: (node, accept) => {
+        validateIfCondition(node, accept, typir, booleanT)
+      },
       BinaryExpression: (n, accept) => {
-        if (!astNodeHasDocument(n) || !textT || !numberT) {
+        if (!astNodeHasDocument(n) || !textT || !numberT || !booleanT) {
           return
         }
         const lt = safeInferType(typir, n.left)
@@ -288,7 +323,7 @@ export class TaoTypeSystem implements LangiumTypeSystemDefinition<TaoSpecifics> 
         if (!lt || !rt) {
           return
         }
-        const result = classifyBinaryOp(n.op, lt, rt, typir, textT, numberT)
+        const result = classifyBinaryOp(n.op, lt, rt, typir, textT, numberT, booleanT)
         if (result.kind === 'invalid') {
           accept({ severity: 'error', message: result.expectedMessage, languageNode: n, languageProperty: 'op' })
         }
@@ -370,6 +405,56 @@ export class TaoTypeSystem implements LangiumTypeSystemDefinition<TaoSpecifics> 
       // enforcement (see `validateTypedStructLiteralFields`).
       typir.factory.Primitives.create({ primitiveName: node.name }).finish()
     }
+  }
+}
+
+function validateIfCondition(
+  node: AST.IfStatement,
+  accept: TypirCallSiteValidationAccept,
+  typir: TaoTypirServices,
+  booleanT: Type | undefined,
+): void {
+  if (!astNodeHasDocument(node) || !booleanT) {
+    return
+  }
+  const conditionType = safeInferType(typir, node.condition)
+  if (!conditionType || typir.Assignability.isAssignable(conditionType, booleanT)) {
+    return
+  }
+  accept({
+    severity: 'error',
+    message: '`if` condition must be boolean.',
+    languageNode: node.condition,
+  })
+}
+
+function validateFunctionReturnTypes(
+  node: AST.FunctionDeclaration,
+  accept: TypirCallSiteValidationAccept,
+  typir: TaoTypirServices,
+): void {
+  if (!astNodeHasDocument(node)) {
+    return
+  }
+  const returns = functionReturnStatements(node)
+  const first = returns.find(returnStatement => safeInferType(typir, returnStatement.value) !== undefined)
+  const expected = safeInferType(typir, first?.value)
+  if (!expected) {
+    return
+  }
+  for (const returnStatement of returns) {
+    const actual = safeInferType(typir, returnStatement.value)
+    if (!actual) {
+      continue
+    }
+    if (typir.Assignability.isAssignable(actual, expected) || typir.Assignability.isAssignable(expected, actual)) {
+      continue
+    }
+    accept({
+      severity: 'error',
+      message: 'Function return statements must have compatible types.',
+      languageNode: returnStatement.value,
+    })
   }
 }
 
