@@ -1,0 +1,139 @@
+use Button, Col, MultiLineText, Number, Row, Stack, Text, TextInput, TextLabel, WrappingRow from @tao/ui
+
+app Meny {
+   navigation MainNavigation
+   design {
+      description "An offline-first personal app for capturing daily notes, lightweight lists, and private momentum. The interface should feel calm, local, quick to scan, and useful without requiring a network connection."
+   }
+   provider InstantDB {
+      appId "00000000-0000-4000-8000-000000000031"
+      adminToken "local-dev-token"
+      apiURI "http://localhost:9020"
+      websocketURI "ws://localhost:9020/runtime/session"
+   }
+}
+
+navigator MainNavigation {
+   stack {
+      screen Home
+   }
+}
+
+data MenyData {
+   Items Item {
+      Title text,
+      Kind text indexed,
+      Status text indexed,
+      Ordering number indexed,
+   }
+}
+
+state ItemCount = 0
+
+state DraftTitle = ""
+
+action UpdateDraftTitle Value text {
+   set DraftTitle = Value
+}
+
+action CaptureItem {
+   set ItemCount += 1
+   create MenyData.Item {
+      Title DraftTitle,
+      Kind "note",
+      Status "local",
+      Ordering ItemCount
+   }
+   set DraftTitle = ""
+}
+
+variant Header = Stack <"top area with app title, local-first status, and a concise value statement">
+
+variant Screen = Col <"full screen personal dashboard surface with calm spacing and strong readability">
+
+ui Home <"root Meny dashboard for personal offline-first capture"> {
+   query MenyData.Items as Items {
+      Title,
+      Kind,
+      Status,
+      Ordering,
+      order by Ordering desc
+   }
+   guard {
+      Text "Loading Meny..."
+   }
+   render Screen [items top stretch, gap 18, pad 20, width fill] {
+      Text "Hi"
+      Header [gap 10, pad 18, width fill] {
+         Kicker "Private workspace"
+         Title "Meny"
+         Summary "Capture the small things that matter, keep them available locally, and let sync be a background detail instead of a prerequisite."
+         MetricRow [gap 10, width fill] {
+            MetricTile [gap 4, pad 12] {
+               MetricLabel "Captured"
+               MetricValue ItemCount
+            }
+            MetricTile [gap 4, pad 12] {
+               MetricLabel "Mode"
+               Text "Offline-first"
+            }
+         }
+      }
+      Composer [gap 10, pad 14, width fill] {
+         SectionTitle "Quick capture"
+         ComposerRow [items center stretch, gap 12, width fill] {
+            CaptureInput DraftTitle, .Label "What should Meny remember?", UpdateDraftTitle [grow]
+            PrimaryButton "Save", CaptureItem
+         }
+      }
+      SectionTitle "Recent"
+      ItemList [gap 10, width fill] {
+         EmptyState "Nothing is saved yet. Add a note, list seed, or reminder so Meny has a first local item."
+         for Item in Items {
+            ItemCard [items center spread, gap 12, pad 14, width fill] {
+               Stack [gap 4] {
+                  ItemTitle Item.Title
+                  ItemMeta "Personal ${ Item.Kind }"
+               }
+               StatusPill Item.Status
+            }
+         }
+      }
+   }
+}
+
+variant Kicker = Text <"small label for the personal workspace context">
+
+variant Title = Text <"large app title with quiet confidence">
+
+variant Summary = MultiLineText <"readable summary copy for the current personal workspace">
+
+variant MetricRow = WrappingRow <"compact personal metrics that wrap cleanly on phones">
+
+variant MetricTile = Stack <"small stat tile with label and value">
+
+variant MetricLabel = TextLabel <"quiet stat label">
+
+variant MetricValue = Number <"prominent stat value">
+
+variant Composer = Stack <"capture area for adding a new personal item">
+
+variant ComposerRow = Row <"input and action row for quick capture">
+
+variant CaptureInput = TextInput <"single line field for the next personal item">
+
+variant PrimaryButton = Button <"primary action button for saving a personal item">
+
+variant SectionTitle = Text <"clear section heading">
+
+variant ItemList = Stack <"vertical list of personal items">
+
+variant ItemCard = Row <"personal item row with title and local-first metadata">
+
+variant ItemTitle = Text <"primary personal item title">
+
+variant ItemMeta = Text <"secondary metadata for a personal item">
+
+variant StatusPill = Text <"compact local-first status pill">
+
+variant EmptyState = MultiLineText <"subtle empty state guidance">

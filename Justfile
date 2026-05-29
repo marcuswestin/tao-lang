@@ -23,10 +23,15 @@ BUN_TEST_NON_COMPILER_ROOTS := "packages/shared packages/parser packages/formatt
 
 # DEV_APP := "./Apps/Test Apps/TODOs/TODOs.tao"
 DEV_APP := "./Apps/Test Apps/Navigation Dev/Navigation Dev.tao"
+MENY_APP := "./Apps/Meny/Meny.tao"
 
 # Run all components in watch mode (Expo web + Metro; iOS Simulator then physical iPhone after Metro is up via launcher).
 @dev DEVICE="roPhone" APP=DEV_APP:
-    just _dev "{{ DEVICE }}" "{{ APP }}"
+    just DEV_METRO_PORT="{{ DEV_METRO_PORT }}" _dev "{{ DEVICE }}" "{{ APP }}"
+
+# Run the Meny personal app in the full Tao dev stack.
+@meny DEVICE="roPhone":
+    just DEV_METRO_PORT=8090 dev "{{ DEVICE }}" "{{ MENY_APP }}"
 
 # Run the Tao Expo runtime on a physical iOS device only (no full `just dev` stack).
 iphone DEVICE="roPhone":

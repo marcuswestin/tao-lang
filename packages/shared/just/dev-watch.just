@@ -24,7 +24,7 @@ _dev DEVICE APP:
         just concurrently-exec-named-dev-loop \
             "grammar" "watchexec --restart --watch=packages/parser/tao-grammar.langium -- just gen" \
             "app_build" "just _compile_dev_app --watch" \
-            "runtime_reload" "open -a 'Google Chrome'; cd packages/expo-runtime && exec env BROWSER='Google Chrome' bunx expo start --web --port {{ DEV_METRO_PORT }}" \
+            "runtime_reload" "open -a 'Google Chrome' 'http://localhost:{{ DEV_METRO_PORT }}/'; cd packages/expo-runtime && exec env BROWSER=none bunx expo start --web --port {{ DEV_METRO_PORT }}" \
             "iphone_app_install" "bash packages/shared/scripts/expo-dev-iphone-launcher.sh || true; tail -f /dev/null" \
             "typecheck_extension" "cd packages/ide-extension && tsc -b tsconfig.json && tsc -b tsconfig.json --watch --preserveWatchOutput" \
             "esbuild_extension" "cd packages/ide-extension && node esbuild.config.ts --watch" \
