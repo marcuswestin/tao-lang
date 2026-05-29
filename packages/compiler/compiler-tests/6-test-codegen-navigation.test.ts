@@ -260,8 +260,11 @@ describe('codegen — navigation:', () => {
     expect(bootstrap).not.toContain('SafeAreaProvider')
     expect(bootstrap).not.toContain('<RN.ScrollView')
     expect(bootstrap).toContain('TaoDesignProvider')
-    expect(bootstrap).toContain('backgroundColor={_compiledTaoAppRootBackground(_taoDesignContext)}')
-    expect(bootstrap).toContain('contentStyle={_compiledTaoAppRootContentStyle(_taoDesignContext)}')
+    expect(bootstrap).toContain('const _taoAppRootDesignStyle = _compiledTaoAppRootDesignStyle(_taoDesignContext)')
+    expect(bootstrap).toContain(
+      'backgroundColor={_compiledTaoAppRootBackground(_taoAppRootDesignStyle, _taoDesignContext)}',
+    )
+    expect(bootstrap).toContain('contentStyle={_compiledTaoAppRootContentStyle(_taoAppRootDesignStyle)}')
     expect(bootstrap).toContain('kind="ui"')
     expect(bootstrap).toContain('<AppUIView />')
   })

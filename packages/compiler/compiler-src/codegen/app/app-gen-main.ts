@@ -307,10 +307,14 @@ function CompiledTaoAppContent(props) {
 }`
     : `const _compiledTaoAppRootDesignStyleKey = ${JSON.stringify(appRoot.appRootStyleKey ?? null)}
 
-function _compiledTaoAppRootBackground(_taoDesignContext) {
-  const designStyle = _compiledTaoAppRootDesignStyleKey === null
+function _compiledTaoAppRootDesignStyle(_taoDesignContext) {
+  return _compiledTaoAppRootDesignStyleKey === null
     ? undefined
     : RN.StyleSheet.flatten(resolveStyle(_compiledTaoAppRootDesignStyleKey, _taoDesignContext))
+}
+
+function _compiledTaoAppRootBackground(_taoAppRootDesignStyle, _taoDesignContext) {
+  const designStyle = _taoAppRootDesignStyle
   const designBackground = designStyle?.backgroundColor
   const backgroundColor = typeof designBackground === 'string' || typeof designBackground === 'number'
     ? designBackground
@@ -318,18 +322,21 @@ function _compiledTaoAppRootBackground(_taoDesignContext) {
   return backgroundColor
 }
 
-function _compiledTaoAppRootContentStyle(_taoDesignContext) {
-  return _compiledTaoAppRootDesignStyleKey === null
-    ? undefined
-    : RN.StyleSheet.flatten(resolveStyle(_compiledTaoAppRootDesignStyleKey, _taoDesignContext))
+function _compiledTaoAppRootContentStyle(_taoAppRootDesignStyle) {
+  if (_taoAppRootDesignStyle === undefined) {
+    return undefined
+  }
+  const { backgroundColor: _backgroundColor, ...contentStyle } = _taoAppRootDesignStyle
+  return contentStyle
 }
 
 function CompiledTaoAppContent() {
   const _taoDesignContext = useTaoDesignContext()
+  const _taoAppRootDesignStyle = _compiledTaoAppRootDesignStyle(_taoDesignContext)
   return (
     <TaoAppShell
-      backgroundColor={_compiledTaoAppRootBackground(_taoDesignContext)}
-      contentStyle={_compiledTaoAppRootContentStyle(_taoDesignContext)}
+      backgroundColor={_compiledTaoAppRootBackground(_taoAppRootDesignStyle, _taoDesignContext)}
+      contentStyle={_compiledTaoAppRootContentStyle(_taoAppRootDesignStyle)}
       kind="ui"
     >
       <AppUIView />

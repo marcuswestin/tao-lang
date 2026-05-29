@@ -265,9 +265,13 @@ describe('runtime:', () => {
   })
 
   test('keeps the web Tao app shell on a web-only scroll path', () => {
+    const nativeShellSource = FS.readTextFile(
+      FS.resolvePath(__dirname, '../../tao-std-lib/tao/tao-runtime/AppShell.native.tsx'),
+    )
     const webShellSource = FS.readTextFile(
       FS.resolvePath(__dirname, '../../tao-std-lib/tao/tao-runtime/AppShell.web.tsx'),
     )
+    expect(nativeShellSource).toContain('react-native-keyboard-controller')
     expect(webShellSource).not.toContain('react-native-keyboard-controller')
     const safeAreaMock = safeAreaContextTestMock()
     safeAreaMock.setSafeAreaInsetsForTests({ bottom: 20, left: 3, right: 4, top: 10 })
