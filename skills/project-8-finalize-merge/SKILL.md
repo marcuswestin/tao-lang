@@ -1,6 +1,6 @@
 ---
 name: project-8-finalize-merge
-description: Finalize a reviewed Tao project by squash merging its prepared feature branch into main, validating main, pushing the squash commit, then deleting the local feature branch and local project worktree while preserving the remote branch. Use after project-7-prepare-merge reports a clean, pushed, ready-to-merge branch, or when the user asks for the final project merge/landing step with local cleanup.
+description: Finalize a reviewed Tao project by squash merging its prepared feature branch into main, validating main, pushing the squash commit, archiving the remote feature branch under archived/, then deleting the local feature branch and local project worktree. Use after project-7-prepare-merge reports a clean, pushed, ready-to-merge branch, or when the user asks for the final project merge/landing step with cleanup.
 ---
 
 # Project 8: Finalize Merge
@@ -10,8 +10,9 @@ description: Finalize a reviewed Tao project by squash merging its prepared feat
 - Use `./agent help` first if it has not already run in the session.
 - Use `./agent git ...` for all Git commands.
 - Do not run project review scripts or implementation review rounds.
-- Do not delete the remote feature branch.
-- Do not delete the local branch or worktree until `main` has been pushed with the squash commit and the remote feature branch still exists.
+- Do not leave the remote feature branch under its active feature name after landing. Archive it on GitHub by renaming it to `archived/<feature-branch>`.
+- Do not remove the active remote branch name until `main` has been pushed and `origin/archived/<feature-branch>` exists at the feature branch tip.
+- Do not delete the local branch or worktree until `main` has been pushed and the remote feature branch has been archived.
 - Delete the local feature branch and local feature worktree after `main` is pushed; a squash merge leaves the local feature branch unmerged by ancestry, so cleanup is an explicit required step.
 - Use `./agent git branch -D <feature-branch>` only after the squash commit is pushed; squash merges do not make `git branch -d` safe by ancestry.
 
@@ -89,10 +90,13 @@ description: Finalize a reviewed Tao project by squash merging its prepared feat
     ./agent git push origin main
     ```
 
-11. Confirm the remote feature branch still exists, then remove only the local worktree and local branch from the clean `main` worktree:
+11. Archive the remote feature branch on GitHub, then remove only the local worktree and local branch from the clean `main` worktree:
 
     ```sh
     ./agent git ls-remote --heads origin <feature-branch>
+    ./agent git push origin <feature-branch>:refs/heads/archived/<feature-branch>
+    ./agent git ls-remote --heads origin archived/<feature-branch>
+    ./agent git push origin --delete <feature-branch>
     ./agent git worktree remove <feature-worktree-path>
     ./agent git branch -D <feature-branch>
     ./agent git worktree prune
@@ -107,6 +111,7 @@ description: Finalize a reviewed Tao project by squash merging its prepared feat
     ./agent git branch --list <feature-branch>
     ./agent git worktree list --porcelain
     ./agent git ls-remote --heads origin <feature-branch>
+    ./agent git ls-remote --heads origin archived/<feature-branch>
     ```
 
 ## Output
@@ -116,4 +121,4 @@ description: Finalize a reviewed Tao project by squash merging its prepared feat
 - Validation commands and results.
 - Confirmation that `main` was pushed.
 - Confirmation that the local feature branch and local feature worktree were deleted.
-- Confirmation that the remote feature branch still exists.
+- Confirmation that the remote feature branch was archived as `origin/archived/<feature-branch>` and no longer exists under the active feature branch name.
