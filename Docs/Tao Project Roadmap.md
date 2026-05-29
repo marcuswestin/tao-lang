@@ -89,15 +89,15 @@ Feature inventory fields:
 
 ## Layout Behavior, Responsive/Adaptive Layout, Safe Areas, And Keyboard-Aware Layout
 
-- Status: Design: standard layout views and the layout/styling boundary are actively specified; Implementation: `Row`, `Col`, `Box`, `Stack`, `WrappingRow`, layout validation, codegen, runtime lowering, and layout tests are underway.
-- MVP remaining: finish the raw layout MVP, cover responsive/adaptive essentials, preserve React Native/Expo mapping, and decide the minimum safe-area and keyboard-aware layout contract.
+- Status: Design: standard layout views and the layout/styling boundary are actively specified; Implementation: `Row`, `Col`, `Box`, `Stack`, `WrappingRow`, layout validation, codegen, runtime lowering, layout tests, and mechanical app-shell safe-area/keyboard defaults are implemented on the current branch.
+- MVP remaining: finish the raw layout MVP, cover responsive/adaptive essentials, preserve React Native/Expo mapping, and merge the app-shell runtime changes after device smoke.
 - Deferred: grid/table/masonry, absolute positioning, overflow/layers, container queries, measure functions, display-contents edge cases, and outside-bounds effects.
 - Project docs: [UI Layout Specification](./Tao%20Language%20Design/UI%20Layout%20Specification.md), [Layout and Styling Project Plan](./Projects/UI%20-%20Layout%20and%20Styling/Layout%20and%20Styling%20Project%20Plan.md), [Layout MVP Implementation Plan](./Projects/UI%20-%20Layout%20and%20Styling/Layout%20MVP%20Implementation%20Plan.md).
 
 ## Design Inference, Appearance, Variants, And Visual Defaults
 
-- Status: Design: design inference is the active long-range direction, while Beautiful App Defaults MVP is now the practical first slice for curated templates, deterministic visual defaults, component recipes, app-shell defaults, and visual fixtures; Implementation: design inference is planned but not implemented.
-- MVP remaining: implement Beautiful App Defaults MVP first: deterministic templates, default token families, runtime recipe helpers, polished std-lib/template components, app-shell max-width/safe-area defaults, template-guided optional LLM suggestions, and gallery/screenshots. Broader design inference still includes app design blocks, design specs, variants, accepted/suggested design locks, generated resolved TypeScript, diagnostics, and future explicit styling.
+- Status: Design: design inference is the active long-range direction, while Beautiful App Defaults MVP is now the practical first slice for curated templates, deterministic visual defaults, component recipes, visual app-shell defaults, and visual fixtures; Implementation: design inference is planned but not implemented.
+- MVP remaining: implement Beautiful App Defaults MVP first: deterministic templates, default token families, runtime recipe helpers, polished std-lib/template components, web/tablet max-width and visual shell defaults on top of the hardened app shell, template-guided optional LLM suggestions, and gallery/screenshots. Broader design inference still includes app design blocks, design specs, variants, accepted/suggested design locks, generated resolved TypeScript, diagnostics, and future explicit styling.
 - Deferred: explicit styling language, source-authored token dictionaries, render-site design specs, structural variants, Style Dictionary export, broad effects, and advanced adaptation axes.
 - Project docs: [Beautiful App Defaults MVP Project Plan](./Projects/Beautiful%20App%20Defaults%20MVP%20Project%20Plan.md), [Beautiful App Defaults MVP Project Research](./Projects/Beautiful%20App%20Defaults%20MVP%20Project%20Research.md), [UI Design Inference Concepts](./Tao%20Language%20Design/UI%20Design%20Inference%20Concepts.md), [UI Design Inference Specification](./Tao%20Language%20Design/UI%20Design%20Inference%20Specification.md), [UI Design Inference Project Plan](./Projects/UI%20-%20Layout%20and%20Styling/UI%20Design/UI%20Design%20Inference%20Project%20Plan.md), [UI Appearance Future Work](./Projects/UI%20-%20Layout%20and%20Styling/UI%20Design/UI%20Appearance%20Future%20Work.md).
 
@@ -173,8 +173,8 @@ Feature inventory fields:
 
 ## Runtime Targets: Expo Native, Web, Headless Tests, App Shell, And Runtime Manifest
 
-- Status: Design: Expo native/web and headless runtime boundaries are documented; Implementation: Expo runtime, headless runtime, app shell, generated app compile flow, and runtime package tests exist.
-- MVP remaining: harden the generated app shell, Android bring-up, shared runtime manifest parsing, compiled-app test helpers, web behavior, source maps, and runtime parity expectations.
+- Status: Design: Expo native/web and headless runtime boundaries are documented; Implementation: Expo runtime, headless runtime, app shell, generated app compile flow, safe-area/keyboard shell hardening, and runtime package tests exist on the current branch.
+- MVP remaining: run device smoke for the app-shell runtime changes, then continue shared runtime manifest parsing, compiled-app test helpers, web behavior, source maps, and runtime parity expectations.
 - Deferred: additional runtime targets, advanced platform adaptation, runtime plugin hosting, production observability hooks, and deep performance tuning.
 - Project docs: [Expo Runtime README](../packages/expo-runtime/README.md), [Headless Test Runtime README](../packages/headless-test-runtime/README.md), [SourceMapping Plan](./Projects/Misc/SourceMapping-Plan.md), Needs project doc for runtime manifest.
 

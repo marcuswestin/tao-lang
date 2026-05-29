@@ -23,5 +23,14 @@ declare module '@react-navigation/native-stack' {
 }
 
 declare module 'react-native-safe-area-context' {
+  export const initialWindowMetrics: null
   export function SafeAreaProvider(props: { children?: import('react').ReactNode }): import('react').ReactElement
+  export function useSafeAreaInsets(): { bottom: number; left: number; right: number; top: number }
+}
+
+declare module 'react-native-keyboard-controller' {
+  export function KeyboardProvider(props: { children?: import('react').ReactNode }): import('react').ReactElement
+  export function KeyboardAwareScrollView(
+    props: import('react-native').ScrollViewProps & { bottomOffset?: number },
+  ): import('react').ReactElement
 }

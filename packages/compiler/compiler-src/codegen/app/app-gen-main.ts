@@ -281,9 +281,7 @@ function compileBootstrapNode(
     ? `import { AppNavigationRoot } from '${appRoot.modulePath}'`
     : `import { AppUIView } from '${appRoot.modulePath}'`
   const designImport = `import { TaoDesignProvider, resolveStyle, useTaoDesignContext } from './tao-design'`
-  const safeAreaImport = appRoot.kind === 'navigation'
-    ? `import { SafeAreaProvider } from 'react-native-safe-area-context'`
-    : ''
+  const appShellImport = `import { TaoAppShell } from './use/@tao/tao-runtime/AppShell'`
   const initImports = initImportPaths
     .map((path, idx) =>
       `import { _taoOpenDataProviders as _taoOpenDataProviders${idx}, _taoRunAppInits as _taoRunAppInits${idx} } from '${path}'`
@@ -292,40 +290,64 @@ function compileBootstrapNode(
   const dataProviderInitCalls = initImportPaths.map((_, idx) => `_taoOpenDataProviders${idx}()`).join('\n')
   const initCalls = initImportPaths.map((_, idx) => `_taoRunAppInits${idx}()`).join('\n')
   const appContent = appRoot.kind === 'navigation'
-    ? `function CompiledTaoAppContent(props) {
+    ? `function _compiledTaoAppDefaultBackground(_taoDesignContext) {
+  return _taoDesignContext.colorScheme === 'dark' ? '#0f1115' : '#f7f8fa'
+}
+
+function CompiledTaoAppContent(props) {
+  const _taoDesignContext = useTaoDesignContext()
   return (
-    <SafeAreaProvider>
+    <TaoAppShell
+      backgroundColor={_compiledTaoAppDefaultBackground(_taoDesignContext)}
+      kind="navigation"
+    >
       <AppNavigationRoot onReady={props?.onRuntimeReady} />
-    </SafeAreaProvider>
+    </TaoAppShell>
   )
 }`
     : `const _compiledTaoAppRootDesignStyleKey = ${JSON.stringify(appRoot.appRootStyleKey ?? null)}
-const _compiledTaoAppRootViewStyle = { flex: 1 }
 
-function _compiledTaoAppRootBackground(_taoDesignContext) {
-  const designStyle = _compiledTaoAppRootDesignStyleKey === null
+function _compiledTaoAppRootDesignStyle(_taoDesignContext) {
+  return _compiledTaoAppRootDesignStyleKey === null
     ? undefined
     : RN.StyleSheet.flatten(resolveStyle(_compiledTaoAppRootDesignStyleKey, _taoDesignContext))
+}
+
+function _compiledTaoAppRootBackground(_taoAppRootDesignStyle, _taoDesignContext) {
+  const designStyle = _taoAppRootDesignStyle
   const designBackground = designStyle?.backgroundColor
   const backgroundColor = typeof designBackground === 'string' || typeof designBackground === 'number'
     ? designBackground
     : (_taoDesignContext.colorScheme === 'dark' ? '#0f1115' : '#f7f8fa')
-  return [_compiledTaoAppRootViewStyle, { backgroundColor }]
+  return backgroundColor
+}
+
+function _compiledTaoAppRootContentStyle(_taoAppRootDesignStyle) {
+  if (_taoAppRootDesignStyle === undefined) {
+    return undefined
+  }
+  const { backgroundColor: _backgroundColor, ...contentStyle } = _taoAppRootDesignStyle
+  return contentStyle
 }
 
 function CompiledTaoAppContent() {
   const _taoDesignContext = useTaoDesignContext()
+  const _taoAppRootDesignStyle = _compiledTaoAppRootDesignStyle(_taoDesignContext)
   return (
-    <RN.ScrollView style={_compiledTaoAppRootBackground(_taoDesignContext)}>
+    <TaoAppShell
+      backgroundColor={_compiledTaoAppRootBackground(_taoAppRootDesignStyle, _taoDesignContext)}
+      contentStyle={_compiledTaoAppRootContentStyle(_taoAppRootDesignStyle)}
+      kind="ui"
+    >
       <AppUIView />
-    </RN.ScrollView>
+    </TaoAppShell>
   )
 }`
   n.append(`// @ts-nocheck
 import * as RN from 'react-native'
 ${appRootImport}
 ${designImport}
-${safeAreaImport}
+${appShellImport}
 ${initImports}
 
 ${dataProviderInitCalls}

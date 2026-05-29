@@ -41,6 +41,34 @@ When building runtime-dependent behavior:
 just expo-runtime test
 ```
 
+## Device smoke
+
+Use `Apps/Test Apps/App Shell Safe Area and Keyboard/App Shell Safe Area and Keyboard.tao` for plain UI-root safe-area and keyboard checks. Use `Apps/Test Apps/App Shell Safe Area and Keyboard Tabs/App Shell Safe Area and Keyboard Tabs.tao` for bottom-tab keyboard checks.
+
+Checklist:
+
+- iOS notch device: top content starts below the unsafe status-bar area.
+- iOS home indicator: the bottom input and submit action can scroll above the keyboard and home indicator.
+- Android edge-to-edge: top and bottom system UI do not cover content.
+- Android keyboard: focusing `Bottom keyboard field` keeps the field visible.
+- Android bottom tabs: focusing `Tabbed bottom field` hides the tab bar.
+- Web: the fixture still scrolls through the normal web shell.
+
+Agent-safe commands:
+
+```sh
+./agent tao compile "Apps/Test Apps/App Shell Safe Area and Keyboard/App Shell Safe Area and Keyboard.tao" --runtime-dir packages/expo-runtime --std-lib-root packages/tao-std-lib
+./agent expo-runtime android-start
+
+./agent tao compile "Apps/Test Apps/App Shell Safe Area and Keyboard/App Shell Safe Area and Keyboard.tao" --runtime-dir packages/expo-runtime --std-lib-root packages/tao-std-lib
+./agent expo-runtime web
+
+./agent tao compile "Apps/Test Apps/App Shell Safe Area and Keyboard Tabs/App Shell Safe Area and Keyboard Tabs.tao" --runtime-dir packages/expo-runtime --std-lib-root packages/tao-std-lib
+./agent expo-runtime android-start
+```
+
+For a human-run physical iPhone check, use `just dev <device-name> "<fixture path>"` from the repo root with either fixture path named above.
+
 ## Test file naming
 
 Files use `*.jest-test.ts(x)` to distinguish from Bun's `*.test.ts` pattern used elsewhere in the monorepo. This prevents `bun test` from accidentally picking them up.

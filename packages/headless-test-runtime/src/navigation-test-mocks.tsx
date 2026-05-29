@@ -101,6 +101,12 @@ export function SafeAreaProvider(props: { children?: ReactNode }) {
   return createElement(Fragment, null, props.children)
 }
 
+export const initialWindowMetrics = null
+
+export function useSafeAreaInsets() {
+  return { bottom: 0, left: 0, right: 0, top: 0 }
+}
+
 /** Ionicons is a no-op icon component for headless navigation tests. */
 export default function Ionicons() {
   return null

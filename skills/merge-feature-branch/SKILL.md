@@ -15,7 +15,8 @@ Land the current feature branch into `main` with the Tao repo's supported `./age
 - Use `./agent git ...` for every Git command and `./agent prep-commit` before every commit-creating action.
 - Do not land from `main`, a detached HEAD, or a dirty working tree.
 - Do not include unrelated local changes in the merge. If the branch is dirty, stop and use `skills/git-workflow/SKILL.md` or `skills/commit-all-chunks/SKILL.md` first.
-- Do not delete the feature branch unless the user explicitly asks.
+- After `main` is pushed with the squash commit, archive the remote feature branch on GitHub as `archived/<feature-branch>`, then delete the local feature branch and local feature worktree if one exists.
+- Do not remove the active remote branch name until the archived remote branch exists at the feature branch tip.
 
 ## Workflow
 
@@ -118,6 +119,20 @@ Land the current feature branch into `main` with the Tao repo's supported `./age
    ./agent git push origin main
    ```
 
+10. Archive the remote feature branch on GitHub, then delete only local feature-branch state:
+
+```sh
+./agent git ls-remote --heads origin <feature-branch>
+./agent git push origin <feature-branch>:refs/heads/archived/<feature-branch>
+./agent git ls-remote --heads origin archived/<feature-branch>
+./agent git push origin --delete <feature-branch>
+./agent git worktree remove <feature-worktree-path>
+./agent git branch -D <feature-branch>
+./agent git worktree prune
+```
+
+Skip `worktree remove` only when the feature branch was not in a separate worktree. Stop instead of forcing cleanup if `worktree remove` reports dirty or untracked files.
+
 ## Handoff
 
-Report the landed feature branch, the final squash commit hash, whether `main` was pushed, and any validation failures or conflict resolutions.
+Report the landed feature branch, the final squash commit hash, whether `main` was pushed, local feature branch/worktree deletion, remote branch archival under `archived/<feature-branch>`, and any validation failures or conflict resolutions.

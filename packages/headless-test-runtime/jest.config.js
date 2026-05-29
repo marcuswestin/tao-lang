@@ -8,6 +8,7 @@ module.exports = {
   // testMatch differs from expo-runtime; moduleNameMapper is shared via ../shared/jest-module-name-mapper.cjs
 
   testMatch: ['<rootDir>/tests/*.jest-test.ts?(x)'],
+  resolver: '<rootDir>/src/headless-jest-resolver.cjs',
   moduleNameMapper: {
     ...sharedModuleNameMapper,
     '^@expo/vector-icons/Ionicons$': '<rootDir>/src/navigation-test-mocks.tsx',

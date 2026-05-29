@@ -1,0 +1,19 @@
+{
+  "steps": [
+    { "assertVisibleText": "App Shell Keyboard Tabs" },
+    {
+      "typeText": {
+        "placeholder": "Tabbed bottom field",
+        "value": "keyboard in tabs"
+      }
+    },
+    {
+      "assertInputValue": {
+        "placeholder": "Tabbed bottom field",
+        "value": "keyboard in tabs"
+      }
+    },
+    { "pressVisibleText": "Submit tab field" },
+    { "assertVisibleText": "Submitted tab field" }
+  ]
+}

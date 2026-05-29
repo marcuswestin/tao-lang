@@ -40,7 +40,7 @@ Read:
 - Include the current research doc, current plan doc if it exists, roadmap excerpt, and relevant local context.
 - Tell the agents to answer with decisions, rationale, risks, and concrete plan changes.
 - Tell the agents to be brief and focus on the most important points, not to perform a thorough deep dive into every possible issue.
-- Use the helper's pinned Claude default, `opus-4.6`. Do not use a floating `opus` alias or `opus-4.7` unless the user explicitly changes the model.
+- Do not pass a Claude model unless `CLAUDE_MODEL` is set. Let the local Claude CLI choose its configured/default model unless the user explicitly changes the model.
 - Prefer broad first-round questions and narrow later rounds.
 - Save artifact paths from each round in the research doc or final report.
 - If one agent fails, use the successful response only when it is enough; otherwise rerun a narrower prompt.
@@ -63,7 +63,7 @@ Environment:
 - `CODEX_CMD`: Codex CLI command, default `codex`
 - `CODEX_MODEL`: optional Codex model
 - `CLAUDE_CMD`: Claude CLI command, default `claude`
-- `CLAUDE_MODEL`: Claude model, default `opus-4.6`
+- `CLAUDE_MODEL`: optional Claude model
 - `REVIEW_TIMEOUT_SECONDS`: timeout per local agent, default `600`
 - `PROJECT_REVIEW_DIR`: artifact root, default `/private/tmp/tao-project-reviews`
 

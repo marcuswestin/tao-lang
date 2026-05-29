@@ -9,12 +9,16 @@ import {
 import { fireEvent, render } from '@testing-library/react-native'
 import type { ComponentType } from 'react'
 import * as RN from 'react-native'
+import { SafeAreaProvider } from 'react-native-safe-area-context'
+import { TaoAppShell } from '../../tao-std-lib/tao/tao-runtime/AppShell.native'
+import { TaoAppShell as TaoWebAppShell } from '../../tao-std-lib/tao/tao-runtime/AppShell.web'
 import { Layout } from '../../tao-std-lib/tao/tao-runtime/Layout'
 import { TR } from '../../tao-std-lib/tao/tao-runtime/tao-runtime'
 
 const rowLayoutStyle = { gap: 8, justifyContent: 'space-between' } as const
 const labelLayoutStyle = { alignSelf: 'center', width: 120 } as const
 const buttonLayoutStyle = { alignSelf: 'center', width: 180 } as const
+const appShellContentStyle = { paddingHorizontal: 7, paddingTop: 5 } as const
 
 type ExpoRuntimePackageJson = {
   readonly dependencies?: Record<string, string>
@@ -25,10 +29,17 @@ type ExpoRuntimeAppJson = {
   readonly expo?: {
     readonly experiments?: Record<string, unknown>
     readonly plugins?: unknown[]
+    readonly android?: {
+      readonly softwareKeyboardLayoutMode?: string
+    }
     readonly web?: {
       readonly output?: string
     }
   }
+}
+
+type SafeAreaContextTestMock = {
+  setSafeAreaInsetsForTests(insets: { bottom: number; left: number; right: number; top: number }): void
 }
 
 describe('runtime:', () => {
@@ -51,6 +62,7 @@ describe('runtime:', () => {
     expect(packageJson.dependencies?.['expo-splash-screen']).toBeDefined()
     expect(appJson.expo?.plugins).not.toContain('expo-router')
     expect(appJson.expo?.experiments?.['typedRoutes']).toBeUndefined()
+    expect(appJson.expo?.android?.softwareKeyboardLayoutMode).toBe('pan')
     expect(appJson.expo?.web?.output).toBe('single')
     expect(entrySource).toContain('registerRootComponent(ExpoRuntimeEntrypoint)')
     expect(entrySource).not.toContain('expo-router')
@@ -189,6 +201,104 @@ describe('runtime:', () => {
       alignSelf: 'center',
       width: 120,
     })
+  })
+
+  test('applies safe-area insets to the native Tao app shell content frame', () => {
+    const safeAreaMock = safeAreaContextTestMock()
+    safeAreaMock.setSafeAreaInsetsForTests({ bottom: 20, left: 3, right: 4, top: 10 })
+
+    try {
+      const screen = render(
+        <TaoAppShell
+          backgroundColor="#f7f8fa"
+          contentStyle={appShellContentStyle}
+          kind="ui"
+        >
+          <RN.Text>Shell content</RN.Text>
+        </TaoAppShell>,
+      )
+      const scrollView = screen.UNSAFE_getByType(RN.ScrollView)
+
+      expect(flattenStyle(scrollView.props.style)).toMatchObject({
+        backgroundColor: '#f7f8fa',
+        flex: 1,
+      })
+      expect(flattenStyle(scrollView.props.contentContainerStyle)).toMatchObject({
+        paddingBottom: 20,
+        paddingLeft: 10,
+        paddingRight: 11,
+        paddingTop: 15,
+      })
+      expect(scrollView.props.bottomOffset).toBe(20)
+      expect(scrollView.props.keyboardShouldPersistTaps).toBe('handled')
+    } finally {
+      safeAreaMock.setSafeAreaInsetsForTests({ bottom: 0, left: 0, right: 0, top: 0 })
+    }
+  })
+
+  test('does not add safe-area padding around native navigation shell content', () => {
+    const safeAreaMock = safeAreaContextTestMock()
+    safeAreaMock.setSafeAreaInsetsForTests({ bottom: 20, left: 3, right: 4, top: 10 })
+
+    try {
+      const screen = render(
+        <TaoAppShell
+          backgroundColor="#101820"
+          contentStyle={appShellContentStyle}
+          kind="navigation"
+        >
+          <RN.Text>Navigation shell content</RN.Text>
+        </TaoAppShell>,
+      )
+      const rootView = screen.UNSAFE_getByType(RN.View)
+
+      expect(() => screen.UNSAFE_getByType(RN.ScrollView)).toThrow(/No instances found/)
+      expect(screen.UNSAFE_queryByType(SafeAreaProvider)).not.toBeNull()
+      expect(flattenStyle(rootView.props.style)).toMatchObject({
+        backgroundColor: '#101820',
+        flex: 1,
+      })
+      expect(screen.getByText('Navigation shell content')).toBeDefined()
+    } finally {
+      safeAreaMock.setSafeAreaInsetsForTests({ bottom: 0, left: 0, right: 0, top: 0 })
+    }
+  })
+
+  test('keeps the web Tao app shell on a web-only scroll path', () => {
+    const nativeShellSource = FS.readTextFile(
+      FS.resolvePath(__dirname, '../../tao-std-lib/tao/tao-runtime/AppShell.native.tsx'),
+    )
+    const webShellSource = FS.readTextFile(
+      FS.resolvePath(__dirname, '../../tao-std-lib/tao/tao-runtime/AppShell.web.tsx'),
+    )
+    expect(nativeShellSource).toContain('react-native-keyboard-controller')
+    expect(webShellSource).not.toContain('react-native-keyboard-controller')
+    const safeAreaMock = safeAreaContextTestMock()
+    safeAreaMock.setSafeAreaInsetsForTests({ bottom: 20, left: 3, right: 4, top: 10 })
+
+    try {
+      const screen = render(
+        <TaoWebAppShell
+          backgroundColor="#f7f8fa"
+          contentStyle={appShellContentStyle}
+          kind="ui"
+        >
+          <RN.Text>Web shell content</RN.Text>
+        </TaoWebAppShell>,
+      )
+      const scrollView = screen.UNSAFE_getByType(RN.ScrollView)
+
+      expect(flattenStyle(scrollView.props.contentContainerStyle)).toMatchObject({
+        paddingBottom: 20,
+        paddingLeft: 10,
+        paddingRight: 11,
+        paddingTop: 15,
+      })
+      expect(scrollView.props.bottomOffset).toBeUndefined()
+      expect(scrollView.props.keyboardShouldPersistTaps).toBe('handled')
+    } finally {
+      safeAreaMock.setSafeAreaInsetsForTests({ bottom: 0, left: 0, right: 0, top: 0 })
+    }
   })
 
   test('applies standard container host styles through std-lib views', () => {
@@ -405,6 +515,11 @@ function makeNeedleApp() {
 
 function flattenStyle(style: RN.StyleProp<any>) {
   return RN.StyleSheet.flatten(style)
+}
+
+function safeAreaContextTestMock(): SafeAreaContextTestMock {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  return require('react-native-safe-area-context') as SafeAreaContextTestMock
 }
 
 async function _cmd(cmd: string, args: string[], opts?: { cwd: string }): Promise<number> {

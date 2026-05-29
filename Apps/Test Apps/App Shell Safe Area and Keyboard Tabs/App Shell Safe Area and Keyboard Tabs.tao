@@ -1,0 +1,56 @@
+use Button, Col, MultiLineText, Text, TextInput, TextLabel from @tao/ui
+
+app AppShellSafeAreaKeyboardTabsApp {
+   navigation ShellTabs
+}
+
+navigator ShellTabs {
+   tabs {
+      tab Keyboard KeyboardTab {
+         title "Keyboard"
+         icon system search
+      }
+
+      tab Status StatusTab {
+         title "Status"
+         icon system home
+      }
+   }
+}
+
+state TabField = ""
+
+state TabSubmitted = "Ready for tab keyboard smoke"
+
+action UpdateTabField Value text {
+   set TabField = Value
+}
+
+action SubmitTabField {
+   set TabSubmitted = "Submitted tab field"
+}
+
+ui KeyboardTab {
+   render Col [items top stretch, gap 16, pad 20, width fill] {
+      Text "App Shell Keyboard Tabs"
+      MultiLineText "This tabbed fixture keeps a text input near the bottom of a tab screen so generated bottom-tab keyboard defaults have a shared smoke path."
+      Col [gap 8, pad 12, height 140, width fill] {
+         TextLabel "Tab spacer one"
+         MultiLineText "The content is intentionally tall enough for compact phones and Android keyboard movement to expose awkward bottom-tab behavior."
+      }
+      Col [gap 8, pad 12, height 140, width fill] {
+         TextLabel "Tab spacer two"
+         MultiLineText "The bottom tab bar should hide when the keyboard opens instead of fighting for space with the focused input."
+      }
+      TextInput TabField, .Label "Tabbed bottom field", UpdateTabField [width fill]
+      Button "Submit tab field", SubmitTabField [width fill]
+      Text TabSubmitted
+   }
+}
+
+ui StatusTab {
+   render Col [items top stretch, gap 16, pad 20, width fill] {
+      Text "Tab shell status"
+      MultiLineText "Secondary tab used to keep this fixture rooted in a real bottom-tab navigator."
+   }
+}

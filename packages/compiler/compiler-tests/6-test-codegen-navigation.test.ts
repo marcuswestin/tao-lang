@@ -107,6 +107,9 @@ describe('codegen — navigation:', () => {
     expect(emitted).not.toContain('StackActions')
     expect(emitted).not.toContain('createTaoNavigationRuntime')
     expect(emitted).toContain('const _TaoNavigator_SearchTabs = createBottomTabNavigator({')
+    expect(emitted).toContain(`screenOptions: {
+    tabBarHideOnKeyboard: true,
+  },`)
     expect(emitted).toContain('const _TaoNavigator_MainNavigation = createNativeStackNavigator({')
     expect(emitted).toContain(
       'RoomId={TR.Literal(_taoNavigationRouteParam(_routeParams.RoomId, "text", "RoomId"))}',
@@ -119,9 +122,11 @@ describe('codegen — navigation:', () => {
       'return <TaoAppNavigationRoot ref={_taoNavigationRootRef} linking={{ enabled: true }} onReady={props?.onReady} />',
     )
     expect(bootstrap).toContain('import { AppNavigationRoot }')
-    expect(bootstrap).toContain("import { SafeAreaProvider } from 'react-native-safe-area-context'")
-    expect(bootstrap).toContain('<SafeAreaProvider>')
+    expect(bootstrap).toContain("import { TaoAppShell } from './use/@tao/tao-runtime/AppShell'")
+    expect(bootstrap).not.toContain('SafeAreaProvider')
     expect(bootstrap).toContain('export default function CompiledTaoApp(props)')
+    expect(bootstrap).toContain('<TaoAppShell')
+    expect(bootstrap).toContain('kind="navigation"')
     expect(bootstrap).toContain('<AppNavigationRoot onReady={props?.onRuntimeReady} />')
     expect(bootstrap).not.toContain('<AppUIView />')
   })
@@ -236,7 +241,7 @@ describe('codegen — navigation:', () => {
     )
   })
 
-  test('keeps legacy ui-root bootstrap output unchanged', async () => {
+  test('emits app shell for ui-root bootstrap output', async () => {
     const result = await compileNavigationSource(`
       app Legacy {
         ui Home
@@ -251,7 +256,16 @@ describe('codegen — navigation:', () => {
 
     expect(emitted).not.toContain('@react-navigation/native')
     expect(bootstrap).toContain('import { AppUIView }')
+    expect(bootstrap).toContain("import { TaoAppShell } from './use/@tao/tao-runtime/AppShell'")
     expect(bootstrap).not.toContain('SafeAreaProvider')
+    expect(bootstrap).not.toContain('<RN.ScrollView')
+    expect(bootstrap).toContain('TaoDesignProvider')
+    expect(bootstrap).toContain('const _taoAppRootDesignStyle = _compiledTaoAppRootDesignStyle(_taoDesignContext)')
+    expect(bootstrap).toContain(
+      'backgroundColor={_compiledTaoAppRootBackground(_taoAppRootDesignStyle, _taoDesignContext)}',
+    )
+    expect(bootstrap).toContain('contentStyle={_compiledTaoAppRootContentStyle(_taoAppRootDesignStyle)}')
+    expect(bootstrap).toContain('kind="ui"')
     expect(bootstrap).toContain('<AppUIView />')
   })
 
