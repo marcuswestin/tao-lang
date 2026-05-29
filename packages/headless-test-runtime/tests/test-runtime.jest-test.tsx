@@ -31,6 +31,15 @@ describe('headless runtime', () => {
     expect(onPress).toHaveBeenCalledTimes(1)
   })
 
+  test('keeps the headless app shell free of native keyboard-controller imports', () => {
+    const repoRoot = FS.resolvePath(__dirname, '../../..')
+    const appShellSource = FS.readTextFile(
+      FS.resolvePath(repoRoot, 'packages/tao-std-lib/tao/tao-runtime/AppShell.tsx'),
+    )
+
+    expect(appShellSource).not.toContain('react-native-keyboard-controller')
+  })
+
   test('compiles and renders Tao code through the CLI entrypoint', () => {
     const repoRoot = FS.resolvePath(__dirname, '../../..')
     const cliEntryPath = FS.resolvePath(repoRoot, 'packages/tao-cli/tao-cli.ts')

@@ -57,8 +57,14 @@ Checklist:
 Agent-safe commands:
 
 ```sh
+./agent tao compile "Apps/Test Apps/App Shell Safe Area and Keyboard/App Shell Safe Area and Keyboard.tao" --runtime-dir packages/expo-runtime --std-lib-root packages/tao-std-lib
 ./agent expo-runtime android-start
+
+./agent tao compile "Apps/Test Apps/App Shell Safe Area and Keyboard/App Shell Safe Area and Keyboard.tao" --runtime-dir packages/expo-runtime --std-lib-root packages/tao-std-lib
 ./agent expo-runtime web
+
+./agent tao compile "Apps/Test Apps/App Shell Safe Area and Keyboard Tabs/App Shell Safe Area and Keyboard Tabs.tao" --runtime-dir packages/expo-runtime --std-lib-root packages/tao-std-lib
+./agent expo-runtime android-start
 ```
 
 For a human-run physical iPhone check, use `just dev <device-name> "<fixture path>"` from the repo root with either fixture path named above.

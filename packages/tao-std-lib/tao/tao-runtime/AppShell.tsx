@@ -1,7 +1,14 @@
 import React from 'react'
 import * as RN from 'react-native'
+import {
+  SafeAreaProvider,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context'
 
-import type { TaoAppShellProps } from './AppShell.shared'
+import {
+  type TaoAppShellProps,
+  taoAppShellSafeAreaContentStyle,
+} from './AppShell.shared'
 
 const styles = RN.StyleSheet.create({
   root: {
@@ -11,6 +18,15 @@ const styles = RN.StyleSheet.create({
 
 /** TaoAppShell renders the platform-neutral fallback app shell. */
 export function TaoAppShell(props: TaoAppShellProps) {
+  return React.createElement(
+    SafeAreaProvider,
+    null,
+    React.createElement(TaoFallbackAppShellContent, props),
+  )
+}
+
+function TaoFallbackAppShellContent(props: TaoAppShellProps) {
+  const insets = useSafeAreaInsets()
   const rootStyle: RN.StyleProp<RN.ViewStyle> = [styles.root, { backgroundColor: props.backgroundColor }]
   if (props.kind === 'navigation') {
     return React.createElement(RN.View, { style: rootStyle }, props.children)
@@ -18,7 +34,10 @@ export function TaoAppShell(props: TaoAppShellProps) {
   return React.createElement(
     RN.ScrollView,
     {
-      contentContainerStyle: props.contentStyle,
+      contentContainerStyle: [
+        props.contentStyle,
+        taoAppShellSafeAreaContentStyle(props.contentStyle, insets, RN.StyleSheet),
+      ],
       keyboardDismissMode: 'interactive',
       keyboardShouldPersistTaps: 'handled',
       style: rootStyle,

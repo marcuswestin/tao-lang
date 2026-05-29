@@ -6,7 +6,6 @@ import {
   type ReactElement,
   type ReactNode,
 } from 'react'
-import * as RN from 'react-native'
 
 type HeadlessNavigationScreenProps = {
   navigation: Record<string, unknown>
@@ -106,16 +105,6 @@ export const initialWindowMetrics = null
 
 export function useSafeAreaInsets() {
   return { bottom: 0, left: 0, right: 0, top: 0 }
-}
-
-/** KeyboardProvider is a pass-through wrapper for generated native app shells in headless tests. */
-export function KeyboardProvider(props: { children?: ReactNode }) {
-  return createElement(Fragment, null, props.children)
-}
-
-/** KeyboardAwareScrollView renders a React Native ScrollView for generated native app shells in headless tests. */
-export function KeyboardAwareScrollView(props: RN.ScrollViewProps & { bottomOffset?: number }) {
-  return createElement(RN.ScrollView, props, props.children)
 }
 
 /** Ionicons is a no-op icon component for headless navigation tests. */
