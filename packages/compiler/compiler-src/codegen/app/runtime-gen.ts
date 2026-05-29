@@ -113,6 +113,7 @@ class RuntimeGen {
       ViewDeclaration: (n) => this.ViewDeclaration(n),
       VariantDeclaration: (n) => this.VariantDeclaration(n),
       ActionDeclaration: (n) => this.ActionDeclaration(n),
+      FunctionDeclaration: (n) => this.FunctionDeclaration(n),
       NavigatorDeclaration: (n) => this.NavigatorDeclaration(n),
       RenderStatement: (n) => this.RenderStatement(n),
       ViewRender: (n) => this.ViewRender(n),
@@ -126,6 +127,8 @@ class RuntimeGen {
       QueryDeclaration: (n) => this.QueryDeclaration(n),
       GuardStatement: (n) => this.GuardStatement(n),
       ForStatement: (n) => this.ForStatement(n),
+      IfStatement: (n) => this.IfStatement(n),
+      ReturnStatement: (n) => this.ReturnStatement(n),
       CreateStatement: (n) => this.CreateStatement(n),
       UpdateStatement: (n) => this.UpdateStatement(n),
     })
@@ -136,6 +139,7 @@ class RuntimeGen {
       AssignmentDeclaration: (n) => this.AssignmentDeclaration(n),
       AppDeclaration: (n) => this.AppDeclaration(n),
       ActionDeclaration: (n) => this.ActionDeclaration(n),
+      FunctionDeclaration: (n) => this.FunctionDeclaration(n),
       ViewDeclaration: (n) => this.ViewDeclaration(n),
       NavigatorDeclaration: (n) => this.NavigatorDeclaration(n),
       VariantDeclaration: (n) => this.VariantDeclaration(n),
@@ -220,6 +224,7 @@ class RuntimeGen {
         const right = this.Expression(node.right)
         return compileNode(node)`TR.BinaryOperation(${left}, '${node.op}', ${right})`
       },
+      FunctionCallExpression: (node) => this.FunctionCallExpression(node),
       UnaryExpression: (node) => {
         const operand = this.Expression(node.operand)
         return compileNode(node)`TR.UnaryOperation('${node.op}', ${operand})`
@@ -612,6 +617,57 @@ ${screens}
       `
   }
 
+  /** FunctionDeclaration emits a pure Tao function as a scoped binding and invocable expression with parameter props. */
+  FunctionDeclaration(declaration: AST.FunctionDeclaration): Compiled {
+    const scopedName = this.scopedName(declaration)
+    const params = declaration.parameterList?.parameters ?? []
+    const paramBindings = compileNodeList(params, p =>
+      compileNode(p)`
+        _Scope.${parameterName(p)} = _FunctionProps.${parameterName(p)}
+      `)
+    const functionLiteral = this.scoped(() =>
+      compileNode(declaration)`TR.Function(function ${declaration.name}(_FunctionProps) {
+        return TR.BlockScope(_Scope, (_Scope) => {
+          ${paramBindings}
+          ${compileNodeList(declaration.block.statements, stmt => this.Statement(stmt))}
+        })
+      })`
+    )
+    return compileNode(declaration)`
+        ${scopedName} = ${functionLiteral}
+      `
+  }
+
+  FunctionCallExpression(node: AST.FunctionCallExpression): Compiled {
+    const functionDecl = refResolved(node.function, 'FunctionCallExpression.function')
+    const propsBag = this.functionCallPropsBag(node, functionDecl)
+    return compileNode(node)`_Scope.${functionDecl.name}.invoke(${propsBag})`
+  }
+
+  private functionCallPropsBag(
+    node: AST.FunctionCallExpression,
+    functionDecl: AST.FunctionDeclaration,
+  ): Compiled {
+    const args = node.argumentList?.arguments ?? []
+    if (args.length === 0) {
+      return compileNode(node)`{}`
+    }
+    const bindings = resolveArgumentBindings(functionDecl, node.argumentList).bindings
+    return compileNode(node)`{
+      ${
+      compileIndentedNodeList(args, arg => {
+        const param = bindings.get(arg)
+        if (param === undefined) {
+          return compileNoop()
+        }
+        return compileNode(arg)`
+          ${parameterName(param)}: ${this.Expression(arg)},
+        `
+      })
+    }
+    }`
+  }
+
   /** actionLiteral emits the runtime form for `action Name P1 t1, P2 t2 { … }` and `action { … }` literals.
    * Parameterized actions take a `_ActionProps` bag at invocation time and inject those values as own
    * properties of a fresh `BlockScope`, so member access inside the body (`_Scope.<ParamName>`) resolves to
@@ -716,6 +772,63 @@ ${screens}
     `
   }
 
+  IfStatement(node: AST.IfStatement): Compiled {
+    if (isUnderViewRender(node)) {
+      const thenBody = compileNodeList(node.thenBlock.statements, stmt => this.viewFragmentStatement(stmt))
+      const elseBody = node.elseBlock
+        ? compileNodeList(node.elseBlock.statements, stmt => this.viewFragmentStatement(stmt))
+        : compileNoop()
+      return compileNode(node)`
+        {TR.IfStatement(${this.Expression(node.condition)}, () => (
+            <>
+              ${thenBody}
+            </>
+          ), ${
+        node.elseBlock
+          ? compileNode(node.elseBlock)`() => (
+            <>
+              ${elseBody}
+            </>
+          )`
+          : compileNode(node)`undefined`
+      }, true)}
+      `
+    }
+    if (isUnderFunctionDeclaration(node)) {
+      return compileNode(node)`
+        {
+        const _taoIfResult = TR.IfStatement(${this.Expression(node.condition)}, () => {
+          ${compileNodeList(node.thenBlock.statements, stmt => this.Statement(stmt))}
+        }, ${
+        node.elseBlock
+          ? compileNode(node.elseBlock)`() => {
+          ${compileNodeList(node.elseBlock.statements, stmt => this.Statement(stmt))}
+        }`
+          : compileNode(node)`undefined`
+      }, false)
+        if (_taoIfResult !== undefined) {
+          return _taoIfResult
+        }
+        }
+      `
+    }
+    return compileNode(node)`
+      TR.IfStatement(${this.Expression(node.condition)}, () => {
+        ${compileNodeList(node.thenBlock.statements, stmt => this.Statement(stmt))}
+      }, ${
+      node.elseBlock
+        ? compileNode(node.elseBlock)`() => {
+        ${compileNodeList(node.elseBlock.statements, stmt => this.Statement(stmt))}
+      }`
+        : compileNode(node)`undefined`
+    }, false)
+    `
+  }
+
+  ReturnStatement(node: AST.ReturnStatement): Compiled {
+    return compileNode(node)`return ${this.Expression(node.value)}`
+  }
+
   // Views
   ////////
 
@@ -780,6 +893,7 @@ ${screens}
       ChildrenSplice: n => this.renderNode(n),
       Injection: n => this.renderNode(n),
       ForStatement: n => this.ForStatement(n),
+      IfStatement: n => this.IfStatement(n),
       Debugger: n => this.Debugger(n),
       QueryDeclaration: () => compileNoop(),
       GuardStatement: () => compileNoop(),
@@ -791,6 +905,7 @@ ${screens}
       NavigatorDeclaration: () => compileNoop(),
       VariantDeclaration: () => compileNoop(),
       ActionDeclaration: () => compileNoop(),
+      FunctionDeclaration: () => compileNoop(),
     })
   }
 
@@ -907,6 +1022,11 @@ ${screens}
     if (AST.isNavigatorDeclaration(declaration)) {
       return compileNoop()
     }
+    if (AST.isFunctionDeclaration(declaration)) {
+      return compileNode(declaration)`
+        ${declaration.name}: ReturnType<_TaoRuntime['Function']>
+      `
+    }
     const runtimeType = this.runtimeTypes[declaration.type]
     return compileNode(declaration)`
       ${declaration.name}: ReturnType<_TaoRuntime['${runtimeType}']>
@@ -920,6 +1040,7 @@ ${screens}
     ui: 'ViewState',
     frame: 'ViewState',
     layout: 'ViewState',
+    function: 'Action',
     app: '<unsupported in runtimeTypes>',
   } as const
 
@@ -1453,6 +1574,34 @@ function isNestedDeclaration(decl: AST.Declaration): boolean {
   return AST.isBlock(decl.$container)
 }
 
+function isUnderViewRender(node: AST.Node): boolean {
+  let current = node.$container as AST.Node | undefined
+  while (current !== undefined) {
+    if (AST.isViewDeclaration(current)) {
+      return true
+    }
+    if (AST.isActionDeclaration(current) || AST.isActionExpression(current) || AST.isFunctionDeclaration(current)) {
+      return false
+    }
+    current = current.$container as AST.Node | undefined
+  }
+  return false
+}
+
+function isUnderFunctionDeclaration(node: AST.Node): boolean {
+  let current = node.$container as AST.Node | undefined
+  while (current !== undefined) {
+    if (AST.isFunctionDeclaration(current)) {
+      return true
+    }
+    if (AST.isViewDeclaration(current) || AST.isActionDeclaration(current) || AST.isActionExpression(current)) {
+      return false
+    }
+    current = current.$container as AST.Node | undefined
+  }
+  return false
+}
+
 /** parentViewDirection returns the standard-container direction of the nearest render parent, when known. */
 function parentViewDirection(node: ViewRenderHost): ReturnType<typeof standardContainerDirection> {
   let current: AST.Node | undefined = node.$container
@@ -1512,10 +1661,12 @@ function viewDeclarationUsesChildrenSplice(decl: AST.ViewDeclaration): boolean {
     if (AST.isDeclaration(stmt)) {
       continue
     }
-    if (
-      AST.isRenderStatement(stmt) || AST.isViewRender(stmt) || AST.isGuardStatement(stmt) || AST.isForStatement(stmt)
-    ) {
-      stack.push(...(stmt.block?.statements ?? []))
+    if (AST.isViewNestedBlockHost(stmt)) {
+      if (AST.isIfStatement(stmt)) {
+        stack.push(...stmt.thenBlock.statements, ...(stmt.elseBlock?.statements ?? []))
+      } else {
+        stack.push(...(stmt.block?.statements ?? []))
+      }
     }
   }
   return false

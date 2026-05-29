@@ -45,8 +45,9 @@ export const validationMessages = {
   viewBody: 'Only ui/frame/layout/alias/state/action/inject statements are allowed in a UI body.',
   actionBody:
     'Only state/action/inject, set (state update), create, and navigation statements are allowed in an action body.',
+  functionBody: 'Only alias/debugger/if/return statements are allowed in a function body.',
   topLevel:
-    'Only alias/state/ui/frame/layout/navigator/variant/action/data/query/inject/use statements are allowed at file level.',
+    'Only alias/state/ui/frame/layout/navigator/variant/action/function/data/query/inject/use statements are allowed at file level.',
   appRootRequired: 'App must have exactly one root entry: ui or navigation.',
   appRootExclusive: 'App can only have one root entry. Choose ui or navigation.',
   duplicateAppUi: 'App can only have one UI declaration.',
@@ -146,10 +147,8 @@ export const validator: langium.ValidationChecks<AST.TaoLangAstType> = {
 
   Block: makeValidater((block, report) => {
     const ctx = getBlockStatementContext(block)
-    const checkFn = ctx === 'view' ? AST.isViewStatement : AST.isActionStatement
-    const message = ctx === 'view'
-      ? validationMessages.viewBody
-      : validationMessages.actionBody
+    const checkFn = getStatementCheckFunction(ctx)
+    const message = getBlockStatementMessage(ctx)
     for (const stmt of block.statements) {
       if (!checkFn(stmt)) {
         report.error(message, stmt)
@@ -292,13 +291,13 @@ export const validator: langium.ValidationChecks<AST.TaoLangAstType> = {
     }
 
     for (const stmt of providerStatements) {
-      if (!isKnownTaoAppDataProviderName(stmt.provider)) {
+      if (isPresentIdentifier(stmt.provider) && !isKnownTaoAppDataProviderName(stmt.provider)) {
         report.error(validationMessages.unknownAppDataProvider(stmt.provider), { node: stmt, property: 'provider' })
       }
     }
 
     for (const stmt of uiStatements) {
-      const ref = stmt.ui.ref
+      const ref = stmt.ui?.ref
       if (ref !== undefined && !isViewLikeDeclaration(ref)) {
         report.error(validationMessages.appUiMustReferenceView, {
           node: stmt,
@@ -308,15 +307,18 @@ export const validator: langium.ValidationChecks<AST.TaoLangAstType> = {
     }
 
     for (const stmt of navigationStatements) {
-      const ref = stmt.navigation.ref
-      if (ref !== undefined && !AST.isNavigatorDeclaration(ref)) {
+      const ref = stmt.navigation?.ref
+      if (ref === undefined) {
+        continue
+      }
+      if (!AST.isNavigatorDeclaration(ref)) {
         report.error(validationMessages.appNavigationMustReferenceNavigator, {
           node: stmt,
           property: 'navigation',
         })
         continue
       }
-      if (ref !== undefined && AST.Utils.findRootNode(ref) !== AST.Utils.findRootNode(stmt)) {
+      if (AST.Utils.findRootNode(ref) !== AST.Utils.findRootNode(stmt)) {
         report.error(validationMessages.appNavigationMustReferenceLocalNavigator, {
           node: stmt,
           property: 'navigation',
@@ -1158,6 +1160,7 @@ function getStateUpdateTargetKind(ref: Exclude<AST.Referenceable, AST.Assignment
   return switch_safe(ref.$type, {
     ParameterDeclaration: () => 'parameter',
     ActionDeclaration: () => 'action',
+    FunctionDeclaration: () => 'function',
     AppDeclaration: () => 'app',
     NavigatorDeclaration: () => 'navigator',
     VariantDeclaration: () => 'variant',
@@ -1169,7 +1172,7 @@ function getStateUpdateTargetKind(ref: Exclude<AST.Referenceable, AST.Assignment
 }
 
 /** getBlockStatementContext returns whether `block` is nested under view-like or action-like syntax. */
-function getBlockStatementContext(block: AST.Block): 'view' | 'action' | null {
+function getBlockStatementContext(block: AST.Block): 'view' | 'action' | 'function' | null {
   const parent = block.$container
   if (
     AST.isViewDeclaration(parent)
@@ -1185,8 +1188,32 @@ function getBlockStatementContext(block: AST.Block): 'view' | 'action' | null {
     || AST.isActionRender(parent)
   ) {
     return 'action'
+  } else if (AST.isFunctionDeclaration(parent)) {
+    return 'function'
+  } else if (AST.isIfStatement(parent)) {
+    return getBlockStatementContext(parent.$container as AST.Block)
   }
   Assert.never(parent)
+}
+
+function getStatementCheckFunction(ctx: ReturnType<typeof getBlockStatementContext>) {
+  if (ctx === 'view') {
+    return AST.isViewStatement
+  }
+  if (ctx === 'function') {
+    return AST.isFunctionStatement
+  }
+  return AST.isActionStatement
+}
+
+function getBlockStatementMessage(ctx: ReturnType<typeof getBlockStatementContext>): string {
+  if (ctx === 'view') {
+    return validationMessages.viewBody
+  }
+  if (ctx === 'function') {
+    return validationMessages.functionBody
+  }
+  return validationMessages.actionBody
 }
 
 /** validateParameterShorthandType rejects shorthand parameters (`Title` with no explicit type) when `name`
@@ -1210,4 +1237,8 @@ function validateParameterShorthandType(
 /** removeItemFrom returns a copy of the array without the first matching item reference. */
 function removeItemFrom<T>(item: T, array: T[]): T[] {
   return array.filter(itemB => itemB !== item)
+}
+
+function isPresentIdentifier(value: unknown): value is string {
+  return typeof value === 'string' && value.length > 0
 }

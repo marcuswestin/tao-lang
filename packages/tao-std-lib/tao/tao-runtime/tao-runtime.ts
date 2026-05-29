@@ -60,6 +60,7 @@ export const TR: _TaoRuntime = {
   // Compound Expressions
   Alias,
   BinaryOperation,
+  IfStatement,
   MemberAccess,
   Object: TaoObject,
   QueryData,
@@ -68,6 +69,7 @@ export const TR: _TaoRuntime = {
 
   // Invocable Expressions
   Action,
+  Function: TaoFunction,
 
   // Views. TODO: Move this to @tao/ui
   Layout,
@@ -85,6 +87,7 @@ export type _TaoRuntime = {
 
   Alias: typeof Alias
   BinaryOperation: typeof BinaryOperation
+  IfStatement: typeof IfStatement
   MemberAccess: typeof MemberAccess
   Object: typeof TaoObject
   QueryData: typeof QueryData
@@ -92,6 +95,7 @@ export type _TaoRuntime = {
   UnaryOperation: typeof UnaryOperation
 
   Action: typeof Action
+  Function: typeof TaoFunction
 
   Layout: typeof Layout
   Views: typeof Views
@@ -332,7 +336,8 @@ class QueryDataExpression implements I.Expression {
   }
 }
 
-type BinaryOperators = '+' | '-' | '*' | '/'
+type BinaryOperators = '+' | '-' | '*' | '/' | '=' | '!=' | '<=' | '>=' | '<' | '>'
+type TaoIfStatementResult = I.Expression | I.Rendered | void
 
 /** UnaryOperation builds a unary numeric expression (currently `-` only). */
 function UnaryOperation(op: string, operand: I.Expression): I.Expression {
@@ -366,6 +371,22 @@ function BinaryOperation<
   RightT extends I.Expression,
 >(left: LeftT, operator: BinaryOperators, right: RightT): I.Expression {
   return new BinaryOperationExpression(left, operator, right)
+}
+
+/** IfStatement evaluates a Tao `if` condition and invokes only the selected branch. */
+function IfStatement(
+  condition: I.Expression,
+  thenBranch: () => TaoIfStatementResult,
+  elseBranch: (() => TaoIfStatementResult) | undefined,
+  isRenderBranch: boolean,
+): TaoIfStatementResult {
+  const conditionValue = condition.evaluate().jsValue
+  Assert(typeof conditionValue === 'boolean', '`if` condition must evaluate to boolean')
+  const selected = conditionValue ? thenBranch : elseBranch
+  if (selected === undefined) {
+    return isRenderBranch ? null : undefined
+  }
+  return selected()
 }
 
 class BinaryOperationExpression<
@@ -409,6 +430,24 @@ class BinaryOperationExpression<
       '/': () => {
         Assert(leftType === 'number' && rightType === 'number', '`/` requires number / number')
         return new Value((leftJSValue as number) / (rightJSValue as number))
+      },
+      '=': () => new Value(leftJSValue === rightJSValue),
+      '!=': () => new Value(leftJSValue !== rightJSValue),
+      '<=': () => {
+        Assert(leftType === 'number' && rightType === 'number', '`<=` requires number operands')
+        return new Value((leftJSValue as number) <= (rightJSValue as number))
+      },
+      '>=': () => {
+        Assert(leftType === 'number' && rightType === 'number', '`>=` requires number operands')
+        return new Value((leftJSValue as number) >= (rightJSValue as number))
+      },
+      '<': () => {
+        Assert(leftType === 'number' && rightType === 'number', '`<` requires number operands')
+        return new Value((leftJSValue as number) < (rightJSValue as number))
+      },
+      '>': () => {
+        Assert(leftType === 'number' && rightType === 'number', '`>` requires number operands')
+        return new Value((leftJSValue as number) > (rightJSValue as number))
       },
     })
   }
@@ -460,6 +499,10 @@ class MemberAccessExpression implements I.Expression {
     }
     let current: I.JSValue = this.root.evaluate().jsValue
     for (const key of this.path) {
+      if (key === 'Empty') {
+        current = Array.isArray(current) ? current.length === 0 : current === null
+        continue
+      }
       const object = current as I.JSObjectValue
       current = object[key]!
     }
@@ -485,6 +528,10 @@ export type ActionProps = Record<string, I.Expression>
 
 function Action(fn: (props: ActionProps) => void) {
   return new Invocable<void>(fn)
+}
+
+function TaoFunction(fn: (props: ActionProps) => I.Expression) {
+  return new Invocable<I.Expression>(fn)
 }
 
 class Invocable<ReturnType> {

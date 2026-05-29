@@ -1,0 +1,29 @@
+use Text, Col, Button from @tao/ui
+
+app ControlSyntaxApp {
+   ui ControlSyntaxRoot
+}
+
+function CountLabel Count number {
+   if Count = 0 {
+      return null
+   } else {
+      return "Count: ${ Count }"
+   }
+}
+
+ui ControlSyntaxRoot {
+   state Count = 0
+   render Col {
+      Text call CountLabel Count
+      if Count > 0 {
+         Text "Non-empty count"
+      } else {
+         Text "Empty count"
+      }
+      Button "Increment", Increment
+   }
+   action Increment {
+      set Count += 1
+   }
+}

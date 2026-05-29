@@ -4,6 +4,7 @@
 
 When starting in a new worktree (or fresh repo clone), the very first thing you must do is:
 
+0. Setup nix devenv: `direnv allow`
 1. Run bootstrap: `bash .config/bootstrap-dev-env.sh`.
 2. Run setup if bootstrap was skipped because tools already exist: `./agent setup`.
 
@@ -25,6 +26,7 @@ Use **`skills/nix-devenv`** when adding shared CLI packages, or when debugging *
 - Use the named commands exposed by `./agent help`, for example `./agent rg <pattern>`, `./agent cat <path>`, and `./agent git status`.
 - Git: use **`./agent git …`** (same arguments you would pass to `git`; `./agent git` forwards to the `git` CLI).
 - `./agent` is the effective whitelist of allowed commands for agents in this repo.
+- If an agent CLI asks for command approval, request or suggest one persistent approval for the root `./agent` command/prefix instead of separate approvals for `./agent rg`, `./agent sed`, `./agent git`, and other subcommands. The wrapper is the repo-owned trust boundary.
 - Do not run repo commands directly through `just`, `bun`, `npm`, `git`, or other tools.
 - Do not edit `agent.Justfile` unless the user explicitly asks for agent command changes.
 
@@ -46,6 +48,7 @@ Tao is a programming language for building native and web apps.
 ## Approach
 
 - Read existing files before writing, and re-read before editing if the file may have changed.
+- Assume other agents may be working in parallel in this checkout or other worktrees. Dirty changes may be unrelated; check status when useful and preserve work you did not make.
 - Be thorough in reasoning and concise in user-facing output.
 - Avoid loading large files wholesale unless required; use targeted search or chunks first.
 - If one issue takes multiple failed or partial approaches, use `skills/multi-pass-debugging`, keep a working notes document, and re-research the owning layer before adding more shims.

@@ -1,0 +1,9 @@
+{
+  "skip": false,
+  "steps": [
+    { "assertVisibleText": "Empty count" },
+    { "pressVisibleText": "Increment" },
+    { "assertVisibleText": "Count: 1" },
+    { "assertVisibleText": "Non-empty count" }
+  ]
+}

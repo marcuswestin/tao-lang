@@ -145,4 +145,49 @@ describe('parse:', () => {
     render.action.expect('name').toBe('Inner')
     void render.block.statements.only.as_Debugger
   })
+
+  test('parses control syntax mini slice', async () => {
+    const doc = await parseAST(`
+      function Label Count number {
+        if Count = 0 {
+          return null
+        } else {
+          return "Count: \${Count}"
+        }
+      }
+      ui Text Value text { }
+      ui V {
+        state Count = 0
+        render Text call Label Count
+        if Count >= 1 {
+          Text "non-empty"
+        } else {
+          Text "empty"
+        }
+      }
+    `)
+    const fn = doc.statements.first.as_FunctionDeclaration
+    fn.expect('name').toBe('Label')
+    void fn.block.statements.first.as_IfStatement
+    void fn.block.statements.first.as_IfStatement.thenBlock.statements.first.as_ReturnStatement.value.as_NullLiteral
+    const render = doc.statements[2].as_ViewDeclaration.block.statements[1].as_RenderStatement
+    void render.argumentList.arguments[0].as_FunctionCallExpression
+    const branch = doc.statements[2].as_ViewDeclaration.block.statements[2].as_IfStatement
+    branch.condition.as_BinaryExpression.expect('op').toBe('>=')
+  })
+
+  test('function declarations are rejected in view bodies', async () => {
+    const report = await parseASTWithErrors(`
+      ui V {
+        render inject \`\`\`ts return null \`\`\`
+        function Nested {
+          return null
+        }
+      }
+    `)
+    expectHumanMessagesContain(
+      report,
+      'Only ui/frame/layout/alias/state/action/inject statements are allowed in a UI body.',
+    )
+  })
 })

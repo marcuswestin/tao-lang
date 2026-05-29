@@ -16,6 +16,7 @@ import {
   structShapeOfDeclaredType,
   typeExpressionAtStructFieldPath,
 } from '../tao-type-shapes'
+import { BOOLEAN_OPERATORS, functionReturnStatementsFromRef } from './tao-control-flow'
 import { typedLiteralType } from './tao-local-parameter-types'
 
 /** Extension checklist — keep every **argument-list call host** aligned when you add one (e.g. `FunctionCall`):
@@ -33,11 +34,11 @@ import { typedLiteralType } from './tao-local-parameter-types'
  * call site. ViewRender targets `ViewDeclaration` and ActionRender targets `ActionDeclaration` today; future
  * function-call / query-invocation surfaces should add their callee declaration here so `resolveArgumentBindings`
  * remains the single matching algorithm for every call host in the language. */
-export type CalleeDeclaration = AST.ViewDeclaration | AST.ActionDeclaration
+export type CalleeDeclaration = AST.CallableDeclaration
 
-/** isCallableDeclaration returns true when `node` is a view or action declaration (the callable kinds that own local parameter types). */
+/** isCallableDeclaration returns true when `node` is a declaration that owns parameters and accepts call arguments. */
 export function isCallableDeclaration(node: AST.Node): node is CalleeDeclaration {
-  return AST.isViewDeclaration(node) || AST.isActionDeclaration(node)
+  return AST.isCallableDeclaration(node)
 }
 
 /** ArgumentBindingDiagnostic is one problem produced by argument resolution. */
@@ -268,11 +269,22 @@ function argumentValueFingerprint(expr: AST.Expression | AST.ObjectLiteral): Typ
   if (AST.isBinaryExpression(expr)) {
     return binaryExpressionFingerprint(expr)
   }
+  if (AST.isFunctionCallExpression(expr)) {
+    for (const returned of functionReturnStatementsFromRef(expr.function)) {
+      const fingerprint = argumentValueFingerprint(returned.value)
+      if (fingerprint.kind !== 'unresolved') {
+        return fingerprint
+      }
+    }
+  }
   return { kind: 'unresolved' }
 }
 
-/** binaryExpressionFingerprint predicts the result primitive of `+ - * /`. */
+/** binaryExpressionFingerprint predicts the result primitive of arithmetic and comparison operators. */
 function binaryExpressionFingerprint(expr: AST.BinaryExpression): TypeFingerprint {
+  if (BOOLEAN_OPERATORS.has(expr.op)) {
+    return { kind: 'primitive', primitive: 'boolean' }
+  }
   if (expr.op === '-' || expr.op === '/') {
     return { kind: 'primitive', primitive: 'number' }
   }
@@ -543,6 +555,10 @@ export function getCalleeDeclaration(host: AST.ArgumentListHost): CalleeDeclarat
   if (AST.isViewRender(host) || AST.isRenderStatement(host)) {
     const ref = host.view?.ref
     return isViewLikeDeclaration(ref) ? resolveVariantTargetView(ref) : undefined
+  }
+  if (AST.isFunctionCallExpression(host)) {
+    const ref = host.function.ref
+    return AST.isFunctionDeclaration(ref) ? ref : undefined
   }
   const ref = host.action?.ref
   return AST.isActionDeclaration(ref) ? ref : undefined

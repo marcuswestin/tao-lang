@@ -43,6 +43,7 @@ export default class TaoFormatter extends AbstractFormatter {
       AppProviderProperty: (n) => this.formatAppProviderProperty(n),
       OnStatement: (n) => this.formatOnStatement(n),
       ViewDeclaration: (n) => this.formatViewDeclaration(n),
+      FunctionDeclaration: (n) => this.formatFunctionDeclaration(n),
       NavigatorDeclaration: (n) => this.formatNavigatorDeclaration(n),
       StackNavigator: (n) => this.formatStackNavigator(n),
       TabsNavigator: (n) => this.formatTabsNavigator(n),
@@ -82,6 +83,7 @@ export default class TaoFormatter extends AbstractFormatter {
       NumberLiteral: (n) => this.formatNumberLiteral(n),
       BooleanLiteral: (n) => this.formatBooleanLiteral(n),
       NullLiteral: (n) => this.formatNullLiteral(n),
+      FunctionCallExpression: (n) => this.formatFunctionCallExpression(n),
       StringTemplateExpression: (n) => this.formatStringTemplateExpression(n),
       StringTemplateSegment: (n) => this.formatStringTemplateSegment(n),
       StateUpdate: (n) => this.formatStateUpdate(n),
@@ -113,6 +115,8 @@ export default class TaoFormatter extends AbstractFormatter {
       QueryFieldPath: (n) => this.formatQueryFieldPath(n),
       GuardStatement: (n) => this.formatGuardStatement(n),
       ForStatement: (n) => this.formatForStatement(n),
+      IfStatement: (n) => this.formatIfStatement(n),
+      ReturnStatement: (n) => this.formatReturnStatement(n),
       CreateStatement: (n) => this.formatCreateStatement(n),
       UpdateStatement: (n) => this.formatUpdateStatement(n),
       CreateFieldAssignment: (n) => this.formatCreateFieldAssignment(n),
@@ -528,6 +532,22 @@ export default class TaoFormatter extends AbstractFormatter {
     f.node(node.block)
   }
 
+  private formatIfStatement(node: AST.IfStatement): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('if').append(Formatting.oneSpace())
+    f.property('condition').append(Formatting.oneSpace())
+    f.node(node.thenBlock).prepend(Formatting.oneSpace())
+    if (node.elseBlock) {
+      f.keyword('else').surround(Formatting.oneSpace())
+      f.node(node.elseBlock)
+    }
+  }
+
+  private formatReturnStatement(node: AST.ReturnStatement): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('return').append(Formatting.oneSpace())
+  }
+
   private formatCreateStatement(node: AST.CreateStatement): void {
     const f = this.getNodeFormatter(node)
     f.keyword('create').append(Formatting.oneSpace())
@@ -588,6 +608,14 @@ export default class TaoFormatter extends AbstractFormatter {
   private formatActionDeclaration(node: AST.ActionDeclaration): void {
     const f = this.getNodeFormatter(node)
     f.keyword('action').append(Formatting.oneSpace())
+    this._spaceAfterProperty(node, 'name')
+    this._spaceAfterProperty(node, 'parameterList')
+    this._spaceBeforeProperty(node, 'block')
+  }
+
+  private formatFunctionDeclaration(node: AST.FunctionDeclaration): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('function').append(Formatting.oneSpace())
     this._spaceAfterProperty(node, 'name')
     this._spaceAfterProperty(node, 'parameterList')
     this._spaceBeforeProperty(node, 'block')
@@ -700,6 +728,13 @@ export default class TaoFormatter extends AbstractFormatter {
 
   private formatNullLiteral(_node: AST.NullLiteral): void {
     // No formatting for null literals.
+  }
+
+  private formatFunctionCallExpression(node: AST.FunctionCallExpression): void {
+    const f = this.getNodeFormatter(node)
+    f.keyword('call').append(Formatting.oneSpace())
+    f.property('function')
+    this._spaceBeforeProperty(node, 'argumentList')
   }
 
   private formatStringTemplateExpression(node: AST.StringTemplateExpression): void {
