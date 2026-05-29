@@ -51,7 +51,7 @@ Checklist:
 - iOS home indicator: the bottom input and submit action can scroll above the keyboard and home indicator.
 - Android edge-to-edge: top and bottom system UI do not cover content.
 - Android keyboard: focusing `Bottom keyboard field` keeps the field visible.
-- Android bottom tabs: focusing `Tabbed bottom field` hides the tab bar instead of pushing it awkwardly.
+- Android bottom tabs: focusing `Tabbed bottom field` hides the tab bar.
 - Web: the fixture still scrolls through the normal web shell.
 
 Agent-safe commands:

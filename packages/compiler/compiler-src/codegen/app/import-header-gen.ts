@@ -113,7 +113,6 @@ export function buildRuntimePreambleImports(
   taoFile: AST.TaoFile,
   importBase: string,
 ): {
-  appShellImport: string
   iconImport: string
   navigationImport: string
   navigationRuntimeImport: string
@@ -134,13 +133,10 @@ export function buildRuntimePreambleImports(
   const navigationRuntimeImport = taoFileHasAppNavigation(taoFile) && taoFileHasNavigationAction(taoFile)
     ? `import { createTaoNavigationRuntime } from '${importBase}use/@tao/tao-runtime/navigation-runtime'\n`
     : ''
-  const appShellImport = taoFileHasAppNavigation(taoFile)
-    ? `import { TaoNavigationScreenShell } from '${importBase}use/@tao/tao-runtime/AppShell'\n`
-    : ''
   const iconImport = taoFileHasNavigationIcon(taoFile)
     ? `import Ionicons from '@expo/vector-icons/Ionicons'\n`
     : ''
-  return { appShellImport, iconImport, navigationImport, navigationRuntimeImport, reactImport, taoDataImport }
+  return { iconImport, navigationImport, navigationRuntimeImport, reactImport, taoDataImport }
 }
 
 function navigationImportsForTaoFile(taoFile: AST.TaoFile): string {

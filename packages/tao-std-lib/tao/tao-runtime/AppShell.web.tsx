@@ -8,15 +8,11 @@ import {
 import {
   type TaoAppShellProps,
   taoAppShellSafeAreaContentStyle,
-  type TaoNavigationScreenShellProps,
 } from './AppShell.shared'
 
 const styles = RN.StyleSheet.create({
   root: {
     flex: 1,
-  },
-  screenContent: {
-    flexGrow: 1,
   },
 })
 
@@ -26,20 +22,6 @@ export function TaoAppShell(props: TaoAppShellProps) {
     SafeAreaProvider,
     null,
     React.createElement(TaoWebAppShellContent, props),
-  )
-}
-
-/** TaoNavigationScreenShell gives generated navigation screens the same scroll host on web. */
-export function TaoNavigationScreenShell(props: TaoNavigationScreenShellProps) {
-  return React.createElement(
-    RN.ScrollView,
-    {
-      contentContainerStyle: styles.screenContent,
-      keyboardDismissMode: 'interactive',
-      keyboardShouldPersistTaps: 'handled',
-      style: styles.root,
-    },
-    props.children,
   )
 }
 

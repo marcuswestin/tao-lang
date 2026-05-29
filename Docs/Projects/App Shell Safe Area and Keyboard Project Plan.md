@@ -378,7 +378,7 @@ Implementation validation:
 - 2026-05-20 Step 6: adopted Expo's documented Android bottom-tab keyboard mitigation with `android.softwareKeyboardLayoutMode: "pan"` in the Expo runtime config, and set generated bottom-tab navigators to `tabBarHideOnKeyboard: true`. Jest coverage now verifies both defaults, but physical Android bottom-tab keyboard smoke remains pending.
 - 2026-05-20 Step 7: added the `App Shell Safe Area and Keyboard` shared fixture with a long plain UI-root form, bottom text input, and bottom submit action. The Expo runtime README now records the real-device smoke checklist and local commands; manual iOS and Android device smoke remains pending and is not yet a validated real-device claim.
 - 2026-05-20 Step 8: updated the roadmap status to `Implemented` and narrowed overlapping Beautiful App Defaults / Look Great By Default ownership so future visual-defaults work builds on this hardened shell instead of reimplementing mechanical safe-area and keyboard behavior.
-- 2026-05-29 implementation review: added the `App Shell Safe Area and Keyboard Tabs` shared fixture so generated bottom-tab keyboard defaults have a tabbed smoke path, and updated generated navigation screen components to render inside `TaoNavigationScreenShell`, a keyboard-aware scroll host for navigation-rooted apps.
+- 2026-05-29 implementation review: added the `App Shell Safe Area and Keyboard Tabs` shared fixture so generated bottom-tab keyboard defaults have a tabbed smoke path. Generated navigation screen content remains unwrapped; this project owns bottom-tab hide-on-keyboard defaults, while navigation-screen keyboard-aware scrolling requires a future explicit screen/forms policy.
 - 2026-05-29 implementation review: the branch also contains `6bef32b` (`docs(skills): review project plans with subagents`), an intentional companion workflow-skill change requested before implementation. It is not part of the app-shell runtime behavior.
 - 2026-05-29 implementation review: the branch also contains `074688f` (`Update dprint deps`), a companion formatter-tooling refresh committed separately from the runtime implementation.
 
@@ -389,5 +389,6 @@ Implementation validation:
 - Keyboard-controller adoption if the import-boundary gate fails.
 - Modal, sheet, drawer, and overlay-specific keyboard policy.
 - Full Forms and Inputs project ownership.
+- Navigation screen keyboard-aware scrolling policy for form-heavy routes.
 - Automated visual regression across a real-device matrix.
 - Safe-area behavior for future non-Expo runtime targets.

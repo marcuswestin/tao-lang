@@ -423,11 +423,7 @@ class RuntimeGen {
       return `function ${navigationScreenComponentName(destination)}(_ScreenProps: any) {
   void _ScreenProps
 ${designContext}
-  return (
-    <TaoNavigationScreenShell>
-      <${target.componentName}${designStyle} />
-    </TaoNavigationScreenShell>
-  )
+  return <${target.componentName}${designStyle} />
 }`
     }
     const props = destination.params
@@ -440,11 +436,7 @@ ${designContext}
     return `function ${navigationScreenComponentName(destination)}(_ScreenProps: any) {
   const _routeParams = _ScreenProps.route?.params ?? {}
 ${designContext}
-  return (
-    <TaoNavigationScreenShell>
-      <${target.componentName} ${props}${designStyle} />
-    </TaoNavigationScreenShell>
-  )
+  return <${target.componentName} ${props}${designStyle} />
 }`
   }
 

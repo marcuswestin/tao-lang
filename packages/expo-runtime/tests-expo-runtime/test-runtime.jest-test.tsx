@@ -9,10 +9,7 @@ import {
 import { fireEvent, render } from '@testing-library/react-native'
 import type { ComponentType } from 'react'
 import * as RN from 'react-native'
-import {
-  TaoAppShell,
-  TaoNavigationScreenShell,
-} from '../../tao-std-lib/tao/tao-runtime/AppShell.native'
+import { TaoAppShell } from '../../tao-std-lib/tao/tao-runtime/AppShell.native'
 import { Layout } from '../../tao-std-lib/tao/tao-runtime/Layout'
 import { TR } from '../../tao-std-lib/tao/tao-runtime/tao-runtime'
 
@@ -259,31 +256,6 @@ describe('runtime:', () => {
         flex: 1,
       })
       expect(screen.getByText('Navigation shell content')).toBeDefined()
-    } finally {
-      safeAreaMock.setSafeAreaInsetsForTests({ bottom: 0, left: 0, right: 0, top: 0 })
-    }
-  })
-
-  test('wraps native navigation screen content in a keyboard-aware scroll host', () => {
-    const safeAreaMock = safeAreaContextTestMock()
-    safeAreaMock.setSafeAreaInsetsForTests({ bottom: 20, left: 3, right: 4, top: 10 })
-
-    try {
-      const screen = render(
-        <TaoNavigationScreenShell>
-          <RN.Text>Navigation screen content</RN.Text>
-        </TaoNavigationScreenShell>,
-      )
-      const scrollView = screen.UNSAFE_getByType(RN.ScrollView)
-
-      expect(flattenStyle(scrollView.props.style)).toMatchObject({
-        flex: 1,
-      })
-      expect(flattenStyle(scrollView.props.contentContainerStyle)).toMatchObject({
-        flexGrow: 1,
-      })
-      expect(scrollView.props.bottomOffset).toBe(20)
-      expect(scrollView.props.keyboardShouldPersistTaps).toBe('handled')
     } finally {
       safeAreaMock.setSafeAreaInsetsForTests({ bottom: 0, left: 0, right: 0, top: 0 })
     }
