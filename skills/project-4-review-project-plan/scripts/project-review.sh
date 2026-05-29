@@ -21,7 +21,7 @@ Environment:
   CODEX_CMD                 Codex CLI command. Default: codex
   CLAUDE_CMD                Claude CLI command. Default: claude
   CODEX_MODEL               Optional Codex model.
-  CLAUDE_MODEL              Claude model. Default: opus-4.6
+  CLAUDE_MODEL              Claude model. Default: opus-4.8
   REVIEW_TIMEOUT_SECONDS    Timeout per reviewer. Default: 600
   PROJECT_REVIEW_DIR        Artifact root. Default: /private/tmp/tao-project-reviews
 USAGE
@@ -195,7 +195,7 @@ run_claude() {
   local prompt_file="$1"
   local pass_dir="$2"
   local claude_cmd="${CLAUDE_CMD:-claude}"
-  local model="${CLAUDE_MODEL:-opus-4.6}"
+  local model="${CLAUDE_MODEL:-opus-4.8}"
   if ! command -v "$claude_cmd" >/dev/null 2>&1; then
     echo "$claude_cmd CLI not found in PATH." > "$pass_dir/claude.stderr"
     return 127

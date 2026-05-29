@@ -102,6 +102,7 @@ describe('codegen — navigation:', () => {
     )
     expect(emitted).toContain("import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'")
     expect(emitted).toContain("import { createNativeStackNavigator } from '@react-navigation/native-stack'")
+    expect(emitted).toContain("import { TaoNavigationScreenShell } from '../use/@tao/tao-runtime/AppShell'")
     expect(emitted).toContain("import Ionicons from '@expo/vector-icons/Ionicons'")
     expect(emitted).toContain('const _taoNavigationRootRef = createNavigationContainerRef()')
     expect(emitted).not.toContain('StackActions')
@@ -114,6 +115,7 @@ describe('codegen — navigation:', () => {
     expect(emitted).toContain(
       'RoomId={TR.Literal(_taoNavigationRouteParam(_routeParams.RoomId, "text", "RoomId"))}',
     )
+    expect(emitted).toContain('<TaoNavigationScreenShell>')
     expect(emitted).toContain('linking: { path: "/rooms/:RoomId" }')
     expect(emitted).toContain('tabBarIcon: _taoNavigationTabIcon("search")')
     expect(emitted).toContain('const TaoAppNavigationRoot = createStaticNavigation(_TaoNavigator_MainNavigation)')

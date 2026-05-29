@@ -18,6 +18,10 @@ export interface TaoAppShellProps {
   readonly onRuntimeReady?: () => void
 }
 
+export interface TaoNavigationScreenShellProps {
+  readonly children: React.ReactNode
+}
+
 /** taoAppShellSafeAreaContentStyle adds device safe-area insets onto resolved shell content padding. */
 export function taoAppShellSafeAreaContentStyle(
   style: RN.StyleProp<RN.ViewStyle> | undefined,

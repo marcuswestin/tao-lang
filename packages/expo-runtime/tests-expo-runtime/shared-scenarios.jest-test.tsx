@@ -7,6 +7,7 @@ import { createExpoScenarioAdapter } from '../test-runtime'
 
 const expoScenarioAllowList = new Set([
   'App Shell Safe Area and Keyboard',
+  'App Shell Safe Area and Keyboard Tabs',
   'Layout Showcase',
   'Navigation',
   'Navigation Dev',

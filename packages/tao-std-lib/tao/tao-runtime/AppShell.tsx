@@ -1,13 +1,33 @@
 import React from 'react'
 import * as RN from 'react-native'
 
-import type { TaoAppShellProps } from './AppShell.shared'
+import type {
+  TaoAppShellProps,
+  TaoNavigationScreenShellProps,
+} from './AppShell.shared'
 
 const styles = RN.StyleSheet.create({
   root: {
     flex: 1,
   },
+  screenContent: {
+    flexGrow: 1,
+  },
 })
+
+/** TaoNavigationScreenShell gives generated navigation screens a platform-neutral scroll host. */
+export function TaoNavigationScreenShell(props: TaoNavigationScreenShellProps) {
+  return React.createElement(
+    RN.ScrollView,
+    {
+      contentContainerStyle: styles.screenContent,
+      keyboardDismissMode: 'interactive',
+      keyboardShouldPersistTaps: 'handled',
+      style: styles.root,
+    },
+    props.children,
+  )
+}
 
 /** TaoAppShell renders the platform-neutral fallback app shell. */
 export function TaoAppShell(props: TaoAppShellProps) {

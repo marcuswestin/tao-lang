@@ -40,7 +40,7 @@ This project supersedes the placeholder "Beautiful App Defaults MVP" entry in `D
 
 - Tao runtime is React Native 0.81 + Expo. Web target ships through React Native Web. All decisions map to one of: React Native/Expo support, a Tao-owned runtime helper, or an explicit validation/runtime diagnostic.
 - The design-inference plan's `tao.design.lock` / `.tao.design.lock` files are the canonical home for accepted/suggested design state. This project adds a `templateSelection` block and bumps `schemaVersion` from 1 to 2; design-inference code reading the lock must handle the new schema or fail loudly.
-- The Layout MVP is stable enough that adding color, radius, shadow, max-width clamping, safe-area, and keyboard handling on top will not collide with its layout-clause parsing.
+- The Layout MVP is stable enough that adding color, radius, shadow, and max-width clamping on top will not collide with its layout-clause parsing. Mechanical app-shell safe-area and keyboard behavior is owned by the App Shell Safe Area and Keyboard project.
 - The Still and Rooms demo apps can run on the first-candidate-default + fallback-token path while Steps 8–10 finish; they do not need the full overrides or gallery to look acceptable.
 - `@expo/vector-icons` is already an Expo runtime dependency. Each template picks one family from its V1 set; an authoring escape hatch to a different family is deferred.
 - An LLM provider routing layer (`--llm-provider`) is available or will be added in coordination with the design-inference plan. This project does not own provider plumbing.
@@ -196,7 +196,7 @@ Intermediate commits inside one template may skip the full checklist as long as 
 - Derive page gutter and section gap from `constraints.spacing.insetScale` and `sectionGapScale` and apply at app-shell and screen-root level.
 - Wire splash screen tint from `color.background.app` token.
 - Wire status bar style per screen based on current background.
-- Wire safe-area handling at app root using `react-native-safe-area-context`.
+- Preserve the hardened app shell safe-area and keyboard defaults from the App Shell Safe Area and Keyboard project; this step owns visual app-shell tokens such as web max-width, gutters, splash tint, and status-bar style.
 - Apply the wiring to the existing Kitchen Sink / Data Schema test apps so the shell wiring is exercised.
 
 **Validation:** `./agent compiler test codegen design`, `./agent expo-runtime test`, `./agent headless-test-runtime test`. Test apps render with max-width clamp on web; safe-area insets applied; status bar style follows scheme.

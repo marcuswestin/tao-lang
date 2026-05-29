@@ -13,11 +13,15 @@ import {
   taoAppShellKeyboardBottomOffset,
   type TaoAppShellProps,
   taoAppShellSafeAreaContentStyle,
+  type TaoNavigationScreenShellProps,
 } from './AppShell.shared'
 
 const styles = RN.StyleSheet.create({
   root: {
     flex: 1,
+  },
+  screenContent: {
+    flexGrow: 1,
   },
 })
 
@@ -31,6 +35,22 @@ export function TaoAppShell(props: TaoAppShellProps) {
       null,
       React.createElement(TaoNativeAppShellContent, props),
     ),
+  )
+}
+
+/** TaoNavigationScreenShell gives generated navigation screens keyboard-aware native scrolling. */
+export function TaoNavigationScreenShell(props: TaoNavigationScreenShellProps) {
+  const insets = useSafeAreaInsets()
+  return React.createElement(
+    KeyboardAwareScrollView,
+    {
+      bottomOffset: taoAppShellKeyboardBottomOffset(undefined, insets, RN.StyleSheet),
+      contentContainerStyle: styles.screenContent,
+      keyboardDismissMode: 'interactive',
+      keyboardShouldPersistTaps: 'handled',
+      style: styles.root,
+    },
+    props.children,
   )
 }
 
