@@ -54,14 +54,14 @@ Checklist:
 - Android bottom tabs: focusing `Tabbed bottom field` hides the tab bar instead of pushing it awkwardly.
 - Web: the fixture still scrolls through the normal web shell.
 
-Useful local commands:
+Agent-safe commands:
 
 ```sh
-just dev roPhone "./Apps/Test Apps/App Shell Safe Area and Keyboard/App Shell Safe Area and Keyboard.tao"
-just dev roPhone "./Apps/Test Apps/App Shell Safe Area and Keyboard Tabs/App Shell Safe Area and Keyboard Tabs.tao"
-just expo-runtime android-start
-just expo-runtime web
+./agent expo-runtime android-start
+./agent expo-runtime web
 ```
+
+For a human-run physical iPhone check, use `just dev <device-name> "<fixture path>"` from the repo root with either fixture path named above.
 
 ## Test file naming
 
