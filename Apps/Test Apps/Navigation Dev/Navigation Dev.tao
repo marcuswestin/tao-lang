@@ -39,9 +39,18 @@ variant HelperText = Text <"secondary navigation state text">
 variant NavButton = Button <"navigation action button">
 
 ui HomeScreen {
+   state ItemId = "alpha"
    render Screen [items top stretch, gap 14, pad 20, width fill] {
       SectionTitle "Navigation Dev Home"
       HelperText "Home tab in root stack"
+      if ItemId = "alpha" {
+         Text "ItemId is alpha"
+      } else {
+         Text "ItemId is not alpha"
+      }
+      NavButton "Change ItemId to beta", action {
+         set ItemId = "beta"
+      }
       NavButton "Open detail alpha", action {
          navigation push Detail {
             ItemId "alpha"
