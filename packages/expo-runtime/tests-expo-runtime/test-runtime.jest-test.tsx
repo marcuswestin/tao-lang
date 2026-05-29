@@ -10,6 +10,7 @@ import { fireEvent, render } from '@testing-library/react-native'
 import type { ComponentType } from 'react'
 import * as RN from 'react-native'
 import { TaoAppShell } from '../../tao-std-lib/tao/tao-runtime/AppShell.native'
+import { TaoAppShell as TaoWebAppShell } from '../../tao-std-lib/tao/tao-runtime/AppShell.web'
 import { Layout } from '../../tao-std-lib/tao/tao-runtime/Layout'
 import { TR } from '../../tao-std-lib/tao/tao-runtime/tao-runtime'
 
@@ -256,6 +257,39 @@ describe('runtime:', () => {
         flex: 1,
       })
       expect(screen.getByText('Navigation shell content')).toBeDefined()
+    } finally {
+      safeAreaMock.setSafeAreaInsetsForTests({ bottom: 0, left: 0, right: 0, top: 0 })
+    }
+  })
+
+  test('keeps the web Tao app shell on a web-only scroll path', () => {
+    const webShellSource = FS.readTextFile(
+      FS.resolvePath(__dirname, '../../tao-std-lib/tao/tao-runtime/AppShell.web.tsx'),
+    )
+    expect(webShellSource).not.toContain('react-native-keyboard-controller')
+    const safeAreaMock = safeAreaContextTestMock()
+    safeAreaMock.setSafeAreaInsetsForTests({ bottom: 20, left: 3, right: 4, top: 10 })
+
+    try {
+      const screen = render(
+        <TaoWebAppShell
+          backgroundColor="#f7f8fa"
+          contentStyle={appShellContentStyle}
+          kind="ui"
+        >
+          <RN.Text>Web shell content</RN.Text>
+        </TaoWebAppShell>,
+      )
+      const scrollView = screen.UNSAFE_getByType(RN.ScrollView)
+
+      expect(flattenStyle(scrollView.props.contentContainerStyle)).toMatchObject({
+        paddingBottom: 20,
+        paddingLeft: 10,
+        paddingRight: 11,
+        paddingTop: 15,
+      })
+      expect(scrollView.props.bottomOffset).toBeUndefined()
+      expect(scrollView.props.keyboardShouldPersistTaps).toBe('handled')
     } finally {
       safeAreaMock.setSafeAreaInsetsForTests({ bottom: 0, left: 0, right: 0, top: 0 })
     }

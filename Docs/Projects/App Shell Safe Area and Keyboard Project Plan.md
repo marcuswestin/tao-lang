@@ -381,6 +381,7 @@ Implementation validation:
 - 2026-05-29 implementation review: added the `App Shell Safe Area and Keyboard Tabs` shared fixture so generated bottom-tab keyboard defaults have a tabbed smoke path. Generated navigation screen content remains unwrapped; this project owns bottom-tab hide-on-keyboard defaults, while navigation-screen keyboard-aware scrolling requires a future explicit screen/forms policy.
 - 2026-05-29 implementation review: the branch also contains `6bef32b` (`docs(skills): review project plans with subagents`), an intentional companion workflow-skill change requested before implementation. It is not part of the app-shell runtime behavior.
 - 2026-05-29 implementation review: the branch also contains `074688f` (`Update dprint deps`), a companion formatter-tooling refresh committed separately from the runtime implementation.
+- 2026-05-29 implementation review: merge prep must either keep those companion commits and call them out in the squash message, or split them before landing this branch as an app-shell-only project.
 
 ## Deferrals
 
