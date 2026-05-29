@@ -305,7 +305,7 @@ Required template tokens and recipe slots should fail in template completeness t
 
 **Context:** Max width and web layout are central to the product goal. A good button is not enough if the app shell stretches a form across a desktop viewport.
 
-**2026-05-20 update:** The App Shell Safe Area and Keyboard project now owns the mechanical native safe-area padding, bottom spacing, keyboard-aware native UI-root scrolling, Android keyboard mode, and bottom-tab hide-on-keyboard defaults. This step should build visual shell polish, web/tablet width behavior, and template-aware spacing on top of that hardened shell rather than reimplementing those mechanics.
+`TaoAppShell` owns mechanical native safe-area padding, bottom spacing, keyboard-aware native UI-root scrolling, Android keyboard mode, and bottom-tab hide-on-keyboard defaults. This step should build visual shell polish, web/tablet width behavior, and template-aware spacing on top of that shell rather than reimplementing those mechanics.
 
 **Work:**
 

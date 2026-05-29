@@ -24,14 +24,14 @@ description: Prepare a reviewed Tao project branch for final landing by verifyin
 5. If the roadmap changed, run `./agent prep-commit` immediately before committing the roadmap update.
 6. Commit the roadmap update through `skills/git-workflow` if needed.
 7. Run `./agent prep-commit` again before treating the branch as merge-ready.
-8. Hand off to `project-8-finalize-merge` for the actual squash landing, main validation, push, and local branch/worktree cleanup.
+8. Hand off to `project-8-finalize-merge` for the actual squash landing, main validation, push, and local feature branch/worktree deletion. Preserve the remote feature branch unless the user explicitly asks to delete it.
 
 ## Output
 
 - Feature branch.
 - Validation status.
 - Roadmap status.
-- Merge handoff to `project-8-finalize-merge`.
+- Merge handoff to `project-8-finalize-merge`, including local feature branch/worktree deletion after `main` is pushed.
 
 ## Validation
 

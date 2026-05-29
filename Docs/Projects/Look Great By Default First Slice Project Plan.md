@@ -136,7 +136,7 @@ Everything LLM-shaped, template-file-shaped, lock-file-shaped, or author-choice-
 
 **Context:** The single most visible "this looks broken" failure on web is content stretching to the viewport edge. On native, an unhandled safe-area is equally jarring. The generated app bootstrap currently does neither. System font on web defaults to a generic browser font when not specified.
 
-**2026-05-20 update:** The App Shell Safe Area and Keyboard project now provides the mechanical `TaoAppShell`, root `SafeAreaProvider`, plain UI-root safe-area padding, native keyboard-aware scrolling, Android keyboard mode, and bottom-tab hide-on-keyboard defaults. This slice should keep owning web max-width, status bar, splash, system font, and visual shell polish, and should reuse the hardened shell instead of introducing a parallel app-shell helper.
+Reuse the existing `TaoAppShell` for mechanical safe-area, keyboard, Android keyboard mode, and bottom-tab hide-on-keyboard behavior. This slice owns visual shell polish such as web max-width, status bar, splash, system font, and template spacing.
 
 **Work:**
 

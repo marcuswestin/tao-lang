@@ -12,6 +12,7 @@ description: Finalize a reviewed Tao project by squash merging its prepared feat
 - Do not run project review scripts or implementation review rounds.
 - Do not delete the remote feature branch.
 - Do not delete the local branch or worktree until `main` has been pushed with the squash commit and the remote feature branch still exists.
+- Delete the local feature branch and local feature worktree after `main` is pushed; a squash merge leaves the local feature branch unmerged by ancestry, so cleanup is an explicit required step.
 - Use `./agent git branch -D <feature-branch>` only after the squash commit is pushed; squash merges do not make `git branch -d` safe by ancestry.
 
 ## Workflow
