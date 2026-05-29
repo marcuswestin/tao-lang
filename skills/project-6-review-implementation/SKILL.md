@@ -20,7 +20,7 @@ description: Review an implemented Tao project against its plan by running selec
    ./agent project-review --mode implementation --base main <plan-path>
    ```
 
-   The shared reviewer script defaults Claude to pinned `opus-4.8`. Do not use a floating `opus` alias or another Claude model unless the user explicitly changes the model.
+   The shared reviewer script does not pass a Claude model unless `CLAUDE_MODEL` is set. Let the local Claude CLI choose its configured/default model unless the user explicitly changes the model.
 
 3. Read the selected review outputs from the reported artifact directory. The prompt asks reviewers to be brief and return only the most important issues rather than a full deep-dive audit. If one requested reviewer fails or hangs, use any completed output and rerun only the missing requested reviewer with the existing prompt instead of starting broader research.
 4. Treat stale-doc findings as first-class implementation issues when the code, plan, roadmap, historical docs, command names, or acceptance paths disagree.

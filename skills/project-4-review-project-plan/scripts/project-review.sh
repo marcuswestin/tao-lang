@@ -21,7 +21,7 @@ Environment:
   CODEX_CMD                 Codex CLI command. Default: codex
   CLAUDE_CMD                Claude CLI command. Default: claude
   CODEX_MODEL               Optional Codex model.
-  CLAUDE_MODEL              Claude model. Default: opus-4.8
+  CLAUDE_MODEL              Optional Claude model.
   REVIEW_TIMEOUT_SECONDS    Timeout per reviewer. Default: 600
   PROJECT_REVIEW_DIR        Artifact root. Default: /private/tmp/tao-project-reviews
 USAGE
@@ -195,16 +195,16 @@ run_claude() {
   local prompt_file="$1"
   local pass_dir="$2"
   local claude_cmd="${CLAUDE_CMD:-claude}"
-  local model="${CLAUDE_MODEL:-opus-4.8}"
   if ! command -v "$claude_cmd" >/dev/null 2>&1; then
     echo "$claude_cmd CLI not found in PATH." > "$pass_dir/claude.stderr"
     return 127
   fi
-  "$claude_cmd" \
-    --print \
-    --output-format json \
-    --model "$model" \
-    "$(cat "$prompt_file")" > "$pass_dir/claude.raw.json" 2> "$pass_dir/claude.stderr"
+  local args=(--print --output-format json)
+  if [ -n "${CLAUDE_MODEL:-}" ]; then
+    args+=(--model "$CLAUDE_MODEL")
+  fi
+  args+=("$(cat "$prompt_file")")
+  "$claude_cmd" "${args[@]}" > "$pass_dir/claude.raw.json" 2> "$pass_dir/claude.stderr"
 
   if command -v jq >/dev/null 2>&1 && jq -e '.result' "$pass_dir/claude.raw.json" >/dev/null 2>&1; then
     jq -r '.result' "$pass_dir/claude.raw.json" > "$pass_dir/claude-review.md"
