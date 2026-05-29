@@ -9,6 +9,7 @@ import {
 import { fireEvent, render } from '@testing-library/react-native'
 import type { ComponentType } from 'react'
 import * as RN from 'react-native'
+import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { TaoAppShell } from '../../tao-std-lib/tao/tao-runtime/AppShell.native'
 import { TaoAppShell as TaoWebAppShell } from '../../tao-std-lib/tao/tao-runtime/AppShell.web'
 import { Layout } from '../../tao-std-lib/tao/tao-runtime/Layout'
@@ -252,6 +253,7 @@ describe('runtime:', () => {
       const rootView = screen.UNSAFE_getByType(RN.View)
 
       expect(() => screen.UNSAFE_getByType(RN.ScrollView)).toThrow(/No instances found/)
+      expect(screen.UNSAFE_queryByType(SafeAreaProvider)).not.toBeNull()
       expect(flattenStyle(rootView.props.style)).toMatchObject({
         backgroundColor: '#101820',
         flex: 1,

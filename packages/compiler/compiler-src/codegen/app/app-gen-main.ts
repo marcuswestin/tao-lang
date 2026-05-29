@@ -300,7 +300,6 @@ function CompiledTaoAppContent(props) {
     <TaoAppShell
       backgroundColor={_compiledTaoAppDefaultBackground(_taoDesignContext)}
       kind="navigation"
-      onRuntimeReady={props?.onRuntimeReady}
     >
       <AppNavigationRoot onReady={props?.onRuntimeReady} />
     </TaoAppShell>
@@ -319,11 +318,18 @@ function _compiledTaoAppRootBackground(_taoDesignContext) {
   return backgroundColor
 }
 
+function _compiledTaoAppRootContentStyle(_taoDesignContext) {
+  return _compiledTaoAppRootDesignStyleKey === null
+    ? undefined
+    : RN.StyleSheet.flatten(resolveStyle(_compiledTaoAppRootDesignStyleKey, _taoDesignContext))
+}
+
 function CompiledTaoAppContent() {
   const _taoDesignContext = useTaoDesignContext()
   return (
     <TaoAppShell
       backgroundColor={_compiledTaoAppRootBackground(_taoDesignContext)}
+      contentStyle={_compiledTaoAppRootContentStyle(_taoDesignContext)}
       kind="ui"
     >
       <AppUIView />

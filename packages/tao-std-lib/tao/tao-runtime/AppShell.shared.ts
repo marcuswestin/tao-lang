@@ -15,7 +15,6 @@ export interface TaoAppShellProps {
   readonly children: React.ReactNode
   readonly contentStyle?: RN.StyleProp<RN.ViewStyle>
   readonly kind: TaoAppShellKind
-  readonly onRuntimeReady?: () => void
 }
 
 /** taoAppShellSafeAreaContentStyle adds device safe-area insets onto resolved shell content padding. */
