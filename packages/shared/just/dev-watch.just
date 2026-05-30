@@ -8,9 +8,6 @@ _dev DEVICE APP:
     export IOS_DEVICE="{{ DEVICE }}"
     export DEV_METRO_PORT="{{ DEV_METRO_PORT }}"
     export LOCAL_INSTANTDB_APP_ID="{{ LOCAL_INSTANTDB_APP_ID }}"
-    export LANG="en_US.UTF-8"
-    export LC_ALL="en_US.UTF-8"
-    export LC_CTYPE="en_US.UTF-8"
     just deps gen
     echo "compile"
     just _compile_dev_app
@@ -24,12 +21,13 @@ _dev DEVICE APP:
         just concurrently-exec-named-dev-loop \
             "grammar" "watchexec --restart --watch=packages/parser/tao-grammar.langium -- just gen" \
             "app_build" "just _compile_dev_app --watch" \
-            "runtime_reload" "open -a 'Google Chrome' 'http://localhost:{{ DEV_METRO_PORT }}/'; cd packages/expo-runtime && exec env BROWSER=none bunx expo start --web --port {{ DEV_METRO_PORT }}" \
+            "expo_runtime" "cd packages/expo-runtime && exec env browser='Google Chrome' bunx expo start --web --port {{ DEV_METRO_PORT }} || true; tail -f /dev/null" \
             "iphone_app_install" "bash packages/shared/scripts/expo-dev-iphone-launcher.sh || true; tail -f /dev/null" \
-            "typecheck_extension" "cd packages/ide-extension && tsc -b tsconfig.json && tsc -b tsconfig.json --watch --preserveWatchOutput" \
-            "esbuild_extension" "cd packages/ide-extension && node esbuild.config.ts --watch" \
-            "fmt_justfile" "watchexec --filter '**/*.just' --filter '**/Justfile' -- just _fmt_just" \
+            "android_app_install" "bash packages/shared/scripts/expo-dev-android-launcher.sh || true; tail -f /dev/null" \
             "dev_control" "just _r_reloead_q_quit" || break
+            # "typecheck_extension" "cd packages/ide-extension && tsc -b tsconfig.json && tsc -b tsconfig.json --watch --preserveWatchOutput" \
+            # "esbuild_extension" "cd packages/ide-extension && node esbuild.config.ts --watch" \
+            # "fmt_justfile" "watchexec --filter '**/*.just' --filter '**/Justfile' -- just _fmt_just" \
     done
 
 _watch_all_tests *PATTERNS:
@@ -45,20 +43,6 @@ _watch_all_tests *PATTERNS:
             "test apps" "just _watch_test_apps {{ PATTERNS }}" \
             "q Exit" "just _r_reloead_q_quit" || break;
     done
-
-_steal_focus:
-    #!/bin/zsh
-    current_app=$(osascript -e 'tell application "System Events" to get name of first application process whose frontmost is true')
-    targets=(Simulator "Google Chrome")
-    while (( ${#targets[@]} > 0 )); do
-        sleep 0.01
-        frontmost=$(osascript -e 'tell application "System Events" to name of first process whose frontmost is true')
-        if (( ${targets[(Ie)$frontmost]} )); then
-            osascript -e "tell application \"$current_app\" to activate"
-            targets=(${targets:#$frontmost})
-        fi
-    done
-    sleep 99999999
 
 _r_reloead_q_quit:
     #!{{ ZSH_INIT }}
@@ -85,13 +69,10 @@ _compile_dev_app *ARGS:
     APP_PATH="${DEV_APP:?tao-lang: DEV_APP must be set by just _dev}"
     HOST="${DEV_HOST:?tao-lang: DEV_HOST must be set by just _dev}"
     APP_ID="${LOCAL_INSTANTDB_APP_ID:?tao-lang: LOCAL_INSTANTDB_APP_ID must be set by just _dev}"
-    # shellcheck disable=SC1091
     source "$INSTANT_ENV"
-    just tao compile "$APP_PATH" \
-        "$@" \
+    just tao compile "$APP_PATH" --verbose "$@" \
         --runtime-dir ./packages/expo-runtime \
         --std-lib-root ./packages/tao-std-lib \
-        --verbose \
         --app provider.name=InstantDB \
         --app "provider.appId=$APP_ID" \
         --app "provider.apiURI=http://${HOST}:${INSTANT_PORT}" \

@@ -4,9 +4,6 @@ release-prep: _deps prebuild test
 
 prebuild:
     #!{{ ZSH_INIT }}
-    export LANG="en_US.UTF-8"
-    export LC_ALL="en_US.UTF-8"
-    export LC_CTYPE="en_US.UTF-8"
     if [[ -d ios ]]; then echo "prebuild already done"; exit 0; fi
     just build install-ios-platform
     bunx expo prebuild
@@ -26,9 +23,6 @@ ios: _deps
 
 device DEVICE="": _deps install-ios-platform
     #!{{ ZSH_INIT }}
-    export LANG="en_US.UTF-8"
-    export LC_ALL="en_US.UTF-8"
-    export LC_CTYPE="en_US.UTF-8"
     npx expo run:ios --device "{{ DEVICE }}"
 
 # Print the dev-client URL for the launcher's `Enter URL manually` fallback.

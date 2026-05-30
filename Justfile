@@ -25,7 +25,7 @@ BUN_TEST_NON_COMPILER_ROOTS := "packages/shared packages/parser packages/formatt
 DEV_APP := "./Apps/Test Apps/Navigation Dev/Navigation Dev.tao"
 MENY_APP := "./Apps/Meny/Meny.tao"
 
-# Run all components in watch mode (Expo web + Metro; iOS Simulator then physical iPhone after Metro is up via launcher).
+# Run dev loop in watch mode (local instantbd, expo runtime, web+ios+android+iphone, via launcher).
 @dev DEVICE="roPhone" APP=DEV_APP:
     just DEV_METRO_PORT="{{ DEV_METRO_PORT }}" _dev "{{ DEVICE }}" "{{ APP }}"
 

@@ -4,10 +4,6 @@
 # (`expo start --web --ios` exits if no dev build is on the Simulator; Metro stays `expo start --web`.)
 set -euo pipefail
 
-export LANG="en_US.UTF-8"
-export LC_ALL="en_US.UTF-8"
-export LC_CTYPE="en_US.UTF-8"
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 cd "$ROOT/packages/expo-runtime"
